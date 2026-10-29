@@ -878,6 +878,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/payments/{payment_id}/return-drafts": {"post"},
         # V1-056 slice 11c-4: the walk-in Security Deposit and a receipt into a Deposit.
         "/api/v1/leases/{lease_id}/security-deposit": {"post"},
+        "/api/v1/leases/{lease_id}/security-deposit/receive": {"post"},
         "/api/v1/deposits/{deposit_id}/receipts": {"post"},
         # V1-056 slice 11d: the wrong-Unit Payment move draft.
         "/api/v1/properties/{property_id}/payment-allocations/{allocation_id}/move-drafts": {
@@ -967,6 +968,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/customers/{customer_id}": {"get", "patch"},
         "/api/v1/customers/{customer_id}/financial-summary": {"get"},
         "/properties/{property_id}/reservations": {"get", "post"},
+        "/properties/{property_id}/reservations/with-payment": {"post"},
         "/reservations/{reservation_id}": {"get"},
         "/reservations/{reservation_id}/extend": {"post"},
         "/reservations/{reservation_id}/cancel": {"post"},

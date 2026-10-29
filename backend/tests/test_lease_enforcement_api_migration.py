@@ -599,7 +599,7 @@ def test_enforcement_new_context_permissions_and_forward_only_head(
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270402_252"]
+    assert scripts.get_heads() == ["20270403_253"]
     revision = scripts.get_revision("20260910_51")
     assert revision is not None and revision.down_revision == "20260910_50"
     with pytest.raises(RuntimeError, match="forward-only"):

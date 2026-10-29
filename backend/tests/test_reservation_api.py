@@ -82,6 +82,7 @@ class InMemoryReservationFlow:
     awaiting_page: ReservationDepositDecisionPage | None = None
     # V1-061 (DL-110): the default Rent of each Unit, when a test sets one.
     unit_rents: dict[UUID, int] = field(default_factory=dict)
+    payments: list[dict[str, object]] = field(default_factory=list)
 
     def unit_default_rent(self, unit_id: UUID) -> int | None:
         return self.unit_rents.get(unit_id)
@@ -143,6 +144,21 @@ class InMemoryReservationFlow:
         )
         self.resources[value.reservation_id] = value
         return value
+
+    def create_with_payment(
+        self,
+        property_id: UUID,
+        command: ReservationCreateCommand,
+        payment: dict[str, object],
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[ReservationResource, dict[str, object]]:
+        # V1-061 (DL-112): the Payment of a one-step Make Reservation.
+        self.payments.append(payment)
+        return self.create(property_id, command, actor=actor), {
+            "payment": {"id": "00000000-0000-4000-8000-0000000000aa"},
+            "receipt": {"receipt_number": "RC0007"},
+        }
 
     def extend(
         self,
@@ -498,6 +514,51 @@ def test_a_rent_below_the_unit_default_rent_needs_a_manager() -> None:
     manager_flow = InMemoryReservationFlow(unit_rents={unit_id: 50_000})
     manager = client(manager_flow, actor(property_id, "reservations.create", "rent.below_default"))
     assert manager.post(url, json=payload(45_000), headers=headers()).status_code == 201
+
+
+def test_make_reservation_with_payment_saves_the_money_and_the_reservation_in_one_request() -> None:
+    """V1-061 (DL-112): one request needs reservations.create and payments.record; the money is
+    the Customer's own and is exactly the deposit accepted."""
+    property_id = uuid4()
+    customer = uuid4()
+
+    def payload(paid: int = 10_000) -> dict[str, object]:
+        return {
+            "reservation_id": str(uuid4()),
+            "unit_id": str(uuid4()),
+            "customer_id": str(customer),
+            "reservation_date": "2026-08-26",
+            "agreed_monthly_rent_usd_cents": 50_000,
+            "expiration_date": "2026-09-05",
+            "acceptance_id": str(uuid4()),
+            "accepted_initial_deposit_usd_cents": 10_000,
+            "required_security_deposit_usd_cents": 50_000,
+            "acceptance_reason": "Suggested 20% of the agreed Rent",
+            "deposit_id": str(uuid4()),
+            "receipt_id": str(uuid4()),
+            "payment": {
+                "payment_method_id": str(uuid4()),
+                "received_at": "2026-08-26T03:00:00Z",
+                "evidence_reference": "Cash received, Cash",
+                "payer_intent_memo": "Reservation deposit, Unit 101",
+                "amount": {"currency": "USD", "minor_units": paid},
+            },
+        }
+
+    url = f"/properties/{property_id}/reservations/with-payment"
+    flow = InMemoryReservationFlow()
+    staff = client(flow, actor(property_id, "reservations.create"))
+    assert staff.post(url, json=payload(), headers=headers()).status_code == 404
+    assert flow.payments == []
+    cashier = client(flow, actor(property_id, "reservations.create", "payments.record"))
+    assert cashier.post(url, json=payload(9_000), headers=headers()).status_code == 422
+    created = cashier.post(url, json=payload(), headers=headers())
+    assert created.status_code == 201, created.text
+    assert created.json()["data"]["receipt_number"] == "RC0007"
+    assert flow.payments[0]["payer_customer_id"] == str(customer)
+    assert flow.payments[0]["received_amount_minor"] == 10_000
+    assert flow.create_command is not None
+    assert flow.create_command.acceptance_kind == "NORMAL_SUGGESTION"
 
 
 def test_extend_requires_version_and_records_one_notice_shape() -> None:

@@ -2349,3 +2349,13 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built (migration `20270402_252`):** the append-only table `app.lease_occupant_move_outs` and `app.move_out_lease_occupant` (the move-in right `reservations.complete`, as Add occupant). `POST /api/v1/leases/{lease_id}/occupancies/{occupancy_id}/move-out` answers `OCCUPANT_PRIMARY_TENANT`, `OCCUPANT_LAST_SIGNER`, `OCCUPANT_SIGNERS_MUST_AGREE`, `OCCUPANT_MOVE_OUT_DATE` or `OCCUPANT_NOT_LIVING_THERE`. The Lease History shows each move-out.
 - **Links:** BR-OCC-005, BR-OCC-006, BR-OCC-009, BR-OCC-010, BR-LEASE-006, API-038, DL-102.
 - **Decision date:** 2026-10-29.
+
+## DL-112 — V1-061: Make Reservation and Receive Security Deposit save in one step
+
+- **Type:** `TECHNICAL DECISION` (a fix on the owner's bug list; no new business rule)
+- **Status:** `APPROVED; BEING BUILT ON THE V1-061 BRANCH`
+- **Source:** the owner's bug list of 2026-10-29 ("Bugs first, then V1.1"): "Make Reservation and Receive Security Deposit should save in one step." AGENTS.md: database transactions for multi-step financial operations.
+- **Decision:** the screens no longer save the money first and the Reservation or the Security Deposit in a second request. One request saves the Payment with its Receipt and the record that holds the money in one database transaction, or saves nothing. The same request sent again answers the same records; anything else sent with the same key is refused. As in DL-108 for Sign Lease.
+- **Built (migration `20270403_253`):** `app.create_reservation_with_payment` (the Customer's own Payment, then `app.create_reservation` taking its deposit receipt from it) and `app.receive_lease_security_deposit_with_payment` (the Primary Tenant's own Payment, a walk-in Lease's Security Deposit when an amount is given, then the receipt into the Security Deposit), EXECUTE to `prm_financial` only. `POST /properties/{property_id}/reservations/with-payment` needs `reservations.create` and `payments.record` (and the deposit override or `rent.below_default` as before); `POST /api/v1/leases/{lease_id}/security-deposit/receive` needs `payments.record` and `payments.allocate`, and `deposits.manage` to make a walk-in Lease's Security Deposit. The money must be exactly the deposit accepted or received. The older two-step routes stay for other callers.
+- **Links:** DL-099, DL-100, DL-101, DL-108, BR-DEP-002, BR-DEP-004, API-032.
+- **Decision date:** 2026-10-29.

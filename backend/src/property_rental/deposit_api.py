@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from typing import Annotated, Final, Protocol, cast
-from uuid import UUID
+from uuid import UUID, uuid5
 
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
@@ -43,6 +43,7 @@ from property_rental.deposit import (
     DEPOSIT_MANAGE_CAPABILITY,
     DEPOSIT_QUERY_TIMEOUT_MS,
     DEPOSIT_REFUND_QUALIFY_CAPABILITY,
+    ONE_STEP_NAMESPACE,
     PAYMENT_ALLOCATE_CAPABILITY,
     CreateLeaseSecurityDepositCommand,
     CreatePetDepositCommand,
@@ -63,12 +64,14 @@ from property_rental.deposit import (
     ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
 )
+from property_rental.financial_context import bind_financial_property
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.payment_api import OwnMoneyInput
 from property_rental.reservation import (
     DEPOSIT_DISPOSITION_CAPABILITY as RESERVATION_DEPOSIT_DISPOSITION_CAPABILITY,
 )
@@ -85,6 +88,7 @@ from property_rental.reservation import (
 from property_rental.settings import Settings
 
 DEPOSIT_READ_CAPABILITY: Final = "deposits.read"
+PAYMENT_RECORD_CAPABILITY: Final = "payments.record"
 MAX_LEDGER_PAGE_SIZE: Final = 100
 
 _CLOSED_SETTLEMENT = "A closed Final Settlement changes only through a post-settlement correction"
@@ -250,6 +254,21 @@ class DepositResourceFlow(Protocol):
     def record_receipt(
         self, property_id: UUID, command: RecordDepositReceiptCommand, *, actor: AuthenticatedActor
     ) -> DepositReceiptRecord: ...
+
+    def lease_payer(self, lease_id: UUID) -> tuple[UUID, UUID]:
+        """The Lease's Property and its Primary Tenant (V1-061, DL-112)."""
+        ...
+
+    def receive_with_payment(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        payment: dict[str, object],
+        create: CreateLeaseSecurityDepositCommand | None,
+        receipt: RecordDepositReceiptCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[DepositReceiptRecord, dict[str, object]]: ...
 
     def reverse_receipt(
         self, receipt_id: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
@@ -765,6 +784,28 @@ class PostgresDepositResourceFlow:
     ) -> DepositReceiptRecord:
         return self._service(property_id, actor).record_receipt(command, actor=actor)
 
+    def lease_payer(self, lease_id: UUID) -> tuple[UUID, UUID]:
+        row = self._fetchone(
+            "SELECT unit.property_id, lease.primary_tenant_id FROM app.leases AS lease "
+            "JOIN app.units AS unit ON unit.id=lease.unit_id WHERE lease.id=%s",
+            (lease_id,),
+        )
+        return UUID(str(row[0])), UUID(str(row[1]))
+
+    def receive_with_payment(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        payment: dict[str, object],
+        create: CreateLeaseSecurityDepositCommand | None,
+        receipt: RecordDepositReceiptCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[DepositReceiptRecord, dict[str, object]]:
+        return self._service(property_id, actor).receive_with_payment(
+            lease_id, payment, create, receipt, actor=actor
+        )
+
     def reverse_receipt(
         self, receipt_id: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
     ) -> DepositSnapshot:
@@ -904,6 +945,19 @@ class DepositReceiptCreate(BaseModel):
     payment_id: UUID
     amount_usd_cents: Annotated[int, Field(gt=0, le=9_223_372_036_854_775_807)]
     reason: Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+class SecurityDepositReceive(BaseModel):
+    """V1-061 (DL-112): Receive Security Deposit in one request. ``required_usd_cents`` is given
+    only to make a walk-in Lease's Security Deposit; ``deposit_id`` is then its new id, otherwise
+    the Lease's own Security Deposit."""
+
+    model_config = ConfigDict(extra="forbid")
+    deposit_id: UUID
+    required_usd_cents: Annotated[int, Field(gt=0, le=9_223_372_036_854_775_807)] | None = None
+    receipt_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=1000)]
+    payment: OwnMoneyInput
 
 
 class ReversalCreate(BaseModel):
@@ -1208,6 +1262,97 @@ def create_deposit_router(
         response.headers["Cache-Control"] = "private, no-store"
         return {
             "data": _snapshot_body(value, actor),
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.post("/leases/{lease_id}/security-deposit/receive", status_code=status.HTTP_201_CREATED)
+    def receive_security_deposit_route(
+        lease_id: UUID,
+        source: SecurityDepositReceive,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """V1-061 (DL-112): the money, its Receipt, a walk-in Lease's Security Deposit and the
+        money going into it, saved in one database transaction or not at all."""
+        actor = _require_actor(request, resolver)
+        for header in ("Idempotency-Key", "Origin", "X-CSRF-Token"):
+            if len(request.headers.getlist(header)) > 1:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        refusals = {**SECURITY_DEPOSIT_REFUSALS, **DEPOSIT_RECEIPT_REFUSALS}
+        try:
+            property_id, payer = flow.lease_payer(lease_id)
+            _require(actor, property_id, PAYMENT_RECORD_CAPABILITY)
+            _require(actor, property_id, PAYMENT_ALLOCATE_CAPABILITY)
+            if source.required_usd_cents is not None:
+                _require(actor, property_id, DEPOSIT_MANAGE_CAPABILITY)
+            require_browser_mutation(request, settings)
+            if idempotency_key.int == 0 or source.reason != source.reason.strip():
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+            security = next(
+                (
+                    deposit
+                    for deposit in flow.list_for_lease(lease_id)
+                    if deposit.deposit_type == "SECURITY"
+                ),
+                None,
+            )
+            if source.required_usd_cents is not None and security is not None:
+                raise RefusedRequest(DEPOSIT_SECURITY_ALREADY_EXISTS)
+            if source.required_usd_cents is None and (
+                security is None or security.deposit_id != source.deposit_id
+            ):
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+            scope = f"{property_id}:{actor.actor_id}:{idempotency_key}"
+            create = (
+                None
+                if source.required_usd_cents is None
+                else CreateLeaseSecurityDepositCommand(
+                    uuid5(ONE_STEP_NAMESPACE, f"deposit-create:{scope}"),
+                    source.deposit_id,
+                    lease_id,
+                    source.required_usd_cents,
+                    source.reason,
+                )
+            )
+            # The real Payment replaces this placeholder inside the transaction.
+            receipt = RecordDepositReceiptCommand(
+                idempotency_key,
+                source.receipt_id,
+                source.deposit_id,
+                idempotency_key,
+                source.payment.amount.minor_units,
+                source.reason,
+            )
+            bind_financial_property(request, property_id)
+            value, confirmed = flow.receive_with_payment(
+                property_id,
+                lease_id,
+                source.payment.intent(idempotency_key, payer),
+                create,
+                receipt,
+                actor=actor,
+            )
+        except (HTTPException, RefusedRequest):
+            raise
+        except Exception as exc:
+            raise _named(exc, refusals) from exc
+        given = confirmed.get("receipt")
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "data": {
+                "deposit_receipt_id": str(value.deposit_receipt_id),
+                "deposit_id": str(value.deposit.deposit_id),
+                "payment_id": str(value.payment_id),
+                "receipt_number": (
+                    cast(dict[str, object], given).get("receipt_number")
+                    if isinstance(given, dict)
+                    else None
+                ),
+                "amount_usd_cents": value.amount_usd_cents,
+                "required_usd_cents": value.deposit.required_usd_cents,
+                "outstanding_required_usd_cents": value.deposit.outstanding_required_usd_cents,
+            },
             "meta": {"request_id": request.state.request_id},
         }
 

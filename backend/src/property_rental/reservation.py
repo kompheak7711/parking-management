@@ -4,20 +4,21 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Final, cast
-from uuid import UUID
+from typing import Final, NoReturn, cast
+from uuid import UUID, uuid5
 
 import psycopg
-from psycopg.types.json import Jsonb
+from psycopg.types.json import Jsonb, set_json_loads
 
 from property_rental.identity import (
     AuthenticatedActor,
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.payment_confirmation import _exact_json
 
 NIL_UUID: Final = UUID(int=0)
 RESERVATION_CANCEL_CAPABILITY: Final = "reservations.cancel"
@@ -342,6 +343,35 @@ def _lifecycle(row: tuple[object, ...]) -> ReservationLifecycleResult:
     )
 
 
+CREATE_RESERVATION_SQL: Final = """
+    SELECT * FROM app.create_reservation(
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+        COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s,%s,%s,%s,%s,
+        COALESCE(%s::timestamptz,statement_timestamp()),%s
+    )
+"""
+# V1-061 (DL-112): the Payment key of a one-step Reservation is made from the command's key.
+ONE_STEP_NAMESPACE: Final = UUID("6f0c2a52-6d1b-4f43-9b7e-2d61c0a5e101")
+
+
+def _raise_command_error(exc: psycopg.Error) -> NoReturn:
+    if exc.sqlstate in {"P0002", "P5301", "P4501"}:
+        raise ReservationNotFoundError("Reservation resource was not found") from exc
+    if exc.sqlstate == "40001":
+        raise ReservationVersionConflictError(
+            "Reservation version precondition was not met"
+        ) from exc
+    if exc.sqlstate == "P0001" and "idempotency key was reused" in str(exc).lower():
+        raise ReservationIdempotencyKeyReused("Reservation idempotency key was reused") from exc
+    if exc.sqlstate == "P5305":
+        raise ReservationIdempotencyKeyReused("Reservation payment key was reused") from exc
+    if exc.sqlstate in {"P0001", "23505"}:
+        raise ReservationCommandConflictError("Reservation command conflicted") from exc
+    if exc.sqlstate in {"22023", "23514", "55000", "P5302"}:
+        raise ReservationCommandInvalidError("Reservation command is invalid") from exc
+    raise ReservationServiceUnavailableError("Reservation persistence is unavailable") from exc
+
+
 @dataclass(frozen=True, slots=True)
 class PostgresReservationService:
     """Execute Property-scoped Reservation commands with stable retry semantics."""
@@ -392,65 +422,109 @@ class PostgresReservationService:
             with psycopg.connect(database_url or self.database_url) as connection:
                 row = connection.execute(query, parameters).fetchone()
         except psycopg.Error as exc:
-            if exc.sqlstate == "P0002":
-                raise ReservationNotFoundError("Reservation resource was not found") from exc
-            if exc.sqlstate == "40001":
-                raise ReservationVersionConflictError(
-                    "Reservation version precondition was not met"
-                ) from exc
-            if exc.sqlstate == "P0001" and "idempotency key was reused" in str(exc).lower():
-                raise ReservationIdempotencyKeyReused(
-                    "Reservation idempotency key was reused"
-                ) from exc
-            if exc.sqlstate in {"P0001", "23505"}:
-                raise ReservationCommandConflictError("Reservation command conflicted") from exc
-            if exc.sqlstate in {"22023", "23514", "55000"}:
-                raise ReservationCommandInvalidError("Reservation command is invalid") from exc
-            raise ReservationServiceUnavailableError(
-                "Reservation persistence is unavailable"
-            ) from exc
+            _raise_command_error(exc)
         if row is None:
             raise ReservationServiceUnavailableError("Reservation command returned no result")
         return row
 
     def create(self, command: ReservationCreateCommand) -> ReservationActivationResult:
-        digest = reservation_request_digest("reservation.create", command)
         # The acceptance and receipt times default to statement_timestamp() (owner answer (a) to
         # Q-2026-10-20-147): one statement time for both, within the function's own checks.
-        return _activation(
-            self._execute(
-                """
-                SELECT * FROM app.create_reservation(
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                    COALESCE(%s::timestamptz,statement_timestamp()),%s,%s,%s,%s,%s,%s,%s,
-                    COALESCE(%s::timestamptz,statement_timestamp()),%s
-                )
-                """,
+        return _activation(self._execute(CREATE_RESERVATION_SQL, self._create_values(command)))
+
+    def _create_values(self, command: ReservationCreateCommand) -> tuple[object, ...]:
+        return (
+            self.property_id,
+            command.idempotency_key,
+            reservation_request_digest("reservation.create", command),
+            command.reservation_id,
+            command.unit_id,
+            command.customer_id,
+            command.reservation_date,
+            command.agreed_monthly_rent_usd_cents,
+            command.original_expiration_date,
+            command.acceptance_id,
+            command.accepted_required_amount_usd_cents,
+            command.acceptance_kind,
+            command.accepted_at,
+            command.acceptance_reason,
+            command.authorization_reference,
+            Jsonb(command.calculation_trace),
+            command.deposit_id,
+            command.required_deposit_usd_cents,
+            command.receipt_id,
+            command.payment_id,
+            command.received_at,
+            self.actor_id,
+        )
+
+    def create_with_payment(
+        self, command: ReservationCreateCommand, payment: dict[str, object]
+    ) -> tuple[ReservationActivationResult, dict[str, object]]:
+        """V1-061 (DL-112): the deposit received and the Reservation that holds it, saved in one
+        database transaction or not at all (app.create_reservation_with_payment).
+
+        The Payment's key is made from the command's key, and the Reservation's request digest is
+        taken with that key in place of the Payment: the same request always confirms the same
+        Payment, so the digest stays the same on a replay. ``command.payment_id`` is ignored."""
+        url = self._financial_url()
+        payment_key = uuid5(
+            ONE_STEP_NAMESPACE,
+            f"reservation-payment:{self.property_id}:{self.actor_id}:{command.idempotency_key}",
+        )
+        keyed = replace(command, payment_id=payment_key)
+        try:
+            with psycopg.connect(url, connect_timeout=3) as connection:
+                set_json_loads(_exact_json, connection)
+                connection.execute("SET LOCAL lock_timeout='3000ms'")
+                connection.execute("SET LOCAL statement_timeout='10000ms'")
+                row = connection.execute(
+                    "SELECT app.create_reservation_with_payment("
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        self.property_id,
+                        self.actor_id,
+                        payment_key,
+                        Jsonb(payment),
+                        command.idempotency_key,
+                        reservation_request_digest("reservation.create", keyed),
+                        command.reservation_id,
+                        command.unit_id,
+                        command.customer_id,
+                        command.reservation_date,
+                        command.agreed_monthly_rent_usd_cents,
+                        command.original_expiration_date,
+                        command.acceptance_id,
+                        command.accepted_required_amount_usd_cents,
+                        command.acceptance_kind,
+                        command.acceptance_reason,
+                        command.authorization_reference,
+                        Jsonb(command.calculation_trace),
+                        command.deposit_id,
+                        command.required_deposit_usd_cents,
+                        command.receipt_id,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            _raise_command_error(exc)
+        if row is None or not isinstance(row[0], dict):
+            raise ReservationServiceUnavailableError("Reservation command returned no result")
+        value = cast(dict[str, object], row[0])
+        made = cast(dict[str, object], value["reservation"])
+        return (
+            _activation(
                 (
-                    self.property_id,
-                    command.idempotency_key,
-                    digest,
-                    command.reservation_id,
-                    command.unit_id,
-                    command.customer_id,
-                    command.reservation_date,
-                    command.agreed_monthly_rent_usd_cents,
-                    command.original_expiration_date,
-                    command.acceptance_id,
-                    command.accepted_required_amount_usd_cents,
-                    command.acceptance_kind,
-                    command.accepted_at,
-                    command.acceptance_reason,
-                    command.authorization_reference,
-                    Jsonb(command.calculation_trace),
-                    command.deposit_id,
-                    command.required_deposit_usd_cents,
-                    command.receipt_id,
-                    command.payment_id,
-                    command.received_at,
-                    self.actor_id,
-                ),
-            )
+                    made["reservation_id"],
+                    made["unit_id"],
+                    made["customer_id"],
+                    made["status"],
+                    date.fromisoformat(str(made["effective_expiration_date"])),
+                    made["deposit_id"],
+                    made["received_usd_cents"],
+                    made["version"],
+                )
+            ),
+            value,
         )
 
     def extend(self, command: ReservationExtendCommand) -> ReservationExtensionResult:

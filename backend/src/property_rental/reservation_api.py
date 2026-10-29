@@ -21,12 +21,14 @@ from property_rental.deposit import (
     DEPOSIT_LOCK_TIMEOUT_MS,
     DEPOSIT_QUERY_TIMEOUT_MS,
 )
+from property_rental.financial_context import bind_financial_property
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.payment_api import OwnMoneyInput
 from property_rental.refund import RefundMethodChoice
 from property_rental.reservation import (
     CancellationResponsibility,
@@ -63,6 +65,7 @@ from property_rental.settings import Settings
 
 RESERVATION_READ_CAPABILITY: Final = "reservations.read"
 RESERVATION_CREATE_CAPABILITY: Final = "reservations.create"
+PAYMENT_RECORD_CAPABILITY: Final = "payments.record"
 RESERVATION_EXTEND_CAPABILITY: Final = "reservations.extend"
 RESERVATION_CANCEL_CAPABILITY: Final = "reservations.cancel"
 DEPOSIT_OVERRIDE_CAPABILITY: Final = "reservation_deposits.override"
@@ -185,6 +188,17 @@ class ReservationResourceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> ReservationResource: ...
 
+    def create_with_payment(
+        self,
+        property_id: UUID,
+        command: ReservationCreateCommand,
+        payment: dict[str, object],
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[ReservationResource, dict[str, object]]:
+        """V1-061 (DL-112): the deposit's Payment and the Reservation in one transaction."""
+        ...
+
     def extend(
         self,
         command: ReservationExtendCommand,
@@ -282,6 +296,18 @@ class UnavailableReservationResourceFlow:
         actor: AuthenticatedActor,
     ) -> ReservationResource:
         del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
+    def create_with_payment(
+        self,
+        property_id: UUID,
+        command: ReservationCreateCommand,
+        payment: dict[str, object],
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[ReservationResource, dict[str, object]]:
+        del property_id, command, payment, actor
         self._raise()
         raise AssertionError
 
@@ -757,6 +783,17 @@ class PostgresReservationResourceFlow:
         self._service(property_id, actor).create(command)
         return self.get(command.reservation_id)
 
+    def create_with_payment(
+        self,
+        property_id: UUID,
+        command: ReservationCreateCommand,
+        payment: dict[str, object],
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[ReservationResource, dict[str, object]]:
+        _, confirmed = self._service(property_id, actor).create_with_payment(command, payment)
+        return self.get(command.reservation_id), confirmed
+
     def extend(
         self,
         command: ReservationExtendCommand,
@@ -794,6 +831,26 @@ class ReservationCreate(BaseModel):
     deposit_id: UUID
     receipt_id: UUID
     payment_id: UUID
+
+
+class ReservationWithPayment(BaseModel):
+    """V1-061 (DL-112): Make Reservation with the deposit received, in one request."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reservation_id: UUID
+    unit_id: UUID
+    customer_id: UUID
+    reservation_date: date
+    agreed_monthly_rent_usd_cents: Annotated[int, Field(gt=0)]
+    expiration_date: date
+    acceptance_id: UUID
+    accepted_initial_deposit_usd_cents: Annotated[int, Field(gt=0)]
+    required_security_deposit_usd_cents: Annotated[int, Field(gt=0)]
+    acceptance_reason: Annotated[str, Field(min_length=1, max_length=500)]
+    deposit_id: UUID
+    receipt_id: UUID
+    payment: OwnMoneyInput
 
 
 class ReservationExtend(BaseModel):
@@ -1028,17 +1085,14 @@ def create_reservation_router(
             "meta": {"request_id": request.state.request_id},
         }
 
-    @router.post("/properties/{property_id}/reservations", status_code=status.HTTP_201_CREATED)
-    def create_reservation(
+    def create_command(
+        actor: AuthenticatedActor,
         property_id: UUID,
-        source: ReservationCreate,
-        request: Request,
-        response: Response,
-        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-    ) -> dict[str, object]:
-        actor = _require_actor(request, resolver)
-        _require(actor, property_id, RESERVATION_CREATE_CAPABILITY)
-        require_browser_mutation(request, settings)
+        source: ReservationCreate | ReservationWithPayment,
+        idempotency_key: UUID,
+        payment_id: UUID,
+    ) -> ReservationCreateCommand:
+        """The Reservation command and the rights it needs, for both create routes."""
         suggested = (source.agreed_monthly_rent_usd_cents + 2) // 5
         acceptance_kind = (
             "NORMAL_SUGGESTION"
@@ -1059,7 +1113,7 @@ def create_reservation_router(
                 raise _translate(exc) from exc
             if floor is not None and source.agreed_monthly_rent_usd_cents < floor:
                 raise RefusedRequest(RENT_BELOW_UNIT_DEFAULT)
-        command = ReservationCreateCommand(
+        return ReservationCreateCommand(
             idempotency_key=idempotency_key,
             reservation_id=source.reservation_id,
             unit_id=source.unit_id,
@@ -1083,10 +1137,23 @@ def create_reservation_router(
             deposit_id=source.deposit_id,
             required_deposit_usd_cents=source.required_security_deposit_usd_cents,
             receipt_id=source.receipt_id,
-            payment_id=source.payment_id,
+            payment_id=payment_id,
             # Owner answer (a) to Q-2026-10-20-147: the database's statement time.
             received_at=None,
         )
+
+    @router.post("/properties/{property_id}/reservations", status_code=status.HTTP_201_CREATED)
+    def create_reservation(
+        property_id: UUID,
+        source: ReservationCreate,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        actor = _require_actor(request, resolver)
+        _require(actor, property_id, RESERVATION_CREATE_CAPABILITY)
+        require_browser_mutation(request, settings)
+        command = create_command(actor, property_id, source, idempotency_key, source.payment_id)
         try:
             resource = flow.create(property_id, command, actor=actor)
         except Exception as exc:
@@ -1095,6 +1162,57 @@ def create_reservation_router(
         response.headers["Location"] = f"/reservations/{resource.reservation_id}"
         response.headers["Cache-Control"] = "private, no-store"
         return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post(
+        "/properties/{property_id}/reservations/with-payment",
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_reservation_with_payment(
+        property_id: UUID,
+        source: ReservationWithPayment,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+    ) -> dict[str, object]:
+        """V1-061 (DL-112): Make Reservation in one press. The deposit received, its Receipt and
+        the Reservation that holds it are saved in one database transaction, or nothing is."""
+        actor = _require_actor(request, resolver)
+        for header in ("Idempotency-Key", "Origin", "X-CSRF-Token"):
+            if len(request.headers.getlist(header)) > 1:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        _require(actor, property_id, RESERVATION_CREATE_CAPABILITY)
+        _require(actor, property_id, PAYMENT_RECORD_CAPABILITY)
+        require_browser_mutation(request, settings)
+        if idempotency_key.int == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        if source.payment.amount.minor_units != source.accepted_initial_deposit_usd_cents:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        bind_financial_property(request, property_id)
+        # The real Payment replaces this placeholder inside the transaction.
+        command = create_command(actor, property_id, source, idempotency_key, idempotency_key)
+        try:
+            payment = source.payment.intent(idempotency_key, source.customer_id)
+            resource, confirmed = flow.create_with_payment(
+                property_id, command, payment, actor=actor
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        receipt = confirmed.get("receipt")
+        response.headers["ETag"] = f'"{resource.version}"'
+        response.headers["Location"] = f"/reservations/{resource.reservation_id}"
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "data": {
+                **_body(resource, actor),
+                "payment_id": str(cast(dict[str, object], confirmed["payment"])["id"]),
+                "receipt_number": (
+                    cast(dict[str, object], receipt).get("receipt_number")
+                    if isinstance(receipt, dict)
+                    else None
+                ),
+            },
+            "meta": {"request_id": request.state.request_id},
+        }
 
     @router.get("/reservations/{reservation_id}")
     def get_reservation(

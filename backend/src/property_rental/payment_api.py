@@ -195,6 +195,28 @@ class UsdPaymentInput(PaymentInput):
         )
 
 
+class OwnMoneyInput(StrictInput):
+    """V1-061 (DL-112): money a Customer pays for their own Reservation or Lease, in USD. The
+    payer is the Reservation's Customer or the Lease's Primary Tenant, so the screen names none."""
+
+    payment_method_id: Identity
+    received_at: Instant
+    evidence_reference: Evidence
+    payer_intent_memo: Memo | None = None
+    amount: UsdAmount
+
+    def intent(self, key: UUID, payer_customer_id: UUID) -> dict[str, object]:
+        return ConfirmUsdPaymentCommand(
+            key,
+            payer_customer_id,
+            self.payment_method_id,
+            self.amount.minor_units,
+            self.received_at,
+            self.evidence_reference,
+            payer_intent_memo=self.payer_intent_memo,
+        ).intent()
+
+
 class KhrPaymentInput(PaymentInput):
     amount: KhrAmount
     usd_accounting_amount: UsdAmount

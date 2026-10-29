@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import cast
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -182,6 +182,34 @@ class InMemoryDepositFlow:
             datetime(2026, 8, 26, tzinfo=UTC),
             5_000,
         )
+
+    def lease_payer(self, _: UUID) -> tuple[UUID, UUID]:
+        return self.value.property_id, self.value.customer_id
+
+    def receive_with_payment(
+        self,
+        _: UUID,
+        lease_id: UUID,
+        payment: dict[str, object],
+        create: CreateLeaseSecurityDepositCommand | None,
+        receipt: RecordDepositReceiptCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[DepositReceiptRecord, dict[str, object]]:
+        # V1-061 (DL-112): Receive Security Deposit in one request.
+        del actor
+        if self.error is not None:
+            raise self.error
+        self.last_command = (lease_id, payment, create, receipt)
+        paid = UUID("00000000-0000-4000-8000-0000000000bb")
+        return DepositReceiptRecord(
+            self.value,
+            receipt.receipt_id,
+            paid,
+            receipt.amount_usd_cents,
+            datetime(2026, 8, 26, tzinfo=UTC),
+            0,
+        ), {"payment": {"id": str(paid)}, "receipt": {"receipt_number": "RC0009"}}
 
     def reverse_receipt(
         self, _: UUID, command: ReverseDepositReceiptCommand, *, actor: AuthenticatedActor
@@ -435,6 +463,56 @@ def test_linked_reversals_and_split_pet_refund_qualification_preserve_sources() 
     assert review.status_code == 201
     assert review.json()["data"]["refund_qualified"] is True
     assert review.headers["location"].endswith(str(flow.value.pet_refund_review_id))
+
+
+def test_receive_security_deposit_saves_the_money_and_the_receipt_in_one_request() -> None:
+    """V1-061 (DL-112): one request needs payments.record and payments.allocate, and
+    deposits.manage to make a walk-in Lease's Security Deposit; the money is the Primary
+    Tenant's own."""
+    property_id = uuid4()
+    lease_id = uuid4()
+    flow = InMemoryDepositFlow(snapshot(property_id))
+    url = f"/api/v1/leases/{lease_id}/security-deposit/receive"
+
+    def payload(deposit: UUID, required: int | None = None) -> dict[str, object]:
+        return {
+            "deposit_id": str(deposit),
+            "required_usd_cents": required,
+            "receipt_id": str(uuid4()),
+            "reason": "Security Deposit received on the Lease page",
+            "payment": {
+                "payment_method_id": str(uuid4()),
+                "received_at": "2026-08-26T03:00:00Z",
+                "evidence_reference": "Cash received, Cash",
+                "amount": {"currency": "USD", "minor_units": 30_000},
+            },
+        }
+
+    allocator = client(flow, actor(property_id, "payments.allocate"))
+    refused = allocator.post(url, json=payload(flow.value.deposit_id), headers=mutation_headers())
+    assert refused.status_code == 404
+    cashier = client(flow, actor(property_id, "payments.record", "payments.allocate"))
+    received = cashier.post(url, json=payload(flow.value.deposit_id), headers=mutation_headers())
+    assert received.status_code == 201, received.text
+    assert received.json()["data"]["receipt_number"] == "RC0009"
+    sent_lease, payment, create, receipt = cast(tuple[Any, ...], flow.last_command)
+    assert (sent_lease, create, receipt.amount_usd_cents) == (lease_id, None, 30_000)
+    assert payment["payer_customer_id"] == str(flow.value.customer_id)
+    # Another Deposit, or a new one while the Lease has its Security Deposit, is refused.
+    other = cashier.post(url, json=payload(uuid4()), headers=mutation_headers())
+    assert other.status_code == 409
+    assert (
+        cashier.post(
+            url, json=payload(flow.value.deposit_id, 50_000), headers=mutation_headers()
+        ).status_code
+        == 404
+    )
+    manager = client(
+        flow, actor(property_id, "payments.record", "payments.allocate", "deposits.manage")
+    )
+    twice = manager.post(url, json=payload(uuid4(), 50_000), headers=mutation_headers())
+    assert twice.status_code == 409
+    assert twice.json()["error"]["code"] == "DEPOSIT_SECURITY_ALREADY_EXISTS"
 
 
 def test_receipt_reverse_route_checks_access_and_csrf_before_the_draft_refusal() -> None:

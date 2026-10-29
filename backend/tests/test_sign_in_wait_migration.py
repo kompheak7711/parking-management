@@ -55,7 +55,7 @@ from test_move_in_migration import runtime_database_url
 REVISION = "20270128_185"
 PREVIOUS = "20270127_184"
 # The head since V1-060 (migration 20270331_250, Sign Lease refuses an ended Reservation).
-HEAD = "20270402_252"
+HEAD = "20270403_253"
 # The migration of login sub-slice L3c-1.
 KEYED_CLEAR = "20270129_186"
 PASSWORD = "correct horse battery staple"

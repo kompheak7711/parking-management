@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime
 from enum import StrEnum
-from typing import Final, TypeAlias, cast
-from uuid import UUID
+from typing import Final, NoReturn, TypeAlias, cast
+from uuid import UUID, uuid5
 
 import psycopg
+from psycopg.types.json import Jsonb, set_json_loads
 
 from property_rental.deposit_disposition import LeaseDepositDispositionContext
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 from property_rental.lock_retry import retry_lock_not_available
+from property_rental.payment_confirmation import _exact_json
 
 NIL_UUID: Final = UUID(int=0)
 DEPOSIT_MANAGE_CAPABILITY: Final = "deposits.manage"
@@ -393,6 +395,29 @@ def _snapshot(row: tuple[object, ...]) -> DepositSnapshot:
     )
 
 
+# V1-061 (DL-112): the Payment and the Security Deposit keys of Receive Security Deposit are made
+# from the receipt command's key.
+ONE_STEP_NAMESPACE: Final = UUID("0b3d6a1e-52f4-4c8e-a1d9-7c3e5f2b9a04")
+
+
+def _raise_deposit_error(exc: psycopg.Error) -> NoReturn:
+    if exc.sqlstate in {"42501", "P4506"}:
+        raise DepositAuthorizationError("Deposit actor is not authorized") from exc
+    if exc.sqlstate in {"P0002", "P5301", "P4501"}:
+        raise DepositNotFoundError("Deposit resource was not found") from exc
+    if exc.sqlstate == "23505" and (
+        "Deposit idempotency key conflicts with another request" in str(exc)
+    ):
+        raise DepositIdempotencyKeyReused("Deposit idempotency key was reused") from exc
+    if exc.sqlstate == "P5305":
+        raise DepositIdempotencyKeyReused("Deposit payment key was reused") from exc
+    if exc.sqlstate in {"23505", "23P01", "P5801", "40001", "P5S01", "23503"}:
+        raise DepositConflictError("Deposit command conflicted") from exc
+    if exc.sqlstate in {"22023", "23514", "55000", "P5302"}:
+        raise DepositInvalidError("Deposit command is invalid") from exc
+    raise DepositServiceUnavailableError("Deposit persistence is unavailable") from exc
+
+
 @dataclass(frozen=True, slots=True)
 class PostgresDepositService:
     financial_database_url: str
@@ -450,19 +475,7 @@ class PostgresDepositService:
             else:
                 row = self._attempt(query, parameters)
         except psycopg.Error as exc:
-            if exc.sqlstate == "42501":
-                raise DepositAuthorizationError("Deposit actor is not authorized") from exc
-            if exc.sqlstate == "P0002":
-                raise DepositNotFoundError("Deposit resource was not found") from exc
-            if exc.sqlstate == "23505" and (
-                "Deposit idempotency key conflicts with another request" in str(exc)
-            ):
-                raise DepositIdempotencyKeyReused("Deposit idempotency key was reused") from exc
-            if exc.sqlstate in {"23505", "23P01", "P5801", "40001", "P5S01"}:
-                raise DepositConflictError("Deposit command conflicted") from exc
-            if exc.sqlstate in {"22023", "23514", "55000"}:
-                raise DepositInvalidError("Deposit command is invalid") from exc
-            raise DepositServiceUnavailableError("Deposit persistence is unavailable") from exc
+            _raise_deposit_error(exc)
         if row is None:
             raise DepositServiceUnavailableError("Deposit command returned no result")
         return row
@@ -564,6 +577,96 @@ class PostgresDepositService:
             amount_usd_cents=int(str(value["amount_usd_cents"])),
             occurred_at=datetime.fromisoformat(str(value["occurred_at"])),
             payment_available_usd_cents=int(str(value["payment_available_usd_cents"])),
+        )
+
+    def receive_with_payment(
+        self,
+        lease_id: UUID,
+        payment: dict[str, object],
+        create: CreateLeaseSecurityDepositCommand | None,
+        receipt: RecordDepositReceiptCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> tuple[DepositReceiptRecord, dict[str, object]]:
+        """V1-061 (DL-112): Receive Security Deposit in one database transaction, or not at all
+        (app.receive_lease_security_deposit_with_payment): the Payment and its Receipt, a walk-in
+        Lease's Security Deposit when ``create`` is given, and the money into the Security
+        Deposit. The Payment's key is made from the receipt command's key, and the receipt's
+        request digest is taken with that key in place of the Payment, so the same request always
+        answers the same records. ``receipt.payment_id`` is ignored. The whole command is
+        replayed after 55P03 (DL-067)."""
+        if not is_authorized(
+            actor, AuthorizationRequirement("payments.record", str(self.property_id))
+        ):
+            raise DepositAuthorizationError("Deposit capability is not authorized")
+        self._authorize(actor, PAYMENT_ALLOCATE_CAPABILITY, receipt.authorization_reference)
+        if create is not None:
+            self._authorize(actor, DEPOSIT_MANAGE_CAPABILITY, create.authorization_reference)
+            if (
+                create.deposit_id != receipt.deposit_id
+                or create.reason != receipt.reason
+                or create.lease_id != lease_id
+            ):
+                raise DepositInvalidError("Security Deposit command is invalid")
+        payment_key = uuid5(
+            ONE_STEP_NAMESPACE,
+            f"deposit-payment:{self.property_id}:{self.actor_id}:{receipt.idempotency_key}",
+        )
+        keyed = replace(receipt, payment_id=payment_key)
+        parameters = (
+            self.property_id,
+            self.actor_id,
+            payment_key,
+            Jsonb(payment),
+            None if create is None else create.idempotency_key,
+            None if create is None else deposit_request_digest("deposit.security.create", create),
+            receipt.deposit_id,
+            lease_id,
+            None if create is None else create.required_usd_cents,
+            receipt.reason,
+            receipt.idempotency_key,
+            deposit_request_digest("deposit.receipt.record", keyed),
+            receipt.receipt_id,
+            receipt.amount_usd_cents,
+        )
+
+        def attempt() -> tuple[object, ...] | None:
+            with psycopg.connect(
+                self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                set_json_loads(_exact_json, connection)
+                connection.execute(
+                    "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+                    (str(DEPOSIT_LOCK_TIMEOUT_MS),),
+                )
+                connection.execute(
+                    "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+                    (str(DEPOSIT_QUERY_TIMEOUT_MS * 2),),
+                )
+                return connection.execute(
+                    "SELECT app.receive_lease_security_deposit_with_payment("
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    parameters,
+                ).fetchone()
+
+        try:
+            row = retry_lock_not_available(attempt)
+        except psycopg.Error as exc:
+            _raise_deposit_error(exc)
+        if row is None or not isinstance(row[0], dict):
+            raise DepositServiceUnavailableError("Deposit command returned no result")
+        confirmed = cast(dict[str, object], row[0])
+        value = cast(dict[str, object], confirmed["deposit"])
+        return (
+            DepositReceiptRecord(
+                deposit=_snapshot((value,)),
+                deposit_receipt_id=UUID(str(value["deposit_receipt_id"])),
+                payment_id=UUID(str(value["payment_id"])),
+                amount_usd_cents=int(str(value["amount_usd_cents"])),
+                occurred_at=datetime.fromisoformat(str(value["occurred_at"])),
+                payment_available_usd_cents=int(str(value["payment_available_usd_cents"])),
+            ),
+            confirmed,
         )
 
     def reverse_receipt(

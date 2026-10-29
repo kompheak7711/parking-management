@@ -58645,6 +58645,83 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-061 (DL-111): a Joint Signer moves out only once every other Signer is ticked as agreeing; the only Signer living there gets a note instead of a button, and a person without reservations.complete sees no button."
+    },
+    {
+      "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_money_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): one transaction confirms the Customer's Payment and makes the Reservation holding it; the same request answers the same records and saves nothing more; the same key with other money is refused."
+    },
+    {
+      "test_id": "test_a_refused_reservation_keeps_no_money",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_money_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): a Reservation refused after its Payment was confirmed leaves no Payment."
+    },
+    {
+      "test_id": "test_receive_security_deposit_saves_the_money_the_deposit_and_the_receipt_together",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_money_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): one transaction confirms the Primary Tenant's Payment, makes a walk-in Lease's Security Deposit and receives the money into it; a replay saves nothing more; the rest is received the same way."
+    },
+    {
+      "test_id": "test_a_refused_security_deposit_keeps_no_money",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_money_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): a receipt refused after the Payment and the new Security Deposit leaves neither; the same key with another request is refused; payments.record is needed."
+    },
+    {
+      "test_id": "test_only_the_financial_role_runs_the_one_step_commands_and_the_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_money_one_step_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): the two one-step functions are EXECUTE to prm_financial only; migration 20270403_253 is forward-only."
+    },
+    {
+      "test_id": "test_make_reservation_with_payment_saves_the_money_and_the_reservation_in_one_request",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): POST /properties/{property_id}/reservations/with-payment needs reservations.create and payments.record, refuses money other than the accepted deposit and sends the Customer as the payer."
+    },
+    {
+      "test_id": "test_receive_security_deposit_saves_the_money_and_the_receipt_in_one_request",
+      "upstream_ids": [
+        "DL-112",
+        "BR-DEP-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-112): POST /api/v1/leases/{lease_id}/security-deposit/receive needs payments.record and payments.allocate, and deposits.manage for a new Security Deposit; another Deposit or a second Security Deposit is refused; the payer is the Primary Tenant."
     }
   ]
 }
