@@ -13,6 +13,8 @@ import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.access_control import RENT_BELOW_DEFAULT_CAPABILITY
+from property_rental.api_refusals import RENT_BELOW_UNIT_DEFAULT, RefusedRequest
 from property_rental.browser_security import require_browser_mutation
 from property_rental.deposit import (
     DEPOSIT_CONNECT_TIMEOUT_SECONDS,
@@ -171,6 +173,10 @@ class ReservationResourceFlow(Protocol):
 
     def get(self, reservation_id: UUID) -> ReservationResource: ...
 
+    def unit_default_rent(self, unit_id: UUID) -> int | None:
+        """The Unit's default Rent (V1-061, DL-110), or None when it has none."""
+        ...
+
     def create(
         self,
         property_id: UUID,
@@ -260,6 +266,11 @@ class UnavailableReservationResourceFlow:
 
     def get(self, reservation_id: UUID) -> ReservationResource:
         del reservation_id
+        self._raise()
+        raise AssertionError
+
+    def unit_default_rent(self, unit_id: UUID) -> int | None:
+        del unit_id
         self._raise()
         raise AssertionError
 
@@ -725,6 +736,17 @@ class PostgresReservationResourceFlow:
             self._database_url, self._financial_database_url or self._database_url
         ).awaiting(property_id, actor=actor, page=page)
 
+    def unit_default_rent(self, unit_id: UUID) -> int | None:
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                row = connection.execute(
+                    "SELECT default_monthly_rent_usd_cents FROM app.units WHERE id = %s",
+                    (unit_id,),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise ReservationResourceUnavailable from exc
+        return None if row is None or row[0] is None else int(str(row[0]))
+
     def create(
         self,
         property_id: UUID,
@@ -1028,6 +1050,15 @@ def create_reservation_router(
         below = source.accepted_initial_deposit_usd_cents < suggested
         if below:
             _require(actor, property_id, DEPOSIT_OVERRIDE_CAPABILITY)
+        # V1-061 (owner 2026-10-29, DL-110): a Rent below the Unit's default Rent needs a
+        # Manager or the Owner; the acceptance reason says why.
+        if not _can(actor, property_id, RENT_BELOW_DEFAULT_CAPABILITY):
+            try:
+                floor = flow.unit_default_rent(source.unit_id)
+            except Exception as exc:
+                raise _translate(exc) from exc
+            if floor is not None and source.agreed_monthly_rent_usd_cents < floor:
+                raise RefusedRequest(RENT_BELOW_UNIT_DEFAULT)
         command = ReservationCreateCommand(
             idempotency_key=idempotency_key,
             reservation_id=source.reservation_id,

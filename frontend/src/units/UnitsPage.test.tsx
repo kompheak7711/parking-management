@@ -21,6 +21,7 @@ import {
   UnitSetupLists,
 } from "../unitClient";
 import type { UtilityMeter, UtilityRate } from "../utilityClient";
+import type { RentTermsServicesApi } from "./RentTerms";
 import { UnitsPage } from "./UnitsPage";
 import type { UtilityPricesApi } from "./UtilityPrices";
 
@@ -232,6 +233,7 @@ function unitApi(overrides: Partial<UnitApi> = {}): UnitApi {
     inventory: vi.fn().mockResolvedValue(inventory),
     saveInventory: vi.fn(),
     inventoryItems: vi.fn().mockResolvedValue([]),
+    setRentTerms: vi.fn(),
     ...overrides,
   };
 }
@@ -306,6 +308,35 @@ function utilityApi(meters: Partial<UtilityMeter>[] = []): UtilityPricesApi & {
   };
 }
 
+function servicesApi(): RentTermsServicesApi & {
+  read: ReturnType<typeof vi.fn>;
+} {
+  const service = (id: string, name: string) => ({
+    service_id: id,
+    service_code: id,
+    name_en: name,
+    name_km: null,
+    service_type_id: null,
+    version: 1,
+    rate_today_usd_cents: 1000,
+    next_rate: null,
+    rates: [],
+    approval_periods: [],
+    leases_using: 0,
+  });
+  return {
+    read: vi.fn().mockResolvedValue({
+      services: [
+        service("svc-parking", "Parking"),
+        service("svc-wifi", "Wi-Fi"),
+      ],
+      service_types: [],
+      today: "2026-10-29",
+      can_manage: true,
+    }),
+  };
+}
+
 function show(
   client: UnitApi,
   options: {
@@ -313,6 +344,7 @@ function show(
     reservations?: ReservationApi;
     capabilities?: ReadonlySet<string> | null;
     utilities?: UtilityPricesApi;
+    services?: RentTermsServicesApi;
   } = {},
 ) {
   return render(
@@ -323,6 +355,7 @@ function show(
       leaseApi={options.leases ?? leaseApi()}
       propertyId="property-1"
       reservationApi={options.reservations ?? reservationApi()}
+      servicesApi={options.services ?? servicesApi()}
       unitApi={client}
       utilityApi={options.utilities ?? utilityApi()}
     />,
@@ -623,6 +656,81 @@ describe("Parking page", () => {
     expect(card).not.toHaveTextContent("$0.75");
     expect(utilities.loadMeters).toHaveBeenCalledWith("unit-U101", undefined);
     expect(utilities.loadRates).toHaveBeenCalledWith("property-1", undefined);
+  });
+
+  it("TEST-FE-1107 the Parking page shows the default Rent and required Services, and a Manager changes them in whole cents (V1-061, DL-110)", async () => {
+    window.location.hash = "#/units/unit-U103";
+    const terms = unit("U103", {
+      default_monthly_rent_usd_cents: 45_000,
+      required_service_ids: ["svc-parking"],
+    });
+    const setRentTerms = vi.fn().mockResolvedValue({
+      ...terms,
+      version: 3,
+      default_monthly_rent_usd_cents: 47_550,
+      required_service_ids: ["svc-parking", "svc-wifi"],
+    });
+    const client = unitApi({
+      get: vi.fn().mockResolvedValue(terms),
+      setRentTerms,
+    });
+    show(client);
+
+    expect(await screen.findByTestId("unit-default-rent")).toHaveTextContent(
+      "$450.00",
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("unit-required-services")).toHaveTextContent(
+        "Parking",
+      );
+    });
+    const card = screen
+      .getByRole("heading", { name: "Rent and Services" })
+      .closest("section");
+    if (card === null) throw new Error("no Rent and Services card");
+    fireEvent.click(within(card).getByRole("button", { name: "Change" }));
+    const dialog = await screen.findByRole("dialog");
+    const rent = within(dialog).getByLabelText("Default Rent per month");
+    fireEvent.change(rent, { target: { value: "475.5x" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "Enter the Rent in dollars and cents above 0, or leave it empty.",
+      ),
+    ).toBeInTheDocument();
+    expect(setRentTerms).not.toHaveBeenCalled();
+    fireEvent.change(rent, { target: { value: "475.5" } });
+    fireEvent.click(within(dialog).getByLabelText("Wi-Fi"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(setRentTerms).toHaveBeenCalledWith(terms, {
+        default_monthly_rent_usd_cents: 47_550,
+        required_service_ids: ["svc-parking", "svc-wifi"],
+      });
+    });
+    expect(
+      await screen.findByText("The Rent and Services of U103 are saved."),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1108 a person who may not manage the Parking sees the Rent and Services but cannot change them, and a Parking with none says so (V1-061, DL-110)", async () => {
+    window.location.hash = "#/units/unit-U103";
+    show(
+      unitApi({
+        get: vi.fn().mockResolvedValue(unit("U103", { can_manage: false })),
+      }),
+    );
+    expect(await screen.findByTestId("unit-default-rent")).toHaveTextContent(
+      "Not set",
+    );
+    expect(screen.getByTestId("unit-required-services")).toHaveTextContent(
+      "None",
+    );
+    const card = screen
+      .getByRole("heading", { name: "Rent and Services" })
+      .closest("section");
+    if (card === null) throw new Error("no Rent and Services card");
+    expect(within(card).queryByRole("button", { name: "Change" })).toBeNull();
   });
 
   it("TEST-FE-1106 the Parking list shows today's Utility prices, and nothing is read without the right to read Utilities (V1-061)", async () => {

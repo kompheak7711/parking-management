@@ -384,7 +384,13 @@ function show(
       propertyId="property-1"
       customerApi={customerClient as CustomerApi}
       reservationApi={reservationClient as ReservationApi}
-      unitApi={unitClient as UnitApi}
+      unitApi={
+        {
+          // V1-061: Edit draft reads the Unit's default Rent; none unless a test gives one.
+          get: vi.fn<UnitApi["get"]>().mockRejectedValue(new Error("no")),
+          ...unitClient,
+        } as UnitApi
+      }
       lettersApi={letters}
       servicesApi={services}
       metersApi={metersClient}
@@ -1012,6 +1018,60 @@ describe("Lease actions", () => {
     expect(list).toHaveBeenCalledTimes(2);
     expect(money.createSecurityDeposit).not.toHaveBeenCalled();
     expect(money.receiveIntoDeposit).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-1111 Edit draft shows the Unit's default Rent and stops a lower Rent without a Manager; raising it is fine (V1-061, DL-110)", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const draft = {
+      ...signable,
+      end_date: "2027-12-31",
+      monthly_rent_usd_cents: 50_000,
+    };
+    const update = vi
+      .fn()
+      .mockResolvedValue({ ...draft, monthly_rent_usd_cents: 55_000 });
+    const get = vi.fn<UnitApi["get"]>().mockResolvedValue({
+      unit_id: "unit-U301",
+      default_monthly_rent_usd_cents: 50_000,
+    } as UnitResource);
+    show(
+      api({ get: vi.fn().mockResolvedValue(draft), update }),
+      deposits(),
+      new Set(["leases.read", "leases.draft"]),
+      undefined,
+      undefined,
+      { get },
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
+    expect(
+      await within(dialog).findByText(
+        "This Unit's default Rent is $500.00. A higher Rent is fine.",
+      ),
+    ).toBeInTheDocument();
+    expect(get).toHaveBeenCalledWith("unit-U301");
+    fireEvent.change(within(dialog).getByLabelText("Monthly Rent"), {
+      target: { value: "450" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Why it changed/), {
+      target: { value: "Asked for less" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent(
+      "The Rent is below this Unit's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
+    );
+    expect(update).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Monthly Rent"), {
+      target: { value: "550" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(update).toHaveBeenCalledTimes(1);
+    });
+    expect(update.mock.calls[0]?.[1]).toMatchObject({
+      monthly_rent_usd_cents: 55_000,
+    });
   });
 
   it("TEST-FE-1017 a walk-in draft shows its planned Security Deposit, and Edit draft saves a new amount after the draft (DL-100)", async () => {
@@ -2513,6 +2573,158 @@ describe("New Lease and Renew", () => {
     window.location.hash = "#/leases/unit%3Aunit-U403";
     show(api(), deposits(), null, undefined, people(), units);
     expect(await screen.findByLabelText("Parking")).toHaveValue("");
+  });
+
+  it("TEST-FE-1109 New Lease starts at the Parking's default Rent, ticks and locks its required Services, and stops a lower Rent without a Manager; a Manager gives a reason (V1-061, DL-110)", async () => {
+    const service = (id: string, name: string) => ({
+      service_id: id,
+      service_code: id,
+      name_en: name,
+      name_km: null,
+      service_type_id: null,
+      version: 1,
+      rate_today_usd_cents: 1000,
+      next_rate: null,
+      rates: [{ monthly_rate_usd_cents: 1000, effective_date: "2026-01-01" }],
+      approval_periods: [
+        {
+          approval_period_id: `ap-${id}`,
+          effective_from: "2026-01-01",
+          effective_through: null,
+        },
+      ],
+      leases_using: 0,
+    });
+    const services = {
+      read: vi.fn<ServiceSettingsApi["read"]>().mockResolvedValue({
+        services: [
+          service("svc-car", "Car park"),
+          service("svc-wifi", "Wi-Fi"),
+        ],
+        service_types: [],
+        today: "2026-10-29",
+        can_manage: false,
+      }),
+    };
+    const termsUnits: Partial<UnitApi> = {
+      list: vi.fn<UnitApi["list"]>().mockResolvedValue({
+        items: [
+          {
+            ...unit("U402", "VACANT"),
+            default_monthly_rent_usd_cents: 45_000,
+            required_service_ids: ["svc-car"],
+          },
+          unit("U401", "CLEANING"),
+        ],
+        next_cursor: null,
+        can_manage: true,
+      }),
+    };
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    const save = async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+      const confirm = await screen.findByRole("dialog", {
+        name: "Save the draft · U402?",
+      });
+      fireEvent.click(
+        within(confirm).getByRole("button", { name: "Save draft" }),
+      );
+    };
+    window.location.hash = "#/leases/new";
+    const view = show(
+      api({ create }),
+      deposits(),
+      new Set(["leases.read", "leases.draft"]),
+      undefined,
+      people(),
+      termsUnits,
+      {},
+      services,
+    );
+
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
+    expect(screen.getByLabelText("Monthly Rent")).toHaveValue("450.00");
+    expect(
+      screen.getByText(
+        "This Parking's default Rent is $450.00. A higher Rent is fine.",
+      ),
+    ).toBeInTheDocument();
+    const car = await screen.findByRole("checkbox", { name: /Car park/ });
+    expect(car).toBeChecked();
+    expect(car).toBeDisabled();
+    expect(car.closest("label")).toHaveTextContent("Required for this Parking");
+    expect(screen.getByRole("checkbox", { name: /Wi-Fi/ })).toBeEnabled();
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "400" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText(
+        "The Rent is below this Parking's default Rent of $450.00. Only a Manager or the Owner can agree a lower Rent.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "500" },
+    });
+    await save();
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      unit_id: "unit-U402",
+      monthly_rent_usd_cents: 50_000,
+      reason: "Lease drafted from the New Lease form",
+    });
+    expect(
+      create.mock.calls[0]?.[1].service_terms.map(
+        (term) => term.property_service_id,
+      ),
+    ).toEqual(["svc-car"]);
+    view.unmount();
+
+    // A Manager may agree less, with a reason kept on the draft.
+    window.location.hash = "#/leases/new";
+    show(
+      api({ create }),
+      deposits(),
+      new Set(["leases.read", "leases.draft", "rent.below_default"]),
+      undefined,
+      people(),
+      termsUnits,
+      {},
+      services,
+    );
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "400" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(
+      await screen.findByText("Say why the Rent is lower."),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Why is the Rent below $450.00?"), {
+      target: { value: "Long stay" },
+    });
+    await save();
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(2);
+    });
+    expect(create.mock.calls[1]?.[1]).toMatchObject({
+      monthly_rent_usd_cents: 40_000,
+      reason:
+        "Lease drafted from the New Lease form. Rent below the Parking default: Long stay",
+    });
   });
 
   it("TEST-FE-858 a Lease from a Booking takes its Parking, Customer, Rent and Security Deposit", async () => {

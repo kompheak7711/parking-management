@@ -56,7 +56,8 @@ type Field =
   | "rent"
   | "required"
   | "received"
-  | "reason";
+  | "reason"
+  | "rentReason";
 
 /** The normal suggestion: 20% of the agreed Rent, to the nearest cent (as the server checks). */
 export function suggestedDeposit(rentCents: number): number {
@@ -72,6 +73,7 @@ export function MakeReservationDialog({
   paymentsApi,
   gate,
   mayOverride,
+  mayLowerRent = null,
   unitId: chosenUnit,
   onClose,
   onSaved,
@@ -87,6 +89,8 @@ export function MakeReservationDialog({
   /** False when this person may not accept less than the suggestion (DL-099); null while their
    * rights are not known. */
   mayOverride: boolean | null;
+  /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null while not known. */
+  mayLowerRent?: boolean | null;
   unitId?: string;
   onClose: () => void;
   onSaved: (saved: ReservationResource) => void;
@@ -104,6 +108,7 @@ export function MakeReservationDialog({
   const [required, setRequired] = useState("");
   const [received, setReceived] = useState("");
   const [reason, setReason] = useState("");
+  const [rentReason, setRentReason] = useState("");
   const [money, setMoney] = useState<MoneyChoice>({
     methodId: "",
     reference: "",
@@ -178,6 +183,18 @@ export function MakeReservationDialog({
   useEffect(load, [customerApi, propertyId, unitApi]);
 
   const rentCents = centsOf(rent);
+  // V1-061 (DL-110): the Rent starts at the Unit's default Rent until it is typed; less needs a
+  // Manager or the Owner and a reason, checked here before any money is taken.
+  const defaultRent =
+    units?.find((unit) => unit.unit_id === unitId)
+      ?.default_monthly_rent_usd_cents ?? null;
+  const typedRent = useRef(false);
+  useEffect(() => {
+    if (typedRent.current) return;
+    setRent(defaultRent === null ? "" : (defaultRent / 100).toFixed(2));
+  }, [defaultRent]);
+  const rentBelow =
+    rentCents !== null && defaultRent !== null && rentCents < defaultRent;
   const suggestion = rentCents === null ? null : suggestedDeposit(rentCents);
   const receivedCents = centsOf(received);
   // DL-099 (owner 2026-10-27): only less than the suggestion needs a reason and the Manager.
@@ -209,6 +226,14 @@ export function MakeReservationDialog({
     if (day !== "" && (end === "" || end <= day || end > addDays(day, 21)))
       found.expires = say("mk_err_expires");
     if (rentCents === null) found.rent = say("mk_err_rent");
+    else if (rentBelow && mayLowerRent !== true)
+      found.rent = rt(
+        language,
+        mayLowerRent === null ? "mk_err_rent_rights" : "mk_err_rent_below",
+        usdFromCents(defaultRent),
+      );
+    else if (rentBelow && rentReason.trim() === "")
+      found.rentReason = say("mk_err_rent_reason");
     if (receivedCents === null) found.received = say("mk_err_received");
     const requiredCents = centsOf(required);
     if (
@@ -258,9 +283,16 @@ export function MakeReservationDialog({
         acceptance_id: ids.current.acceptance,
         accepted_initial_deposit_usd_cents: receivedCents,
         required_security_deposit_usd_cents: requiredCents,
-        acceptance_reason: below
+        acceptance_reason: `${(below
           ? reason.trim()
-          : rt("en", above ? "mk_reason_more" : "mk_reason_default"),
+          : rt("en", above ? "mk_reason_more" : "mk_reason_default")
+        ).replace(
+          /\.$/,
+          "",
+        )}${rentBelow ? `. Rent below the Unit default: ${rentReason.trim()}` : ""}`.slice(
+          0,
+          500,
+        ),
         deposit_id: ids.current.deposit,
         receipt_id: ids.current.receipt,
       },
@@ -533,12 +565,36 @@ export function MakeReservationDialog({
                 id="mk-rent"
                 inputMode="decimal"
                 onChange={(event) => {
+                  typedRent.current = true;
                   setRent(event.currentTarget.value);
                 }}
                 value={rent}
               />
+              {defaultRent !== null && (
+                <p className="help">
+                  {rt(language, "mk_rent_default", usdFromCents(defaultRent))}
+                </p>
+              )}
               {error("rent")}
             </div>
+            {rentBelow && mayLowerRent === true && (
+              <div className="ui-field">
+                <label htmlFor="mk-rent-reason">
+                  {rt(language, "mk_rent_reason", usdFromCents(defaultRent))}
+                </label>
+                <input
+                  aria-invalid={problems.rentReason !== undefined}
+                  disabled={locked}
+                  id="mk-rent-reason"
+                  maxLength={300}
+                  onChange={(event) => {
+                    setRentReason(event.currentTarget.value);
+                  }}
+                  value={rentReason}
+                />
+                {error("rentReason")}
+              </div>
+            )}
             <div className="ui-field">
               <label htmlFor="mk-required">{rt(language, "mk_required")}</label>
               <input

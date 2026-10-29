@@ -200,6 +200,10 @@ class Unit:
     kitchen_item_id: UUID | None = None
     notes: str | None = None
     room_feature_ids: tuple[UUID, ...] = ()
+    # V1-061 (owner 2026-10-29, DL-110): the Rent a new draft starts with, and the Services every
+    # new Lease draft of the Unit must hold.
+    default_monthly_rent_usd_cents: int | None = None
+    required_service_ids: tuple[UUID, ...] = ()
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -353,9 +357,12 @@ def _optional_int(value: object) -> int | None:
 
 
 def unit_from_row(row: tuple[object, ...]) -> Unit:
-    """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`."""
+    """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`, then
+    the Rent terms of `app.unit_rent_terms` when the query joined them (V1-061)."""
     details = row[7:15] if len(row) >= 15 else (None,) * 7 + ((),)
     features = details[7]
+    rent = row[15] if len(row) >= 17 else None
+    required = row[16] if len(row) >= 17 else ()
     return Unit(
         unit_id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -373,6 +380,10 @@ def unit_from_row(row: tuple[object, ...]) -> Unit:
         notes=None if details[6] is None else str(details[6]),
         room_feature_ids=tuple(
             UUID(str(item)) for item in (features if isinstance(features, list | tuple) else ())
+        ),
+        default_monthly_rent_usd_cents=_optional_int(rent),
+        required_service_ids=tuple(
+            UUID(str(item)) for item in (required if isinstance(required, list | tuple) else ())
         ),
     )
 

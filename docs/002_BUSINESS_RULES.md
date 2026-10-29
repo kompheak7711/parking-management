@@ -294,6 +294,10 @@ value alone must never authorize a conflicting Reservation, Lease, or move-in.
 
 Each Unit has a configured cleaning rate in USD cents. It is the source of the Unit cleaning charge at move-out (BR-MOVEOUT-013). Changing the rate never changes an issued charge (DL-065, DL-068).
 
+## BR-UNIT-015 — Default Rent and Required Services
+
+A Unit may have a default monthly Rent in USD cents and a list of required Services (DL-110, owner 2026-10-29). A new Reservation or Lease draft for the Unit starts at the default Rent. Staff may agree a higher Rent; a Rent below the default needs a Manager or the Owner (`rent.below_default`) and the reason of the command. A Lease draft from a Booking may keep the Booking's agreed Rent. Every new Lease draft for the Unit holds each required Service, and staff cannot remove one. Changing either never changes a Reservation or Lease that already exists.
+
 ---
 
 # 5. Customer Rules
@@ -967,6 +971,20 @@ Move-out Date is recorded through the move-out process.
 
 Closing Occupancy must be coordinated with Lease termination, Unit status, final
 Utility handling, and Final Settlement. Occupancy history must never be deleted.
+
+Amended by DL-111 (owner, 2026-10-29): one person may move out while the Lease runs (BR-OCC-010). The whole-Unit move-out above still closes the last Occupancies with the Lease.
+
+---
+
+## BR-OCC-010 — Move Out One Occupant
+
+While a signed Lease runs, one person may move out on their own actual day (DL-111, owner 2026-10-29):
+
+- The Primary Tenant never moves out alone; they leave with the Lease (Termination and Move-out).
+- A person who signs nothing needs only the day and a reason.
+- A Joint Signer needs every other Signer of the Lease to agree. They stay a Signer of the Lease and keep its responsibility until it ends.
+- The only Signer still living there cannot move out until the Lease's termination is complete.
+- The day is on or after their Move-in Date, never after today and never after the End Date.
 
 ---
 

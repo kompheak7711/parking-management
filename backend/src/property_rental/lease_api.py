@@ -13,7 +13,19 @@ import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from property_rental.api_refusals import LEASE_END_DATE_NOT_MONTH_END, RefusedRequest
+from property_rental.access_control import RENT_BELOW_DEFAULT_CAPABILITY
+from property_rental.api_refusals import (
+    LEASE_END_DATE_NOT_MONTH_END,
+    LEASE_REQUIRED_SERVICE_MISSING,
+    OCCUPANT_LAST_SIGNER,
+    OCCUPANT_MOVE_OUT_DATE,
+    OCCUPANT_NOT_LIVING_THERE,
+    OCCUPANT_PRIMARY_TENANT,
+    OCCUPANT_SIGNERS_MUST_AGREE,
+    RENT_BELOW_UNIT_DEFAULT,
+    Refusal,
+    RefusedRequest,
+)
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -38,6 +50,7 @@ from property_rental.lease import (
     LeaseNotFoundError,
     LeasePetTerm,
     LeaseRecordSignatureCommand,
+    LeaseRequiredServiceMissingError,
     LeaseServiceTerm,
     LeaseSignCommand,
     LeaseStatus,
@@ -58,6 +71,8 @@ from property_rental.move_in import (
     MoveInOccupant,
     MoveInSnapshot,
     MoveInVersionConflictError,
+    OccupantMoveOutCommand,
+    OccupantMoveOutRefusedError,
     PostgresMoveInService,
     RecordLeaseMoveInCommand,
 )
@@ -67,6 +82,14 @@ LEASE_READ_CAPABILITY: Final = "leases.read"
 MOVE_IN_CAPABILITY: Final = "reservations.complete"
 DEFAULT_PAGE_SIZE: Final = 50
 MAX_PAGE_SIZE: Final = 100
+# V1-061 (DL-111): each database reason for refusing one occupant's move-out, by its refusal.
+OCCUPANT_MOVE_OUT_REFUSALS: Final[dict[str, Refusal]] = {
+    "PRIMARY_TENANT": OCCUPANT_PRIMARY_TENANT,
+    "LAST_SIGNER": OCCUPANT_LAST_SIGNER,
+    "SIGNERS_AGREE": OCCUPANT_SIGNERS_MUST_AGREE,
+    "DATE": OCCUPANT_MOVE_OUT_DATE,
+    "NOT_LIVING_THERE": OCCUPANT_NOT_LIVING_THERE,
+}
 LeasePeriodFilter = Literal["current", "future", "historical", "approaching_end"]
 
 
@@ -266,6 +289,10 @@ class LeaseResourceFlow(Protocol):
         self, command: LeaseUpdateDraftCommand, *, actor: AuthenticatedActor
     ) -> LeaseResource: ...
 
+    def rent_floor(self, unit_id: UUID, security_deposit_id: UUID | None) -> int | None:
+        """The lowest Rent a draft may have without `rent.below_default` (DL-110), or None."""
+        ...
+
     def add_signer(
         self, command: LeaseAddSignerCommand, *, actor: AuthenticatedActor
     ) -> LeaseResource: ...
@@ -304,6 +331,14 @@ class LeaseResourceFlow(Protocol):
         self,
         property_id: UUID,
         command: AddLeaseOccupantCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource: ...
+
+    def move_out_occupant(
+        self,
+        property_id: UUID,
+        command: OccupantMoveOutCommand,
         *,
         actor: AuthenticatedActor,
     ) -> LeaseResource: ...
@@ -348,6 +383,11 @@ class UnavailableLeaseResourceFlow:
         self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
     ) -> LeaseResource:
         del lease_id, visibility
+        self._raise()
+        raise AssertionError
+
+    def rent_floor(self, unit_id: UUID, security_deposit_id: UUID | None) -> int | None:
+        del unit_id, security_deposit_id
         self._raise()
         raise AssertionError
 
@@ -445,6 +485,17 @@ class UnavailableLeaseResourceFlow:
         self._raise()
         raise AssertionError
 
+    def move_out_occupant(
+        self,
+        property_id: UUID,
+        command: OccupantMoveOutCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
 
 def _encode_cursor(created_at: datetime, lease_id: UUID) -> str:
     raw = json.dumps([created_at.isoformat(), str(lease_id)]).encode()
@@ -512,6 +563,11 @@ class PostgresLeaseResourceFlow:
             SELECT id,'lease.occupant_added',occurred_at,reason,actor_id,id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
             FROM app.lease_occupant_additions WHERE lease_id=%s
+            UNION ALL
+            -- V1-061 (DL-111): one person moved out on their own day.
+            SELECT id,'lease.occupant_moved_out',occurred_at,reason,actor_id,id::text,
+                   '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
+            FROM app.lease_occupant_move_outs WHERE lease_id=%s
             UNION ALL
             SELECT id,'lease.termination_notice',occurred_at,notice_text,actor_id,id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
@@ -669,7 +725,7 @@ class PostgresLeaseResourceFlow:
         rows = connection.execute(
             self._timeline_select,
             (
-                *(lease_id,) * 8,
+                *(lease_id,) * 9,
                 cursor_time,
                 cursor_time,
                 cursor_id,
@@ -719,6 +775,29 @@ class PostgresLeaseResourceFlow:
                 )
         except psycopg.Error as exc:
             raise LeaseResourceUnavailable from exc
+
+    def rent_floor(self, unit_id: UUID, security_deposit_id: UUID | None) -> int | None:
+        """The Unit's default Rent (DL-110); a draft from a Booking may keep the Booking's agreed
+        Rent, which was agreed when the Booking was made."""
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                row = connection.execute(
+                    "SELECT unit.default_monthly_rent_usd_cents, ("
+                    "SELECT reservation.agreed_monthly_rent_usd_cents "
+                    "FROM app.deposits AS deposit JOIN app.reservations AS reservation "
+                    "ON reservation.id = deposit.reservation_id "
+                    "WHERE deposit.id = %s AND reservation.unit_id = unit.id) "
+                    "FROM app.units AS unit WHERE unit.id = %s",
+                    (security_deposit_id, unit_id),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise LeaseResourceUnavailable from exc
+        if row is None or row[0] is None:
+            return None
+        floor = int(str(row[0]))
+        if row[1] is not None:
+            floor = min(floor, int(str(row[1])))
+        return floor
 
     def get(
         self, lease_id: UUID, *, visibility: LeaseTimelineVisibility = NO_RESTRICTED_EVENTS
@@ -952,6 +1031,17 @@ class PostgresLeaseResourceFlow:
         service.add_lease_occupant(command, actor=actor)
         return self.get(command.lease_id)
 
+    def move_out_occupant(
+        self,
+        property_id: UUID,
+        command: OccupantMoveOutCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        service = PostgresMoveInService(self._database_url, property_id, self._actor_id(actor))
+        service.move_out_lease_occupant(command, actor=actor)
+        return self.get(command.lease_id)
+
 
 class LeaseDraftSignerSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -1129,6 +1219,17 @@ class LeaseOccupantSource(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+class OccupantMoveOutSource(BaseModel):
+    """V1-061 (DL-111): Move out one occupant; a Joint Signer names the Signers who agreed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
+    move_out_date: date
+    agreed_signer_customer_ids: Annotated[list[UUID], Field(max_length=100)] = []
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
 class MoveInSource(MoveInCommandSource):
     lease_id: UUID
 
@@ -1207,11 +1308,32 @@ def _body(resource: LeaseResource, actor: AuthenticatedActor) -> dict[str, objec
     return result
 
 
+def _check_rent(
+    flow: LeaseResourceFlow,
+    actor: AuthenticatedActor,
+    property_id: UUID,
+    unit_id: UUID,
+    rent: int | None,
+    security_deposit_id: UUID | None,
+) -> None:
+    """V1-061 (owner 2026-10-29, DL-110): a Rent below the Unit's default Rent needs a Manager or
+    the Owner; the reason of the command says why."""
+    if rent is None or _can(actor, property_id, RENT_BELOW_DEFAULT_CAPABILITY):
+        return
+    floor = flow.rent_floor(unit_id, security_deposit_id)
+    if floor is not None and rent < floor:
+        raise RefusedRequest(RENT_BELOW_UNIT_DEFAULT)
+
+
 def _translate(exc: Exception) -> HTTPException | RefusedRequest:
     if isinstance(exc, (HTTPException, RefusedRequest)):
         return exc
     if isinstance(exc, LeaseEndDateNotMonthEndError):
         return RefusedRequest(LEASE_END_DATE_NOT_MONTH_END)
+    if isinstance(exc, LeaseRequiredServiceMissingError):
+        return RefusedRequest(LEASE_REQUIRED_SERVICE_MISSING)
+    if isinstance(exc, OccupantMoveOutRefusedError):
+        return RefusedRequest(OCCUPANT_MOVE_OUT_REFUSALS[exc.reason])
     if isinstance(exc, (LeaseResourceNotFound, LeaseNotFoundError, MoveInNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if isinstance(exc, (LeaseVersionConflictError, MoveInVersionConflictError)):
@@ -1309,6 +1431,14 @@ def create_lease_router(
         _require(actor, property_id, LEASE_DRAFT_CAPABILITY)
         require_browser_mutation(request, settings)
         try:
+            _check_rent(
+                flow,
+                actor,
+                property_id,
+                source.unit_id,
+                source.monthly_rent_usd_cents,
+                source.security_deposit_id,
+            )
             resource = flow.draft(
                 property_id,
                 LeaseDraftCommand(
@@ -1388,6 +1518,18 @@ def create_lease_router(
             current = flow.get(lease_id)
             _require(actor, current.property_id, LEASE_DRAFT_CAPABILITY)
             require_browser_mutation(request, settings)
+            if (
+                "monthly_rent_usd_cents" in source.model_fields_set
+                and source.monthly_rent_usd_cents != current.monthly_rent_usd_cents
+            ):
+                _check_rent(
+                    flow,
+                    actor,
+                    current.property_id,
+                    current.unit_id,
+                    source.monthly_rent_usd_cents,
+                    current.security_deposit_id,
+                )
             resource = flow.update_draft(
                 LeaseUpdateDraftCommand(
                     idempotency_key=idempotency_key,
@@ -1586,6 +1728,48 @@ def create_lease_router(
         require_browser_mutation(request, settings)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
+    @router.post("/leases/{lease_id}/occupancies/{occupancy_id}/move-out")
+    def move_out_lease_occupant(
+        lease_id: UUID,
+        occupancy_id: UUID,
+        source: OccupantMoveOutSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """V1-061 (owner 2026-10-29, DL-111): one person moves out on their own day; never the
+        Primary Tenant, a Joint Signer only with every other Signer agreeing, and never the last
+        Signer living there."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, MOVE_IN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            if len(set(source.agreed_signer_customer_ids)) != len(
+                source.agreed_signer_customer_ids
+            ):
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+            resource = flow.move_out_occupant(
+                current.property_id,
+                OccupantMoveOutCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_lease_version=_version(if_match),
+                    occupancy_id=occupancy_id,
+                    move_out_date=source.move_out_date,
+                    agreed_signer_customer_ids=tuple(source.agreed_signer_customer_ids),
+                    reason=source.reason,
+                    authorization_reference=MOVE_IN_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
     # V1-061: the plain `POST /leases/{lease_id}/sign` signed a Lease with no money and is
     # removed; Sign Lease with payment (DL-108, lease_signing_api) is the only way to sign.
 
@@ -1602,6 +1786,14 @@ def create_lease_router(
             current = flow.get(lease_id)
             _require(actor, current.property_id, LEASE_DRAFT_CAPABILITY)
             require_browser_mutation(request, settings)
+            _check_rent(
+                flow,
+                actor,
+                current.property_id,
+                current.unit_id,
+                source.monthly_rent_usd_cents,
+                None,
+            )
             resource = flow.draft(
                 current.property_id,
                 LeaseDraftCommand(

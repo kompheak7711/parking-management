@@ -42,7 +42,7 @@ export interface LeasesPageProps {
   depositApi: DepositApi;
   reservationApi: Pick<ReservationApi, "list" | "get">;
   customerApi: Pick<CustomerApi, "get" | "list">;
-  unitApi: Pick<UnitApi, "list">;
+  unitApi: Pick<UnitApi, "list" | "get">;
   lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;
   /** The Services from Settings for the New Lease form; the real server when not given. */
@@ -145,6 +145,9 @@ export function LeasesPage({
         }
         key={`${detail ?? ""}:${propertyId}`}
         language={language}
+        mayLowerRent={
+          capabilities === null ? null : capabilities.has("rent.below_default")
+        }
         mode={formMode}
         propertyId={propertyId}
         reservationApi={reservationApi}
@@ -181,6 +184,7 @@ export function LeasesPage({
         }
         paymentsApi={paymentsApi}
         settlementApi={settlementApi}
+        unitApi={unitApi}
       />
     );
   }

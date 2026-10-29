@@ -1,6 +1,7 @@
 // V1-058 R2: the Units page of the rebuilt app. "#/units" shows the list; "#/units/<Unit id>"
 // shows the Unit page.
 
+import { serviceSettingsApi } from "../settings/serviceSettingsClient";
 import "../shell/screens.css";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import { UnitDetail } from "./UnitDetail";
 import { UnitsList } from "./UnitsList";
 import { ut } from "./text";
 import { type UtilityPricesApi, UtilityPricesStrip } from "./UtilityPrices";
+import type { RentTermsServicesApi } from "./RentTerms";
 import { UnitsData, loadUnitsData, reservationFor } from "./unitsData";
 
 export interface UnitsPageProps {
@@ -30,6 +32,8 @@ export interface UnitsPageProps {
   capabilities: ReadonlySet<string> | null;
   /** V1-061: the Utility prices and the Unit's Meters. */
   utilityApi: UtilityPricesApi;
+  /** V1-061 (DL-110): the Property's Services; the real server when not given. */
+  servicesApi?: RentTermsServicesApi;
 }
 
 export function UnitsPage({
@@ -41,6 +45,7 @@ export function UnitsPage({
   reservationApi,
   capabilities,
   utilityApi,
+  servicesApi = serviceSettingsApi,
 }: UnitsPageProps) {
   const detail = useHashDetail("units");
   const [data, setData] = useState<UnitsData | null>(null);
@@ -121,6 +126,7 @@ export function UnitsPage({
         reservation={reservationFor(data, detail)}
         tenanciesKnown={data.leases !== null && data.reservations !== null}
         unitApi={unitApi}
+        servicesApi={servicesApi}
         unitId={detail}
         utilityApi={utilityApi}
       />

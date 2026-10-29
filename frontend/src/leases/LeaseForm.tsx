@@ -9,6 +9,9 @@
 // Service here with the Settings dialog.
 // V1-060 B6 (DL-107, owner 28/10/2026): New Lease on a Unit page opens this form with that Unit
 // chosen; it can still be changed, like any walk-in draft.
+// V1-061 (owner 29/10/2026, DL-110): a walk-in draft starts at the Unit's default Rent; a Rent
+// below it needs a Manager or the Owner and a reason. The Unit's required Services are ticked
+// and cannot be unticked.
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
@@ -54,6 +57,7 @@ import {
   defaultChosen,
   type ServiceGroup,
   serviceGroups,
+  withRequired,
 } from "./leaseServices";
 import { lt } from "./text";
 
@@ -147,6 +151,8 @@ export interface LeaseFormProps {
   customerGate?: CustomerCommandGate;
   /** V1-060 B6 (DL-100, DL-101): saves the draft's Security Deposit; the real server when not given. */
   signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
+  /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null when not known. */
+  mayLowerRent?: boolean | null;
 }
 
 export function LeaseForm({
@@ -162,6 +168,7 @@ export function LeaseForm({
   customerCreateApi,
   customerGate,
   signingApi = settlementApi,
+  mayLowerRent = null,
 }: LeaseFormProps) {
   const today = todayInPhnomPenh();
   const [sources, setSources] = useState<Sources | null>(null);
@@ -173,6 +180,9 @@ export function LeaseForm({
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(oneYearEnd(today));
   const [rent, setRent] = useState("");
+  // A walk-in draft follows the chosen Unit's default Rent until the Rent is typed (DL-110).
+  const [rentTyped, setRentTyped] = useState(false);
+  const [rentReason, setRentReason] = useState("");
   // The draft's Security Deposit, a Lease term like the Rent: one month's Rent until it is typed
   // on a walk-in draft (DL-100), the Reservation's amount on a draft from a Booking (DL-101).
   const [deposit, setDeposit] = useState("");
@@ -395,6 +405,20 @@ export function LeaseForm({
 
   useEffect(load, []);
 
+  const walkIn =
+    sources !== null &&
+    sources.reservation === null &&
+    sources.previous === null;
+  const unitDefault =
+    sources?.units.find((unit) => unit.unit_id === unitId)
+      ?.default_monthly_rent_usd_cents ?? null;
+  useEffect(() => {
+    if (!walkIn || rentTyped) return;
+    const value = unitDefault === null ? "" : (unitDefault / 100).toFixed(2);
+    setRent(value);
+    if (!depositTyped) setDeposit(value);
+  }, [walkIn, rentTyped, unitDefault, depositTyped]);
+
   const back = (
     <button
       className="ui-crumb"
@@ -462,6 +486,19 @@ export function LeaseForm({
     previous?.unit_number ??
     "";
   const cents = centsOf(rent);
+  const chosenUnit = sources.units.find((unit) => unit.unit_id === unitId);
+  // The lowest Rent staff may agree (DL-110): the Unit's default Rent, or a Booking's agreed Rent
+  // when that is lower (it was agreed when the Booking was made).
+  const defaultRent = chosenUnit?.default_monthly_rent_usd_cents ?? null;
+  const rentFloor =
+    defaultRent === null
+      ? null
+      : reservation === null
+        ? defaultRent
+        : Math.min(defaultRent, reservation.agreed_monthly_rent_usd_cents);
+  const belowDefault =
+    cents !== null && rentFloor !== null && cents < rentFloor;
+  const required = new Set(chosenUnit?.required_service_ids ?? []);
   const startOk = /^\d{4}-\d{2}-\d{2}$/.test(start);
   const preview = startOk && cents !== null ? initialRent(start, cents) : null;
   const endOk = /^\d{4}-\d{2}-\d{2}$/.test(end) && end > start;
@@ -469,9 +506,10 @@ export function LeaseForm({
     services !== null && services !== "failed" && startOk && endOk
       ? serviceGroups(services, start, end)
       : [];
+  const ticked = withRequired(chosen, groups, required);
   const picked = groups
     .flatMap((group) => group.choices)
-    .filter((choice) => chosen.has(choice.service.service_id));
+    .filter((choice) => ticked.has(choice.service.service_id));
   const serviceName = (choice: (typeof picked)[number]) =>
     language === "km" && choice.service.name_km !== null
       ? choice.service.name_km
@@ -561,6 +599,10 @@ export function LeaseForm({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
+    else if (belowDefault && mayLowerRent === false)
+      found.rent = lt(language, "err_rent_below", usdFromCents(rentFloor));
+    else if (belowDefault && rentReason.trim() === "")
+      found.rentReason = lt(language, "err_rent_reason");
     const depositCents = takesDeposit ? centsOf(deposit) : null;
     if (takesDeposit && depositCents === null)
       found.deposit = lt(language, "err_deposit");
@@ -586,6 +628,12 @@ export function LeaseForm({
     else if (picked.some((choice) => choice.approvalPeriodId === null))
       found.services = lt(language, "err_svc_greyed");
     else if (picked.length > 20) found.services = lt(language, "err_svc_many");
+    else if (
+      [...required].some(
+        (id) => !picked.some((choice) => choice.service.service_id === id),
+      )
+    )
+      found.services = lt(language, "err_svc_required");
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
     setPlannedCents(depositCents);
@@ -638,12 +686,16 @@ export function LeaseForm({
         : null,
       security_deposit_id: reservation?.deposit_id ?? null,
       event_id: "",
-      reason:
+      reason: `${
         previous !== null
           ? "Renewal drafted from the New Lease form"
           : reservation !== null
             ? "Lease drafted from the Booking"
-            : "Lease drafted from the New Lease form",
+            : "Lease drafted from the New Lease form"
+      }${belowDefault ? `. Rent below the Unit default: ${rentReason.trim()}` : ""}`.slice(
+        0,
+        500,
+      ),
     });
   }
 
@@ -906,12 +958,32 @@ export function LeaseForm({
               inputMode="decimal"
               onChange={(event) => {
                 setRent(event.currentTarget.value);
+                setRentTyped(true);
                 if (!depositTyped) setDeposit(event.currentTarget.value);
               }}
               value={rent}
             />,
             problems.rent,
+            defaultRent === null
+              ? undefined
+              : lt(language, "rent_default_help", usdFromCents(defaultRent)),
           )}
+          {belowDefault &&
+            mayLowerRent !== false &&
+            field(
+              "lease-form-rent-reason",
+              lt(language, "rent_reason", usdFromCents(rentFloor)),
+              <input
+                aria-invalid={problems.rentReason !== undefined}
+                id="lease-form-rent-reason"
+                maxLength={300}
+                onChange={(event) => {
+                  setRentReason(event.currentTarget.value);
+                }}
+                value={rentReason}
+              />,
+              problems.rentReason,
+            )}
           {takesDeposit &&
             field(
               "lease-form-deposit",
@@ -981,9 +1053,10 @@ export function LeaseForm({
           <ServicesField
             added={addDone}
             addNote={addNote}
-            chosen={chosen}
+            chosen={ticked}
             groups={groups}
             language={language}
+            locked={required}
             onAdd={
               services !== null && services !== "failed" && services.can_manage
                 ? () => {
@@ -1267,11 +1340,14 @@ function ServicesField({
   onChange,
   onRetry,
   onAdd,
+  locked,
 }: {
   language: Language;
   state: "loading" | "failed" | "dates" | "ready";
   groups: ServiceGroup[];
   chosen: ReadonlySet<string>;
+  /** The Services the Unit requires: ticked, and never unticked here (DL-110). */
+  locked: ReadonlySet<string>;
   problem: string | undefined;
   /** The name of a Service just added here. */
   added: string | null;
@@ -1332,6 +1408,12 @@ function ServicesField({
       {state === "ready" &&
         groups.map((group) => {
           const name = `lease-svc-${group.typeId ?? "other"}`;
+          // An "Only one per Lease" group with a required Service keeps that one (DL-110).
+          const held =
+            group.onePerLease &&
+            group.choices.some((choice) =>
+              locked.has(choice.service.service_id),
+            );
           return (
             <fieldset
               aria-describedby={
@@ -1352,6 +1434,7 @@ function ServicesField({
                     checked={group.choices.every(
                       (choice) => !chosen.has(choice.service.service_id),
                     )}
+                    disabled={held}
                     name={name}
                     onChange={() => {
                       onChange(choose(chosen, group, null, true));
@@ -1365,6 +1448,7 @@ function ServicesField({
                 const id = choice.service.service_id;
                 const closed = choice.approvalPeriodId === null;
                 const on = chosen.has(id);
+                const must = locked.has(id);
                 const label =
                   language === "km" && choice.service.name_km !== null
                     ? choice.service.name_km
@@ -1373,8 +1457,9 @@ function ServicesField({
                   <label className={closed ? "ui-chk off" : "ui-chk"} key={id}>
                     <input
                       checked={on}
-                      // A greyed Service that is still ticked can be unticked.
-                      disabled={closed && !on}
+                      // A greyed Service that is still ticked can be unticked; a required one
+                      // never can, and its group allows no other choice.
+                      disabled={(closed && !on) || must || (held && !must)}
                       name={name}
                       onChange={(event) => {
                         onChange(
@@ -1390,6 +1475,11 @@ function ServicesField({
                     />
                     <span>
                       {label}
+                      {must && (
+                        <span className="ui-sub2">
+                          {lt(language, "svc_required")}
+                        </span>
+                      )}
                       <span className="ui-sub2 ui-num">
                         {closed
                           ? choice.startsLater !== null

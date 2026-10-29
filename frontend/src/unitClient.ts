@@ -117,6 +117,15 @@ export interface UnitResource extends UnitDetails {
   active_meter_summary: unknown;
   operational_alerts: string[];
   can_manage?: boolean;
+  /** V1-061 (DL-110): the Rent a new Reservation or Lease draft starts at, in cents. */
+  default_monthly_rent_usd_cents?: number | null;
+  /** V1-061 (DL-110): the Services every new Lease draft of the Unit holds. */
+  required_service_ids?: string[];
+}
+
+export interface UnitRentTermsSource {
+  default_monthly_rent_usd_cents: number | null;
+  required_service_ids: string[];
 }
 
 export interface UnitListPage {
@@ -182,6 +191,11 @@ export interface UnitApi {
     lines: UnitInventoryLine[],
   ) => Promise<UnitInventory>;
   inventoryItems: (propertyId: string) => Promise<UnitInventoryItemName[]>;
+  /** V1-061 (DL-110): a Manager or the Owner sets the default Rent and required Services. */
+  setRentTerms: (
+    current: UnitResource,
+    source: UnitRentTermsSource,
+  ) => Promise<UnitResource>;
 }
 
 export class UnitUnavailableError extends Error {
@@ -325,7 +339,8 @@ function unit(value: unknown): UnitResource {
     !nullableNumber(value.bathrooms) ||
     !nullableString(value.view_item_id) ||
     !nullableString(value.kitchen_item_id) ||
-    !nullableString(value.notes)
+    !nullableString(value.notes) ||
+    !nullableNumber(value.default_monthly_rent_usd_cents)
   ) {
     throw new UnitRequestError();
   }
@@ -366,6 +381,9 @@ function unit(value: unknown): UnitResource {
     operational_alerts: stringArray(value.operational_alerts),
     can_manage:
       typeof value.can_manage === "boolean" ? value.can_manage : undefined,
+    default_monthly_rent_usd_cents:
+      value.default_monthly_rent_usd_cents ?? null,
+    required_service_ids: stringArray(value.required_service_ids ?? []),
   };
 }
 
@@ -635,6 +653,19 @@ async function saveInventory(
   );
 }
 
+async function setRentTerms(
+  current: UnitResource,
+  source: UnitRentTermsSource,
+): Promise<UnitResource> {
+  return unit(
+    await request(`/units/${encodeURIComponent(current.unit_id)}/rent-terms`, {
+      method: "PUT",
+      headers: mutationHeaders(current.version),
+      body: JSON.stringify(source),
+    }),
+  );
+}
+
 async function inventoryItems(
   propertyId: string,
 ): Promise<UnitInventoryItemName[]> {
@@ -667,4 +698,5 @@ export const unitApi: UnitApi = {
   inventory,
   saveInventory,
   inventoryItems,
+  setRentTerms,
 };

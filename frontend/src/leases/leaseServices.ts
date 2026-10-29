@@ -168,3 +168,23 @@ export function choose(
   }
   return next;
 }
+
+/**
+ * V1-061 (owner 2026-10-29, DL-110, "Ticked and locked"): the chosen Services with every Service
+ * the Unit requires ticked. In an "Only one per Lease" group the required Service replaces the
+ * others.
+ */
+export function withRequired(
+  chosen: ReadonlySet<string>,
+  groups: ServiceGroup[],
+  required: ReadonlySet<string>,
+): Set<string> {
+  let next = new Set(chosen);
+  for (const group of groups) {
+    for (const choice of group.choices) {
+      if (required.has(choice.service.service_id))
+        next = choose(next, group, choice.service.service_id, true);
+    }
+  }
+  return next;
+}

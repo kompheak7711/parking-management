@@ -258,6 +258,49 @@ const TEXT = {
     "Prices are set in Settings › Rates and services.",
     "តម្លៃត្រូវបានកំណត់នៅ ការកំណត់ › តម្លៃ និងសេវា។",
   ],
+  // new (V1-061, owner 29/10/2026, DL-110): the Unit's default Rent and required Services
+  rt_title: ["Rent and Services", "ថ្លៃឈ្នួល និងសេវា"],
+  rt_change: ["Change", "ប្តូរ"],
+  rt_rent: ["Default Rent per month", "ថ្លៃឈ្នួលលំនាំដើមប្រចាំខែ"],
+  rt_none: ["Not set", "មិនទាន់កំណត់"],
+  rt_services: ["Required Services", "សេវាចាំបាច់"],
+  rt_no_services: ["None", "គ្មាន"],
+  rt_services_count: ["{0} Services", "សេវា {0}"],
+  rt_unknown_service: ["A Service not found", "រកមិនឃើញសេវា"],
+  rt_loading: ["Loading…", "កំពុងផ្ទុក…"],
+  rt_note: [
+    "A new Reservation or Lease starts at this Rent. Staff may agree more; less needs a Manager or the Owner. Every new Lease of this Unit has the required Services.",
+    "ការកក់ ឬកិច្ចសន្យាថ្មីចាប់ផ្តើមនៅថ្លៃនេះ។ បុគ្គលិកអាចយល់ព្រមថ្លៃខ្ពស់ជាង; ថ្លៃទាបជាងត្រូវការអ្នកគ្រប់គ្រង ឬម្ចាស់។ កិច្ចសន្យាថ្មីទាំងអស់នៃបន្ទប់នេះមានសេវាចាំបាច់។",
+  ],
+  rt_rent_help: [
+    "In US dollars, for example 450.00. Leave it empty for no default Rent.",
+    "ជាដុល្លារអាមេរិក ឧទាហរណ៍ 450.00។ ទុកទទេប្រសិនបើគ្មានថ្លៃលំនាំដើម។",
+  ],
+  rt_err_rent: [
+    "Enter the Rent in dollars and cents above 0, or leave it empty.",
+    "សូមបញ្ចូលថ្លៃជាដុល្លារ និងសេន លើស 0 ឬទុកទទេ។",
+  ],
+  rt_err_many: [
+    "A Unit can require at most 20 Services.",
+    "បន្ទប់មួយអាចតម្រូវសេវាបានច្រើនបំផុត 20។",
+  ],
+  rt_services_failed: [
+    "The Services could not be read, so this cannot be saved now. Open it again later.",
+    "មិនអាចអានសេវាបានទេ ដូច្នេះមិនអាចរក្សាទុកបានឥឡូវនេះ។ សូមបើកម្តងទៀតពេលក្រោយ។",
+  ],
+  rt_no_property_services: [
+    "There are no Services yet. Add them in Settings › Rates and services.",
+    "មិនទាន់មានសេវាទេ។ សូមបន្ថែមនៅ ការកំណត់ › តម្លៃ និងសេវា។",
+  ],
+  rt_dialog_note: [
+    "Leases that already exist do not change. The change is kept in the Unit's History.",
+    "កិច្ចសន្យាដែលមានរួចមិនផ្លាស់ប្តូរទេ។ ការប្តូរត្រូវបានរក្សាទុកក្នុងប្រវត្តិបន្ទប់។",
+  ],
+  rt_saved: [
+    "The Rent and Services of {0} are saved.",
+    "ថ្លៃឈ្នួល និងសេវារបស់ {0} ត្រូវបានរក្សាទុក។",
+  ],
+  h_rent_terms: ["Rent and Services changed", "ថ្លៃឈ្នួល និងសេវាត្រូវបានប្តូរ"],
 } as const;
 
 export type UnitTextKey = keyof typeof TEXT;

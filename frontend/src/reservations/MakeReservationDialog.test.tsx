@@ -858,3 +858,117 @@ describe("Date box (V1-060 B7, third review)", () => {
     expect(onChange).toHaveBeenLastCalledWith("1986-03-15");
   });
 });
+
+describe("Make Reservation (V1-061)", () => {
+  it("TEST-FE-1110 the Rent starts at the Unit's default Rent; a lower Rent stops before any money without a Manager, and a Manager gives a reason (DL-110)", async () => {
+    const { customerApi, paymentsApi, confirm } = apis();
+    const unitApi = {
+      list: vi.fn(() =>
+        Promise.resolve({
+          items: [
+            {
+              unit_id: "unit-2",
+              unit_number: "U102",
+              status: "VACANT",
+              default_monthly_rent_usd_cents: 50_000,
+            } as unknown as UnitResource,
+          ],
+          next_cursor: null,
+        }),
+      ),
+    } as unknown as Pick<UnitApi, "list">;
+    const create = vi.fn<ReservationApi["create"]>().mockResolvedValue({
+      reservation_id: "saved",
+    } as unknown as ReservationResource);
+    const api = { create } as unknown as ReservationApi;
+    const open = (mayLowerRent: boolean | null) =>
+      render(
+        <MakeReservationDialog
+          api={api}
+          customerApi={customerApi}
+          language="en"
+          mayLowerRent={mayLowerRent}
+          mayOverride={true}
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+          paymentsApi={paymentsApi}
+          propertyId="property-1"
+          unitApi={unitApi}
+          unitId="unit-2"
+        />,
+      );
+    const fill = async (dialog: HTMLElement) => {
+      await waitFor(() => {
+        expect(within(dialog).getByLabelText("Unit")).toHaveValue("unit-2");
+      });
+      const rent = within(dialog).getByLabelText("Agreed monthly Rent (USD)");
+      await waitFor(() => {
+        expect(rent).toHaveValue("500.00");
+      });
+      expect(
+        within(dialog).getByText(
+          "This Unit's default Rent is $500.00. A higher Rent is fine.",
+        ),
+      ).toBeInTheDocument();
+      fireEvent.change(within(dialog).getByLabelText("Customer"), {
+        target: { value: "customer-dara" },
+      });
+      fireEvent.change(rent, { target: { value: "450" } });
+      fireEvent.change(
+        await within(dialog).findByLabelText("How the money came"),
+        { target: { value: "method-cash" } },
+      );
+    };
+
+    for (const [right, words] of [
+      [
+        false,
+        "The Rent is below this Unit's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
+      ],
+      [
+        null,
+        "Your rights could not be read just now, so a Rent below $500.00 cannot be checked before the money is taken. Reload the page, or agree at least $500.00.",
+      ],
+    ] as const) {
+      const view = open(right);
+      const dialog = await screen.findByRole("dialog", {
+        name: "Make Reservation",
+      });
+      await fill(dialog);
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Save Reservation" }),
+      );
+      expect(within(dialog).getByText(words)).toBeInTheDocument();
+      expect(confirm).not.toHaveBeenCalled();
+      view.unmount();
+    }
+
+    open(true);
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    await fill(dialog);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      within(dialog).getByText("Say why the Rent is lower."),
+    ).toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+    fireEvent.change(
+      within(dialog).getByLabelText("Why is the Rent below $500.00?"),
+      { target: { value: "Long stay" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({
+      agreed_monthly_rent_usd_cents: 45_000,
+      acceptance_reason:
+        "Suggested 20% of the agreed Rent. Rent below the Unit default: Long stay",
+    });
+  });
+});

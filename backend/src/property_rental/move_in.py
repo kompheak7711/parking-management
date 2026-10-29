@@ -38,6 +38,20 @@ class MoveInInvalidError(ValueError):
     """Raised when a move-in prerequisite is not satisfied."""
 
 
+class OccupantMoveOutRefusedError(ValueError):
+    """V1-061 (DL-111): a move-out of one occupant that the Lease's rules refuse, by its reason:
+    PRIMARY_TENANT, LAST_SIGNER, SIGNERS_AGREE, DATE or NOT_LIVING_THERE."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"Occupant move-out is refused: {reason}")
+        self.reason = reason
+
+
+OCCUPANT_MOVE_OUT_REASONS: Final = frozenset(
+    {"PRIMARY_TENANT", "LAST_SIGNER", "SIGNERS_AGREE", "DATE", "NOT_LIVING_THERE"}
+)
+
+
 class MoveInAuthorizationError(PermissionError):
     """Raised before persistence when capability evidence is absent."""
 
@@ -169,8 +183,42 @@ class AddLeaseOccupantCommand:
         _require_nonblank(self.authorization_reference, "authorization_reference")
 
 
+@dataclass(frozen=True, slots=True)
+class OccupantMoveOutCommand:
+    """V1-061 (owner 2026-10-29, DL-111): one person of a signed Lease moves out on their own day.
+
+    Never the Primary Tenant. A Joint Signer needs every other Signer of the Lease to agree
+    (``agreed_signer_customer_ids``), and the last Signer living there leaves only with the Lease.
+    """
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_lease_version: int
+    occupancy_id: UUID
+    move_out_date: date
+    agreed_signer_customer_ids: tuple[UUID, ...]
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id", "occupancy_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_lease_version < 1:
+            raise ValueError("expected versions must be positive")
+        if len(set(self.agreed_signer_customer_ids)) != len(self.agreed_signer_customer_ids):
+            raise ValueError("a Signer may agree only once")
+        if len(self.agreed_signer_customer_ids) > 100:
+            raise ValueError("at most 100 Signers agree")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
 def move_in_request_digest(
-    command: CompleteMoveInCommand | RecordLeaseMoveInCommand | AddLeaseOccupantCommand,
+    command: CompleteMoveInCommand
+    | RecordLeaseMoveInCommand
+    | AddLeaseOccupantCommand
+    | OccupantMoveOutCommand,
 ) -> str:
     """Bind stable replay identity to every move-in input."""
 
@@ -396,4 +444,62 @@ class PostgresMoveInService:
             ) from exc
         if row is None or not isinstance(row[0], dict):
             raise MoveInServiceUnavailableError("Occupant addition returned no result")
+        return cast(dict[str, object], row[0])
+
+    def move_out_lease_occupant(
+        self, command: OccupantMoveOutCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        """End one person's Occupancy on their own move-out day (DL-111)."""
+        try:
+            authenticated_actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise MoveInAuthorizationError("Move-in actor is invalid") from exc
+        if authenticated_actor_id != self.actor_id:
+            raise MoveInAuthorizationError("Move-in actor does not match the command")
+        if command.authorization_reference != MOVE_IN_CAPABILITY or not is_authorized(
+            actor,
+            AuthorizationRequirement(
+                capability=MOVE_IN_CAPABILITY, property_id=str(self.property_id)
+            ),
+        ):
+            raise MoveInAuthorizationError("Move-in capability is not authorized")
+        try:
+            with psycopg.connect(self.database_url) as connection:
+                row = connection.execute(
+                    "SELECT app.move_out_lease_occupant("
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%s::uuid[],%s,%s,%s)",
+                    (
+                        self.property_id,
+                        command.idempotency_key,
+                        move_in_request_digest(command),
+                        command.event_id,
+                        command.lease_id,
+                        command.expected_lease_version,
+                        command.occupancy_id,
+                        command.move_out_date,
+                        list(command.agreed_signer_customer_ids),
+                        command.reason,
+                        command.authorization_reference,
+                        self.actor_id,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate == "P0002":
+                raise MoveInNotFoundError("Occupant move-out source was not found") from exc
+            if exc.sqlstate == "40001":
+                raise MoveInVersionConflictError(
+                    "Occupant move-out version precondition was not met"
+                ) from exc
+            if exc.sqlstate in {"23505", "23P01"}:
+                raise MoveInConflictError("Occupant move-out conflicted") from exc
+            hint = exc.diag.message_hint
+            if exc.sqlstate == "23514" and hint in OCCUPANT_MOVE_OUT_REASONS:
+                raise OccupantMoveOutRefusedError(hint) from exc
+            if exc.sqlstate in {"22023", "22P02", "23514", "55000"}:
+                raise MoveInInvalidError("Occupant move-out is invalid") from exc
+            raise MoveInServiceUnavailableError(
+                "Occupant move-out persistence is unavailable"
+            ) from exc
+        if row is None or not isinstance(row[0], dict):
+            raise MoveInServiceUnavailableError("Occupant move-out returned no result")
         return cast(dict[str, object], row[0])

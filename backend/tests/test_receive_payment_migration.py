@@ -294,7 +294,7 @@ def test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_comm
             ("prm_runtime", False, False, True, False),
         ]
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-        assert head == ("20270331_250",)
+        assert head == ("20270402_252",)
 
 
 def test_receive_payment_commands_are_append_only(migrated_database_url: str) -> None:

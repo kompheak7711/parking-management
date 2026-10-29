@@ -19,6 +19,8 @@ SETTINGS_MANAGE_CAPABILITY: Final = "settings.manage"
 OPERATIONS_STATUS_READ_CAPABILITY: Final = "operations.status.read"
 PROPERTY_READ_CAPABILITY: Final = "property.read"
 UNITS_READ_CAPABILITY: Final = "units.read"
+# V1-061 (owner 2026-10-29, DL-110): a Rent below the Unit's default Rent.
+RENT_BELOW_DEFAULT_CAPABILITY: Final = "rent.below_default"
 
 CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "audit.export": "Export the audit history",
@@ -75,6 +77,7 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "refunds.corrections.reverse": "Reverse a Refund correction",
     "refunds.create": "Record Refund drafts",
     "refunds.read": "Read Refunds",
+    "rent.below_default": "Agree a Rent below the Unit's default Rent",
     "rent_nonpayment.case_manage": "Open and manage Rent nonpayment cases",
     "rent_nonpayment.evaluate": "Evaluate Rent nonpayment (evaluation principal only)",
     "rent_nonpayment.event_post": "Post Rent nonpayment events",

@@ -23,6 +23,7 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
+import type { UnitApi } from "../unitClient";
 import type { CustomerApi } from "../customerClient";
 import type { CustomerCommandGate } from "../customers/commands";
 import type { LettersApi } from "../letters/lettersClient";
@@ -104,6 +105,8 @@ export interface LeaseDetailProps {
   /** V1-060 B6 (DL-102): New Customer from Add occupant; left out, the button is not shown. */
   customerCreateApi?: CustomerApi;
   customerGate?: CustomerCommandGate;
+  /** V1-061 (DL-110): Edit draft reads the Unit's default Rent. */
+  unitApi?: Pick<UnitApi, "get">;
 }
 
 export function LeaseDetail({
@@ -121,6 +124,7 @@ export function LeaseDetail({
   paymentsApi = defaultPaymentsApi,
   customerCreateApi,
   customerGate,
+  unitApi,
 }: LeaseDetailProps) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
@@ -1256,7 +1260,13 @@ export function LeaseDetail({
           lease={lease}
           planned={depositDraft && planned !== undefined ? planned : undefined}
           held={held}
+          mayLowerRent={
+            capabilities === null
+              ? null
+              : capabilities.has("rent.below_default")
+          }
           signingApi={settlementApi}
+          unitApi={unitApi}
           // The dates and Rent may be saved without the Security Deposit (B7): read again.
           onClose={() => {
             setDialog(null);

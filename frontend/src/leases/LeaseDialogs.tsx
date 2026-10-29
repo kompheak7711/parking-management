@@ -23,6 +23,7 @@ import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
+import type { UnitApi } from "../unitClient";
 import { lt, type LeaseTextKey } from "./text";
 
 export type Outcome = "unknown" | "refused" | null;
@@ -138,13 +139,38 @@ export function EditDraftDialog({
   planned,
   held = null,
   signingApi,
+  unitApi,
+  mayLowerRent = null,
 }: DialogProps & {
   /** V1-060 B6 (DL-100, DL-101): the draft's recorded Security Deposit; undefined hides the box. */
   planned?: number | null;
   /** DL-101: the Reservation's Security Deposit of a draft from a Booking. */
   held?: { required: number; received: number } | null;
   signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
+  /** V1-061 (DL-110): reads the Unit's default Rent; left out, only the server checks it. */
+  unitApi?: Pick<UnitApi, "get">;
+  /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null when not known. */
+  mayLowerRent?: boolean | null;
 }) {
+  // A walk-in draft may not go below the Unit's default Rent without the right (DL-110); a draft
+  // from a Booking is checked by the server, which knows the Booking's agreed Rent.
+  const [defaultRent, setDefaultRent] = useState<number | null>(null);
+  useEffect(() => {
+    if (unitApi === undefined || held !== null) return;
+    const run = { live: true };
+    unitApi
+      .get(lease.unit_id)
+      .then((unit) => {
+        if (run.live)
+          setDefaultRent(unit.default_monthly_rent_usd_cents ?? null);
+      })
+      .catch(() => {
+        // Not known: the server still checks it.
+      });
+    return () => {
+      run.live = false;
+    };
+  }, [unitApi, held, lease.unit_id]);
   const takesDeposit = planned !== undefined && signingApi !== undefined;
   const firstDeposit =
     planned ?? held?.required ?? lease.monthly_rent_usd_cents ?? null;
@@ -189,6 +215,13 @@ export function EditDraftDialog({
     if (!/^\d{4}-\d{2}-\d{2}$/.test(end) || end <= start || !monthEnd(end))
       found.end = lt(language, "err_end");
     if (cents === null) found.rent = lt(language, "err_rent");
+    else if (
+      mayLowerRent === false &&
+      defaultRent !== null &&
+      cents !== lease.monthly_rent_usd_cents &&
+      cents < defaultRent
+    )
+      found.rent = lt(language, "err_rent_below", usdFromCents(defaultRent));
     const depositCents = takesDeposit ? centsOf(deposit) : null;
     if (takesDeposit && depositCents === null)
       found.deposit = lt(language, "err_deposit");
@@ -272,10 +305,12 @@ export function EditDraftDialog({
     label: string,
     input: ReactNode,
     problem: string | undefined,
+    help?: string,
   ) => (
     <div className="ui-field">
       <label htmlFor={id}>{label}</label>
       {input}
+      {help !== undefined && <p className="help">{help}</p>}
       <Problem message={problem ?? null} />
     </div>
   );
@@ -337,6 +372,9 @@ export function EditDraftDialog({
           value={rent}
         />,
         problems.rent,
+        defaultRent === null
+          ? undefined
+          : lt(language, "rent_default_help", usdFromCents(defaultRent)),
       )}
       {takesDeposit &&
         field(

@@ -118,6 +118,28 @@ class InMemoryUnitFlow:
         self.units[unit_id] = updated
         return updated
 
+    def set_rent_terms(
+        self,
+        unit_id: UUID,
+        *,
+        default_monthly_rent_usd_cents: int | None,
+        required_service_ids: tuple[UUID, ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del actor_id
+        current = self.get(unit_id)
+        if current.version != expected_version:
+            raise UnitVersionConflict(current.version)
+        updated = replace(
+            current,
+            version=current.version + 1,
+            default_monthly_rent_usd_cents=default_monthly_rent_usd_cents,
+            required_service_ids=required_service_ids,
+        )
+        self.units[unit_id] = updated
+        return updated
+
     def timeline(self, unit_id: UUID, *, limit: int, cursor: str | None) -> UnitTimelinePage:
         del cursor
         self.get(unit_id)
@@ -623,3 +645,56 @@ def test_unit_setup_lists_are_read_with_units_read_and_changed_only_with_setting
     assert owner.get(f"/properties/{property_id}/unit-setup").json()["data"]["lists"]["VIEW"] == []
     with_removed = owner.get(f"/properties/{property_id}/unit-setup?include_removed=true")
     assert len(with_removed.json()["data"]["lists"]["VIEW"]) == 1
+
+
+def test_rent_terms_are_set_by_a_manager_at_the_unit_version() -> None:
+    """V1-061 (owner 2026-10-29, DL-110): the default Rent and the required Services."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    flow = InMemoryUnitFlow(units={unit.unit_id: unit})
+    service = uuid4()
+    body = {"default_monthly_rent_usd_cents": 45_000, "required_service_ids": [str(service)]}
+    staff = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "units.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    refused = staff.put(
+        f"/units/{unit.unit_id}/rent-terms", headers={**BROWSER, "If-Match": '"1"'}, json=body
+    )
+    assert refused.status_code == 403
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    path = f"/units/{unit.unit_id}/rent-terms"
+    no_csrf = client.put(path, headers={"If-Match": '"1"'}, json=body)
+    assert no_csrf.status_code == 403
+    twice = client.put(
+        path,
+        headers={**BROWSER, "If-Match": '"1"'},
+        json={**body, "required_service_ids": [str(service), str(service)]},
+    )
+    assert twice.status_code == 422
+    for wrong in (0, -1, "45000", 1.5):
+        bad = client.put(
+            path,
+            headers={**BROWSER, "If-Match": '"1"'},
+            json={**body, "default_monthly_rent_usd_cents": wrong},
+        )
+        assert bad.status_code == 422, wrong
+    stale = client.put(path, headers={**BROWSER, "If-Match": '"0"'}, json=body)
+    assert stale.status_code == 412
+    saved = client.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=body)
+    assert saved.status_code == 200, saved.text
+    assert saved.headers["etag"] == '"2"'
+    assert saved.json()["data"]["default_monthly_rent_usd_cents"] == 45_000
+    assert saved.json()["data"]["required_service_ids"] == [str(service)]
+    cleared = client.put(
+        path,
+        headers={**BROWSER, "If-Match": '"2"'},
+        json={"default_monthly_rent_usd_cents": None, "required_service_ids": []},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["data"]["default_monthly_rent_usd_cents"] is None
+    assert cleared.json()["data"]["required_service_ids"] == []

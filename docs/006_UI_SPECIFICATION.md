@@ -232,6 +232,8 @@ Historical and future non-overlapping Leases are distinct from current occupancy
 
 Amended by DL-078 (owner, 2026-10-20): Unit detail shows floor, Unit Type, size in m², bedrooms, bathrooms, view, kitchen, Room features, notes and the Unit inventory with its History.
 
+Amended by DL-110 (V1-061, owner 2026-10-29): Unit detail shows the default Rent and the required Services, and a Manager or the Owner changes them with "Rent and Services". It shows "Electricity and water": each Meter (working, or broken since a day), the price in force with its start day and the next price; a kind with no Meter says the Unit is not billed for it. The Units list shows today's electricity and water prices. New Lease and Make Reservation start at the default Rent; New Lease ticks the required Services and they cannot be unticked; a Rent below the default shows that a Manager or the Owner must agree it.
+
 ## UI-027 — Unit Actions
 
 Authorized actions may update editable Unit source data or start an approved
@@ -367,6 +369,8 @@ and become immutable after signing.
 
 Manage Occupants separately from Signers. Clearly label that occupancy does not
 itself establish signer responsibility.
+
+Amended by DL-111 (V1-061, owner 2026-10-29): each person living there has Move out on the Lease page, except the Primary Tenant (who leaves with the Lease). The dialog asks for the day and a reason; for a Joint Signer it lists every other Signer, each to tick that they agree, and says the person stays a Signer of the Lease. The only Signer still living there sees why they cannot move out yet, with no Move out.
 
 ## UI-040 — Sign Lease
 

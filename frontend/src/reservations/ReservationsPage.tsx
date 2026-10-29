@@ -109,6 +109,9 @@ export function ReservationsPage({
           : undefined
       }
       language={language}
+      mayLowerRent={
+        capabilities === null ? null : capabilities.has("rent.below_default")
+      }
       mayOverride={
         capabilities === null
           ? null

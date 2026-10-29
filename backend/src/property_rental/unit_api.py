@@ -191,6 +191,16 @@ class UnitResourceFlow(Protocol):
         reason: str | None = None,
     ) -> Unit: ...
 
+    def set_rent_terms(
+        self,
+        unit_id: UUID,
+        *,
+        default_monthly_rent_usd_cents: int | None,
+        required_service_ids: tuple[UUID, ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit: ...
+
     def timeline(
         self,
         unit_id: UUID,
@@ -283,6 +293,20 @@ class UnavailableUnitResourceFlow:
     ) -> Unit:
         del unit_id, floor_item_id, unit_type, unit_status, details, expected_version, actor_id
         del reason
+        self._unavailable()
+        raise AssertionError
+
+    def set_rent_terms(
+        self,
+        unit_id: UUID,
+        *,
+        default_monthly_rent_usd_cents: int | None,
+        required_service_ids: tuple[UUID, ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del unit_id, default_monthly_rent_usd_cents, required_service_ids, expected_version
+        del actor_id
         self._unavailable()
         raise AssertionError
 
@@ -384,6 +408,14 @@ def _size_json(value: Decimal | None) -> str | None:
     return None if value is None else f"{value:.2f}"
 
 
+# V1-061 (DL-110): a Unit read with its default Rent and required Services.
+UNIT_SELECT: Final = (
+    "SELECT detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids "
+    "FROM app.unit_with_details(%s) AS detail "
+    "CROSS JOIN LATERAL app.unit_rent_terms(detail.id) AS terms"
+)
+
+
 class PostgresUnitResourceFlow:
     """Versioned Unit commands and bounded queries over PostgreSQL."""
 
@@ -418,8 +450,10 @@ class PostgresUnitResourceFlow:
             parameters.extend(decoded)
         parameters.append(limit + 1)
         query = (
-            "SELECT detail.* FROM app.units AS unit "
-            "CROSS JOIN LATERAL app.unit_with_details(unit.id) AS detail WHERE "
+            "SELECT detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids "
+            "FROM app.units AS unit "
+            "CROSS JOIN LATERAL app.unit_with_details(unit.id) AS detail "
+            "CROSS JOIN LATERAL app.unit_rent_terms(unit.id) AS terms WHERE "
             + " AND ".join(clauses)
             + " ORDER BY unit.unit_number, unit.id LIMIT %s"
         )
@@ -438,9 +472,7 @@ class PostgresUnitResourceFlow:
     def get(self, unit_id: UUID) -> Unit:
         try:
             with psycopg.connect(self._database_url) as connection:
-                row = connection.execute(
-                    "SELECT * FROM app.unit_with_details(%s)", (unit_id,)
-                ).fetchone()
+                row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
         except psycopg.Error as exc:
             raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         if row is None:
@@ -467,6 +499,8 @@ class PostgresUnitResourceFlow:
             ),
             "notes": unit.notes,
             "room_feature_ids": [str(item) for item in unit.room_feature_ids],
+            "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
+            "required_service_ids": [str(item) for item in unit.required_service_ids],
         }
 
     @staticmethod
@@ -550,6 +584,9 @@ class PostgresUnitResourceFlow:
                 if row is None:
                     raise UnitResourceUnavailable("Parking creation returned no result")
                 created = _unit(row)
+                full = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if full is not None:
+                    created = _unit(full)
                 self._audit(
                     connection,
                     unit=created,
@@ -570,6 +607,65 @@ class PostgresUnitResourceFlow:
         except psycopg.Error as exc:
             raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
+    def set_rent_terms(
+        self,
+        unit_id: UUID,
+        *,
+        default_monthly_rent_usd_cents: int | None,
+        required_service_ids: tuple[UUID, ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        """V1-061 (DL-110): set the Unit's default Rent and required Services, kept in History."""
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                current_row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if current_row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                current = _unit(current_row)
+                if current.version != expected_version:
+                    raise UnitVersionConflict(current.version)
+                version = connection.execute(
+                    "SELECT app.set_unit_rent_terms(%s, %s, %s, %s::uuid[], %s)",
+                    (
+                        unit_id,
+                        expected_version,
+                        default_monthly_rent_usd_cents,
+                        list(required_service_ids),
+                        UUID(actor_id),
+                    ),
+                ).fetchone()
+                if version is None or version[0] is None:
+                    latest = connection.execute(
+                        "SELECT version FROM app.units WHERE id = %s", (unit_id,)
+                    ).fetchone()
+                    if latest is None:
+                        raise UnitResourceNotFound("Unit was not found")
+                    raise UnitVersionConflict(int(str(latest[0])))
+                row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                updated = _unit(row)
+                self._audit(
+                    connection,
+                    unit=updated,
+                    actor_id=actor_id,
+                    action="unit.rent_terms_changed",
+                    previous_state=self._state(current),
+                )
+            return updated
+        except (UnitResourceNotFound, UnitVersionConflict):
+            raise
+        except (
+            ValueError,
+            psycopg.errors.CheckViolation,
+            psycopg.errors.InvalidParameterValue,
+            psycopg.errors.ForeignKeyViolation,
+        ) as exc:
+            raise UnitResourceInvalid("Unit Rent terms are invalid") from exc
+        except psycopg.Error as exc:
+            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+
     def patch(
         self,
         unit_id: UUID,
@@ -584,9 +680,7 @@ class PostgresUnitResourceFlow:
     ) -> Unit:
         try:
             with psycopg.connect(self._database_url) as connection:
-                current_row = connection.execute(
-                    "SELECT * FROM app.unit_with_details(%s)", (unit_id,)
-                ).fetchone()
+                current_row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
                 if current_row is None:
                     raise UnitResourceNotFound("Parking was not found")
                 current = _unit(current_row)
@@ -614,6 +708,9 @@ class PostgresUnitResourceFlow:
                         raise UnitResourceNotFound("Parking was not found")
                     raise UnitVersionConflict(int(str(latest[0])))
                 updated = _unit(row)
+                full = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if full is not None:
+                    updated = _unit(full)
                 # V1-058 R2: Change status keeps the person's reason in the Unit's History.
                 status_changed = reason is not None and updated.status != current.status
                 self._audit(
@@ -854,6 +951,24 @@ class UnitCreate(BaseModel):
         return _distinct_features(value)
 
 
+class UnitRentTermsSource(BaseModel):
+    """V1-061 (DL-110): the Unit's default Rent (integer cents, or null for none) and the
+    Services every new Lease draft of the Unit must hold."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    default_monthly_rent_usd_cents: int | None = Field(ge=1, le=100_000_000)
+    required_service_ids: list[UUID] = Field(max_length=20)
+
+    @field_validator("required_service_ids", mode="before")
+    @classmethod
+    def ids_from_text(cls, value: object) -> object:
+        del cls
+        if isinstance(value, list):
+            return [UUID(item) if isinstance(item, str) else item for item in value]
+        return value
+
+
 class UnitPatch(BaseModel):
     """The Unit number cannot change (owner, 2026-10-24); a detail sent as null is cleared."""
 
@@ -1040,6 +1155,8 @@ def _body(unit: Unit) -> dict[str, object]:
         "kitchen_item_id": None if unit.kitchen_item_id is None else str(unit.kitchen_item_id),
         "notes": unit.notes,
         "room_feature_ids": [str(item) for item in unit.room_feature_ids],
+        "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
+        "required_service_ids": [str(item) for item in unit.required_service_ids],
         "current_reservation": None,
         "current_lease": None,
         "current_occupancy": None,
@@ -1194,6 +1311,39 @@ def create_unit_router(
                 expected_version=expected,
                 actor_id=actor.actor_id,
                 reason=patch.reason,
+            )
+        except UnitResourceNotFound as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except UnitResourceInvalid as exc:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
+        except UnitResourceUnavailable as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+        response.headers["ETag"] = f'"{unit.version}"'
+        return {"data": _body(unit), "meta": {"request_id": request.state.request_id}}
+
+    @router.put("/units/{unit_id}/rent-terms")
+    def put_unit_rent_terms(
+        unit_id: UUID,
+        source: UnitRentTermsSource,
+        request: Request,
+        response: Response,
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ) -> dict[str, object]:
+        """V1-061 (DL-110): a Manager or the Owner sets the default Rent and required Services."""
+        actor = _require_actor(request, resolver)
+        current = get_unit_or_http(unit_id)
+        _require_manager(actor, current.property_id)
+        require_browser_mutation(request, settings)
+        if len(set(source.required_service_ids)) != len(source.required_service_ids):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        expected = _expected_version(if_match, current.version)
+        try:
+            unit = flow.set_rent_terms(
+                unit_id,
+                default_monthly_rent_usd_cents=source.default_monthly_rent_usd_cents,
+                required_service_ids=tuple(source.required_service_ids),
+                expected_version=expected,
+                actor_id=actor.actor_id,
             )
         except UnitResourceNotFound as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc

@@ -175,6 +175,8 @@ Amended by DL-075 (owner, 2026-10-20): `unit_type` comes from the Unit Types Set
 
 Amended by DL-078 (owner, 2026-10-20): new Unit columns: size in m², bedrooms, bathrooms, view, kitchen, Room features and notes (lists from DL-075), and a new append-only Unit inventory table (item, quantity, group Furniture, Appliances, Kitchen or Bathroom, dated History). `unit_number` cannot change after creation. One Unit photo is built in the later file storage step. Not built yet (screen rebuild).
 
+Amended by DL-110 (V1-061, owner 2026-10-29; migration `20270401_251`): new column `units.default_monthly_rent_usd_cents bigint NULL` (above zero) and new table `unit_required_services(unit_id, property_service_id, added_at, added_by)` (primary key on both ids; the Service is of the Unit's Property; at most 20 per Unit). The runtime role reads them and changes them only through `app.set_unit_rent_terms`, which moves the Unit version on; `app.create_lease_draft_with_terms` refuses a new draft that leaves out a required Service.
+
 ## DB-CUST-001 — `customers`
 
 | Column | Type | Null | Rule |
@@ -478,6 +480,8 @@ Append-preserved once the Lease is SIGNED.
 | provenance columns | as DB-TYPE-007 | no | |
 
 `CHECK (move_out_date IS NULL OR move_out_date >= move_in_date)`. Index `(lease_id, move_out_date)` and `(customer_id, move_in_date DESC)`. Absence of `move_out_date` means open occupancy. Occupancy has no debt/responsibility columns.
+
+Amended by DL-111 (V1-061, owner 2026-10-29; migration `20270402_252`): one person's Occupancy of a running Lease may end on its own day through `app.move_out_lease_occupant`, recorded in the new append-only table `lease_occupant_move_outs(id, property_id, actor_id, idempotency_key, request_digest, lease_id, occupancy_id UNIQUE, customer_id, move_out_date, was_signer, agreed_signer_customer_ids, reason, authorization_reference, result_snapshot, occurred_at)`.
 
 ## DB-LEASE-004 — `termination_notices`
 

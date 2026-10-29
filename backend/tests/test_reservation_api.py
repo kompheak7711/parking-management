@@ -80,6 +80,11 @@ class InMemoryReservationFlow:
     cancel_command: ReservationCancelCommand | None = None
     draft_calls: list[tuple[str, UUID, object, object]] = field(default_factory=list)
     awaiting_page: ReservationDepositDecisionPage | None = None
+    # V1-061 (DL-110): the default Rent of each Unit, when a test sets one.
+    unit_rents: dict[UUID, int] = field(default_factory=dict)
+
+    def unit_default_rent(self, unit_id: UUID) -> int | None:
+        return self.unit_rents.get(unit_id)
 
     def list(
         self,
@@ -457,6 +462,42 @@ def test_more_than_the_suggestion_needs_no_override() -> None:
     assert flow.create_command.acceptance_kind == "AUTHORIZED_VARIANCE"
     assert flow.create_command.authorization_reference == "reservations.create"
     assert flow.create_command.acceptance_reason == "More than the suggested 20% received."
+
+
+def test_a_rent_below_the_unit_default_rent_needs_a_manager() -> None:
+    """V1-061 (owner 2026-10-29, DL-110): a Booking below the Unit's default Rent needs the right
+    rent.below_default; the default Rent or more needs nothing more."""
+    property_id = uuid4()
+    unit_id = uuid4()
+
+    def payload(rent: int) -> dict[str, object]:
+        return {
+            "reservation_id": str(uuid4()),
+            "unit_id": str(unit_id),
+            "customer_id": str(uuid4()),
+            "reservation_date": "2026-08-26",
+            "agreed_monthly_rent_usd_cents": rent,
+            "expiration_date": "2026-09-05",
+            "acceptance_id": str(uuid4()),
+            "accepted_initial_deposit_usd_cents": rent // 5,
+            "required_security_deposit_usd_cents": rent,
+            "acceptance_reason": "Suggested deposit",
+            "deposit_id": str(uuid4()),
+            "receipt_id": str(uuid4()),
+            "payment_id": str(uuid4()),
+        }
+
+    url = f"/properties/{property_id}/reservations"
+    staff_flow = InMemoryReservationFlow(unit_rents={unit_id: 50_000})
+    staff = client(staff_flow, actor(property_id, "reservations.create"))
+    lower = staff.post(url, json=payload(45_000), headers=headers())
+    assert lower.status_code == 403, lower.text
+    assert lower.json()["error"]["code"] == "RENT_BELOW_UNIT_DEFAULT"
+    assert staff_flow.create_command is None
+    assert staff.post(url, json=payload(50_000), headers=headers()).status_code == 201
+    manager_flow = InMemoryReservationFlow(unit_rents={unit_id: 50_000})
+    manager = client(manager_flow, actor(property_id, "reservations.create", "rent.below_default"))
+    assert manager.post(url, json=payload(45_000), headers=headers()).status_code == 201
 
 
 def test_extend_requires_version_and_records_one_notice_shape() -> None:

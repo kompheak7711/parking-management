@@ -77,6 +77,59 @@ DRAFT_CONFIRM_NOT_AVAILABLE = Refusal(
     "This draft cannot be confirmed here.",
     ("BR-AUTH-010",),
 )
+# V1-061 (owner 2026-10-29, DL-110): a Rent below the Unit's default Rent needs a Manager or the
+# Owner (`rent.below_default`); a new Lease draft holds every Service its Unit requires.
+RENT_BELOW_UNIT_DEFAULT = Refusal(
+    403,
+    "RENT_BELOW_UNIT_DEFAULT",
+    "The Rent is below the Unit's default Rent. A Manager or the Owner must agree it.",
+    ("DL-110",),
+    ("monthly_rent_usd_cents",),
+)
+LEASE_REQUIRED_SERVICE_MISSING = Refusal(
+    409,
+    "LEASE_REQUIRED_SERVICE_MISSING",
+    "The Lease must hold every Service the Unit requires.",
+    ("DL-110",),
+    ("service_terms",),
+)
+# V1-061 (owner 2026-10-29, DL-111): Move out one occupant.
+OCCUPANT_PRIMARY_TENANT = Refusal(
+    409,
+    "OCCUPANT_PRIMARY_TENANT",
+    "The Primary Tenant moves out only with the Lease, through Termination and Move-out.",
+    ("DL-111",),
+    ("occupancy_id",),
+)
+OCCUPANT_LAST_SIGNER = Refusal(
+    409,
+    "OCCUPANT_LAST_SIGNER",
+    "This is the only Signer still living there. End the Lease through Termination first.",
+    ("DL-111",),
+    ("occupancy_id",),
+)
+OCCUPANT_SIGNERS_MUST_AGREE = Refusal(
+    409,
+    "OCCUPANT_SIGNERS_MUST_AGREE",
+    "Every other Signer of the Lease must agree before a Signer moves out.",
+    ("DL-111",),
+    ("agreed_signer_customer_ids",),
+)
+OCCUPANT_MOVE_OUT_DATE = Refusal(
+    422,
+    "OCCUPANT_MOVE_OUT_DATE",
+    "The move-out day must be on or after the move-in day, not after today and not after the "
+    "End Date.",
+    ("DL-111",),
+    ("move_out_date",),
+)
+OCCUPANT_NOT_LIVING_THERE = Refusal(
+    409,
+    "OCCUPANT_NOT_LIVING_THERE",
+    "This person has already moved out, or the Lease is not running.",
+    ("DL-111",),
+    ("occupancy_id",),
+)
 LEASE_END_DATE_NOT_MONTH_END = Refusal(
     422,
     "LEASE_END_DATE_NOT_MONTH_END",

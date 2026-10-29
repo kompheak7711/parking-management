@@ -58394,6 +58394,235 @@
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1-061 (owner 29/10/2026): the Units list shows today's electricity and water prices; without utility.read nothing is read or shown."
+    },
+    {
+      "test_id": "test_rent_terms_are_set_at_the_unit_version_and_kept_in_history",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_rent_terms_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026, DL-110): the Unit's default Rent and required Services are set at the Unit version and move it on; a stale version or a Service not of the Property changes nothing; clearing both works; each change is one unit.rent_terms_changed History event."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_write_required_services_directly",
+      "upstream_ids": [
+        "DL-110"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_unit_rent_terms_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): the runtime role reads the required Services but writes them only through app.set_unit_rent_terms."
+    },
+    {
+      "test_id": "test_a_lease_draft_must_hold_every_required_service",
+      "upstream_ids": [
+        "DL-110",
+        "API-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_rent_terms_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner answer Ticked and locked, DL-110): a new Lease draft that leaves out a required Service of the Unit is refused with LEASE_REQUIRED_SERVICE_MISSING; with it the draft is saved."
+    },
+    {
+      "test_id": "test_a_rent_below_the_default_needs_a_manager",
+      "upstream_ids": [
+        "DL-110",
+        "API-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_rent_terms_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner answer Lower Rent needs a Manager, DL-110): over HTTP and the runtime role, staff cannot draft a Lease below the Unit's default Rent (RENT_BELOW_UNIT_DEFAULT) but may draft it higher; with rent.below_default the lower Rent is saved."
+    },
+    {
+      "test_id": "test_default_owner_and_manager_bundles_hold_the_new_right",
+      "upstream_ids": [
+        "DL-110",
+        "DL-075"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_unit_rent_terms_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): each Property's default Owner and Manager bundles hold rent.below_default; the default Staff bundle does not."
+    },
+    {
+      "test_id": "test_rent_terms_are_set_by_a_manager_at_the_unit_version",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): PUT /units/{unit_id}/rent-terms needs a Manager, the browser checks and If-Match; a Rent that is not whole cents above zero or a Service named twice answers 422; a stale version answers 412."
+    },
+    {
+      "test_id": "test_a_draft_rent_change_below_the_unit_default_needs_a_manager",
+      "upstream_ids": [
+        "DL-110",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): changing a draft's Rent below the Unit's default Rent needs rent.below_default; raising it does not; the refusal names monthly_rent_usd_cents and nothing is sent to the flow."
+    },
+    {
+      "test_id": "test_a_rent_below_the_unit_default_rent_needs_a_manager",
+      "upstream_ids": [
+        "DL-110",
+        "BR-RES-003"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): Make Reservation below the Unit's default Rent needs rent.below_default; at the default Rent staff may make it."
+    },
+    {
+      "test_id": "TEST-FE-1107",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015",
+        "UI-026"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026, DL-110): the Unit page shows the default Rent and the required Services by name; a Manager changes them in Rent and Services, a Rent that is not whole cents is refused before sending, and the Rent is sent in cents with the Service ids."
+    },
+    {
+      "test_id": "TEST-FE-1108",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015",
+        "UI-026"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): a person who may not manage the Unit sees the Rent and Services without Change; a Unit with none says Not set and None."
+    },
+    {
+      "test_id": "TEST-FE-1109",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015",
+        "UI-026"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (owner answers Lower Rent needs a Manager, Ticked and locked): New Lease starts at the Unit's default Rent, ticks and locks the required Service, stops a lower Rent without rent.below_default before saving, and with it asks for a reason that is kept in the draft's reason."
+    },
+    {
+      "test_id": "TEST-FE-1110",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015",
+        "UI-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): Make Reservation starts at the Unit's default Rent; a lower Rent stops before any money when the person may not agree it or the rights are not known, and a Manager gives a reason that is kept with the Reservation."
+    },
+    {
+      "test_id": "TEST-FE-1111",
+      "upstream_ids": [
+        "DL-110",
+        "BR-UNIT-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (DL-110): Edit draft shows the Unit's default Rent and stops a lower Rent without rent.below_default before sending; a higher Rent is saved."
+    },
+    {
+      "test_id": "test_a_person_who_signs_nothing_moves_out_on_their_own_day",
+      "upstream_ids": [
+        "DL-111",
+        "BR-OCC-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026, DL-111): a person who signs nothing moves out on a day from their move-in day to today; it is answered again for the same key, refused for another request with that key, a second time, or at a stale version, and shows once in the Lease History."
+    },
+    {
+      "test_id": "test_the_primary_tenant_never_moves_out_alone",
+      "upstream_ids": [
+        "DL-111"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026 04:10, DL-111): the Primary Tenant's Occupancy is never ended alone (PRIMARY_TENANT), even with the other Signer agreeing."
+    },
+    {
+      "test_id": "test_a_joint_signer_moves_out_only_when_every_other_signer_agrees",
+      "upstream_ids": [
+        "DL-111",
+        "BR-LEASE-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026 04:22, DL-111): a Joint Signer moves out only when every other Signer agrees (SIGNERS_AGREE otherwise); the Signers who agreed are kept, and the person stays a Signer of the Lease."
+    },
+    {
+      "test_id": "test_a_person_who_signs_nothing_may_leave_the_primary_tenant_alone",
+      "upstream_ids": [
+        "DL-111"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): after the Joint Signer and the friend move out, the Primary Tenant alone lives there and still cannot move out alone."
+    },
+    {
+      "test_id": "test_the_last_signer_rule_holds_for_a_joint_signer",
+      "upstream_ids": [
+        "DL-111"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026 04:22, DL-111): the only Signer still living there is refused (LAST_SIGNER); the Lease is ended through Termination first."
+    },
+    {
+      "test_id": "test_move_outs_are_permanent_and_only_the_function_writes_them",
+      "upstream_ids": [
+        "DL-111"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): a move-out record is never changed or deleted; the runtime role reads it and only app.move_out_lease_occupant writes it; the financial role cannot run it."
+    },
+    {
+      "test_id": "test_occupant_move_out_migration_is_forward_only",
+      "upstream_ids": [
+        "DL-111"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_occupant_move_out_migration.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): migration 20270402_252 follows 20270401_251 and is forward-only."
+    },
+    {
+      "test_id": "test_move_out_one_occupant_needs_the_move_in_capability_and_answers_each_refusal",
+      "upstream_ids": [
+        "DL-111",
+        "API-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "V1-061 (DL-111): POST /api/v1/leases/{lease_id}/occupancies/{occupancy_id}/move-out needs reservations.complete, If-Match and a strict body with no Signer named twice; each database refusal answers its own code."
     }
   ]
 }

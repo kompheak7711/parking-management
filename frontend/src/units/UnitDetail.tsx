@@ -27,6 +27,7 @@ import {
   UnitSetupLists,
   UnitTimelineEvent,
 } from "../unitClient";
+import { type RentTermsServicesApi, RentTermsCard } from "./RentTerms";
 import { ChangeStatusDialog, UpdateUnitDialog } from "./UnitDialogs";
 import { UnitChip, floorText } from "./UnitsList";
 import { ut } from "./text";
@@ -107,6 +108,8 @@ function historyLines(
   for (const event of events) {
     if (event.action === "unit.created") {
       lines.push({ at: event.occurred_at, text: ut(language, "h_created") });
+    } else if (event.action === "unit.rent_terms_changed") {
+      lines.push({ at: event.occurred_at, text: ut(language, "h_rent_terms") });
     } else if (event.action === "unit.inventory_updated") {
       lines.push({ at: event.occurred_at, text: ut(language, "h_inventory") });
     } else if (event.action === "unit.status_changed") {
@@ -197,6 +200,8 @@ export interface UnitDetailProps {
   onChanged: (unit: UnitResource) => void;
   /** V1-061: the Unit's Meters and the Utility prices. */
   utilityApi: UtilityPricesApi;
+  /** V1-061 (DL-110): the Property's Services, for the required Services. */
+  servicesApi: RentTermsServicesApi;
 }
 
 export function UnitDetail({
@@ -212,6 +217,7 @@ export function UnitDetail({
   capabilities,
   onChanged,
   utilityApi,
+  servicesApi,
 }: UnitDetailProps) {
   const khmer = language === "km";
   const [unit, setUnit] = useState<UnitResource | null>(null);
@@ -626,6 +632,23 @@ export function UnitDetail({
               unitId={unit.unit_id}
             />
           </section>
+          <RentTermsCard
+            canManage={canManage && unit.can_manage !== false}
+            language={language}
+            onConflict={() => {
+              setWarning(ut(language, "conflict"));
+              load();
+            }}
+            onSaved={(saved) => {
+              setNotice(ut(language, "rt_saved", saved.unit_number));
+              onChanged(saved);
+              load();
+            }}
+            propertyId={propertyId}
+            servicesApi={servicesApi}
+            unit={unit}
+            unitApi={unitApi}
+          />
         </div>
         <div className="ui-stack">
           {now}

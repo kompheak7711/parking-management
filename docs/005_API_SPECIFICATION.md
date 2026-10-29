@@ -458,7 +458,7 @@ responsibility.
 
 ## API-038 — Lease Commands
 
-- `POST /leases/{id}/sign`
+- `POST /leases/{id}/sign` (removed by DL-110; Sign Lease is `POST /leases/{id}/sign-with-payment`)
 - `POST /leases/{id}/renew`
 - `POST /leases/{id}/terminate`
 
@@ -2125,3 +2125,7 @@ V1-058 R7b-6d move-out cleaning rates (DL-075): `GET /properties/{id}/cleaning-s
 Amended by DL-109 (V1-060 B7 second review, 2026-10-28; migration `20270331_250`): `POST /leases/{lease_id}/sign-with-payment` also answers 409 `SIGNING_RESERVATION_ENDED` when the draft names a Security Deposit that is not held for the Primary Tenant's active Reservation of the Unit, `SIGNING_DATES_TAKEN` when another signed Lease of the Unit covers the dates, and `SIGNING_PAYMENT_SOURCE_GONE` when the way of payment is no longer on or the Customer was not found. Any other error the command raised answers 409 `SIGNING_REFUSED`, and nothing was saved. 503 means only that the outcome is not known (a deadlock, a lock wait, a timeout, a lost connection or a failed commit), after which the same request may be sent again with the same key.
 
 Amended by DL-109 (V1-060 B7 third review, 2026-10-28): `SIGNING_DATES_TAKEN` is only for the signed-Lease dates check (`leases_signed_period_exclusive`); another exclusion check answers `SIGNING_REFUSED`. `SIGNING_PAYMENT_SOURCE_GONE` also answers a way of payment switched off after the dialog opened, and its words say "switched off".
+
+Amended by DL-110 (V1-061, owner 2026-10-29; migration `20270401_251`): `POST /leases/{lease_id}/sign` (API-038), which signed a Lease with no money, is removed and answers 404; `POST /leases/{lease_id}/sign-with-payment` is the only way to sign. `PUT /units/{unit_id}/rent-terms` (a Manager or the Owner of the Unit's Property, else 403; `If-Match` with the Unit version, else 412 on a stale one; browser mutation checks; strict body) sets `default_monthly_rent_usd_cents` (whole cents from 1 to 100000000, or null for none) and `required_service_ids` (at most 20 Services of the same Property, no repeats, else 422). It answers 200 with the Unit and its new `ETag`; every Unit answer now has both fields. Make Reservation, a new Lease draft, a draft Rent change and a renewal answer 403 `RENT_BELOW_UNIT_DEFAULT` (field `monthly_rent_usd_cents`) when the Rent is below the Unit's default Rent and the person lacks `rent.below_default`; a Lease draft from a Booking may keep the Booking's agreed Rent. A new Lease draft without every required Service of its Unit answers 409 `LEASE_REQUIRED_SERVICE_MISSING` (field `service_terms`).
+
+Amended by DL-111 (V1-061, owner 2026-10-29; migration `20270402_252`): `POST /api/v1/leases/{lease_id}/occupancies/{occupancy_id}/move-out` (capability `reservations.complete` for the Lease's Property, else 404; `If-Match` with the Lease version, else 428; browser mutation checks; one `Idempotency-Key`; strict body `event_id`, `move_out_date`, `agreed_signer_customer_ids` (at most 100, no repeats) and a `reason` of 1 to 500 characters) ends one person's Occupancy and answers the Lease with its new `ETag`. Refusals: 409 `OCCUPANT_PRIMARY_TENANT`, 409 `OCCUPANT_LAST_SIGNER`, 409 `OCCUPANT_SIGNERS_MUST_AGREE` (a Joint Signer needs every other Signer named), 422 `OCCUPANT_MOVE_OUT_DATE` and 409 `OCCUPANT_NOT_LIVING_THERE`. The Lease timeline shows `lease.occupant_moved_out`.

@@ -58,6 +58,13 @@ class LeaseEndDateNotMonthEndError(LeaseCommandInvalidError):
 END_DATE_NOT_MONTH_END: Final = "Lease End Date must be the last day of a calendar month"
 
 
+class LeaseRequiredServiceMissingError(LeaseCommandInvalidError):
+    """Raised when a new Lease draft leaves out a Service its Unit requires (DL-110)."""
+
+
+REQUIRED_SERVICE_MISSING: Final = "Lease draft is missing a required Service of the Unit"
+
+
 class LeaseAuthorizationError(PermissionError):
     """Raised before persistence when trusted capability evidence is absent."""
 
@@ -522,6 +529,9 @@ class PostgresLeaseService:
             # Migration 76: draft, update and signing refuse an End Date that is not a month end.
             if exc.sqlstate == "22023" and exc.diag.message_primary == END_DATE_NOT_MONTH_END:
                 raise LeaseEndDateNotMonthEndError(END_DATE_NOT_MONTH_END) from exc
+            # Migration 251 (DL-110): a new draft holds every Service its Unit requires.
+            if exc.sqlstate == "23514" and exc.diag.message_primary == REQUIRED_SERVICE_MISSING:
+                raise LeaseRequiredServiceMissingError(REQUIRED_SERVICE_MISSING) from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
                 raise LeaseCommandInvalidError("Lease command is invalid") from exc
             raise LeaseServiceUnavailableError("Lease persistence is unavailable") from exc

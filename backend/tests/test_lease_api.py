@@ -32,6 +32,8 @@ from property_rental.move_in import (
     AddLeaseOccupantCommand,
     CompleteMoveInCommand,
     MoveInSnapshot,
+    OccupantMoveOutCommand,
+    OccupantMoveOutRefusedError,
     RecordLeaseMoveInCommand,
 )
 
@@ -82,7 +84,10 @@ class InMemoryLeaseFlow:
     cancel_command: LeaseCancelCommand | None = None
     record_move_in_command: RecordLeaseMoveInCommand | None = None
     occupant_command: AddLeaseOccupantCommand | None = None
+    move_out_command: OccupantMoveOutCommand | None = None
     visibilities: list[LeaseTimelineVisibility] = field(default_factory=list)
+    # V1-061 (DL-110): the default Rent of each Unit, when a test sets one.
+    unit_rents: dict[UUID, int] = field(default_factory=dict)
 
     def list(
         self,
@@ -217,6 +222,10 @@ class InMemoryLeaseFlow:
         self.resources[value.lease_id] = value
         return value
 
+    def rent_floor(self, unit_id: UUID, security_deposit_id: UUID | None) -> int | None:
+        del security_deposit_id
+        return self.unit_rents.get(unit_id)
+
     def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
         del actor
         self.sign_command = command
@@ -302,6 +311,20 @@ class InMemoryLeaseFlow:
     ) -> LeaseResource:
         del property_id, actor
         self.occupant_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
+
+    def move_out_occupant(
+        self,
+        property_id: UUID,
+        command: OccupantMoveOutCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, actor
+        self.move_out_command = command
         current = self.get(command.lease_id)
         value = replace(current, version=current.version + 1)
         self.resources[value.lease_id] = value
@@ -855,3 +878,93 @@ def test_an_end_date_that_is_not_a_month_end_answers_its_own_code() -> None:
         assert error["rule_ids"] == ["BR-LEASE-031"]
         assert "calendar" not in answer.text
         assert answer.headers["cache-control"] == "private, no-store"
+
+
+def test_a_draft_rent_change_below_the_unit_default_needs_a_manager() -> None:
+    """V1-061 (owner 2026-10-29, DL-110): staff may raise the Rent; lowering it below the Unit's
+    default Rent needs rent.below_default. A change that leaves the Rent alone is not checked."""
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryLeaseFlow({current.lease_id: current}, unit_rents={current.unit_id: 80_000})
+    staff = client(flow, actor(property_id, "leases.read", "leases.draft"))
+    path = f"/api/v1/leases/{current.lease_id}"
+
+    def change(rent: int | None) -> dict[str, object]:
+        body: dict[str, object] = {"event_id": str(uuid4()), "reason": "Agreed Rent"}
+        if rent is not None:
+            body["monthly_rent_usd_cents"] = rent
+        return body
+
+    lower = staff.patch(path, headers=headers(version=1), json=change(70_000))
+    assert lower.status_code == 403, lower.text
+    assert lower.json()["error"]["code"] == "RENT_BELOW_UNIT_DEFAULT"
+    assert lower.json()["error"]["fields"] == ["monthly_rent_usd_cents"]
+    assert flow.update_command is None
+    assert staff.patch(path, headers=headers(version=1), json=change(90_000)).status_code == 200
+    flow.update_command = None
+    manager = client(flow, actor(property_id, "leases.read", "leases.draft", "rent.below_default"))
+    assert manager.patch(path, headers=headers(version=1), json=change(70_000)).status_code == 200
+    assert flow.update_command is not None
+
+
+def test_move_out_one_occupant_needs_the_move_in_capability_and_answers_each_refusal() -> None:
+    """V1-061 (owner 2026-10-29, DL-111): Move out one occupant passes the day and the Signers
+    who agreed; each database refusal reaches the screen by its own code."""
+    property_id = uuid4()
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=4)
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    occupancy_id = uuid4()
+    path = f"/api/v1/leases/{signed.lease_id}/occupancies/{occupancy_id}/move-out"
+    signer = uuid4()
+    body = {
+        "event_id": str(uuid4()),
+        "move_out_date": "2026-10-28",
+        "agreed_signer_customer_ids": [str(signer)],
+        "reason": "Moved to Siem Reap",
+    }
+
+    reader = client(flow, actor(property_id, "leases.read", "leases.draft"))
+    assert reader.post(path, headers=headers(version=4), json=body).status_code == 404
+    api = client(flow, actor(property_id, "leases.read", "reservations.complete"))
+    assert api.post(path, headers=headers(), json=body).status_code == 428
+    twice = {**body, "agreed_signer_customer_ids": [str(signer), str(signer)]}
+    assert api.post(path, headers=headers(version=4), json=twice).status_code == 422
+    assert api.post(path, headers=headers(version=4), json={**body, "x": 1}).status_code == 422
+    assert [flow.move_out_command] == [None]
+
+    moved = api.post(path, headers=headers(version=4), json=body)
+    assert moved.status_code == 200, moved.text
+    assert moved.headers["etag"] == '"5"'
+    command = flow.move_out_command
+    assert command is not None
+    assert (command.lease_id, command.occupancy_id) == (signed.lease_id, occupancy_id)
+    assert command.move_out_date == date(2026, 10, 28)
+    assert command.agreed_signer_customer_ids == (signer,)
+    assert command.authorization_reference == "reservations.complete"
+
+    for reason, code, status_code in (
+        ("PRIMARY_TENANT", "OCCUPANT_PRIMARY_TENANT", 409),
+        ("LAST_SIGNER", "OCCUPANT_LAST_SIGNER", 409),
+        ("SIGNERS_AGREE", "OCCUPANT_SIGNERS_MUST_AGREE", 409),
+        ("DATE", "OCCUPANT_MOVE_OUT_DATE", 422),
+        ("NOT_LIVING_THERE", "OCCUPANT_NOT_LIVING_THERE", 409),
+    ):
+
+        class RefusingFlow(InMemoryLeaseFlow):
+            def move_out_occupant(
+                self,
+                property_id: UUID,
+                command: OccupantMoveOutCommand,
+                *,
+                actor: AuthenticatedActor,
+                refusal: str = reason,
+            ) -> LeaseResource:
+                raise OccupantMoveOutRefusedError(refusal)
+
+        refused = client(
+            RefusingFlow({signed.lease_id: signed}),
+            actor(property_id, "leases.read", "reservations.complete"),
+        ).post(path, headers=headers(version=4), json=body)
+        assert refused.status_code == status_code, refused.text
+        assert refused.json()["error"]["code"] == code
+        assert refused.json()["error"]["rule_ids"] == ["DL-111"]

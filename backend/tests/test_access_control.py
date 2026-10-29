@@ -94,6 +94,7 @@ NON_CAPABILITY_LABELS = frozenset(
         "unit.created",
         "unit.updated",
         "unit.status_changed",
+        "unit.rent_terms_changed",
         "unpaid_initial.moved_in_credit",
         "unpaid_initial.never_moved_in",
         "utility.baseline.record",
@@ -134,14 +135,14 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     assert NON_CAPABILITY_LABELS <= found
     # The 68 capabilities the application checks today are all in the catalog (login sub-slice
     # L5: `service_rates.manage` and `utility_rates.manage` no longer open a route), with the
-    # three V1-057 report and export rights.
+    # three V1-057 report and export rights, and V1-061 `rent.below_default`.
     assert len(found - NON_CAPABILITY_LABELS) == 71
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
-    assert len(CAPABILITY_CATALOG) == 78
+    assert len(CAPABILITY_CATALOG) == 79
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -177,7 +178,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 75
+    assert len(BUNDLE_CAPABILITIES) == 76
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -326,6 +327,8 @@ STAFF_NOT_NAMED = frozenset(
         "refunds.corrections.reverse",
         "late_payment.charge_correction",
         "late_payment.final_decision",
+        # V1-061 (owner 2026-10-29, DL-110): a Rent below the Unit's default needs a Manager.
+        "rent.below_default",
     }
 )
 # Replaced by `settings.manage` in sub-slice L5 (Q-2026-10-21-151 (a)); not in the Staff bundle.

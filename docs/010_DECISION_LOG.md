@@ -2325,3 +2325,27 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Owner answer (2026-10-29, decision card "Should a draft be signed after its Reservation ended?"):** "Keep refusing". A draft Lease whose Reservation was cancelled or expired, or whose Unit another Reservation holds, is not signed (`SIGNING_RESERVATION_ENDED`); staff make a new draft, and the ended Reservation keeps its own Security Deposit (DL-009). This closes the open owner question above; nothing else changes.
 - **Links:** BR-DEP-002, BR-DEP-004, BR-RENT-005, API-038, UI-032, UI-040, UI-089, DL-004, DL-009, DL-064, DL-099, DL-100, DL-101, DL-108.
 - **Decision date:** 2026-10-28.
+
+## DL-110 — V1-061: a Unit's default Rent and required Services, Utility prices on the Unit pages, and no signing without money
+
+- **Type:** `BUSINESS RULE DECISION`
+- **Status:** `APPROVED; BEING BUILT ON THE V1-061 BRANCH`
+- **Source:** the owner's bug list of 2026-10-29 04:10 ("unit details has no default unit price, default service that unit is required. And utility price information should appear on Units page or Unit detail page too.") and the V1-061 plan the owner chose on 2026-10-29 04:02 ("Bugs first, then V1.1"), which lists the old Sign route that signed with no money.
+- **Owner answers (2026-10-29 04:17, decision cards, both the recommendation):**
+  - "How should the Unit's default Rent work?" -> "Lower Rent needs a Manager". A Unit has a default monthly Rent (integer cents, or none). A new Reservation or Lease draft for the Unit starts with it. Staff may agree a higher Rent. A Rent below it needs a Manager or the Owner (the new right `rent.below_default`, in the default Owner and Manager bundles, never in Staff) and the command's reason. A Lease draft from a Booking may keep the Booking's agreed Rent, which was agreed when the Booking was made.
+  - "How should a Unit's required Services work?" -> "Ticked and locked". A Unit lists the Services every new Lease draft for it must hold. The screen ticks them and staff cannot untick them; the database refuses a new draft without one (`LEASE_REQUIRED_SERVICE_MISSING`). Leases that already exist do not change.
+- **Decision (built, migration `20270401_251`):** `app.units.default_monthly_rent_usd_cents`, the table `app.unit_required_services`, `app.unit_rent_terms(unit)` and `app.set_unit_rent_terms(...)` (at the Unit version; a Service must be of the Unit's Property; at most 20). A Manager or the Owner sets both with `PUT /units/{unit_id}/rent-terms`; each change is a `unit.rent_terms_changed` History event. A Rent below the default answers `RENT_BELOW_UNIT_DEFAULT` (403) on Make Reservation, on a new Lease draft, on a draft Rent change and on a renewal.
+- **Also in V1-061 (no rule change):** the Units list shows today's electricity and water prices, and the Unit page shows each Meter, its price in force and the next price (read with `utility.read`). The plain `POST /leases/{lease_id}/sign`, which signed a Lease with no money, is removed; Sign Lease with payment (DL-108) is the only way to sign.
+- **Not built yet (follow-ups):** a renewal draft made without terms does not take the Unit's required Services.
+- **Links:** BR-UNIT-015, BR-RES-003, BR-UTIL-003, API-038, UI-026, DL-075, DL-098, DL-100, DL-108.
+- **Decision date:** 2026-10-29.
+
+## DL-111 — V1-061: move out one occupant while the Lease runs
+
+- **Type:** `BUSINESS RULE DECISION`
+- **Status:** `APPROVED; BEING BUILT ON THE V1-061 BRANCH`
+- **Source:** the owner's bug list of 2026-10-29 04:10 ("Lease details, Occupants: add move-out button for individual tenant. but Primary Tenant is not allowed to move-out.") and 04:22 ("If more than one signer, before move-out, other signer must acknowledge and agree. If one signer or only signer left, do not allow to move-out until termination processing complete.").
+- **Decision:** a Move out button for each person on the Lease page (BR-OCC-010). The Primary Tenant never moves out alone. A person who signs nothing moves out on their own day. A Joint Signer moves out only when every other Signer of the Lease agrees; the Signers who agreed are kept with the move-out. The only Signer still living there is refused until the Lease's termination is complete. The day is from their move-in day to today and never after the End Date. Claude's reading, told to the owner on 2026-10-29 and not changed by them: a Joint Signer who moves out stays a Signer of the Lease and keeps its responsibility until it ends (the Signers of a signed Lease never change); a Signer who should stop owing needs a new Lease.
+- **Built (migration `20270402_252`):** the append-only table `app.lease_occupant_move_outs` and `app.move_out_lease_occupant` (the move-in right `reservations.complete`, as Add occupant). `POST /api/v1/leases/{lease_id}/occupancies/{occupancy_id}/move-out` answers `OCCUPANT_PRIMARY_TENANT`, `OCCUPANT_LAST_SIGNER`, `OCCUPANT_SIGNERS_MUST_AGREE`, `OCCUPANT_MOVE_OUT_DATE` or `OCCUPANT_NOT_LIVING_THERE`. The Lease History shows each move-out.
+- **Links:** BR-OCC-005, BR-OCC-006, BR-OCC-009, BR-OCC-010, BR-LEASE-006, API-038, DL-102.
+- **Decision date:** 2026-10-29.

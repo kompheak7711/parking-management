@@ -37,6 +37,7 @@ function api(overrides: Partial<UnitApi> = {}): UnitApi {
       { item_group: "FURNITURE", item_name: "Bed" },
       { item_group: "KITCHEN", item_name: "Kettle" },
     ]),
+    setRentTerms: vi.fn(),
     ...overrides,
   };
 }
