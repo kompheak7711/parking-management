@@ -91,18 +91,13 @@ def test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing(
         "SELECT id, code, version FROM app.unit_setup_items WHERE property_id = %s ORDER BY code",
         (property_id,),
     ).fetchall()
-    assert len(before) == 5
 
     connection.execute("SELECT app.seed_unit_setup_items(%s, %s)", (property_id, actor_id))
 
-    rows = connection.execute(TYPES_OF, (property_id,)).fetchall()
-    assert [row[1] for row in rows] == [
-        "STUDIO",
-        "COVERED",
-        "UNCOVERED",
-        "MOTORBIKE",
-        "TUK_TUK_FOOD_CART",
-    ]
+    # Other suites may have committed their own items to the one Property, so only what this
+    # test can see is compared: the five codes are there, and no item changed or was added.
+    codes = {row[1] for row in connection.execute(TYPES_OF, (property_id,)).fetchall()}
+    assert {"STUDIO", "COVERED", "UNCOVERED", "MOTORBIKE", "TUK_TUK_FOOD_CART"} <= codes
     assert (
         connection.execute(
             "SELECT id, code, version FROM app.unit_setup_items"
