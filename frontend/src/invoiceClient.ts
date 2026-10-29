@@ -184,6 +184,14 @@ export interface ItemsInvoiceInput {
   evidence_reference: string;
   items: InvoiceItemInput[];
 }
+/** DL-115 (I): a Services Invoice; each price comes from Settings › Regular services. */
+export interface ServicesInvoiceInput {
+  customer_id: string;
+  lease_id: string | null;
+  items: { charge_id: string; regular_service_id: string; quantity: number }[];
+}
+/** The evidence the server writes on every Services Invoice charge (migration 20270407_257). */
+export const REGULAR_SERVICES_EVIDENCE = "Settings > Regular services price";
 /** The Property setting for the Due Date of one-time charges, with its new version. */
 export interface DueDaysSetting {
   property_id: string;
@@ -228,6 +236,12 @@ export interface InvoiceApi {
   createWithItems: (
     propertyId: string,
     input: ItemsInvoiceInput,
+    key: string,
+  ) => Promise<InvoiceResource>;
+  /** DL-115 (I): a Draft of Regular services at their Settings price, How many each. */
+  createWithServices: (
+    propertyId: string,
+    input: ServicesInvoiceInput,
     key: string,
   ) => Promise<InvoiceResource>;
   /** DL-103: Edit items of a Draft made from typed items, with the reason for the change. */
@@ -932,6 +946,12 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         "/api/v1/properties/" + encoded(id) + "/invoices/drafts",
         resource(invoice),
         { key, body: itemsBody(input) },
+      ),
+    createWithServices: (id, input, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/invoices/services-drafts",
+        resource(invoice),
+        { key, body: { ...input } },
       ),
     replaceItems: (id, input, version, key) =>
       request("/api/v1/invoices/" + encoded(id) + "/items", resource(invoice), {

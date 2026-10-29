@@ -1099,6 +1099,9 @@ const LISTS = {
     VIEW: [],
     KITCHEN: [],
     ROOM_FEATURE: [],
+    FEATURE_TYPE: [],
+    UNIT_FEATURE: [],
+    ITEM_TYPE: [],
   },
   can_manage: false,
 };

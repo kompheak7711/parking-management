@@ -6,7 +6,10 @@ export type UnitSetupListKind =
   | "UNIT_TYPE"
   | "VIEW"
   | "KITCHEN"
-  | "ROOM_FEATURE";
+  | "ROOM_FEATURE"
+  | "FEATURE_TYPE"
+  | "UNIT_FEATURE"
+  | "ITEM_TYPE";
 
 export const unitSetupListKinds: UnitSetupListKind[] = [
   "FLOOR",
@@ -14,6 +17,10 @@ export const unitSetupListKinds: UnitSetupListKind[] = [
   "VIEW",
   "KITCHEN",
   "ROOM_FEATURE",
+  // V1.1 (DL-115 (I)): Unit features with their Feature types, and the inventory Item types.
+  "FEATURE_TYPE",
+  "UNIT_FEATURE",
+  "ITEM_TYPE",
 ];
 
 export interface UnitSetupItem {
@@ -26,6 +33,14 @@ export interface UnitSetupItem {
   removed: boolean;
   in_use: boolean;
   version: number;
+  /** V1.1 (DL-115 (I)): the Feature type of a Unit feature; null for every other item. */
+  feature_type_item_id: string | null;
+}
+
+/** V1.1 (DL-115 (I)): how many of one Unit feature a Unit has (1 to 9). */
+export interface UnitFeatureCount {
+  item_id: string;
+  count: number;
 }
 
 export interface UnitSetupLists {
@@ -44,24 +59,14 @@ export interface UnitDetails {
   room_feature_ids: string[];
 }
 
-// DL-078 answer 2: the items in a Unit, each with a quantity, in four groups. Every save is a new
-// numbered record kept in History; record number 0 means nothing was saved yet.
-export type UnitInventoryGroup =
-  | "FURNITURE"
-  | "APPLIANCES"
-  | "KITCHEN"
-  | "BATHROOM";
-
-export const unitInventoryGroups: UnitInventoryGroup[] = [
-  "FURNITURE",
-  "APPLIANCES",
-  "KITCHEN",
-  "BATHROOM",
-];
-
+// DL-078 answer 2: the items in a Unit, each with a quantity. Every save is a new numbered record
+// kept in History; record number 0 means nothing was saved yet. V1.1 (DL-115 (I)): each line has
+// an Item type and an optional place ("Where"): one of the Unit's features and which one.
 export interface UnitInventoryLine {
-  item_group: UnitInventoryGroup;
+  item_type_item_id: string;
   item_name: string;
+  where_item_id: string | null;
+  where_number: number | null;
   quantity: number;
 }
 
@@ -71,12 +76,13 @@ export interface UnitInventory {
   recorded_at: string | null;
   recorded_by: string | null;
   lines: UnitInventoryLine[];
-  counts: Record<UnitInventoryGroup, number>;
+  /** How many items of each Item type (by its item id). */
+  counts: Record<string, number>;
   can_manage: boolean;
 }
 
 export interface UnitInventoryItemName {
-  item_group: UnitInventoryGroup;
+  item_type_item_id: string;
   item_name: string;
 }
 
@@ -121,6 +127,8 @@ export interface UnitResource extends UnitDetails {
   default_monthly_rent_usd_cents?: number | null;
   /** V1-061 (DL-110): the Services every new Lease draft of the Unit holds. */
   required_service_ids?: string[];
+  /** V1.1 (DL-115 (I)): the Unit's features and how many of each. */
+  features?: UnitFeatureCount[];
 }
 
 export interface UnitRentTermsSource {
@@ -182,11 +190,12 @@ export interface UnitApi {
       name_en: string;
       name_km?: string | null;
       sort_order?: number;
+      feature_type_item_id?: string | null;
     },
   ) => Promise<UnitSetupItem>;
   updateSetupItem: (
     item: UnitSetupItem,
-    source: Partial<Pick<UnitSetupItem, "name_en" | "name_km" | "sort_order">>,
+    source: SetupItemChange,
   ) => Promise<UnitSetupItem>;
   removeSetupItem: (item: UnitSetupItem) => Promise<UnitSetupItem>;
   inventory: (unitId: string) => Promise<UnitInventory>;
@@ -200,7 +209,19 @@ export interface UnitApi {
     current: UnitResource,
     source: UnitRentTermsSource,
   ) => Promise<UnitResource>;
+  /** V1.1 (DL-115 (I)): a Manager or the Owner sets the Unit's features. */
+  setFeatures: (
+    current: UnitResource,
+    features: UnitFeatureCount[],
+  ) => Promise<UnitResource>;
 }
+
+export type SetupItemChange = Partial<
+  Pick<
+    UnitSetupItem,
+    "name_en" | "name_km" | "sort_order" | "feature_type_item_id"
+  >
+>;
 
 export class UnitUnavailableError extends Error {
   constructor() {
@@ -310,7 +331,8 @@ function setupItem(value: unknown): UnitSetupItem {
     typeof value.sort_order !== "number" ||
     typeof value.removed !== "boolean" ||
     typeof value.in_use !== "boolean" ||
-    typeof value.version !== "number"
+    typeof value.version !== "number" ||
+    !nullableString(value.feature_type_item_id)
   ) {
     throw new UnitRequestError();
   }
@@ -324,7 +346,24 @@ function setupItem(value: unknown): UnitSetupItem {
     removed: value.removed,
     in_use: value.in_use,
     version: value.version,
+    feature_type_item_id: value.feature_type_item_id ?? null,
   };
+}
+
+function featureCounts(value: unknown): UnitFeatureCount[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new UnitRequestError();
+  return value.map((entry): UnitFeatureCount => {
+    if (
+      !isObject(entry) ||
+      typeof entry.item_id !== "string" ||
+      typeof entry.count !== "number" ||
+      !Number.isInteger(entry.count)
+    ) {
+      throw new UnitRequestError();
+    }
+    return { item_id: entry.item_id, count: entry.count };
+  });
 }
 
 function unit(value: unknown): UnitResource {
@@ -388,6 +427,7 @@ function unit(value: unknown): UnitResource {
     default_monthly_rent_usd_cents:
       value.default_monthly_rent_usd_cents ?? null,
     required_service_ids: stringArray(value.required_service_ids ?? []),
+    features: featureCounts(value.features),
   };
 }
 
@@ -545,6 +585,7 @@ async function createSetupItem(
     name_en: string;
     name_km?: string | null;
     sort_order?: number;
+    feature_type_item_id?: string | null;
   },
 ): Promise<UnitSetupItem> {
   return setupItem(
@@ -561,7 +602,7 @@ async function createSetupItem(
 
 async function updateSetupItem(
   current: UnitSetupItem,
-  source: Partial<Pick<UnitSetupItem, "name_en" | "name_km" | "sort_order">>,
+  source: SetupItemChange,
 ): Promise<UnitSetupItem> {
   return setupItem(
     await request(`/unit-setup/items/${encodeURIComponent(current.item_id)}`, {
@@ -581,28 +622,23 @@ async function removeSetupItem(current: UnitSetupItem): Promise<UnitSetupItem> {
   );
 }
 
-function inventoryGroup(value: unknown): UnitInventoryGroup {
-  if (
-    typeof value !== "string" ||
-    !unitInventoryGroups.includes(value as UnitInventoryGroup)
-  ) {
-    throw new UnitRequestError();
-  }
-  return value as UnitInventoryGroup;
-}
-
 function inventoryLine(value: unknown): UnitInventoryLine {
   if (
     !isObject(value) ||
+    typeof value.item_type_item_id !== "string" ||
     typeof value.item_name !== "string" ||
+    !nullableString(value.where_item_id) ||
+    !nullableNumber(value.where_number) ||
     typeof value.quantity !== "number" ||
     !Number.isInteger(value.quantity)
   ) {
     throw new UnitRequestError();
   }
   return {
-    item_group: inventoryGroup(value.item_group),
+    item_type_item_id: value.item_type_item_id,
     item_name: value.item_name,
+    where_item_id: value.where_item_id ?? null,
+    where_number: value.where_number ?? null,
     quantity: value.quantity,
   };
 }
@@ -619,14 +655,11 @@ function inventoryOf(data: Record<string, unknown>): UnitInventory {
   ) {
     throw new UnitRequestError();
   }
-  const source = data.counts;
-  const counts = Object.fromEntries(
-    unitInventoryGroups.map((group) => {
-      const count = source[group];
-      if (typeof count !== "number") throw new UnitRequestError();
-      return [group, count];
-    }),
-  ) as Record<UnitInventoryGroup, number>;
+  const counts: Record<string, number> = {};
+  for (const [kind, count] of Object.entries(data.counts)) {
+    if (typeof count !== "number") throw new UnitRequestError();
+    counts[kind] = count;
+  }
   return {
     unit_id: data.unit_id,
     record_number: data.record_number,
@@ -672,6 +705,19 @@ async function setRentTerms(
   );
 }
 
+async function setFeatures(
+  current: UnitResource,
+  features: UnitFeatureCount[],
+): Promise<UnitResource> {
+  return unit(
+    await request(`/units/${encodeURIComponent(current.unit_id)}/features`, {
+      method: "PUT",
+      headers: mutationHeaders(current.version),
+      body: JSON.stringify({ features }),
+    }),
+  );
+}
+
 async function inventoryItems(
   propertyId: string,
 ): Promise<UnitInventoryItemName[]> {
@@ -681,11 +727,15 @@ async function inventoryItems(
   );
   if (!Array.isArray(data.items)) throw new UnitRequestError();
   return data.items.map((value): UnitInventoryItemName => {
-    if (!isObject(value) || typeof value.item_name !== "string") {
+    if (
+      !isObject(value) ||
+      typeof value.item_name !== "string" ||
+      typeof value.item_type_item_id !== "string"
+    ) {
       throw new UnitRequestError();
     }
     return {
-      item_group: inventoryGroup(value.item_group),
+      item_type_item_id: value.item_type_item_id,
       item_name: value.item_name,
     };
   });
@@ -705,4 +755,5 @@ export const unitApi: UnitApi = {
   saveInventory,
   inventoryItems,
   setRentTerms,
+  setFeatures,
 };

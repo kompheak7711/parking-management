@@ -46,6 +46,7 @@ function item(list_kind: string, code: string, item_id: string) {
     removed: false,
     in_use: false,
     version: 1,
+    feature_type_item_id: null,
   };
 }
 
@@ -72,6 +73,9 @@ describe("Parking API client", () => {
             VIEW: [],
             KITCHEN: [],
             ROOM_FEATURE: [item("ROOM_FEATURE", "BALCONY", "feature-1")],
+            FEATURE_TYPE: [],
+            UNIT_FEATURE: [],
+            ITEM_TYPE: [],
           },
           can_manage: false,
         }),
@@ -94,6 +98,9 @@ describe("Parking API client", () => {
             VIEW: [],
             KITCHEN: [],
             ROOM_FEATURE: [],
+            FEATURE_TYPE: [],
+            UNIT_FEATURE: [],
+            ITEM_TYPE: [],
           },
           can_manage: false,
         }),
@@ -139,8 +146,16 @@ describe("Parking API client", () => {
       record_number: 2,
       recorded_at: "2026-10-24T05:30:00+00:00",
       recorded_by: "actor-1",
-      lines: [{ item_group: "FURNITURE", item_name: "Bed", quantity: 1 }],
-      counts: { FURNITURE: 1, APPLIANCES: 0, KITCHEN: 0, BATHROOM: 0 },
+      lines: [
+        {
+          item_type_item_id: "type-1",
+          item_name: "Bed",
+          where_item_id: null,
+          where_number: null,
+          quantity: 1,
+        },
+      ],
+      counts: { "type-1": 1 },
       can_manage: true,
     };
     const fetchMock = vi
@@ -149,7 +164,7 @@ describe("Parking API client", () => {
       .mockResolvedValueOnce(respond(200, { ...shown, record_number: 3 }))
       .mockResolvedValueOnce(
         respond(200, {
-          items: [{ item_group: "GARDEN", item_name: "Hose" }],
+          items: [{ item_name: "Hose" }],
         }),
       );
     vi.stubGlobal("fetch", fetchMock);
@@ -158,7 +173,7 @@ describe("Parking API client", () => {
     const saved = await unitApi.saveInventory(current, current.lines);
 
     expect(current.lines).toEqual(shown.lines);
-    expect(current.counts.FURNITURE).toBe(1);
+    expect(current.counts["type-1"]).toBe(1);
     expect(saved.record_number).toBe(3);
     const [path, init] = fetchMock.mock.calls[1] ?? [];
     expect(path).toBe("/units/unit-1/inventory");

@@ -12,6 +12,10 @@ import type { CustomerApi } from "../customerClient";
 import type { InvoiceApi } from "../invoiceClient";
 import type { LeaseApi } from "../leaseClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
+import {
+  type RegularServicesApi,
+  regularServicesApi,
+} from "../settings/serviceSettingsClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
@@ -33,6 +37,7 @@ export interface InvoicesPageProps {
     | "get"
     | "issue"
     | "createWithItems"
+    | "createWithServices"
     | "replaceItems"
     | "adjust"
     | "void"
@@ -42,6 +47,8 @@ export interface InvoicesPageProps {
   /** The late-payment card on the Invoice page (R5d). */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   capabilities: ReadonlySet<string> | null;
+  /** V1.1: the Regular services of Create Invoice › Services; the real server when not given. */
+  regularApi?: Pick<RegularServicesApi, "read">;
   /** Today in Phnom Penh; tests pass a fixed day. */
   today?: string;
 }
@@ -55,6 +62,7 @@ export function InvoicesPage({
   customerApi,
   lateApi,
   capabilities,
+  regularApi = regularServicesApi,
   today: fixedToday,
 }: InvoicesPageProps) {
   const detail = useHashDetail("invoices");
@@ -148,6 +156,7 @@ export function InvoicesPage({
         language={language}
         onSaved={load}
         propertyId={propertyId}
+        servicesApi={regularApi}
       />
     );
   }

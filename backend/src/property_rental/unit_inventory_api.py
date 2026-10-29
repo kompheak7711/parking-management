@@ -1,9 +1,9 @@
 """Unit inventory with dated history (V1-058 R2b; DL-078 answer 2).
 
-A Unit's inventory is the list of items in it, each with a quantity, grouped as Furniture,
-Appliances, Kitchen and Bathroom. Every save is a new numbered record kept for good; the latest is
-the current inventory, and each save is written to the Unit's History. The inventory charges
-nothing by itself.
+A Unit's inventory is the list of items in it, each with a quantity, an Item type and (V1.1,
+DL-115 (I)) an optional place: one of the Unit's own features. Every save is a new numbered
+record kept for good; the latest is the current inventory, and each save is written to the
+Unit's History. The inventory charges nothing by itself.
 """
 
 from __future__ import annotations
@@ -11,13 +11,20 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Final, Literal, Protocol
+from typing import Annotated, Final, Protocol
 from uuid import UUID, uuid4
 
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import ActorResolver
@@ -34,19 +41,14 @@ from property_rental.unit_api import (
     _require_reader,
 )
 
-UnitInventoryGroup = Literal["FURNITURE", "APPLIANCES", "KITCHEN", "BATHROOM"]
-UNIT_INVENTORY_GROUPS: Final[tuple[UnitInventoryGroup, ...]] = (
-    "FURNITURE",
-    "APPLIANCES",
-    "KITCHEN",
-    "BATHROOM",
-)
 MAX_INVENTORY_LINES: Final = 200
 MAX_ITEM_QUANTITY: Final = 999
+MAX_PLACE_NUMBER: Final = 9
 
-# The items Edit inventory always offers, besides every item already used at the Property
-# (decided by Claude under the owner's 2026-10-23 22:30 rule; the owner may add others).
-STARTER_ITEMS: Final[tuple[tuple[UnitInventoryGroup, str], ...]] = (
+# V1.1 (DL-115 (I)): the items Edit inventory always offers, by Item type code, besides every
+# item already used at the Property (decided by Claude under the owner's 2026-10-23 22:30 rule;
+# the owner may add others).
+STARTER_ITEMS: Final[tuple[tuple[str, str], ...]] = (
     ("FURNITURE", "Bed"),
     ("FURNITURE", "Mattress"),
     ("FURNITURE", "Wardrobe"),
@@ -58,30 +60,38 @@ STARTER_ITEMS: Final[tuple[tuple[UnitInventoryGroup, str], ...]] = (
     ("FURNITURE", "Desk"),
     ("FURNITURE", "Desk chair"),
     ("FURNITURE", "Curtains"),
-    ("APPLIANCES", "Air conditioner"),
-    ("APPLIANCES", "Refrigerator"),
-    ("APPLIANCES", "Washing machine"),
-    ("APPLIANCES", "Television"),
-    ("APPLIANCES", "Water heater"),
-    ("APPLIANCES", "Fan"),
-    ("KITCHEN", "Cooker"),
-    ("KITCHEN", "Cooker hood"),
-    ("KITCHEN", "Microwave"),
-    ("KITCHEN", "Kettle"),
-    ("KITCHEN", "Kitchen sink"),
-    ("BATHROOM", "Shower"),
-    ("BATHROOM", "Toilet"),
-    ("BATHROOM", "Washbasin"),
-    ("BATHROOM", "Mirror"),
-    ("BATHROOM", "Towel rail"),
+    ("FURNITURE", "Mirror"),
+    ("APPLIANCE", "Air conditioner"),
+    ("APPLIANCE", "Refrigerator"),
+    ("APPLIANCE", "Washing machine"),
+    ("APPLIANCE", "Water heater"),
+    ("APPLIANCE", "Fan"),
+    ("APPLIANCE", "Cooker"),
+    ("APPLIANCE", "Cooker hood"),
+    ("APPLIANCE", "Microwave"),
+    ("APPLIANCE", "Kettle"),
+    ("ELECTRONICS", "Television"),
+    ("ELECTRONICS", "Wi-Fi router"),
+    ("LINEN", "Bed sheet"),
+    ("LINEN", "Pillow"),
+    ("LINEN", "Towel"),
+    ("KEYS", "Door key"),
+    ("KEYS", "Key card"),
+    ("KEYS", "Air conditioner remote"),
+    ("KEYS", "Television remote"),
 )
 
 
 @dataclass(frozen=True, slots=True)
 class UnitInventoryLine:
-    item_group: str
+    """One line: an Item type, a name, an optional place (a Unit feature and which one) and how
+    many."""
+
+    item_type_item_id: UUID
     item_name: str
     quantity: int
+    where_item_id: UUID | None = None
+    where_number: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,7 +108,7 @@ class UnitInventory:
 
 @dataclass(frozen=True, slots=True)
 class UnitInventoryItemName:
-    item_group: str
+    item_type_item_id: UUID
     item_name: str
 
 
@@ -145,12 +155,26 @@ def _lines(value: object) -> tuple[UnitInventoryLine, ...]:
         raise UnitResourceUnavailable("Parking inventory lines are unreadable")
     return tuple(
         UnitInventoryLine(
-            item_group=str(line["item_group"]),
+            item_type_item_id=UUID(str(line["item_type_item_id"])),
             item_name=str(line["item_name"]),
             quantity=int(line["quantity"]),
+            where_item_id=(
+                None if line.get("where_item_id") is None else UUID(str(line["where_item_id"]))
+            ),
+            where_number=(None if line.get("where_number") is None else int(line["where_number"])),
         )
         for line in value
     )
+
+
+def _line_json(line: UnitInventoryLine) -> dict[str, object]:
+    return {
+        "item_type_item_id": str(line.item_type_item_id),
+        "item_name": line.item_name,
+        "where_item_id": None if line.where_item_id is None else str(line.where_item_id),
+        "where_number": line.where_number,
+        "quantity": line.quantity,
+    }
 
 
 class PostgresUnitInventoryFlow:
@@ -167,7 +191,7 @@ class PostgresUnitInventoryFlow:
                     SELECT unit.id, unit.property_id, latest.record_number, latest.recorded_at,
                            latest.recorded_by,
                            CASE WHEN latest.id IS NULL THEN '[]'::jsonb
-                                ELSE app.unit_inventory_lines_json(latest.id) END
+                                ELSE app.unit_inventory_items_json(latest.id) END
                     FROM app.units AS unit
                     LEFT JOIN LATERAL (
                         SELECT record.id, record.record_number, record.recorded_at,
@@ -202,16 +226,13 @@ class PostgresUnitInventoryFlow:
         expected_record_number: int,
         actor_id: str,
     ) -> UnitInventory:
-        payload = [
-            {"item_group": line.item_group, "item_name": line.item_name, "quantity": line.quantity}
-            for line in lines
-        ]
+        payload = [_line_json(line) for line in lines]
         try:
             with psycopg.connect(self._database_url) as connection:
                 row = connection.execute(
                     """
                     SELECT unit_id, property_id, record_number, recorded_at, recorded_by, lines
-                    FROM app.record_unit_inventory(%s, %s, %s, %s, %s)
+                    FROM app.record_unit_inventory_items(%s, %s, %s, %s, %s)
                     """,
                     (uuid4(), unit_id, expected_record_number, Jsonb(payload), UUID(actor_id)),
                 ).fetchone()
@@ -235,35 +256,51 @@ class PostgresUnitInventoryFlow:
     def known_items(self, property_id: UUID) -> tuple[UnitInventoryItemName, ...]:
         try:
             with psycopg.connect(self._database_url) as connection:
+                types = connection.execute(
+                    "SELECT item.code, item.id FROM app.unit_setup_items AS item "
+                    "WHERE item.property_id = %s AND item.list_kind = 'ITEM_TYPE' "
+                    "AND item.removed_at IS NULL ORDER BY item.sort_order, item.name_en",
+                    (property_id,),
+                ).fetchall()
                 rows = connection.execute(
                     """
-                    SELECT line.item_group, line.item_name
-                    FROM app.unit_inventory_lines AS line
+                    SELECT line.item_type_item_id, line.item_name
+                    FROM app.unit_inventory_items AS line
                     JOIN app.unit_inventory_records AS record ON record.id = line.record_id
-                    WHERE record.property_id = %s
-                    GROUP BY line.item_group, line.item_name
+                    JOIN app.unit_setup_items AS kind ON kind.id = line.item_type_item_id
+                    WHERE record.property_id = %s AND kind.removed_at IS NULL
+                    GROUP BY line.item_type_item_id, line.item_name
                     -- The latest spelling of a name wins when capitals differ.
                     ORDER BY max(record.recorded_at) DESC, line.item_name
                     """,
                     (property_id,),
                 ).fetchall()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
-        return _merge_known(UnitInventoryItemName(str(group), str(name)) for group, name in rows)
+            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+        return _merge_known(
+            [(str(code), UUID(str(item_id))) for code, item_id in types],
+            (UnitInventoryItemName(UUID(str(kind)), str(name)) for kind, name in rows),
+        )
 
 
-def _merge_known(used: Iterable[UnitInventoryItemName]) -> tuple[UnitInventoryItemName, ...]:
-    """The starter items and the used ones, one per group and name (any capitals)."""
-    chosen: dict[tuple[str, str], UnitInventoryItemName] = {}
-    for group, name in STARTER_ITEMS:
-        chosen[(group, name.lower())] = UnitInventoryItemName(group, name)
+def _merge_known(
+    types: Sequence[tuple[str, UUID]], used: Iterable[UnitInventoryItemName]
+) -> tuple[UnitInventoryItemName, ...]:
+    """The starter items of the Item types the Property has, and the used ones, one per type
+    and name (any capitals), in the Item types' order."""
+    by_code = dict(types)
+    chosen: dict[tuple[UUID, str], UnitInventoryItemName] = {}
+    for code, name in STARTER_ITEMS:
+        if code in by_code:
+            chosen[(by_code[code], name.lower())] = UnitInventoryItemName(by_code[code], name)
+    order = {item_id: index for index, (_, item_id) in enumerate(types)}
     for item in used:
-        chosen.setdefault((item.item_group, item.item_name.lower()), item)
-    order: dict[str, int] = {group: index for index, group in enumerate(UNIT_INVENTORY_GROUPS)}
+        if item.item_type_item_id in order:
+            chosen.setdefault((item.item_type_item_id, item.item_name.lower()), item)
     return tuple(
         sorted(
             chosen.values(),
-            key=lambda item: (order.get(item.item_group, len(order)), item.item_name.lower()),
+            key=lambda item: (order[item.item_type_item_id], item.item_name.lower()),
         )
     )
 
@@ -274,9 +311,18 @@ ItemName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1,
 class UnitInventoryLineInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    item_group: UnitInventoryGroup
+    item_type_item_id: UUID
     item_name: ItemName
     quantity: int = Field(ge=1, le=MAX_ITEM_QUANTITY, strict=True)
+    # V1.1 (DL-115 (I)): "Where" is optional: one of the Unit's features and which one.
+    where_item_id: UUID | None = None
+    where_number: int | None = Field(default=None, ge=1, le=MAX_PLACE_NUMBER, strict=True)
+
+    @model_validator(mode="after")
+    def check_place(self) -> UnitInventoryLineInput:
+        if (self.where_item_id is None) != (self.where_number is None):
+            raise ValueError("a place names the Unit feature and which one")
+        return self
 
 
 class UnitInventoryInput(BaseModel):
@@ -290,26 +336,26 @@ class UnitInventoryInput(BaseModel):
     @classmethod
     def check_unique(cls, value: list[UnitInventoryLineInput]) -> list[UnitInventoryLineInput]:
         del cls
-        keys = [(line.item_group, line.item_name.lower()) for line in value]
+        keys = [
+            (line.item_type_item_id, line.item_name.lower(), line.where_item_id, line.where_number)
+            for line in value
+        ]
         if len(set(keys)) != len(keys):
-            raise ValueError("an item may appear once in its group")
+            raise ValueError("an item may appear once for its type and place")
         return value
 
 
 def _body(inventory: UnitInventory, *, can_manage: bool) -> dict[str, object]:
-    counts = {
-        group: sum(line.quantity for line in inventory.lines if line.item_group == group)
-        for group in UNIT_INVENTORY_GROUPS
-    }
+    counts: dict[str, int] = {}
+    for line in inventory.lines:
+        kind = str(line.item_type_item_id)
+        counts[kind] = counts.get(kind, 0) + line.quantity
     return {
         "unit_id": str(inventory.unit_id),
         "record_number": inventory.record_number,
         "recorded_at": None if inventory.recorded_at is None else inventory.recorded_at.isoformat(),
         "recorded_by": None if inventory.recorded_by is None else str(inventory.recorded_by),
-        "lines": [
-            {"item_group": line.item_group, "item_name": line.item_name, "quantity": line.quantity}
-            for line in inventory.lines
-        ],
+        "lines": [_line_json(line) for line in inventory.lines],
         "counts": counts,
         "can_manage": can_manage,
     }
@@ -357,7 +403,13 @@ def create_unit_inventory_router(
             inventory = flow.record(
                 unit_id,
                 lines=[
-                    UnitInventoryLine(line.item_group, line.item_name, line.quantity)
+                    UnitInventoryLine(
+                        line.item_type_item_id,
+                        line.item_name,
+                        line.quantity,
+                        line.where_item_id,
+                        line.where_number,
+                    )
                     for line in command.lines
                 ],
                 expected_record_number=expected,
@@ -387,7 +439,8 @@ def create_unit_inventory_router(
         return {
             "data": {
                 "items": [
-                    {"item_group": item.item_group, "item_name": item.item_name} for item in items
+                    {"item_type_item_id": str(item.item_type_item_id), "item_name": item.item_name}
+                    for item in items
                 ]
             },
             "meta": {"request_id": request.state.request_id},

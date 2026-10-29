@@ -250,11 +250,18 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
     )
     flow = PostgresUnitInventoryFlow(runtime_url)
     rare = f"Rocking chair {uuid4().hex[:6]}"
+    # V1.1 (DL-115 (I)): lines name an Item type of the Property.
+    types = {
+        item.code: item.item_id
+        for item in units.setup_lists(property_id, include_removed=False).items
+        if item.list_kind == "ITEM_TYPE"
+    }
+    furniture = types["FURNITURE"]
 
     empty = flow.current(unit.unit_id)
     saved = flow.record(
         unit.unit_id,
-        lines=[UnitInventoryLine("FURNITURE", rare, 1)],
+        lines=[UnitInventoryLine(furniture, rare, 1)],
         expected_record_number=0,
         actor_id=str(actor_id),
     )
@@ -263,7 +270,7 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
     with pytest.raises(UnitResourceInvalid):
         flow.record(
             unit.unit_id,
-            lines=[UnitInventoryLine("GARDEN", "Hose", 1)],
+            lines=[UnitInventoryLine(uuid4(), "Hose", 1)],
             expected_record_number=1,
             actor_id=str(actor_id),
         )
@@ -286,11 +293,11 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
 
     assert (empty.record_number, empty.lines, empty.recorded_by) == (0, (), None)
     assert (saved.record_number, saved.recorded_by) == (1, actor_id)
-    assert saved.lines == (UnitInventoryLine("FURNITURE", rare, 1),)
+    assert saved.lines == (UnitInventoryLine(furniture, rare, 1),)
     assert flow.current(unit.unit_id) == saved
     assert conflict.value.current_version == 1
-    assert UnitInventoryItemName("FURNITURE", rare) in known
-    assert UnitInventoryItemName("KITCHEN", "Kettle") in known
+    assert UnitInventoryItemName(furniture, rare) in known
+    assert UnitInventoryItemName(types["APPLIANCE"], "Kettle") in known
     assert timeline.items[0].action == "unit.inventory_updated"
     assert cleaning.status == UnitStatus.CLEANING
     assert (status_event.action, status_event.reason) == (

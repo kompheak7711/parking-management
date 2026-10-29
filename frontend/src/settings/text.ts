@@ -122,7 +122,33 @@ const TEXT = {
   cf_one_UNIT_TYPE: ["Parking Type", "ប្រភេទចំណត"],
   cf_one_VIEW: ["View", "ទេសភាព"],
   cf_one_KITCHEN: ["Kitchen", "ផ្ទះបាយ"],
-  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈចំណត"],
+  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈបន្ទប់"],
+  // V1.1 (DL-115 (I)): Unit features with their Feature types, and the inventory Item types.
+  cf_FEATURE_TYPE: ["Feature types", "ប្រភេទលក្ខណៈ"],
+  cf_UNIT_FEATURE: ["Unit features", "លក្ខណៈបន្ទប់"],
+  cf_ITEM_TYPE: ["Item types", "ប្រភេទរបស់របរ"],
+  cf_one_FEATURE_TYPE: ["Feature type", "ប្រភេទលក្ខណៈ"],
+  cf_one_UNIT_FEATURE: ["Unit feature", "លក្ខណៈបន្ទប់"],
+  cf_one_ITEM_TYPE: ["Item type", "ប្រភេទរបស់របរ"],
+  cf_ftype: ["Feature type", "ប្រភេទលក្ខណៈ"],
+  cf_e_ftype: [
+    "Pick a Feature type. Add one in the Feature types list first.",
+    "សូមជ្រើសប្រភេទលក្ខណៈ។ សូមបន្ថែមវានៅក្នុងបញ្ជីប្រភេទលក្ខណៈជាមុន។",
+  ],
+  cf_UNIT_FEATURE_note: [
+    "What the place is or has built in. It stays with the Unit and does not move. Each Unit page lists its features and how many.",
+    "អ្វីដែលកន្លែងនេះជា ឬមានភ្ជាប់ជាប់។ វានៅជាមួយបន្ទប់ ហើយមិនផ្លាស់ទី។ ទំព័របន្ទប់នីមួយៗបង្ហាញលក្ខណៈ និងចំនួន។",
+  ],
+  cf_FEATURE_TYPE_note: [
+    "Each Unit feature has one Feature type. A type a feature uses cannot be removed.",
+    "លក្ខណៈបន្ទប់នីមួយៗមានប្រភេទលក្ខណៈមួយ។ ប្រភេទដែលលក្ខណៈកំពុងប្រើ មិនអាចដកចេញបានទេ។",
+  ],
+  cf_ITEM_TYPE_note: [
+    "Item types group the things in a Unit's inventory, such as furniture or keys.",
+    "ប្រភេទរបស់របរ ដាក់ជាក្រុមនូវរបស់ក្នុងបញ្ជីសារពើភណ្ឌរបស់បន្ទប់ ដូចជាគ្រឿងសង្ហារឹម ឬសោ។",
+  ],
+  set_n_feature1: ["1 feature", "1 លក្ខណៈ"],
+  set_n_features: ["{0} features", "{0} លក្ខណៈ"],
   cf_add: ["Add", "បន្ថែម"],
   cf_edit: ["Edit", "កែ"],
   cf_floor_no: ["Floor number", "លេខជាន់"],
@@ -633,7 +659,8 @@ const TEXT = {
     "សូមបញ្ចូលចំនួនជាដុល្លារ និងសេន ឧទាហរណ៍ 353.00។",
   ],
   se_util_saved: ["New {0} Rate from {1}.", "អត្រា{0}ថ្មី ចាប់ពី {1}។"],
-  se_svc: ["Services", "សេវា"],
+  // V1.1 (DL-115 (I)): renamed from "Services", beside the new Regular services.
+  se_svc: ["Monthly Services", "សេវាប្រចាំខែ"],
   se_svc_n: [
     "Billed in advance on the Rent Invoice. Each Lease ticks its Services on the New Lease form. A new rate starts on the first day of a month and never changes Invoices already issued.",
     "គិតថ្លៃជាមុននៅលើវិក្កយបត្រថ្លៃឈ្នួល។ កិច្ចសន្យានីមួយៗធីកសេវារបស់ខ្លួននៅលើទម្រង់កិច្ចសន្យាថ្មី។ អត្រាថ្មីចាប់ផ្តើមនៅថ្ងៃទីមួយនៃខែ ហើយមិនប្តូរវិក្កយបត្រដែលចេញរួចទេ។",
@@ -724,6 +751,37 @@ const TEXT = {
     "វាត្រូវបានរក្សាទុករួចហើយ ដោយតម្លៃដែលបានផ្ញើលើកដំបូង។ វានៅក្នុងបញ្ជីឥឡូវនេះ សូមប្តូរនៅទីនោះ បើត្រូវការ។",
   ],
   // V1-058 R7b-6d: the move-out cleaning rates by Unit Type.
+  // V1.1 (DL-115 (I); mock-up round 13): Regular services with a set price.
+  rs_title: ["Regular services", "សេវាធម្មតា"],
+  rs_sub: [
+    "One-time services with a set price, billed with Create Invoice, kind Services. Monthly Services stay on the Rent Invoice.",
+    "សេវាមួយដងដែលមានតម្លៃកំណត់ គិតថ្លៃតាម បង្កើតវិក្កយបត្រ ប្រភេទ សេវា។ សេវាប្រចាំខែនៅលើវិក្កយបត្រថ្លៃឈ្នួល។",
+  ],
+  rs_price: ["Price", "តម្លៃ"],
+  rs_used: ["Used this year", "ប្រើឆ្នាំនេះ"],
+  rs_add: ["Add service", "បន្ថែមសេវា"],
+  rs_edit_t: ["Change a Regular service", "ប្តូរសេវាធម្មតា"],
+  rs_none: ["No Regular services yet.", "មិនទាន់មានសេវាធម្មតា។"],
+  rs_note: [
+    "Staff cannot type a price on the Invoice: it always comes from this list. A new price is used for new Invoices only; Invoices already made keep their price. Every change is kept in History.",
+    "បុគ្គលិកមិនអាចវាយតម្លៃលើវិក្កយបត្របានទេ៖ វាមកពីបញ្ជីនេះជានិច្ច។ តម្លៃថ្មីប្រើសម្រាប់វិក្កយបត្រថ្មីប៉ុណ្ណោះ វិក្កយបត្រដែលធ្វើរួចរក្សាតម្លៃដើម។ ការផ្លាស់ប្តូរទាំងអស់រក្សាទុកក្នុងប្រវត្តិ។",
+  ],
+  rs_block: [
+    "Used on {0} Invoice items this year. It can be removed next year.",
+    "ប្រើលើមុខវិក្កយបត្រ {0} ឆ្នាំនេះ។ អាចដកចេញនៅឆ្នាំក្រោយ។",
+  ],
+  rs_read_failed: [
+    "The Regular services could not be read just now. Check the connection and try again.",
+    "មិនអាចអានសេវាធម្មតាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  rs_name_taken: [
+    "A Regular service already has this name. Choose another name.",
+    "មានសេវាធម្មតាដែលមានឈ្មោះនេះរួចហើយ។ សូមជ្រើសឈ្មោះផ្សេង។",
+  ],
+  rs_used_refused: [
+    "This Regular service is on an Invoice this year, so it cannot be removed until next year. The list was read again.",
+    "សេវាធម្មតានេះនៅលើវិក្កយបត្រឆ្នាំនេះ ដូច្នេះមិនអាចដកចេញរហូតដល់ឆ្នាំក្រោយ។ បញ្ជីត្រូវបានអានម្តងទៀត។",
+  ],
   cl_title: ["Move-out cleaning rates", "អត្រាសម្អាតពេលចាកចេញ"],
   cl_add: ["Add a cleaning rate", "បន្ថែមអត្រាសម្អាត"],
   cl_name: ["Name", "ឈ្មោះ"],

@@ -2386,3 +2386,95 @@ a.ui-kpi.ui-home-kpi {
   min-width: 15.5em;
   justify-content: center;
 }
+
+/* V1.1 (DL-115 (I)): the Unit's features on the Unit page and in Edit features. */
+.ui-features {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 12px;
+}
+.ui-features h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.ui-feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-feature-chips li {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.ui-feature-edit {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-feature-edit li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ui-feature-name {
+  display: inline-flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-stepper output {
+  min-width: 2em;
+  text-align: center;
+}
+.ui-feature-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ui-feature-add select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* V1.1 (DL-115 (I)): Edit inventory as a table of Item type, name, Where and How many. */
+.ui-invtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ui-invtable th {
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+.ui-invtable td {
+  padding: 4px 6px;
+  border-top: 1px solid var(--border);
+}
+.ui-invtable select,
+.ui-invtable input {
+  width: 100%;
+  min-width: 0;
+}
+.ui-invtable td:nth-child(4) {
+  width: 5.5em;
+}
+.ui-invtable td:nth-child(5) {
+  width: 4em;
+  text-align: center;
+}

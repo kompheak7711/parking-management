@@ -58796,6 +58796,146 @@
       "notes": "V1-061 owner ask 29/10: the Unit page offers Add electricity meter and Add water meter for each kind with no meter, opens Add meter set to this Unit and kind, and shows nothing to a person who may not manage meters."
     },
     {
+      "test_id": "test_unit_features_are_set_by_a_manager_at_the_unit_version",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): PUT /units/{unit_id}/features needs a Manager, the browser checks and If-Match; a count outside 1 to 9, a repeated feature, more than 50 or an unknown field answers 422; a stale version answers 412."
+    },
+    {
+      "test_id": "test_a_unit_feature_names_its_feature_type",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a Unit feature is created and changed with its Feature type, and the setup lists answer Feature types, Unit features and Item types."
+    },
+    {
+      "test_id": "test_each_property_has_the_default_lists",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_features_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): every Property has the default Feature types, Unit features joined to their types, and Item types."
+    },
+    {
+      "test_id": "test_unit_features_are_set_at_the_unit_version_and_kept_in_history",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_features_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a Unit's features are set at the Unit version and move it on; a stale version, a count outside 1 to 9 or an item that is not a Unit feature changes nothing; each change is one unit.features_changed History event."
+    },
+    {
+      "test_id": "test_a_unit_feature_in_use_and_its_feature_type_cannot_be_removed",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_features_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a Unit feature a Unit uses, and the Feature type a feature names, cannot be removed."
+    },
+    {
+      "test_id": "test_a_unit_feature_needs_a_feature_type_of_its_property",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_features_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a Unit feature without a Feature type, or with an item that is not a Feature type of its Property, is refused; no other list item takes a Feature type."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_write_unit_features_directly",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_features_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): the runtime role cannot write app.unit_features; only app.set_unit_features changes them."
+    },
+    {
+      "test_id": "test_the_same_item_may_be_in_two_places",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_inventory_api.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): Edit inventory lines name an Item type and an optional place; the same item may be saved in two places and is counted under its Item type."
+    },
+    {
+      "test_id": "test_lines_name_an_item_type_and_an_optional_place",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_inventory_items_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): an inventory line names an Item type of the Unit's Property and optionally a Unit feature and which one (1 to 9); any other item is refused; an Item type in a Unit's current inventory cannot be removed."
+    },
+    {
+      "test_id": "test_a_record_saved_before_v1_1_reads_in_the_v1_1_form",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_inventory_items_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): a record saved in the V1-058 form reads as Item types and places: Appliances as Appliance, the Kitchen group as Appliance in the Unit's kitchen."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_write_inventory_items_directly",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_inventory_items_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 (DL-115 (I)): the V1.1 inventory lines are append-only and the runtime role writes them only through app.record_unit_inventory_items."
+    },
+    {
+      "test_id": "TEST-FE-1124",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 1 (DL-115 (I)): Settings Unit setup adds a Unit feature with its Feature type, changes the type on Edit, and asks no Feature type for other lists."
+    },
+    {
+      "test_id": "TEST-FE-1125",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 1 (DL-115 (I)): the Unit page lists its features with counts; Edit features changes counts 1 to 9, removes with x, adds from Settings and saves the whole list."
+    },
+    {
+      "test_id": "TEST-FE-1126",
+      "upstream_ids": [
+        "DL-115"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 1 (DL-115 (I)): Edit features shows a refused list in the form and closes and reads the Unit again after someone else's change."
+    },
+    {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
       "upstream_ids": [
         "DL-112",

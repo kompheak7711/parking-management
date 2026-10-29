@@ -15,6 +15,7 @@ import { detailFromHash, hashForPage, pageFromHash } from "../shell/navigation";
 import {
   UnitApi,
   UnitConflictError,
+  UnitInvalidError,
   UnitInventory,
   UnitResource,
   UnitSetupItem,
@@ -51,6 +52,8 @@ function setupItem(
     removed,
     in_use: false,
     version: 1,
+    feature_type_item_id:
+      list_kind === "UNIT_FEATURE" ? "FEATURE_TYPE-ROOM" : null,
   };
 }
 
@@ -69,6 +72,12 @@ const lists: UnitSetupLists = {
     VIEW: [setupItem("VIEW", "RIVER", "River view")],
     KITCHEN: [],
     ROOM_FEATURE: [setupItem("ROOM_FEATURE", "BALCONY", "Balcony")],
+    FEATURE_TYPE: [setupItem("FEATURE_TYPE", "ROOM", "Room")],
+    UNIT_FEATURE: [
+      setupItem("UNIT_FEATURE", "BEDROOM", "Bedroom"),
+      setupItem("UNIT_FEATURE", "MAIN_ROOM", "Main room"),
+    ],
+    ITEM_TYPE: [],
   },
   can_manage: false,
 };
@@ -87,6 +96,7 @@ function unit(
     status: "VACANT",
     version: 2,
     size_square_metres: "36.00",
+    features: [{ item_id: "UNIT_FEATURE-BEDROOM", count: 1 }],
     bedrooms: 1,
     bathrooms: 1,
     view_item_id: "VIEW-RIVER",
@@ -210,7 +220,7 @@ const inventory: UnitInventory = {
   recorded_at: null,
   recorded_by: null,
   lines: [],
-  counts: { FURNITURE: 0, APPLIANCES: 0, KITCHEN: 0, BATHROOM: 0 },
+  counts: {},
   can_manage: true,
 };
 
@@ -235,6 +245,7 @@ function unitApi(overrides: Partial<UnitApi> = {}): UnitApi {
     saveInventory: vi.fn(),
     inventoryItems: vi.fn().mockResolvedValue([]),
     setRentTerms: vi.fn(),
+    setFeatures: vi.fn(),
     ...overrides,
   };
 }
@@ -620,12 +631,11 @@ describe("Parking page", () => {
       .getByRole("heading", { name: "Parking details" })
       .closest("section");
     if (details === null) throw new Error("no details card");
-    // Parking Step 5: features and home fields are hidden on Parking; the code stays.
-    if (ROOM_FEATURES) expect(details).toHaveTextContent("BalconyYes");
-    if (HOME_FIELDS) {
-      expect(details).toHaveTextContent("ViewRiver view");
-      expect(details).toHaveTextContent("KitchenNot recorded");
-    }
+    expect(details).toHaveTextContent("ViewRiver view");
+    // V1.1 (DL-115 (I)): the features list replaces Bedrooms, Bathrooms, Kitchen and Balcony.
+    expect(details).toHaveTextContent("Bedroom ×1");
+    expect(details).not.toHaveTextContent("Bathrooms");
+    expect(details).not.toHaveTextContent("Kitchen");
     const leaseCard = screen
       .getByRole("heading", { name: "Current Lease" })
       .closest("section");
@@ -1095,7 +1105,98 @@ describe("Parking page", () => {
     expect(client.create).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1123 the Parking page offers Add electricity meter and Add water meter for a kind with no meter, set to this Parking (V1-061)", async () => {
+  it("TEST-FE-1125 Edit features changes how many of each, removes one with × and adds one from Settings, then saves the whole list (V1.1, DL-115 (I))", async () => {
+    window.location.hash = "#/units/unit-U103";
+    const before = unit("U103", {
+      features: [{ item_id: "UNIT_FEATURE-BEDROOM", count: 2 }],
+    });
+    const saved = {
+      ...before,
+      version: 3,
+      features: [{ item_id: "UNIT_FEATURE-MAIN_ROOM", count: 1 }],
+    };
+    const setFeatures = vi.fn().mockResolvedValue(saved);
+    const client = unitApi({
+      get: vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(setFeatures.mock.calls.length === 0 ? before : saved),
+        ),
+      setFeatures,
+    });
+    show(client);
+    const details = (
+      await screen.findByRole("heading", { name: "Unit details" })
+    ).closest("section");
+    if (details === null) throw new Error("no details card");
+    await waitFor(() => {
+      expect(details).toHaveTextContent("Bedroom ×2");
+    });
+    fireEvent.click(
+      within(details).getByRole("button", { name: "Edit features" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("BedroomRoom");
+    const count = within(dialog).getByLabelText("How many Bedroom");
+    fireEvent.click(within(dialog).getByLabelText("One more Bedroom"));
+    expect(count).toHaveTextContent("3");
+    fireEvent.click(within(dialog).getByLabelText("One fewer Bedroom"));
+    fireEvent.click(within(dialog).getByLabelText("One fewer Bedroom"));
+    expect(count).toHaveTextContent("1");
+    // A count stays from 1 to 9.
+    expect(within(dialog).getByLabelText("One fewer Bedroom")).toBeDisabled();
+    fireEvent.click(within(dialog).getByLabelText("Remove Bedroom"));
+    expect(dialog).not.toHaveTextContent("BedroomRoom");
+    fireEvent.change(within(dialog).getByLabelText("Add a feature"), {
+      target: { value: "UNIT_FEATURE-MAIN_ROOM" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add" }));
+    expect(
+      within(dialog).getByLabelText("How many Main room"),
+    ).toHaveTextContent("1");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save features" }),
+    );
+    await waitFor(() => {
+      expect(setFeatures).toHaveBeenCalledWith(before, [
+        { item_id: "UNIT_FEATURE-MAIN_ROOM", count: 1 },
+      ]);
+    });
+    expect(
+      await screen.findByText("The features of Unit U103 are saved."),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(details).toHaveTextContent("Main room ×1");
+    });
+  });
+
+  it("TEST-FE-1126 Edit features: someone else's change closes the form and reads the Unit again; a refused list stays open with the reason (V1.1)", async () => {
+    window.location.hash = "#/units/unit-U103";
+    const before = unit("U103");
+    const setFeatures = vi
+      .fn()
+      .mockRejectedValueOnce(new UnitInvalidError())
+      .mockRejectedValueOnce(new UnitConflictError());
+    const get = vi.fn().mockResolvedValue(before);
+    show(unitApi({ get, setFeatures }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit features" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save features" }),
+    );
+    expect(await within(dialog).findByRole("alert")).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save features" }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(get.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it("TEST-FE-1123 the Unit page offers Add electricity meter and Add water meter for a kind with no meter, set to this Unit (V1-061)", async () => {
     window.location.hash = "#/units/unit-U101";
     const installMeter = vi.fn().mockResolvedValue({
       id: "meter-2",
@@ -1194,18 +1295,15 @@ describe("Parking page", () => {
     fireEvent.change(within(dialog).getByLabelText("Parking Type"), {
       target: { value: "ONE_BEDROOM" },
     });
-    // Parking Step 5: the home fields and Room features are hidden on Parking; a hidden field
-    // is left out of what is sent. The code stays.
-    if (HOME_FIELDS) {
-      fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
-        target: { value: "36" },
-      });
-      fireEvent.change(within(dialog).getByLabelText("View"), {
-        target: { value: "VIEW-RIVER" },
-      });
-    }
-    if (ROOM_FEATURES) {
-      fireEvent.click(within(dialog).getByLabelText("Balcony"));
+    fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
+      target: { value: "36" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("View"), {
+      target: { value: "VIEW-RIVER" },
+    });
+    // V1.1 (DL-115 (I)): New Unit no longer asks Bedrooms, Bathrooms, Kitchen or Room features.
+    for (const gone of [/^Bedrooms/, /^Bathrooms/, /^Kitchen/, "Balcony"]) {
+      expect(within(dialog).queryByLabelText(gone)).toBeNull();
     }
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => {
@@ -1216,17 +1314,9 @@ describe("Parking page", () => {
       floor_item_id: "FLOOR-F002",
       unit_type: "ONE_BEDROOM",
       status: "VACANT",
+      size_square_metres: "36.00",
+      view_item_id: "VIEW-RIVER",
       notes: null,
-      ...(HOME_FIELDS
-        ? {
-            size_square_metres: "36.00",
-            bedrooms: null,
-            bathrooms: null,
-            view_item_id: "VIEW-RIVER",
-            kitchen_item_id: null,
-          }
-        : {}),
-      ...(ROOM_FEATURES ? { room_feature_ids: ["ROOM_FEATURE-BALCONY"] } : {}),
     });
 
     cleanup();
@@ -1249,10 +1339,18 @@ describe("Parking page", () => {
     expect(sent).toMatchObject({
       floor_item_id: "FLOOR-F002",
       unit_type: "STUDIO",
-      notes: "Corner Parking",
-      ...(ROOM_FEATURES ? { room_feature_ids: ["ROOM_FEATURE-BALCONY"] } : {}),
+      notes: "Corner Unit",
     });
-    expect(sent).not.toHaveProperty("unit_number");
+    // The old details are left as they were.
+    for (const kept of [
+      "unit_number",
+      "bedrooms",
+      "bathrooms",
+      "kitchen_item_id",
+      "room_feature_ids",
+    ]) {
+      expect(sent).not.toHaveProperty(kept);
+    }
   });
   it("TEST-FE-1139 Parking Step 5: Update Parking leaves the hidden fields out of what it sends, so stored values are kept", async ({
     skip,

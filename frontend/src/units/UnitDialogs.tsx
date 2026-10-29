@@ -30,11 +30,6 @@ function text(data: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function optionalNumber(data: FormData, name: string): number | null {
-  const value = text(data, name);
-  return value === "" ? null : Number(value);
-}
-
 function itemLabel(item: UnitSetupItem, language: Language): string {
   return language === "km" && item.name_km !== null
     ? item.name_km
@@ -46,22 +41,20 @@ function choices(items: UnitSetupItem[], current?: string | null) {
   return items.filter((item) => !item.removed || item.item_id === current);
 }
 
+// V1.1 (DL-115 (I)): Bedrooms, Bathrooms, Kitchen and the Room features are no longer asked;
+// the Unit page's features list says them. An update leaves the old values as they were.
 // Parking Step 5: a hidden field is left out of the request, not sent as empty, so the server
 // keeps whatever the row already holds (it clears a field only when it receives one).
-function detailsFrom(data: FormData): Partial<UnitDetails> {
-  const details: Partial<UnitDetails> = { notes: text(data, "notes") || null };
+function detailsFrom(
+  data: FormData,
+): Partial<Pick<UnitDetails, "size_square_metres" | "view_item_id" | "notes">> {
+  const details: Partial<Pick<UnitDetails, "size_square_metres" | "view_item_id" | "notes">> = {
+    notes: text(data, "notes") || null,
+  };
   if (HOME_FIELDS) {
     const size = text(data, "size");
     details.size_square_metres = size === "" ? null : Number(size).toFixed(2);
-    details.bedrooms = optionalNumber(data, "bedrooms");
-    details.bathrooms = optionalNumber(data, "bathrooms");
     details.view_item_id = text(data, "view") || null;
-    details.kitchen_item_id = text(data, "kitchen") || null;
-  }
-  if (ROOM_FEATURES) {
-    details.room_feature_ids = data
-      .getAll("features")
-      .filter((value): value is string => typeof value === "string");
   }
   return details;
 }
@@ -127,8 +120,8 @@ function DetailFields({
   unit: UnitResource | null;
 }) {
   const optionalSelect = (
-    kind: "VIEW" | "KITCHEN",
-    name: "view" | "kitchen",
+    kind: "VIEW",
+    name: "view",
     current: string | null,
   ) => (
     <div className="ui-field">
@@ -142,10 +135,6 @@ function DetailFields({
         ))}
       </select>
     </div>
-  );
-  const features = lists.lists.ROOM_FEATURE.filter(
-    (item) =>
-      !item.removed || unit?.room_feature_ids.includes(item.item_id) === true,
   );
   const types = lists.lists.UNIT_TYPE.filter(
     (item) => !item.removed || item.code === unit?.unit_type,
@@ -183,62 +172,7 @@ function DetailFields({
           </div>
         )}
       </div>
-      {HOME_FIELDS && (
-        <div className="ui-row2">
-          <div className="ui-field">
-            <label htmlFor="unit-bedrooms">{ut(language, "beds")}</label>
-            <input
-              defaultValue={unit?.bedrooms ?? ""}
-              id="unit-bedrooms"
-              inputMode="numeric"
-              max="20"
-              min="0"
-              name="bedrooms"
-              step="1"
-              type="number"
-            />
-          </div>
-          <div className="ui-field">
-            <label htmlFor="unit-bathrooms">{ut(language, "baths")}</label>
-            <input
-              defaultValue={unit?.bathrooms ?? ""}
-              id="unit-bathrooms"
-              inputMode="numeric"
-              max="20"
-              min="0"
-              name="bathrooms"
-              step="1"
-              type="number"
-            />
-          </div>
-        </div>
-      )}
-      {HOME_FIELDS && (
-        <div className="ui-row2">
-          {optionalSelect("VIEW", "view", unit?.view_item_id ?? null)}
-          {optionalSelect("KITCHEN", "kitchen", unit?.kitchen_item_id ?? null)}
-        </div>
-      )}
-      {ROOM_FEATURES && (
-        <fieldset className="ui-radios">
-          <legend>{ut(language, "features")}</legend>
-          {features.length === 0 ? (
-            <p className="ui-small ui-muted">{ut(language, "no_features")}</p>
-          ) : (
-            features.map((item) => (
-              <label className="ui-chk" key={item.item_id}>
-                <input
-                  defaultChecked={unit?.room_feature_ids.includes(item.item_id)}
-                  name="features"
-                  type="checkbox"
-                  value={item.item_id}
-                />
-                <span>{itemLabel(item, language)}</span>
-              </label>
-            ))
-          )}
-        </fieldset>
-      )}
+      {HOME_FIELDS && optionalSelect("VIEW", "view", unit?.view_item_id ?? null)}
       <div className="ui-field">
         <label htmlFor="unit-notes">{ut(language, "notes")}</label>
         <textarea

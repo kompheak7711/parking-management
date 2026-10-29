@@ -25,6 +25,8 @@ from property_rental.identity import (
 )
 from property_rental.settings import Settings
 from property_rental.unit import (
+    UNIT_MAX_FEATURE_COUNT,
+    UNIT_MAX_FEATURES,
     UNIT_MAX_ROOMS,
     UNIT_NOTES_MAX_LENGTH,
     UNIT_SETUP_CODE,
@@ -36,13 +38,26 @@ from property_rental.unit import (
 UNIT_MANAGE_CAPABILITY: Final = "property.manage"
 # DL-075 answer 10 and DL-074 answer 2: the Owner or a user ticked for Settings access.
 UNIT_SETUP_MANAGE_CAPABILITY: Final = SETTINGS_MANAGE_CAPABILITY
-UnitSetupListKind = Literal["FLOOR", "UNIT_TYPE", "VIEW", "KITCHEN", "ROOM_FEATURE"]
+UnitSetupListKind = Literal[
+    "FLOOR",
+    "UNIT_TYPE",
+    "VIEW",
+    "KITCHEN",
+    "ROOM_FEATURE",
+    "FEATURE_TYPE",
+    "UNIT_FEATURE",
+    "ITEM_TYPE",
+]
 UNIT_SETUP_LIST_KINDS: Final[tuple[UnitSetupListKind, ...]] = (
     "FLOOR",
     "UNIT_TYPE",
     "VIEW",
     "KITCHEN",
     "ROOM_FEATURE",
+    # V1.1 (DL-115 (I)): Unit features with their Feature types, and the inventory Item types.
+    "FEATURE_TYPE",
+    "UNIT_FEATURE",
+    "ITEM_TYPE",
 )
 MAX_ROOM_FEATURES: Final = 50
 DEFAULT_PAGE_SIZE: Final = 50
@@ -130,6 +145,8 @@ class UnitSetupItem:
     removed: bool
     version: int
     in_use: bool = False
+    # V1.1 (DL-115 (I)): the Feature type of a Unit feature; no other item has one.
+    feature_type_item_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,6 +221,15 @@ class UnitResourceFlow(Protocol):
         reason: str,
     ) -> Unit: ...
 
+    def set_features(
+        self,
+        unit_id: UUID,
+        *,
+        features: tuple[tuple[UUID, int], ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit: ...
+
     def timeline(
         self,
         unit_id: UUID,
@@ -223,6 +249,7 @@ class UnitResourceFlow(Protocol):
         name_km: str | None,
         sort_order: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem: ...
 
     def get_setup_item(self, item_id: UUID) -> UnitSetupItem: ...
@@ -236,6 +263,7 @@ class UnitResourceFlow(Protocol):
         sort_order: int,
         expected_version: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem: ...
 
     def remove_setup_item(
@@ -314,6 +342,18 @@ class UnavailableUnitResourceFlow:
         self._unavailable()
         raise AssertionError
 
+    def set_features(
+        self,
+        unit_id: UUID,
+        *,
+        features: tuple[tuple[UUID, int], ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del unit_id, features, expected_version, actor_id
+        self._unavailable()
+        raise AssertionError
+
     def timeline(
         self,
         unit_id: UUID,
@@ -339,8 +379,9 @@ class UnavailableUnitResourceFlow:
         name_km: str | None,
         sort_order: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
-        del property_id, list_kind, name_en, name_km, sort_order, actor_id
+        del property_id, list_kind, name_en, name_km, sort_order, actor_id, feature_type_item_id
         self._unavailable()
         raise AssertionError
 
@@ -358,8 +399,10 @@ class UnavailableUnitResourceFlow:
         sort_order: int,
         expected_version: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
         del item_id, name_en, name_km, sort_order, expected_version, actor_id
+        del feature_type_item_id
         self._unavailable()
         raise AssertionError
 
@@ -404,7 +447,8 @@ def _setup_item(row: tuple[object, ...]) -> UnitSetupItem:
         sort_order=int(str(row[6])),
         removed=row[7] is not None,
         version=int(str(row[8])),
-        in_use=bool(row[9]) if len(row) > 9 else False,
+        feature_type_item_id=None if len(row) <= 9 or row[9] is None else UUID(str(row[9])),
+        in_use=bool(row[10]) if len(row) > 10 else False,
     )
 
 
@@ -412,10 +456,18 @@ def _size_json(value: Decimal | None) -> str | None:
     return None if value is None else f"{value:.2f}"
 
 
-# V1-061 (DL-110): a Unit read with its default Rent and required Services.
+def _features_json(unit: Unit) -> list[dict[str, object]]:
+    return [{"item_id": str(item), "count": count} for item, count in unit.features]
+
+
+# V1-061 (DL-110): a Unit read with its default Rent and required Services; V1.1 (DL-115 (I)):
+# and its Unit features.
+UNIT_COLUMNS: Final = (
+    "detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids, "
+    "app.unit_feature_counts(detail.id) AS features"
+)
 UNIT_SELECT: Final = (
-    "SELECT detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids "
-    "FROM app.unit_with_details(%s) AS detail "
+    f"SELECT {UNIT_COLUMNS} FROM app.unit_with_details(%s) AS detail "
     "CROSS JOIN LATERAL app.unit_rent_terms(detail.id) AS terms"
 )
 
@@ -425,7 +477,7 @@ class PostgresUnitResourceFlow:
 
     _setup_columns: Final = (
         "item.id, item.property_id, item.list_kind, item.code, item.name_en, item.name_km, "
-        "item.sort_order, item.removed_at, item.version"
+        "item.sort_order, item.removed_at, item.version, item.feature_type_item_id"
     )
 
     def __init__(self, database_url: str) -> None:
@@ -454,8 +506,7 @@ class PostgresUnitResourceFlow:
             parameters.extend(decoded)
         parameters.append(limit + 1)
         query = (
-            "SELECT detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids "
-            "FROM app.units AS unit "
+            f"SELECT {UNIT_COLUMNS} FROM app.units AS unit "
             "CROSS JOIN LATERAL app.unit_with_details(unit.id) AS detail "
             "CROSS JOIN LATERAL app.unit_rent_terms(unit.id) AS terms WHERE "
             + " AND ".join(clauses)
@@ -505,6 +556,7 @@ class PostgresUnitResourceFlow:
             "room_feature_ids": [str(item) for item in unit.room_feature_ids],
             "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
             "required_service_ids": [str(item) for item in unit.required_service_ids],
+            "features": _features_json(unit),
         }
 
     @staticmethod
@@ -673,6 +725,63 @@ class PostgresUnitResourceFlow:
         except psycopg.Error as exc:
             raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
+    def set_features(
+        self,
+        unit_id: UUID,
+        *,
+        features: tuple[tuple[UUID, int], ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        """V1.1 (DL-115 (I)): set how many of each Unit feature the Unit has, kept in History."""
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                current_row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if current_row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                current = _unit(current_row)
+                if current.version != expected_version:
+                    raise UnitVersionConflict(current.version)
+                version = connection.execute(
+                    "SELECT app.set_unit_features(%s, %s, %s, %s)",
+                    (
+                        unit_id,
+                        expected_version,
+                        Jsonb([{"item_id": str(item), "count": count} for item, count in features]),
+                        UUID(actor_id),
+                    ),
+                ).fetchone()
+                if version is None or version[0] is None:
+                    latest = connection.execute(
+                        "SELECT version FROM app.units WHERE id = %s", (unit_id,)
+                    ).fetchone()
+                    if latest is None:
+                        raise UnitResourceNotFound("Unit was not found")
+                    raise UnitVersionConflict(int(str(latest[0])))
+                row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                updated = _unit(row)
+                self._audit(
+                    connection,
+                    unit=updated,
+                    actor_id=actor_id,
+                    action="unit.features_changed",
+                    previous_state=self._state(current),
+                )
+            return updated
+        except (UnitResourceNotFound, UnitVersionConflict):
+            raise
+        except (
+            ValueError,
+            psycopg.errors.CheckViolation,
+            psycopg.errors.InvalidParameterValue,
+            psycopg.errors.ForeignKeyViolation,
+        ) as exc:
+            raise UnitResourceInvalid("Unit features are invalid") from exc
+        except psycopg.Error as exc:
+            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+
     def patch(
         self,
         unit_id: UUID,
@@ -796,10 +905,20 @@ class PostgresUnitResourceFlow:
         name_km: str | None,
         sort_order: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
         created = self._setup_command(
-            "SELECT * FROM app.create_unit_setup_item(%s, %s, %s, %s, %s, %s, %s)",
-            (uuid4(), property_id, list_kind, name_en, name_km, sort_order, UUID(actor_id)),
+            "SELECT * FROM app.create_unit_setup_item(%s, %s, %s, %s, %s, %s, %s, %s::uuid)",
+            (
+                uuid4(),
+                property_id,
+                list_kind,
+                name_en,
+                name_km,
+                sort_order,
+                UUID(actor_id),
+                feature_type_item_id,
+            ),
         )
         if created is None:
             raise UnitResourceUnavailable("Parking setup item creation returned no result")
@@ -819,12 +938,21 @@ class PostgresUnitResourceFlow:
         sort_order: int,
         expected_version: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
         return self._versioned(
             item_id,
             self._setup_command(
-                "SELECT * FROM app.update_unit_setup_item(%s, %s, %s, %s, %s, %s)",
-                (item_id, name_en, name_km, sort_order, expected_version, UUID(actor_id)),
+                "SELECT * FROM app.update_unit_setup_item(%s, %s, %s, %s, %s, %s, %s::uuid)",
+                (
+                    item_id,
+                    name_en,
+                    name_km,
+                    sort_order,
+                    expected_version,
+                    UUID(actor_id),
+                    feature_type_item_id,
+                ),
             ),
         )
 
@@ -1037,6 +1165,23 @@ UNIT_REQUIRED_PATCH_FIELDS: Final = frozenset(
 )
 
 
+class UnitFeatureCount(BaseModel):
+    """V1.1 (DL-115 (I)): one Unit feature of a Unit and how many it has."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    item_id: UUID
+    count: int = Field(ge=1, le=UNIT_MAX_FEATURE_COUNT, strict=True)
+
+
+class UnitFeaturesSource(BaseModel):
+    """V1.1 (DL-115 (I)): the whole set of a Unit's features; a feature left out is removed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    features: list[UnitFeatureCount] = Field(max_length=UNIT_MAX_FEATURES)
+
+
 class UnitSetupItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1044,6 +1189,8 @@ class UnitSetupItemCreate(BaseModel):
     name_en: str = Field(min_length=1, max_length=100)
     name_km: str | None = Field(default=None, max_length=100)
     sort_order: int = Field(default=0, ge=0, le=10000, strict=True)
+    # V1.1 (DL-115 (I)): a Unit feature names its Feature type; no other item has one.
+    feature_type_item_id: UUID | None = None
 
     @field_validator("name_en", "name_km", mode="before")
     @classmethod
@@ -1058,6 +1205,7 @@ class UnitSetupItemPatch(BaseModel):
     name_en: str | None = Field(default=None, min_length=1, max_length=100)
     name_km: str | None = Field(default=None, max_length=100)
     sort_order: int | None = Field(default=None, ge=0, le=10000, strict=True)
+    feature_type_item_id: UUID | None = None
 
     @field_validator("name_en", "name_km", mode="before")
     @classmethod
@@ -1144,6 +1292,9 @@ def _setup_body(item: UnitSetupItem) -> dict[str, object]:
         "removed": item.removed,
         "in_use": item.in_use,
         "version": item.version,
+        "feature_type_item_id": (
+            None if item.feature_type_item_id is None else str(item.feature_type_item_id)
+        ),
     }
 
 
@@ -1175,6 +1326,7 @@ def _body(unit: Unit) -> dict[str, object]:
         "room_feature_ids": [str(item) for item in unit.room_feature_ids],
         "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
         "required_service_ids": [str(item) for item in unit.required_service_ids],
+        "features": _features_json(unit),
         "current_reservation": None,
         "current_lease": None,
         "current_occupancy": None,
@@ -1373,6 +1525,39 @@ def create_unit_router(
         response.headers["ETag"] = f'"{unit.version}"'
         return {"data": _body(unit), "meta": {"request_id": request.state.request_id}}
 
+    @router.put("/units/{unit_id}/features")
+    def put_unit_features(
+        unit_id: UUID,
+        source: UnitFeaturesSource,
+        request: Request,
+        response: Response,
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ) -> dict[str, object]:
+        """V1.1 (DL-115 (I)): a Manager or the Owner sets the Unit's features and their counts."""
+        actor = _require_actor(request, resolver)
+        current = get_unit_or_http(unit_id)
+        _require_manager(actor, current.property_id)
+        require_browser_mutation(request, settings)
+        items = [feature.item_id for feature in source.features]
+        if len(set(items)) != len(items):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+        expected = _expected_version(if_match, current.version)
+        try:
+            unit = flow.set_features(
+                unit_id,
+                features=tuple((feature.item_id, feature.count) for feature in source.features),
+                expected_version=expected,
+                actor_id=actor.actor_id,
+            )
+        except UnitResourceNotFound as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except UnitResourceInvalid as exc:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
+        except UnitResourceUnavailable as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+        response.headers["ETag"] = f'"{unit.version}"'
+        return {"data": _body(unit), "meta": {"request_id": request.state.request_id}}
+
     @router.get("/units/{unit_id}/timeline")
     def unit_timeline(
         unit_id: UUID,
@@ -1455,6 +1640,7 @@ def create_unit_router(
                 name_km=command.name_km or None,
                 sort_order=command.sort_order,
                 actor_id=actor.actor_id,
+                feature_type_item_id=command.feature_type_item_id,
             )
         except UnitResourceInvalid as exc:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
@@ -1501,6 +1687,11 @@ def create_unit_router(
                 ),
                 expected_version=expected,
                 actor_id=actor_id,
+                feature_type_item_id=(
+                    patch.feature_type_item_id
+                    if "feature_type_item_id" in given
+                    else current.feature_type_item_id
+                ),
             )
         except UnitResourceInvalid as exc:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc

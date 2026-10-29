@@ -17,6 +17,7 @@ import {
 
 import {
   InvoiceClientError,
+  REGULAR_SERVICES_EVIDENCE,
   type InvoiceApi,
   type InvoiceResource,
   type JsonValue,
@@ -27,7 +28,9 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
+import type { RegularServicesApi } from "../settings/serviceSettingsClient";
 import { type InvoicesData, centsOf } from "./invoicesData";
+import { ServicesInvoice } from "./ServicesInvoice";
 import { ivt, type InvoicesTextKey } from "./text";
 
 /** At most 20 items on one Invoice, each a whole quantity from 1 to 9999 (owner, DL-103). */
@@ -134,6 +137,15 @@ export function editableItems(invoice: InvoiceResource): Start | null {
   const lines = [...invoice.lines].sort(
     (left, right) => left.sequence - right.sequence,
   );
+  // DL-115 (I): a Services Invoice takes its prices from Settings, so its items are never typed.
+  if (
+    lines.some(
+      (line) =>
+        line.calculation_evidence.evidence_reference ===
+        REGULAR_SERVICES_EVIDENCE,
+    )
+  )
+    return null;
   const rows: Row[] = [];
   for (const line of lines) {
     const quantity = wholeOf(line.calculation_evidence.quantity);
@@ -157,7 +169,10 @@ export function editableItems(invoice: InvoiceResource): Start | null {
   };
 }
 
-type Api = Pick<InvoiceApi, "createWithItems" | "replaceItems" | "get">;
+type Api = Pick<
+  InvoiceApi,
+  "createWithItems" | "createWithServices" | "replaceItems" | "get"
+>;
 
 export function CreateInvoice({
   language,
@@ -166,6 +181,7 @@ export function CreateInvoice({
   data,
   onSaved,
   editId,
+  servicesApi,
 }: {
   language: Language;
   propertyId: string;
@@ -175,6 +191,8 @@ export function CreateInvoice({
   onSaved: () => void;
   /** Edit items of this Draft instead of making a new Invoice. */
   editId?: string;
+  /** V1.1: the Regular services the Services kind picks from. */
+  servicesApi?: Pick<RegularServicesApi, "read">;
 }) {
   if (editId === undefined)
     return (
@@ -184,6 +202,7 @@ export function CreateInvoice({
         language={language}
         onSaved={onSaved}
         propertyId={propertyId}
+        servicesApi={servicesApi}
         start={{ customer: "", rows: [blankRow()], reason: "", source: "" }}
       />
     );
@@ -310,6 +329,7 @@ function ItemsForm({
   invoice,
   changed = false,
   onChangedMeanwhile,
+  servicesApi,
 }: {
   language: Language;
   propertyId: string;
@@ -317,6 +337,7 @@ function ItemsForm({
   data: InvoicesData;
   onSaved: () => void;
   start: Start;
+  servicesApi?: Pick<RegularServicesApi, "read">;
   /** Edit items: the Draft as it was read. */
   invoice?: InvoiceResource;
   /** Edit items: the Draft changed meanwhile and was read again. */
@@ -324,7 +345,7 @@ function ItemsForm({
   onChangedMeanwhile?: () => void;
 }) {
   const editing = invoice !== undefined;
-  const [kind, setKind] = useState<"MISC" | "DAMAGE">("MISC");
+  const [kind, setKind] = useState<"MISC" | "SERVICES" | "DAMAGE">("MISC");
   const [customer, setCustomer] = useState(start.customer);
   const [rows, setRows] = useState<Row[]>(start.rows);
   const [reason, setReason] = useState(start.reason);
@@ -530,6 +551,51 @@ function ItemsForm({
       {ivt(language, "back")}
     </button>
   );
+
+  const kindPicker = (
+    <div className="ui-field">
+      <span className="lbl" id="ni-kind">
+        {ivt(language, "ni_kind")}
+      </span>
+      <div aria-labelledby="ni-kind" className="ui-seg" role="group">
+        {(
+          [
+            ["MISC", "MISCELLANEOUS_CHARGES"],
+            ...(servicesApi === undefined
+              ? []
+              : ([["SERVICES", "SERVICES"]] as const)),
+            ["DAMAGE", "DAMAGE_CHARGES"],
+          ] as const
+        ).map(([value, key]) => (
+          <button
+            aria-pressed={kind === value}
+            key={value}
+            onClick={() => {
+              setKind(value);
+            }}
+            type="button"
+          >
+            {ivt(language, key)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+  if (kind === "SERVICES" && !editing && servicesApi !== undefined) {
+    return (
+      <ServicesInvoice
+        api={api}
+        back={back}
+        customers={customers}
+        kindPicker={kindPicker}
+        language={language}
+        leaseOf={(id) => data.customerLeases.get(id) ?? null}
+        onSaved={onSaved}
+        propertyId={propertyId}
+        servicesApi={servicesApi}
+      />
+    );
+  }
 
   if (done !== null) {
     return (
@@ -814,32 +880,7 @@ function ItemsForm({
               </div>
             </div>
           )}
-          {!editing && (
-            <div className="ui-field">
-              <span className="lbl" id="ni-kind">
-                {ivt(language, "ni_kind")}
-              </span>
-              <div aria-labelledby="ni-kind" className="ui-seg" role="group">
-                {(
-                  [
-                    ["MISC", "MISCELLANEOUS_CHARGES"],
-                    ["DAMAGE", "DAMAGE_CHARGES"],
-                  ] as const
-                ).map(([value, key]) => (
-                  <button
-                    aria-pressed={kind === value}
-                    key={value}
-                    onClick={() => {
-                      setKind(value);
-                    }}
-                    type="button"
-                  >
-                    {ivt(language, key)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {!editing && kindPicker}
           {kind === "DAMAGE" ? (
             <div className="ui-notice" role="note">
               <Icon name="info" />

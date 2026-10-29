@@ -17,6 +17,8 @@ NIL_UUID = UUID(int=0)
 UNIT_SETUP_CODE: Final = re.compile(r"[A-Z0-9][A-Z0-9_]{0,39}")
 UNIT_NOTES_MAX_LENGTH: Final = 2000
 UNIT_MAX_ROOMS: Final = 20
+UNIT_MAX_FEATURE_COUNT: Final = 9
+UNIT_MAX_FEATURES: Final = 50
 UNIT_MAX_SIZE: Final = Decimal("10000")
 
 
@@ -204,6 +206,8 @@ class Unit:
     # new Lease draft of the Unit must hold.
     default_monthly_rent_usd_cents: int | None = None
     required_service_ids: tuple[UUID, ...] = ()
+    # V1.1 (DL-115 (I)): how many of each Unit feature the Unit has, as (item id, count 1 to 9).
+    features: tuple[tuple[UUID, int], ...] = ()
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -235,6 +239,10 @@ class Unit:
             raise ValueError("notes must be trimmed text of at most 2000 characters")
         if len(set(self.room_feature_ids)) != len(self.room_feature_ids):
             raise ValueError("room_feature_ids must not repeat")
+        if len({item for item, _ in self.features}) != len(self.features) or any(
+            not 1 <= count <= UNIT_MAX_FEATURE_COUNT for _, count in self.features
+        ):
+            raise ValueError("features must not repeat and each count must be from 1 to 9")
         if not isinstance(self.status, UnitStatus):
             raise ValueError("status is not supported")
         if self.version < 1:
@@ -358,11 +366,13 @@ def _optional_int(value: object) -> int | None:
 
 def unit_from_row(row: tuple[object, ...]) -> Unit:
     """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`, then
-    the Rent terms of `app.unit_rent_terms` when the query joined them (V1-061)."""
+    the Rent terms of `app.unit_rent_terms` when the query joined them (V1-061), then the Unit
+    features of `app.unit_feature_counts` (V1.1)."""
     details = row[7:15] if len(row) >= 15 else (None,) * 7 + ((),)
     features = details[7]
     rent = row[15] if len(row) >= 17 else None
     required = row[16] if len(row) >= 17 else ()
+    counts = row[17] if len(row) >= 18 else ()
     return Unit(
         unit_id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -384,6 +394,11 @@ def unit_from_row(row: tuple[object, ...]) -> Unit:
         default_monthly_rent_usd_cents=_optional_int(rent),
         required_service_ids=tuple(
             UUID(str(item)) for item in (required if isinstance(required, list | tuple) else ())
+        ),
+        features=tuple(
+            (UUID(str(entry["item_id"])), int(entry["count"]))
+            for entry in (counts if isinstance(counts, list) else ())
+            if isinstance(entry, dict)
         ),
     )
 

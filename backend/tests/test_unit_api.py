@@ -144,6 +144,22 @@ class InMemoryUnitFlow:
         self.rent_reasons.append(reason)
         return updated
 
+    def set_features(
+        self,
+        unit_id: UUID,
+        *,
+        features: tuple[tuple[UUID, int], ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del actor_id
+        current = self.get(unit_id)
+        if current.version != expected_version:
+            raise UnitVersionConflict(current.version)
+        updated = replace(current, version=current.version + 1, features=features)
+        self.units[unit_id] = updated
+        return updated
+
     def timeline(self, unit_id: UUID, *, limit: int, cursor: str | None) -> UnitTimelinePage:
         del cursor
         self.get(unit_id)
@@ -167,10 +183,20 @@ class InMemoryUnitFlow:
         name_km: str | None,
         sort_order: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
         del actor_id
         item = UnitSetupItem(
-            uuid4(), property_id, list_kind, name_en.upper(), name_en, name_km, sort_order, False, 1
+            uuid4(),
+            property_id,
+            list_kind,
+            name_en.upper(),
+            name_en,
+            name_km,
+            sort_order,
+            False,
+            1,
+            feature_type_item_id=feature_type_item_id,
         )
         self.setup_items[item.item_id] = item
         return item
@@ -190,6 +216,7 @@ class InMemoryUnitFlow:
         sort_order: int,
         expected_version: int,
         actor_id: str,
+        feature_type_item_id: UUID | None = None,
     ) -> UnitSetupItem:
         del actor_id
         current = self.get_setup_item(item_id)
@@ -197,6 +224,7 @@ class InMemoryUnitFlow:
             raise UnitVersionConflict(current.version)
         updated = replace(
             current,
+            feature_type_item_id=feature_type_item_id,
             name_en=name_en,
             name_km=name_km,
             sort_order=sort_order,
@@ -624,6 +652,9 @@ def test_unit_setup_lists_are_read_with_units_read_and_changed_only_with_setting
         "VIEW",
         "KITCHEN",
         "ROOM_FEATURE",
+        "FEATURE_TYPE",
+        "UNIT_FEATURE",
+        "ITEM_TYPE",
     }
     assert stranger.get(f"/properties/{property_id}/unit-setup").status_code == 403
     item_url = f"/unit-setup/items/{item['item_id']}"
@@ -731,3 +762,97 @@ def test_rent_terms_need_a_reason_which_is_kept_for_history() -> None:
     )
     assert saved.status_code == 200, saved.text
     assert flow.rent_reasons == ["New price list"]
+
+
+def test_unit_features_are_set_by_a_manager_at_the_unit_version() -> None:
+    """V1.1 (owner 2026-10-29, DL-115 (I)): how many of each Unit feature a Unit has."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    flow = InMemoryUnitFlow(units={unit.unit_id: unit})
+    bedroom, balcony = uuid4(), uuid4()
+    body = {
+        "features": [{"item_id": str(bedroom), "count": 2}, {"item_id": str(balcony), "count": 1}]
+    }
+    path = f"/units/{unit.unit_id}/features"
+    staff = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "units.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    assert staff.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=body).status_code == 403
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    assert client.put(path, headers={"If-Match": '"1"'}, json=body).status_code == 403
+    for wrong in (
+        {"features": [{"item_id": str(bedroom), "count": 0}]},
+        {"features": [{"item_id": str(bedroom), "count": 10}]},
+        {"features": [{"item_id": str(bedroom), "count": "2"}]},
+        {
+            "features": [
+                {"item_id": str(bedroom), "count": 1},
+                {"item_id": str(bedroom), "count": 2},
+            ]
+        },
+        {"features": [{"item_id": str(uuid4()), "count": 1}] * 51},
+        {"features": [{"item_id": "bedroom", "count": 1}]},
+        {"features": [{"item_id": str(bedroom), "count": 1, "where": "x"}]},
+    ):
+        bad = client.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=wrong)
+        assert bad.status_code == 422, wrong
+    assert client.put(path, headers={**BROWSER, "If-Match": '"0"'}, json=body).status_code == 412
+    saved = client.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=body)
+    assert saved.status_code == 200, saved.text
+    assert saved.headers["etag"] == '"2"'
+    assert saved.json()["data"]["features"] == body["features"]
+    read = client.get(f"/units/{unit.unit_id}")
+    assert read.json()["data"]["features"] == body["features"]
+    cleared = client.put(path, headers={**BROWSER, "If-Match": '"2"'}, json={"features": []})
+    assert cleared.status_code == 200 and cleared.json()["data"]["features"] == []
+
+
+def test_a_unit_feature_names_its_feature_type() -> None:
+    """V1.1 (DL-115 (I)): the Settings list of Unit features keeps each feature's type."""
+    property_id = uuid4()
+    flow = InMemoryUnitFlow()
+    owner = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "settings.manage", "units.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    items_url = f"/properties/{property_id}/unit-setup/items"
+    room = owner.post(
+        items_url, headers=BROWSER, json={"list_kind": "FEATURE_TYPE", "name_en": "Room"}
+    ).json()["data"]
+    assert room["feature_type_item_id"] is None
+    study = owner.post(
+        items_url,
+        headers=BROWSER,
+        json={
+            "list_kind": "UNIT_FEATURE",
+            "name_en": "Study",
+            "feature_type_item_id": room["item_id"],
+        },
+    )
+    assert study.status_code == 201
+    assert study.json()["data"]["feature_type_item_id"] == room["item_id"]
+    outdoor = owner.post(
+        items_url, headers=BROWSER, json={"list_kind": "FEATURE_TYPE", "name_en": "Outdoor"}
+    ).json()["data"]
+    item_url = f"/unit-setup/items/{study.json()['data']['item_id']}"
+    renamed = owner.patch(
+        item_url, headers={**BROWSER, "If-Match": '"1"'}, json={"name_en": "Study room"}
+    )
+    assert renamed.json()["data"]["feature_type_item_id"] == room["item_id"]
+    moved = owner.patch(
+        item_url,
+        headers={**BROWSER, "If-Match": '"2"'},
+        json={"feature_type_item_id": outdoor["item_id"]},
+    )
+    assert moved.status_code == 200
+    assert moved.json()["data"]["feature_type_item_id"] == outdoor["item_id"]
+    listed = owner.get(f"/properties/{property_id}/unit-setup").json()["data"]["lists"]
+    assert [entry["name_en"] for entry in listed["UNIT_FEATURE"]] == ["Study room"]
+    assert [entry["name_en"] for entry in listed["FEATURE_TYPE"]] == ["Room", "Outdoor"]

@@ -2,6 +2,8 @@
 // Views, Kitchens and Room features, each with Add, Edit (not Floors) and Remove. The lists fill
 // the choices of New Unit and Update Unit. The Unit counts come from the Units list; an item a Unit
 // uses cannot be removed. R7b-6d: a Unit Type with no move-out cleaning rate shows a chip.
+// V1.1 (DL-115 (I)): Feature types, Unit features (each with its Feature type) and Item types;
+// the old Kitchens and Room features are folded into Unit features and no longer shown.
 
 import {
   type FormEvent,
@@ -58,8 +60,15 @@ export type SetupApi = Pick<
 
 const NOTES: Partial<Record<UnitSetupListKind, SettingsTextKey>> = {
   UNIT_TYPE: "cf_type_note",
-  ROOM_FEATURE: "cf_feat_note",
+  FEATURE_TYPE: "cf_FEATURE_TYPE_note",
+  UNIT_FEATURE: "cf_UNIT_FEATURE_note",
+  ITEM_TYPE: "cf_ITEM_TYPE_note",
 };
+
+/** The lists this tab shows, in order. */
+const SHOWN = unitSetupListKinds.filter(
+  (kind) => kind !== "KITCHEN" && kind !== "ROOM_FEATURE",
+);
 
 /** How many Units use the item; null when the Units could not be read. */
 function unitCount(
@@ -79,6 +88,10 @@ function unitCount(
         return unit.kitchen_item_id === item.item_id;
       case "ROOM_FEATURE":
         return unit.room_feature_ids.includes(item.item_id);
+      case "UNIT_FEATURE":
+        return (unit.features ?? []).some(
+          (feature) => feature.item_id === item.item_id,
+        );
       default:
         return false;
     }
@@ -112,10 +125,18 @@ function ItemDialog({
     name_en: string;
     name_km: string | null;
     sort_order?: number;
+    feature_type_item_id?: string;
   }) => void;
 }) {
   const { kind, item } = editing;
   const floor = kind === "FLOOR";
+  const typed = kind === "UNIT_FEATURE";
+  const featureTypes = lists.lists.FEATURE_TYPE.filter(
+    (type) => !type.removed || type.item_id === item?.feature_type_item_id,
+  );
+  const [featureType, setFeatureType] = useState(
+    item?.feature_type_item_id ?? featureTypes[0]?.item_id ?? "",
+  );
   const [english, setEnglish] = useState(item?.name_en ?? "");
   const [khmer, setKhmer] = useState(
     item?.name_km !== null && item?.name_km !== item?.name_en
@@ -162,6 +183,18 @@ function ItemDialog({
     }
     if (taken(name)) {
       setError(sst(language, "cf_e_dup", name));
+      return;
+    }
+    if (typed) {
+      if (featureType === "") {
+        setError(sst(language, "cf_e_ftype"));
+        return;
+      }
+      onSave({
+        name_en: name,
+        name_km: khmer.trim() || null,
+        feature_type_item_id: featureType,
+      });
       return;
     }
     onSave({ name_en: name, name_km: khmer.trim() || null });
@@ -230,6 +263,28 @@ function ItemDialog({
               value={khmer}
             />
           </div>
+        </div>
+      )}
+      {typed && (
+        <div className="ui-field">
+          <label htmlFor="setup-ftype">
+            {sst(language, "cf_ftype")}
+            <span className="req">{sst(language, "required")}</span>
+          </label>
+          <select
+            id="setup-ftype"
+            onChange={(event) => {
+              setFeatureType(event.currentTarget.value);
+              setError(null);
+            }}
+            value={featureType}
+          >
+            {featureTypes.map((type) => (
+              <option key={type.item_id} value={type.item_id}>
+                {itemName(language, type)}
+              </option>
+            ))}
+          </select>
         </div>
       )}
       {error !== null && (
@@ -412,23 +467,45 @@ export function UnitSetupTab({
         </header>
         <ul className="ui-apps">
           {lists.lists[kind].map((item) => {
+            // A Feature type counts the Unit features of its type, not Units.
+            const features =
+              kind === "FEATURE_TYPE"
+                ? lists.lists.UNIT_FEATURE.filter(
+                    (feature) =>
+                      !feature.removed &&
+                      feature.feature_type_item_id === item.item_id,
+                  ).length
+                : null;
             const count = unitCount(units, item);
-            const used = item.in_use || (count ?? 0) > 0;
+            const used = item.in_use || (count ?? 0) > 0 || (features ?? 0) > 0;
             const name = itemName(language, item);
+            const type =
+              kind === "UNIT_FEATURE"
+                ? lists.lists.FEATURE_TYPE.find(
+                    (entry) => entry.item_id === item.feature_type_item_id,
+                  )
+                : undefined;
             return (
               <li key={item.item_id}>
                 <span>
                   {name}
+                  {type !== undefined && (
+                    <Chip tone="neutral">{itemName(language, type)}</Chip>
+                  )}
                   <small className="ui-num">
-                    {count === null
-                      ? used
-                        ? sst(language, "in_use")
-                        : sst(language, "set_none_units")
-                      : count === 0
-                        ? sst(language, "set_none_units")
-                        : count === 1
-                          ? sst(language, "set_n_unit1")
-                          : sst(language, "set_n_units", count)}
+                    {features !== null
+                      ? features === 1
+                        ? sst(language, "set_n_feature1")
+                        : sst(language, "set_n_features", features)
+                      : count === null
+                        ? used
+                          ? sst(language, "in_use")
+                          : sst(language, "set_none_units")
+                        : count === 0
+                          ? sst(language, "set_none_units")
+                          : count === 1
+                            ? sst(language, "set_n_unit1")
+                            : sst(language, "set_n_units", count)}
                   </small>
                   {kind === "UNIT_TYPE" && noRate?.has(item.code) === true && (
                     <Chip icon="alert" tone="warn">
@@ -497,9 +574,7 @@ export function UnitSetupTab({
           <p>{sst(language, "read_only")}</p>
         </div>
       )}
-      <div className="ui-setup">
-        {unitSetupListKinds.filter(shownOnParking).map(card)}
-      </div>
+      <div className="ui-setup">{SHOWN.filter(shownOnParking).map(card)}</div>
 
       {editing !== null && (
         <ItemDialog
@@ -522,6 +597,11 @@ export function UnitSetupTab({
                   : api.updateSetupItem(item, {
                       name_en: source.name_en,
                       name_km: source.name_km,
+                      ...(source.feature_type_item_id === undefined
+                        ? {}
+                        : {
+                            feature_type_item_id: source.feature_type_item_id,
+                          }),
                     }),
               sst(language, "cf_saved"),
             );

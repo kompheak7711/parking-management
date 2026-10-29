@@ -97,6 +97,31 @@ const TEXT = {
   hasnt: ["No", "គ្មាន"],
   // new
   not_recorded: ["Not recorded", "មិនទាន់កត់ត្រា"],
+  // V1.1 (DL-115 (I)): the Unit's features.
+  uf_title: ["Unit features", "លក្ខណៈបន្ទប់"],
+  uf_none: ["No features recorded yet.", "មិនទាន់កត់ត្រាលក្ខណៈទេ។"],
+  uf_unknown: ["Removed feature", "លក្ខណៈដែលបានដកចេញ"],
+  uf_edit: ["Edit features", "កែលក្ខណៈ"],
+  uf_save: ["Save features", "រក្សាលក្ខណៈ"],
+  uf_less: ["One fewer {0}", "{0} តិចមួយ"],
+  uf_more: ["One more {0}", "{0} ច្រើនមួយ"],
+  uf_count: ["How many {0}", "ចំនួន {0}"],
+  uf_remove: ["Remove {0}", "ដក {0} ចេញ"],
+  uf_add_label: ["Add a feature", "បន្ថែមលក្ខណៈ"],
+  uf_add_pick: ["Add a feature…", "បន្ថែមលក្ខណៈ…"],
+  uf_add_none: [
+    "Every feature in Settings is already listed",
+    "លក្ខណៈទាំងអស់ក្នុងការកំណត់ មាននៅក្នុងបញ្ជីរួចហើយ",
+  ],
+  uf_add: ["Add", "បន្ថែម"],
+  uf_note: [
+    "Each feature can be 1 to 9. A shop or office lists only what it has, for example Main room ×1. New features are added in Settings → Unit setup. Every change is kept in History.",
+    "លក្ខណៈនីមួយៗអាចមានពី ១ ដល់ ៩។ ហាង ឬការិយាល័យ បង្ហាញតែអ្វីដែលវាមាន ឧទាហរណ៍ បន្ទប់ធំ ×១។ លក្ខណៈថ្មីត្រូវបន្ថែមនៅក្នុង ការកំណត់ → ការរៀបចំបន្ទប់។ ការផ្លាស់ប្តូរនីមួយៗត្រូវបានរក្សាក្នុងប្រវត្តិ។",
+  ],
+  uf_saved: [
+    "The features of Unit {0} are saved.",
+    "លក្ខណៈរបស់បន្ទប់ {0} ត្រូវបានរក្សាទុក។",
+  ],
   notes: ["Notes", "កំណត់ចំណាំ"],
   current_lease: ["Current Lease", "កិច្ចសន្យាបច្ចុប្បន្ន"],
   primary: ["Primary Tenant", "អ្នកជួលចម្បង"],

@@ -33,6 +33,8 @@ const TEXT = {
   SERVICE_CHARGES: ["Services", "សេវា"],
   MISCELLANEOUS_CHARGES: ["Miscellaneous", "ផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
+  // V1.1 (DL-115 (I)): the Services kind of Create Invoice.
+  SERVICES: ["Services", "សេវា"],
   ic_total: ["Total Invoice amount", "ចំនួនវិក្កយបត្រសរុប"],
   ic_total_s: ["Issued Invoices", "វិក្កយបត្រដែលបានចេញ"],
   ic_unpaid: ["Total unpaid", "មិនទាន់បង់សរុប"],
@@ -228,6 +230,35 @@ const TEXT = {
     "សេចក្តីព្រាងសម្រាប់ {0} {1}៖ {2} មុខ សរុប {3}។ អ្នកគ្រប់គ្រងពិនិត្យ ហើយចេញវា។",
   ],
   ni_open: ["Open Draft", "បើកសេចក្តីព្រាង"],
+  // V1.1 (DL-115 (I); mock-up round 13): Create Invoice › Services.
+  sv_svc: ["Regular service", "សេវាធម្មតា"],
+  sv_pick: ["Pick a Regular service…", "ជ្រើសសេវាធម្មតា…"],
+  sv_item_n: ["Regular service {0}", "សេវាធម្មតាទី {0}"],
+  sv_note: [
+    "The price comes from Settings › Regular services and cannot be typed here. A Manager changes a price only in Settings.",
+    "តម្លៃមកពី ការកំណត់ › សេវាធម្មតា ហើយមិនអាចវាយនៅទីនេះ។ អ្នកគ្រប់គ្រងប្តូរតម្លៃបានតែក្នុងការកំណត់។",
+  ],
+  sv_add: ["Add a service", "បន្ថែមសេវា"],
+  sv_remove: ["Remove line {0}", "ដកបន្ទាត់ {0}"],
+  sv_none: [
+    "There are no Regular services yet. A user with Settings access adds them in Settings › Rates and services.",
+    "មិនទាន់មានសេវាធម្មតា។ អ្នកប្រើដែលមានសិទ្ធិការកំណត់ បន្ថែមវានៅ ការកំណត់ › អត្រា និងសេវា។",
+  ],
+  sv_failed: [
+    "The Regular services could not be read just now. Check the connection and try again.",
+    "មិនអាចអានសេវាធម្មតាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
+  ],
+  sv_err_svc: ["Add at least one Regular service.", "សូមបន្ថែមសេវាធម្មតាយ៉ាងហោចណាស់មួយ។"],
+  sv_err_pick: ["Line {0}: pick a Regular service.", "បន្ទាត់ {0}៖ សូមជ្រើសសេវាធម្មតា។"],
+  sv_err_qty: [
+    "Line {0}: How many must be a whole number from 1 to 9999.",
+    "បន្ទាត់ {0}៖ ចំនួនត្រូវជាលេខគត់ពី 1 ដល់ 9999។",
+  ],
+  sv_how_many: ["How many", "ចំនួន"],
+  sv_gone: [
+    "A Regular service was removed or changed in Settings meanwhile. The list was read again: check the lines and save again.",
+    "សេវាធម្មតាត្រូវបានដក ឬប្តូរក្នុងការកំណត់ក្នុងពេលនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត៖ សូមពិនិត្យបន្ទាត់ ហើយរក្សាទុកម្តងទៀត។",
+  ],
   // new (DL-103): the items table of Create Invoice and Edit items.
   ni_items: ["Items", "មុខទំនិញ និងសេវា"],
   ni_qty: ["Quantity", "ចំនួន"],
