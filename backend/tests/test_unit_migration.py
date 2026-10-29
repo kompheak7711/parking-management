@@ -566,6 +566,8 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
         "kitchen_item_id": None,
         "notes": None,
         "room_feature_ids": [],
+        "default_monthly_rent_usd_cents": None,
+        "required_service_ids": [],
     }
 
 

@@ -58,10 +58,13 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
         assert family == capability.split(".", 1)[0]
         assert description == CAPABILITY_CATALOG[capability]
         assert grant_path == capability_grant_path(capability)
-        # The V1-057 report and export rights came with migration `20270301_220`.
+        # The V1-057 report and export rights came with migration `20270301_220`, and the
+        # V1-061 lower-Rent right with migration `20270401_251`.
         expected = (
             "v1-057-reports"
             if capability in {"audit.export", "data.export", "reports.read"}
+            else "v1-061-unit-rent"
+            if capability == "rent.below_default"
             else "login-slice-capability-catalog"
         )
         assert provenance == expected and finite is True
