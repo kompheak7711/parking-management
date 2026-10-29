@@ -2404,9 +2404,14 @@ describe("explicit Payment reversal with complete related evidence", () => {
         name: "Load complete original and current context",
       }),
     );
-    const region = await screen.findByRole("region", {
-      name: "Complete Payment reversal impact",
-    });
+    // 101 records render slowly on a busy machine: this test waits longer than the usual 15
+    // seconds, still well inside the 60-second test limit (V1-061 Fix 5).
+    const slow = { timeout: 45_000 };
+    const region = await screen.findByRole(
+      "region",
+      { name: "Complete Payment reversal impact" },
+      slow,
+    );
     expect(region).toHaveTextContent("101 related dependency records loaded");
     expect(h.calls).toHaveLength(2);
     expect(within(region).getAllByRole("row")).toHaveLength(51);
@@ -2417,18 +2422,18 @@ describe("explicit Payment reversal with complete related evidence", () => {
     // otherwise reach the button before React has finished the first page change.
     await waitFor(() => {
       expect(region).toHaveTextContent("60000000-0000-4000-8000-000000000051");
-    });
+    }, slow);
     fireEvent.click(
       screen.getByRole("button", { name: "Next reversal records" }),
     );
     await waitFor(() => {
       expect(within(region).getAllByRole("row")).toHaveLength(2);
-    });
+    }, slow);
     expect(region).toHaveTextContent("60000000-0000-4000-8000-000000000101");
     fireEvent.click(
       screen.getByRole("button", { name: "Review selected financial action" }),
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await screen.findByRole("alert", {}, slow)).toHaveTextContent(
       "Resolve the active linked",
     );
     expect(h.calls).toHaveLength(4);

@@ -1722,8 +1722,11 @@ describe("V1-047 bounded correction regressions", () => {
     expect(api.issue).not.toHaveBeenCalled();
     fireEvent.click(opener);
     await confirm();
-    // Issuance removes its initiating button; restore to the result announcement.
-    expect(screen.getByRole("status")).toHaveFocus();
+    // Issuance removes its initiating button; restore to the result announcement. The focus
+    // moves after the answer renders, so a busy machine is waited for (V1-061 Fix 5).
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveFocus();
+    });
   });
   it("TEST-FE-259 associates safe field details with the originating form and exposes the support ID", async () => {
     const { api, journal } = setup();
