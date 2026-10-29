@@ -173,6 +173,8 @@ Constraints and indexes:
 
 Amended by DL-075 (owner, 2026-10-20): `unit_type` comes from the Unit Types Settings list instead of the four fixed values; Floors, Views, Kitchens and Room features are Settings lists too. An item used by a Unit cannot be removed. Not built yet (screen rebuild).
 
+Amended for Parking (owner, 2026-10-29, migration 251): `units.default_monthly_rent_usd_cents bigint NULL CHECK (> 0)`, the default monthly price in whole USD cents; set only through `app.set_unit_default_rent(id, cents, expected_version, actor)`, which bumps `version`; the API writes the History row `unit.default_rent_changed` with the reason and the old and new price. The seeded Unit Types are the four Parking Types (COVERED, UNCOVERED, MOTORBIKE, TUK_TUK_FOOD_CART); no Room feature is seeded.
+
 Amended by DL-078 (owner, 2026-10-20): new Unit columns: size in m², bedrooms, bathrooms, view, kitchen, Room features and notes (lists from DL-075), and a new append-only Unit inventory table (item, quantity, group Furniture, Appliances, Kitchen or Bathroom, dated History). `unit_number` cannot change after creation. One Unit photo is built in the later file storage step. Not built yet (screen rebuild).
 
 ## DB-CUST-001 — `customers`

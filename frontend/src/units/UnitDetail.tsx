@@ -27,7 +27,11 @@ import {
   UnitSetupLists,
   UnitTimelineEvent,
 } from "../unitClient";
-import { ChangeStatusDialog, UpdateUnitDialog } from "./UnitDialogs";
+import {
+  ChangePriceDialog,
+  ChangeStatusDialog,
+  UpdateUnitDialog,
+} from "./UnitDialogs";
 import { UnitChip, floorText } from "./UnitsList";
 import { ut } from "./text";
 import { itemName, typeName } from "./unitsData";
@@ -130,6 +134,27 @@ function historyLines(
           event.reason,
         ),
       });
+    } else if (event.action === "unit.default_rent_changed") {
+      // Parking Step 3: who, the old and the new price and the reason.
+      const priceOf = (state: unknown): string => {
+        const cents = (
+          state as { default_monthly_rent_usd_cents?: unknown } | null
+        )?.default_monthly_rent_usd_cents;
+        return typeof cents === "number"
+          ? usdFromCents(cents)
+          : ut(language, "price_unset");
+      };
+      lines.push({
+        at: event.occurred_at,
+        text: ut(
+          language,
+          "h_price",
+          priceOf(event.previous_state),
+          priceOf(event.resulting_state),
+          event.actor_name ?? event.actor_id,
+          event.reason,
+        ),
+      });
     } else {
       lines.push({ at: event.occurred_at, text: ut(language, "h_updated") });
     }
@@ -214,7 +239,9 @@ export function UnitDetail({
   const [missing, setMissing] = useState(false);
   const [events, setEvents] = useState<UnitTimelineEvent[]>([]);
   const [leases, setLeases] = useState<LeaseResource[] | null>(null);
-  const [dialog, setDialog] = useState<"update" | "status" | null>(null);
+  const [dialog, setDialog] = useState<"update" | "status" | "price" | null>(
+    null,
+  );
   const [notice, setNotice] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
@@ -537,6 +564,20 @@ export function UnitDetail({
               </button>
             </>
           )}
+          {unit.can_change_rent === true && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setWarning(null);
+                setDialog("price");
+              }}
+              type="button"
+            >
+              <Icon name="swap" />
+              {ut(language, "change_price")}
+            </button>
+          )}
         </div>
       </div>
       {warning !== null && (
@@ -567,6 +608,16 @@ export function UnitDetail({
             <div className="ui-facts">
               {fact(ut(language, "floor"), floorText(language, unit.floor))}
               {fact(ut(language, "type"), type)}
+              {fact(
+                ut(language, "price"),
+                unit.default_monthly_rent_usd_cents === null ? (
+                  ut(language, "price_unset")
+                ) : (
+                  <span className="ui-num">
+                    {usdFromCents(unit.default_monthly_rent_usd_cents)}
+                  </span>
+                ),
+              )}
               {fact(
                 ut(language, "size"),
                 unit.size_square_metres === null ? (
@@ -706,6 +757,36 @@ export function UnitDetail({
           onSaved={(saved) => {
             setDialog(null);
             setNotice(ut(language, "saved", saved.unit_number));
+            onChanged(saved);
+            load();
+          }}
+          unit={unit}
+        />
+      )}
+      {dialog === "price" && (
+        <ChangePriceDialog
+          api={unitApi}
+          language={language}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onConflict={() => {
+            setDialog(null);
+            setWarning(ut(language, "conflict"));
+            load();
+          }}
+          onSaved={(saved) => {
+            setDialog(null);
+            setNotice(
+              ut(
+                language,
+                "price_saved",
+                saved.unit_number,
+                saved.default_monthly_rent_usd_cents === null
+                  ? ut(language, "price_unset")
+                  : usdFromCents(saved.default_monthly_rent_usd_cents),
+              ),
+            );
             onChanged(saved);
             load();
           }}

@@ -68,6 +68,7 @@ function unit(
     current_occupancy: null,
     active_meter_summary: null,
     operational_alerts: [],
+    default_monthly_rent_usd_cents: null,
   };
 }
 

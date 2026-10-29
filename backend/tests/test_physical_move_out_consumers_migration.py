@@ -47,6 +47,7 @@ from test_physical_move_out_migration import (
 )
 from test_reservation_migration import create_reservation, reservation_business_date
 from test_termination_deposit_migration import terminate
+from unit_type_support import seeded_unit_type
 
 
 def without_searches(
@@ -334,8 +335,15 @@ def test_physical_completion_requires_unit_relation_and_preserved_evidence_state
             connection.execute(
                 "INSERT INTO app.units(id,property_id,unit_number,floor,unit_"
                 "type,status,created_by,updated_by) "
-                "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
-                (wrong_unit, prop, "PD-" + wrong_unit.hex[:12], human, human),
+                "VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+                (
+                    wrong_unit,
+                    prop,
+                    "PD-" + wrong_unit.hex[:12],
+                    seeded_unit_type(connection, prop),
+                    human,
+                    human,
+                ),
             )
         previous = "OCCUPIED" if mismatch == "initial_availability" else "CLEANING"
         resulting = (

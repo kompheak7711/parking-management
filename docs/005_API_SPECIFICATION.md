@@ -282,6 +282,8 @@ history.
 
 Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): the Unit list, `GET /units/{unit_id}` and the Unit timeline need `units.read` for the Unit's Property (checked before the Unit is read, then again for its Property); a caller with `units.read` for no Property gets 403 at once. `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}` keep `property.manage` and now need the configured Origin and the CSRF pair.
 
+Amended for Parking (owner, 2026-10-29, Parking Step 3): `PUT /units/{unit_id}/default-rent` with body `{"default_monthly_rent_usd_cents": <int > 0>, "reason": <1–500 chars>}` and `If-Match: "<version>"` sets the Parking's default monthly price; it needs `settings.manage` for the Parking's Property (403 otherwise), the configured Origin and the CSRF pair; 412 with `current_version` on a stale version, 422 for a price of zero or less, a non-integer, a missing or blank reason, or an unknown field. Every Unit body carries `default_monthly_rent_usd_cents` (int or null); `GET /units/{unit_id}` also carries `can_change_rent`. Timeline rows carry `actor_name` (the display name of who did it). The History row is `unit.default_rent_changed` with the reason and the old and new price.
+
 # 10. Customer Endpoints
 
 ## API-030 — Customers

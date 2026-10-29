@@ -31,8 +31,8 @@ from property_rental.settings import Settings
 PROPERTY = uuid.uuid4()
 U1, U2 = uuid.uuid4(), uuid.uuid4()
 UNITS: list[dict[str, object]] = [
-    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "STUDIO", "status": "OCCUPIED"},
-    {"id": U2, "unit_number": "U204", "floor": "2", "unit_type": "STUDIO", "status": "VACANT"},
+    {"id": U1, "unit_number": "U101", "floor": "1", "unit_type": "COVERED", "status": "OCCUPIED"},
+    {"id": U2, "unit_number": "U204", "floor": "2", "unit_type": "COVERED", "status": "VACANT"},
 ]
 
 
@@ -239,7 +239,7 @@ def test_the_lists_count_today_and_ignore_the_period_where_it_does_not_apply() -
         "not_available": 1,
         "unit_count": 2,
     }
-    assert page["rows"][0]["unit_type"] == "STUDIO"
+    assert page["rows"][0]["unit_type"] == "COVERED"
     leases: list[dict[str, object]] = [
         {
             "lease_id": uuid.uuid4(),

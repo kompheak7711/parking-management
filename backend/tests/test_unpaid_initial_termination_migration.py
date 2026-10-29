@@ -69,7 +69,8 @@ SNAPSHOT_TABLES = ("leases", "reservations", "deposits", "invoices", "units")
 # Floor text. Every other value must stay as it was.
 UNIT_SETUP_COLUMNS = (
     "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
-    "'view_item_id','kitchen_item_id','notes']"
+    "'view_item_id','kitchen_item_id','notes',"
+    "'default_monthly_rent_usd_cents']"
 )
 
 

@@ -17,6 +17,7 @@ from property_rental.unit import (
     UnitType,
     evaluate_unit_availability,
     restored_unit_status,
+    unit_from_row,
 )
 
 
@@ -39,10 +40,10 @@ class InMemoryUnitRepository:
 @pytest.mark.parametrize(
     "unit_type",
     [
-        UnitType.STUDIO,
-        UnitType.ONE_BEDROOM,
-        UnitType.TWO_BEDROOM,
-        UnitType.THREE_BEDROOM,
+        UnitType.COVERED,
+        UnitType.UNCOVERED,
+        UnitType.MOTORBIKE,
+        UnitType.TUK_TUK_FOOD_CART,
     ],
 )
 def test_unit_accepts_each_supported_type(unit_type: UnitType) -> None:
@@ -65,7 +66,7 @@ def test_unit_accepts_each_supported_status(status: UnitStatus) -> None:
         property_id=uuid4(),
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=status,
     )
 
@@ -84,6 +85,9 @@ def test_unit_accepts_each_supported_status(status: UnitStatus) -> None:
         # A Unit Type is a list code (V1-058 R2a); the database checks the list itself.
         ("unit_type", "commercial", "unit_type is not supported"),
         ("status", "AVAILABLE", "status is not supported"),
+        # Parking Step 3: the default monthly price is whole USD cents above zero, or none.
+        ("default_monthly_rent_usd_cents", 0, "default_monthly_rent_usd_cents must be above zero"),
+        ("default_monthly_rent_usd_cents", -1, "default_monthly_rent_usd_cents must be above zero"),
     ],
 )
 def test_unit_rejects_invalid_identity_or_attributes(
@@ -94,7 +98,7 @@ def test_unit_rejects_invalid_identity_or_attributes(
         "property_id": uuid4(),
         "unit_number": "101",
         "floor": "1",
-        "unit_type": UnitType.STUDIO,
+        "unit_type": UnitType.COVERED,
         "status": UnitStatus.VACANT,
     }
     values[field_name] = value
@@ -114,7 +118,7 @@ def test_service_normalizes_and_persists_unit_with_stable_identity() -> None:
         property_id=property_id,
         unit_number=" 101 ",
         floor=" 1 ",
-        unit_type=UnitType.ONE_BEDROOM,
+        unit_type=UnitType.UNCOVERED,
         status=UnitStatus.CLEANING,
     )
 
@@ -123,7 +127,7 @@ def test_service_normalizes_and_persists_unit_with_stable_identity() -> None:
         property_id=property_id,
         unit_number="101",
         floor="1",
-        unit_type=UnitType.ONE_BEDROOM,
+        unit_type=UnitType.UNCOVERED,
         status=UnitStatus.CLEANING,
     )
     assert repository.units[(property_id, "101")] is created
@@ -138,7 +142,7 @@ def test_service_rejects_unit_outside_authoritative_property_scope() -> None:
             property_id=uuid4(),
             unit_number="101",
             floor="1",
-            unit_type=UnitType.STUDIO,
+            unit_type=UnitType.COVERED,
             status=UnitStatus.VACANT,
         )
 
@@ -152,7 +156,7 @@ def test_service_rejects_duplicate_unit_number_within_property() -> None:
         property_id=property_id,
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=UnitStatus.VACANT,
     )
 
@@ -162,7 +166,7 @@ def test_service_rejects_duplicate_unit_number_within_property() -> None:
             property_id=property_id,
             unit_number=" 101 ",
             floor="2",
-            unit_type=UnitType.TWO_BEDROOM,
+            unit_type=UnitType.MOTORBIKE,
             status=UnitStatus.UNDER_MAINTENANCE,
         )
 
@@ -174,7 +178,7 @@ def availability_unit(status: UnitStatus = UnitStatus.VACANT) -> Unit:
         property_id=uuid4(),
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=status,
     )
 
@@ -387,3 +391,29 @@ def test_state_decisions_preserve_unit_identity() -> None:
     assert decision.property_id == unit.property_id
     assert decision.status is UnitStatus.VACANT
     assert unit.status is UnitStatus.OUT_OF_SERVICE
+
+
+def test_unit_default_rent_is_optional_whole_cents() -> None:
+    """Parking Step 3: a Parking starts with no price; a price is whole USD cents."""
+    unit = Unit(uuid4(), uuid4(), "101", "1", UnitType.COVERED, UnitStatus.VACANT)
+    priced = Unit(
+        uuid4(),
+        uuid4(),
+        "101",
+        "1",
+        UnitType.COVERED,
+        UnitStatus.VACANT,
+        default_monthly_rent_usd_cents=4500,
+    )
+
+    assert unit.default_monthly_rent_usd_cents is None
+    assert priced.default_monthly_rent_usd_cents == 4500
+
+
+def test_unit_from_row_reads_the_price_as_the_last_column() -> None:
+    base = (uuid4(), uuid4(), "101", "1", "COVERED", "VACANT", 3)
+    details: tuple[object, ...] = (None, None, None, None, None, None, None, [])
+
+    assert unit_from_row(base + details + (4500,)).default_monthly_rent_usd_cents == 4500
+    assert unit_from_row(base + details + (None,)).default_monthly_rent_usd_cents is None
+    assert unit_from_row(base + details).default_monthly_rent_usd_cents is None

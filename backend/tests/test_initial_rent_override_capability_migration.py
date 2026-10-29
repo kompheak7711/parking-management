@@ -112,7 +112,8 @@ def test_upgrade_keeps_every_earlier_record(migrated_database_url: str) -> None:
         # the Floor text) and audits the Unit setup items it creates; nothing earlier changes.
         units_row = (
             "to_jsonb(t)-ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
-            "'view_item_id','kitchen_item_id','notes']"
+            "'view_item_id','kitchen_item_id','notes',"
+            "'default_monthly_rent_usd_cents']"
         )
         tables = {
             "audit_events": ("to_jsonb(t)", "WHERE t.entity_type <> 'unit_setup_item'"),

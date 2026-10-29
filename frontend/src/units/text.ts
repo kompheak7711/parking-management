@@ -236,6 +236,30 @@ const TEXT = {
     "មានអ្នកជួល និង បានកក់ ត្រូវបានកំណត់ដោយកម្មវិធី ពេលចុះហត្ថលេខាកិច្ចសន្យា ឬធ្វើការកក់។ ការប្តូរទាំងអស់ត្រូវបានរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   status_saved: ["{0} is now {1}.", "{0} ឥឡូវ {1}។"],
+  // Parking Step 3 (owner, 2026-10-29): the default monthly price.
+  price: ["Default monthly price", "តម្លៃប្រចាំខែលំនាំដើម"],
+  price_unset: ["Not set", "មិនទាន់កំណត់"],
+  change_price: ["Change price", "ប្តូរតម្លៃ"],
+  price_help: [
+    "Fills the Monthly Rent of a new Lease for this Parking. Existing Leases and Invoices do not change.",
+    "បំពេញថ្លៃឈ្នួលប្រចាំខែនៃកិច្ចសន្យាថ្មីសម្រាប់ចំណតនេះ។ កិច្ចសន្យា និងវិក្កយបត្រដែលមានស្រាប់មិនផ្លាស់ប្តូរទេ។",
+  ],
+  price_invalid: [
+    "Enter a price above zero, in dollars and cents.",
+    "សូមបញ្ចូលតម្លៃលើសពីសូន្យ ជាដុល្លារ និងសេន។",
+  ],
+  price_reason_req: [
+    "Say why the price changes.",
+    "សូមប្រាប់មូលហេតុនៃការប្តូរតម្លៃ។",
+  ],
+  price_saved: [
+    "{0} default monthly price is now {1}.",
+    "តម្លៃប្រចាំខែលំនាំដើមរបស់ {0} ឥឡូវ {1}។",
+  ],
+  h_price: [
+    "Default monthly price {0} → {1} by {2}: {3}",
+    "តម្លៃប្រចាំខែលំនាំដើម {0} → {1} ដោយ {2}៖ {3}",
+  ],
 } as const;
 
 export type UnitTextKey = keyof typeof TEXT;

@@ -954,6 +954,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/exchange-rates:confirm": {"post"},
         "/properties/{property_id}/units": {"get", "post"},
         "/units/{unit_id}": {"get", "patch"},
+        "/units/{unit_id}/default-rent": {"put"},
         "/units/{unit_id}/timeline": {"get"},
         "/properties/{property_id}/unit-setup": {"get"},
         "/properties/{property_id}/unit-setup/items": {"post"},

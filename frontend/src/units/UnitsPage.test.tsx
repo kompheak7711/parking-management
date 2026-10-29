@@ -95,6 +95,8 @@ function unit(
     active_meter_summary: null,
     operational_alerts: [],
     can_manage: true,
+    default_monthly_rent_usd_cents: null,
+    can_change_rent: false,
     ...overrides,
   };
 }
@@ -230,6 +232,7 @@ function unitApi(overrides: Partial<UnitApi> = {}): UnitApi {
     inventory: vi.fn().mockResolvedValue(inventory),
     saveInventory: vi.fn(),
     inventoryItems: vi.fn().mockResolvedValue([]),
+    setDefaultRent: vi.fn(),
     ...overrides,
   };
 }
@@ -737,5 +740,155 @@ describe("Parking page", () => {
       room_feature_ids: ["ROOM_FEATURE-BALCONY"],
     });
     expect(sent).not.toHaveProperty("unit_number");
+  });
+});
+
+// Parking Step 3 (owner, 2026-10-29): the default monthly price.
+describe("Default monthly price", () => {
+  const priced = unit("U201", {
+    floor: "2",
+    floor_item_id: "FLOOR-F002",
+    default_monthly_rent_usd_cents: 3500,
+    can_change_rent: true,
+  });
+
+  it("TEST-FE-1107 shows the default monthly price or Not set, and Change price only with the server's permission", async () => {
+    window.location.hash = "#/units/unit-U201";
+    const { unmount } = show(
+      unitApi({ get: vi.fn().mockResolvedValue(priced) }),
+    );
+    const term = await screen.findByText("Default monthly price");
+    expect(term.nextElementSibling).toHaveTextContent("$35.00");
+    expect(
+      screen.getByRole("button", { name: "Change price" }),
+    ).toBeInTheDocument();
+    unmount();
+
+    window.location.hash = "#/units/unit-U202";
+    show(unitApi());
+    const unset = await screen.findByText("Default monthly price");
+    expect(unset.nextElementSibling).toHaveTextContent("Not set");
+    expect(
+      screen.queryByRole("button", { name: "Change price" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-1108 Change price needs a reason and whole cents, sends the price in cents, and says when someone changed the Parking first", async () => {
+    window.location.hash = "#/units/unit-U201";
+    const setDefaultRent = vi
+      .fn()
+      .mockRejectedValueOnce(new UnitConflictError())
+      .mockResolvedValue(
+        unit("U201", {
+          floor: "2",
+          floor_item_id: "FLOOR-F002",
+          default_monthly_rent_usd_cents: 4500,
+          can_change_rent: true,
+          version: 3,
+        }),
+      );
+    show(unitApi({ get: vi.fn().mockResolvedValue(priced), setDefaultRent }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Change price" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    const price = within(dialog).getByLabelText(/^Default monthly price/);
+    expect(price).toHaveValue("35.00");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText("Say why the price changes."),
+    ).toBeInTheDocument();
+    expect(setDefaultRent).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: " New price list " },
+    });
+    for (const bad of ["45.555", "0", "12345678"]) {
+      fireEvent.change(price, { target: { value: bad } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      expect(
+        await within(dialog).findByText(
+          "Enter a price above zero, in dollars and cents.",
+        ),
+      ).toBeInTheDocument();
+      expect(price).toHaveAttribute("aria-invalid", "true");
+    }
+    expect(setDefaultRent).not.toHaveBeenCalled();
+    fireEvent.change(price, { target: { value: "45" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /changed this Parking first/,
+    );
+    expect(setDefaultRent).toHaveBeenCalledWith(priced, 4500, "New price list");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Change price" }),
+    );
+    const again = screen.getByRole("dialog");
+    fireEvent.change(within(again).getByLabelText(/^Default monthly price/), {
+      target: { value: "45.00" },
+    });
+    fireEvent.change(within(again).getByLabelText(/^Reason/), {
+      target: { value: "New price list" },
+    });
+    fireEvent.click(within(again).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("U201 default monthly price is now $45.00."),
+    ).toBeInTheDocument();
+    expect(setDefaultRent).toHaveBeenLastCalledWith(
+      priced,
+      4500,
+      "New price list",
+    );
+  });
+
+  it("TEST-FE-1109 History shows who changed the price, when, the old and new price and the reason", async () => {
+    window.location.hash = "#/units/unit-U201";
+    const client = unitApi({
+      get: vi.fn().mockResolvedValue(priced),
+      timeline: vi.fn().mockResolvedValue({
+        items: [
+          {
+            event_id: "event-3",
+            occurred_at: "2026-10-29T03:00:00Z",
+            actor_id: "actor-1",
+            actor_name: "Sok Dara",
+            action: "unit.default_rent_changed",
+            entity_type: "unit",
+            reason: "New price list",
+            previous_state: { default_monthly_rent_usd_cents: 3500 },
+            resulting_state: { default_monthly_rent_usd_cents: 4500 },
+            correlation_id: "event-3",
+            outcome: "SUCCEEDED",
+          },
+          {
+            event_id: "event-2",
+            occurred_at: "2026-10-28T03:00:00Z",
+            actor_id: "actor-1",
+            actor_name: "Sok Dara",
+            action: "unit.default_rent_changed",
+            entity_type: "unit",
+            reason: "Opening price",
+            previous_state: { default_monthly_rent_usd_cents: null },
+            resulting_state: { default_monthly_rent_usd_cents: 3500 },
+            correlation_id: "event-2",
+            outcome: "SUCCEEDED",
+          },
+        ],
+        next_cursor: null,
+      }),
+    });
+    show(client);
+    const history = (
+      await screen.findByRole("heading", { name: "History" })
+    ).closest("section");
+    if (history === null) throw new Error("no History card");
+    const lines = within(history).getAllByRole("listitem");
+    expect(lines[0]).toHaveTextContent(
+      "Default monthly price $35.00 → $45.00 by Sok Dara: New price list29/10/2026 10:00",
+    );
+    expect(lines[1]).toHaveTextContent(
+      "Default monthly price Not set → $35.00 by Sok Dara: Opening price",
+    );
   });
 });

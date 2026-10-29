@@ -33,6 +33,7 @@ from test_reservation_migration import (
     reservation_business_date,
     setup_reservation_sources,
 )
+from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -714,9 +715,16 @@ def test_database_prevents_summary_drift_illegal_transition_and_history_loss(
                 INSERT INTO app.units (
                     id, property_id, unit_number, floor, unit_type, status,
                     created_by, updated_by
-                ) VALUES (%s,%s,%s,'1','STUDIO','RESERVED',%s,%s)
+                ) VALUES (%s,%s,%s,'1',%s,'RESERVED',%s,%s)
                 """,
-                (uuid4(), new_property_id, f"INVALID-{uuid4()}", actor_id, actor_id),
+                (
+                    uuid4(),
+                    new_property_id,
+                    f"INVALID-{uuid4()}",
+                    seeded_unit_type(owner, new_property_id),
+                    actor_id,
+                    actor_id,
+                ),
             )
         assert unsupported_reserved_insert.value.sqlstate == "23514"
 

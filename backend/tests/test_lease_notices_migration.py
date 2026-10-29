@@ -109,7 +109,8 @@ def source(url: str) -> tuple[UUID, UUID, UUID, RecordLeaseNotice]:
 
 UNIT_SETUP_COLUMNS = (
     "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
-    "'view_item_id','kitchen_item_id','notes']"
+    "'view_item_id','kitchen_item_id','notes',"
+    "'default_monthly_rent_usd_cents']"
 )
 
 

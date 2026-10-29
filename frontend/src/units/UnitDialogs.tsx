@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 
 import type { Language } from "../signInText";
 import { Icon } from "../shell/icons";
+import { centsOf } from "../leases/LeaseDialogs";
+import { usdFromCents } from "../shell/format";
 import { Dialog } from "../shell/ui";
 import {
   UnitApi,
@@ -513,6 +515,110 @@ export function ChangeStatusDialog({
         {reasonMissing && <Problem message={ut(language, "reason_req")} />}
       </div>
       <p className="ui-small ui-muted">{ut(language, "status_note")}</p>
+      <Problem message={problem} />
+    </Dialog>
+  );
+}
+
+/**
+ * Parking Step 3 (owner, 2026-10-29): Change the default monthly price with a reason, because
+ * a price change is a money action. History keeps who, the old and the new price and the reason.
+ */
+export function ChangePriceDialog({
+  api,
+  language,
+  unit,
+  onClose,
+  onSaved,
+  onConflict,
+}: {
+  api: UnitApi;
+  language: Language;
+  unit: UnitResource;
+  onClose: () => void;
+  onSaved: (unit: UnitResource) => void;
+  onConflict: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [reasonMissing, setReasonMissing] = useState(false);
+  const [priceBad, setPriceBad] = useState(false);
+  const title = `${ut(language, "change_price")} · ${unit.unit_number}`;
+  const current = unit.default_monthly_rent_usd_cents;
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const reason = text(data, "reason");
+    const cents = centsOf(text(data, "price"));
+    setReasonMissing(reason === "");
+    setPriceBad(cents === null);
+    setProblem(cents === null ? ut(language, "price_invalid") : null);
+    if (cents === null || reason === "") {
+      form
+        .querySelector<HTMLElement>(
+          cents === null ? "#price-amount" : "#price-reason",
+        )
+        ?.focus();
+      return;
+    }
+    setBusy(true);
+    void api
+      .setDefaultRent(unit, cents, reason)
+      .then(onSaved)
+      .catch((error: unknown) => {
+        setProblem(failure(language, error));
+        setBusy(false);
+        if (error instanceof UnitConflictError) onConflict();
+      });
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={ut(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={ut(language, "save")}
+      title={title}
+    >
+      <div className="ui-field">
+        <label htmlFor="price-amount">
+          {ut(language, "price")}
+          <span className="req">{ut(language, "required")}</span>
+        </label>
+        <input
+          aria-invalid={priceBad}
+          autoComplete="off"
+          defaultValue={current === null ? "" : (current / 100).toFixed(2)}
+          id="price-amount"
+          inputMode="decimal"
+          name="price"
+        />
+        <p className="ui-small ui-muted">
+          {current === null
+            ? ut(language, "price_unset")
+            : usdFromCents(current)}
+        </p>
+      </div>
+      <div className="ui-field">
+        <label htmlFor="price-reason">
+          {ut(language, "reason")}
+          <span className="req">{ut(language, "required")}</span>
+        </label>
+        <input
+          aria-invalid={reasonMissing}
+          autoComplete="off"
+          id="price-reason"
+          maxLength={500}
+          name="reason"
+        />
+        {reasonMissing && (
+          <Problem message={ut(language, "price_reason_req")} />
+        )}
+      </div>
+      <p className="ui-small ui-muted">{ut(language, "price_help")}</p>
       <Problem message={problem} />
     </Dialog>
   );

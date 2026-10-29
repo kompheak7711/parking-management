@@ -117,6 +117,10 @@ export interface UnitResource extends UnitDetails {
   active_meter_summary: unknown;
   operational_alerts: string[];
   can_manage?: boolean;
+  // Parking Step 3 (owner, 2026-10-29): the default monthly price in whole USD cents, or null;
+  // can_change_rent is true for a user who may change the Settings.
+  default_monthly_rent_usd_cents: number | null;
+  can_change_rent?: boolean;
 }
 
 export interface UnitListPage {
@@ -136,6 +140,8 @@ export interface UnitTimelineEvent {
   resulting_state: unknown;
   correlation_id: string;
   outcome: string;
+  /** The display name of who did it (Parking Step 3), when the server knows it. */
+  actor_name?: string | null;
 }
 
 export interface UnitTimelinePage {
@@ -156,6 +162,11 @@ export interface UnitApi {
   update: (
     unit: UnitResource,
     source: UnitUpdateSource,
+  ) => Promise<UnitResource>;
+  setDefaultRent: (
+    unit: UnitResource,
+    cents: number,
+    reason: string,
   ) => Promise<UnitResource>;
   timeline: (unitId: string, cursor?: string) => Promise<UnitTimelinePage>;
   setupLists: (
@@ -366,6 +377,14 @@ function unit(value: unknown): UnitResource {
     operational_alerts: stringArray(value.operational_alerts),
     can_manage:
       typeof value.can_manage === "boolean" ? value.can_manage : undefined,
+    default_monthly_rent_usd_cents:
+      typeof value.default_monthly_rent_usd_cents === "number"
+        ? value.default_monthly_rent_usd_cents
+        : null,
+    can_change_rent:
+      typeof value.can_change_rent === "boolean"
+        ? value.can_change_rent
+        : undefined,
   };
 }
 
@@ -439,6 +458,23 @@ async function update(
   );
 }
 
+async function setDefaultRent(
+  current: UnitResource,
+  cents: number,
+  reason: string,
+): Promise<UnitResource> {
+  return unit(
+    await request(
+      `/units/${encodeURIComponent(current.unit_id)}/default-rent`,
+      {
+        method: "PUT",
+        headers: mutationHeaders(current.version),
+        body: JSON.stringify({ default_monthly_rent_usd_cents: cents, reason }),
+      },
+    ),
+  );
+}
+
 async function timeline(
   unitId: string,
   cursor?: string,
@@ -482,6 +518,8 @@ async function timeline(
       resulting_state: value.resulting_state ?? null,
       correlation_id: value.correlation_id,
       outcome: value.outcome,
+      actor_name:
+        typeof value.actor_name === "string" ? value.actor_name : null,
     };
   });
   return { items, next_cursor: data.next_cursor };
@@ -659,6 +697,7 @@ export const unitApi: UnitApi = {
   get,
   create,
   update,
+  setDefaultRent,
   timeline,
   setupLists,
   createSetupItem,

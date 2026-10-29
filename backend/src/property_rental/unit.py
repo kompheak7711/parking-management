@@ -21,13 +21,13 @@ UNIT_MAX_SIZE: Final = Decimal("10000")
 
 
 class UnitType(StrEnum):
-    """The default Unit Types every Property starts with (BR-UNIT-001; a Settings list since
-    DL-075, so a Unit may hold any code of that list)."""
+    """The default Parking Types every Property starts with (owner, 2026-10-29; a Settings list
+    since DL-075, so a Unit may hold any code of that list)."""
 
-    STUDIO = "STUDIO"
-    ONE_BEDROOM = "ONE_BEDROOM"
-    TWO_BEDROOM = "TWO_BEDROOM"
-    THREE_BEDROOM = "THREE_BEDROOM"
+    COVERED = "COVERED"
+    UNCOVERED = "UNCOVERED"
+    MOTORBIKE = "MOTORBIKE"
+    TUK_TUK_FOOD_CART = "TUK_TUK_FOOD_CART"
 
 
 class UnitStatus(StrEnum):
@@ -200,6 +200,8 @@ class Unit:
     kitchen_item_id: UUID | None = None
     notes: str | None = None
     room_feature_ids: tuple[UUID, ...] = ()
+    # Parking Step 3 (owner, 2026-10-29): the default monthly price, whole USD cents, or none.
+    default_monthly_rent_usd_cents: int | None = None
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -235,6 +237,9 @@ class Unit:
             raise ValueError("status is not supported")
         if self.version < 1:
             raise ValueError("version must be positive")
+        rent = self.default_monthly_rent_usd_cents
+        if rent is not None and rent <= 0:
+            raise ValueError("default_monthly_rent_usd_cents must be above zero")
 
 
 class UnitRepository(Protocol):
@@ -353,9 +358,11 @@ def _optional_int(value: object) -> int | None:
 
 
 def unit_from_row(row: tuple[object, ...]) -> Unit:
-    """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`."""
+    """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`, then
+    the default monthly price (Parking Step 3)."""
     details = row[7:15] if len(row) >= 15 else (None,) * 7 + ((),)
     features = details[7]
+    rent = row[15] if len(row) >= 16 else None
     return Unit(
         unit_id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -374,6 +381,7 @@ def unit_from_row(row: tuple[object, ...]) -> Unit:
         room_feature_ids=tuple(
             UUID(str(item)) for item in (features if isinstance(features, list | tuple) else ())
         ),
+        default_monthly_rent_usd_cents=None if rent is None else int(str(rent)),
     )
 
 
