@@ -52,7 +52,6 @@ from property_rental.lease import (
     LeaseRecordSignatureCommand,
     LeaseRequiredServiceMissingError,
     LeaseServiceTerm,
-    LeaseSignCommand,
     LeaseStatus,
     LeaseTerminateCommand,
     LeaseUpdateDraftCommand,
@@ -301,8 +300,6 @@ class LeaseResourceFlow(Protocol):
         self, command: LeaseRecordSignatureCommand, *, actor: AuthenticatedActor
     ) -> LeaseResource: ...
 
-    def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource: ...
-
     def terminate(
         self, command: LeaseTerminateCommand, *, actor: AuthenticatedActor
     ) -> LeaseResource: ...
@@ -431,11 +428,6 @@ class UnavailableLeaseResourceFlow:
     def record_signature(
         self, command: LeaseRecordSignatureCommand, *, actor: AuthenticatedActor
     ) -> LeaseResource:
-        del command, actor
-        self._raise()
-        raise AssertionError
-
-    def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
         del command, actor
         self._raise()
         raise AssertionError
@@ -966,11 +958,6 @@ class PostgresLeaseResourceFlow:
     ) -> LeaseResource:
         current = self.get(command.lease_id)
         self._service(current.property_id, actor).record_signature(command, actor=actor)
-        return self.get(command.lease_id)
-
-    def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
-        current = self.get(command.lease_id)
-        self._service(current.property_id, actor).sign(command, actor=actor)
         return self.get(command.lease_id)
 
     def terminate(

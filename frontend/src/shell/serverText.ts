@@ -498,11 +498,17 @@ const KM: Readonly<Record<string, string>> = {
 const FALLBACK_KM =
   "ម៉ាស៊ីនមេបានបដិសេធសំណើនេះ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យ រួចព្យាយាមម្តងទៀត ឬសួរម្ចាស់។";
 
-/** The server's words in the screen's language: English as sent, Khmer by the refusal's code. */
+/** The server's words in the screen's language: English as sent, Khmer by the refusal's code.
+ * A code with no Khmer words yet keeps the server's English after the general Khmer line, so
+ * staff can still see what to fix. */
 export function serverWords(
   language: Language,
   error: { code: string | null; message: string },
 ): string {
   if (language === "en") return error.message;
-  return (error.code === null ? undefined : KM[error.code]) ?? FALLBACK_KM;
+  const words = error.code === null ? undefined : KM[error.code];
+  if (words !== undefined) return words;
+  return error.message.trim() === ""
+    ? FALLBACK_KM
+    : `${FALLBACK_KM} (${error.message})`;
 }

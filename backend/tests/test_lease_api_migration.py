@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from payment_test_support import seed_deposit_payment
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
-from property_rental.lease import LeaseSignCommand
+from property_rental.lease import LeaseSignCommand, PostgresLeaseService
 from property_rental.lease_api import LeaseResource, PostgresLeaseResourceFlow
 from test_lease_lifecycle_migration import database_now
 from test_lease_migration import setup_sources
@@ -78,7 +78,9 @@ def sign_in_database(
 ) -> LeaseResource:
     """V1-061: no route signs without money any more (the plain sign route is removed), so these
     tests reach the signing step through the runtime role's flow, as Sign Lease does inside."""
-    return PostgresLeaseResourceFlow(runtime_database_url()).sign(
+    flow = PostgresLeaseResourceFlow(runtime_database_url())
+    current = flow.get(UUID(str(lease_id)))
+    PostgresLeaseService(runtime_database_url(), current.property_id, UUID(actor.actor_id)).sign(
         LeaseSignCommand(
             idempotency_key=key or uuid4(),
             event_id=event_id or uuid4(),
@@ -91,6 +93,7 @@ def sign_in_database(
         ),
         actor=actor,
     )
+    return flow.get(current.lease_id)
 
 
 def headers(version: int | None = None) -> dict[str, str]:

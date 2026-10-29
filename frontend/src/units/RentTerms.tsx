@@ -20,18 +20,10 @@ import {
   UnitInvalidError,
   type UnitResource,
 } from "../unitClient";
+import { centsOf } from "../payments/depositMoney";
 import { ut } from "./text";
 
 export type RentTermsServicesApi = Pick<ServiceSettingsApi, "read">;
-
-/** "500.00" or "500" as cents; null when it is not a whole-cent amount above zero. */
-function centsOf(text: string): number | null {
-  const value = text.trim();
-  if (!/^\d{1,7}(\.\d{1,2})?$/.test(value)) return null;
-  const [dollars = "0", part = ""] = value.split(".");
-  const cents = Number(dollars) * 100 + Number(part.padEnd(2, "0"));
-  return cents > 0 ? cents : null;
-}
 
 function serviceName(service: ServiceSetting, language: Language): string {
   return language === "km" && service.name_km !== null

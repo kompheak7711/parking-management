@@ -552,6 +552,11 @@ def test_make_reservation_with_payment_saves_the_money_and_the_reservation_in_on
     assert flow.payments == []
     cashier = client(flow, actor(property_id, "reservations.create", "payments.record"))
     assert cashier.post(url, json=payload(9_000), headers=headers()).status_code == 422
+    # A command the domain refuses (more accepted than the Security Deposit) is a refusal, not
+    # an unknown outcome.
+    too_much = {**payload(), "required_security_deposit_usd_cents": 5_000}
+    assert cashier.post(url, json=too_much, headers=headers()).status_code == 422
+    assert flow.payments == []
     created = cashier.post(url, json=payload(), headers=headers())
     assert created.status_code == 201, created.text
     assert created.json()["data"]["receipt_number"] == "RC0007"

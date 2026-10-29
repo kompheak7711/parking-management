@@ -1113,34 +1113,38 @@ def create_reservation_router(
                 raise _translate(exc) from exc
             if floor is not None and source.agreed_monthly_rent_usd_cents < floor:
                 raise RefusedRequest(RENT_BELOW_UNIT_DEFAULT)
-        return ReservationCreateCommand(
-            idempotency_key=idempotency_key,
-            reservation_id=source.reservation_id,
-            unit_id=source.unit_id,
-            customer_id=source.customer_id,
-            reservation_date=source.reservation_date,
-            agreed_monthly_rent_usd_cents=source.agreed_monthly_rent_usd_cents,
-            original_expiration_date=source.expiration_date,
-            acceptance_id=source.acceptance_id,
-            accepted_required_amount_usd_cents=source.accepted_initial_deposit_usd_cents,
-            acceptance_kind=acceptance_kind,
-            accepted_at=None,
-            acceptance_reason=source.acceptance_reason,
-            authorization_reference=(
-                DEPOSIT_OVERRIDE_CAPABILITY if below else RESERVATION_CREATE_CAPABILITY
-            ),
-            calculation_trace={
-                "agreed_monthly_rent_usd_cents": source.agreed_monthly_rent_usd_cents,
-                "suggested_rate_basis_points": 2000,
-                "suggested_amount_usd_cents": suggested,
-            },
-            deposit_id=source.deposit_id,
-            required_deposit_usd_cents=source.required_security_deposit_usd_cents,
-            receipt_id=source.receipt_id,
-            payment_id=payment_id,
-            # Owner answer (a) to Q-2026-10-20-147: the database's statement time.
-            received_at=None,
-        )
+        try:
+            return ReservationCreateCommand(
+                idempotency_key=idempotency_key,
+                reservation_id=source.reservation_id,
+                unit_id=source.unit_id,
+                customer_id=source.customer_id,
+                reservation_date=source.reservation_date,
+                agreed_monthly_rent_usd_cents=source.agreed_monthly_rent_usd_cents,
+                original_expiration_date=source.expiration_date,
+                acceptance_id=source.acceptance_id,
+                accepted_required_amount_usd_cents=source.accepted_initial_deposit_usd_cents,
+                acceptance_kind=acceptance_kind,
+                accepted_at=None,
+                acceptance_reason=source.acceptance_reason,
+                authorization_reference=(
+                    DEPOSIT_OVERRIDE_CAPABILITY if below else RESERVATION_CREATE_CAPABILITY
+                ),
+                calculation_trace={
+                    "agreed_monthly_rent_usd_cents": source.agreed_monthly_rent_usd_cents,
+                    "suggested_rate_basis_points": 2000,
+                    "suggested_amount_usd_cents": suggested,
+                },
+                deposit_id=source.deposit_id,
+                required_deposit_usd_cents=source.required_security_deposit_usd_cents,
+                receipt_id=source.receipt_id,
+                payment_id=payment_id,
+                # Owner answer (a) to Q-2026-10-20-147: the database's statement time.
+                received_at=None,
+            )
+        except ValueError as exc:
+            # A command the domain refuses is a 422 refusal, never an unknown outcome (503).
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
 
     @router.post("/properties/{property_id}/reservations", status_code=status.HTTP_201_CREATED)
     def create_reservation(

@@ -10,7 +10,6 @@ import type {
   CleaningChargeInput,
   CleaningRateInput,
   DepositReceiptCorrectionInput,
-  DepositReceiptCreate,
   ExtraChargeInput,
   FinalSettlementDraftInput,
   ForfeitureDraftInput,
@@ -31,7 +30,6 @@ import type {
   ReturnReversalCorrectionInput,
   ReturnedPaymentInput,
   ReversalInput,
-  SecurityDepositCreate,
 } from "./settlementForms";
 
 export type DraftState = "PENDING" | "CONFIRMED" | "REJECTED" | "WITHDRAWN";
@@ -408,17 +406,6 @@ export interface SettlementApi {
     form: HandBackResolutionInput,
     key: string,
   ) => Promise<SettlementRecord>;
-  // Slice 11c-4: the walk-in Security Deposit and a receipt into a Deposit.
-  createSecurityDeposit: (
-    leaseId: string,
-    form: SecurityDepositCreate,
-    key: string,
-  ) => Promise<SettlementRecord>;
-  receiveIntoDeposit: (
-    depositId: string,
-    form: DepositReceiptCreate,
-    key: string,
-  ) => Promise<SettlementRecord>;
   // DL-112: Receive Security Deposit in one request: the money with its Receipt, a walk-in
   // Lease's Security Deposit and the money going into it, all saved or none. After a lost
   // answer, send the same body with the same key: the answer is the first one.
@@ -595,10 +582,6 @@ export const settlementApi: SettlementApi = {
       undefined,
       version,
     ),
-  createSecurityDeposit: (leaseId, form, key) =>
-    post(`/api/v1/leases/${id(leaseId)}/security-deposit`, form, key),
-  receiveIntoDeposit: (depositId, form, key) =>
-    post(`/api/v1/deposits/${id(depositId)}/receipts`, form, key),
   receiveSecurityDeposit: async (propertyId, leaseId, body, key) => {
     const saved = await post(
       `/api/v1/leases/${id(leaseId)}/security-deposit/receive`,

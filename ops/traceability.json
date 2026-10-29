@@ -58744,6 +58744,17 @@
       "notes": "V1-061 Fix 4 (DL-114): a Lease with 20 people living there shows no Add occupant button and says why; with 19 the button shows."
     },
     {
+      "test_id": "TEST-FE-1119",
+      "upstream_ids": [
+        "DL-112",
+        "DL-110"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/reservations/acceptanceReason.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 review: the Make Reservation reason keeps the person's words, adds the Rent-below reason after them, and is cut at 500 characters by whole characters with no space at the end, so the server never refuses it."
+    },
+    {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
       "upstream_ids": [
         "DL-112",

@@ -68,6 +68,20 @@ export function suggestedDeposit(rentCents: number): number {
   return Math.floor((rentCents + 2) / 5);
 }
 
+/** The saved acceptance reason: the person's own words, and the Rent-below reason after them
+ * when there is one. Cut at 500 characters by whole characters (never half an emoji) and
+ * trimmed, because the server refuses a reason that starts or ends with a space. */
+export function acceptanceReason(
+  base: string,
+  rentBelow: string | null,
+): string {
+  const text =
+    rentBelow === null
+      ? base
+      : `${base.replace(/\.$/, "")}. Rent below the Unit default: ${rentBelow}`;
+  return Array.from(text).slice(0, 500).join("").trim();
+}
+
 export function MakeReservationDialog({
   language,
   propertyId,
@@ -287,15 +301,11 @@ export function MakeReservationDialog({
         acceptance_id: ids.current.acceptance,
         accepted_initial_deposit_usd_cents: receivedCents,
         required_security_deposit_usd_cents: requiredCents,
-        acceptance_reason: `${(below
-          ? reason.trim()
-          : rt("en", above ? "mk_reason_more" : "mk_reason_default")
-        ).replace(
-          /\.$/,
-          "",
-        )}${rentBelow ? `. Rent below the Unit default: ${rentReason.trim()}` : ""}`.slice(
-          0,
-          500,
+        acceptance_reason: acceptanceReason(
+          below
+            ? reason.trim()
+            : rt("en", above ? "mk_reason_more" : "mk_reason_default"),
+          rentBelow ? rentReason.trim() : null,
         ),
         deposit_id: ids.current.deposit,
         receipt_id: ids.current.receipt,

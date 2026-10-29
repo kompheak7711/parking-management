@@ -18,6 +18,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.lock_retry import retry_lock_not_available
 from property_rental.payment_confirmation import _exact_json
 
 NIL_UUID: Final = UUID(int=0)
@@ -372,6 +373,18 @@ def _raise_command_error(exc: psycopg.Error) -> NoReturn:
     raise ReservationServiceUnavailableError("Reservation persistence is unavailable") from exc
 
 
+def _raise_one_step_error(exc: psycopg.Error) -> NoReturn:
+    """The one-step Reservation also runs app.confirm_usd_payment: its refusals are mapped as
+    Payment confirmation maps them, so a refused payment is never reported as unknown."""
+    if exc.sqlstate in {"P4506", "42501"}:
+        raise ReservationAuthorizationError("Reservation payment is not authorized") from exc
+    if exc.sqlstate in {"23503", "40P01"}:
+        raise ReservationCommandConflictError("Reservation command conflicted") from exc
+    if exc.sqlstate is not None and exc.sqlstate.startswith("22"):
+        raise ReservationCommandInvalidError("Reservation command is invalid") from exc
+    _raise_command_error(exc)
+
+
 @dataclass(frozen=True, slots=True)
 class PostgresReservationService:
     """Execute Property-scoped Reservation commands with stable retry semantics."""
@@ -473,12 +486,13 @@ class PostgresReservationService:
             f"reservation-payment:{self.property_id}:{self.actor_id}:{command.idempotency_key}",
         )
         keyed = replace(command, payment_id=payment_key)
-        try:
+
+        def attempt() -> tuple[object, ...] | None:
             with psycopg.connect(url, connect_timeout=3) as connection:
                 set_json_loads(_exact_json, connection)
                 connection.execute("SET LOCAL lock_timeout='3000ms'")
                 connection.execute("SET LOCAL statement_timeout='10000ms'")
-                row = connection.execute(
+                return connection.execute(
                     "SELECT app.create_reservation_with_payment("
                     "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (
@@ -505,8 +519,12 @@ class PostgresReservationService:
                         command.receipt_id,
                     ),
                 ).fetchone()
+
+        # The same lock replay as Receive Security Deposit with payment (DL-067).
+        try:
+            row = retry_lock_not_available(attempt)
         except psycopg.Error as exc:
-            _raise_command_error(exc)
+            _raise_one_step_error(exc)
         if row is None or not isinstance(row[0], dict):
             raise ReservationServiceUnavailableError("Reservation command returned no result")
         value = cast(dict[str, object], row[0])

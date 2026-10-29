@@ -13,7 +13,6 @@ from property_rental.lease import (
     LeaseCancelCommand,
     LeaseDraftCommand,
     LeaseRecordSignatureCommand,
-    LeaseSignCommand,
     LeaseStatus,
     LeaseTerminateCommand,
     LeaseUpdateDraftCommand,
@@ -78,7 +77,6 @@ class InMemoryLeaseFlow:
     update_command: LeaseUpdateDraftCommand | None = None
     signer_command: LeaseAddSignerCommand | None = None
     signature_command: LeaseRecordSignatureCommand | None = None
-    sign_command: LeaseSignCommand | None = None
     terminate_command: LeaseTerminateCommand | None = None
     move_in_command: CompleteMoveInCommand | None = None
     cancel_command: LeaseCancelCommand | None = None
@@ -225,19 +223,6 @@ class InMemoryLeaseFlow:
     def rent_floor(self, unit_id: UUID, security_deposit_id: UUID | None) -> int | None:
         del security_deposit_id
         return self.unit_rents.get(unit_id)
-
-    def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseResource:
-        del actor
-        self.sign_command = command
-        current = self.get(command.lease_id)
-        value = replace(
-            current,
-            status=LeaseStatus.SIGNED,
-            signed_at=command.signed_at,
-            version=current.version + 1,
-        )
-        self.resources[value.lease_id] = value
-        return value
 
     def terminate(
         self, command: LeaseTerminateCommand, *, actor: AuthenticatedActor
@@ -539,7 +524,6 @@ def test_signer_renewal_and_termination_are_explicit_commands_and_plain_signing_
     assert added.status_code == 201
     assert added.headers["location"].startswith("/api/v1/lease-signers/")
     assert gone.status_code == 404
-    assert flow.sign_command is None
     assert renewed.status_code == 201
     assert renewed.headers["location"] == f"/api/v1/leases/{successor_id}"
     assert renewed.json()["data"]["predecessor_lease_id"] == str(current.lease_id)
@@ -563,7 +547,7 @@ def test_the_signature_route_takes_no_signing_time_from_the_request() -> None:
 
     assert refused_signature.status_code == 422
     assert refused_signature.json()["error"]["fields"] == ["body.signed_at"]
-    assert (flow.signature_command, flow.sign_command) == (None, None)
+    assert [flow.signature_command] == [None]
 
     recorded = api.patch(
         signature_path,
@@ -744,7 +728,6 @@ def test_the_plain_sign_route_is_removed() -> None:
     )
 
     assert signed.status_code == 404
-    assert flow.sign_command is None
     assert flow.resources[current.lease_id].status is LeaseStatus.DRAFTED
 
 
