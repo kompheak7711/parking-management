@@ -729,11 +729,15 @@ describe("Parking page", () => {
     expect(setRentTerms).not.toHaveBeenCalled();
     fireEvent.change(rent, { target: { value: "475.5" } });
     fireEvent.click(within(dialog).getByLabelText("Wi-Fi"));
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "New price list" },
+    });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => {
       expect(setRentTerms).toHaveBeenCalledWith(terms, {
         default_monthly_rent_usd_cents: 47_550,
         required_service_ids: ["svc-parking", "svc-wifi"],
+        reason: "New price list",
       });
     });
     expect(
@@ -765,6 +769,118 @@ describe("Parking page", () => {
       .closest("section");
     if (card === null) throw new Error("no Rent and Services card");
     expect(within(card).queryByRole("button", { name: "Change" })).toBeNull();
+  });
+
+  it("TEST-FE-1124 Rent and Services needs a reason before it saves, and sends it trimmed (Parking Step 3: a price change is a money action)", async () => {
+    window.location.hash = "#/units/unit-U103";
+    const terms = unit("U103", { default_monthly_rent_usd_cents: 35_000 });
+    const setRentTerms = vi
+      .fn()
+      .mockResolvedValue({
+        ...terms,
+        version: 3,
+        default_monthly_rent_usd_cents: 45_000,
+      });
+    show(unitApi({ get: vi.fn().mockResolvedValue(terms), setRentTerms }));
+    const card = (
+      await screen.findByRole("heading", { name: "Rent and Services" })
+    ).closest("section");
+    if (card === null) throw new Error("no Rent and Services card");
+    fireEvent.click(within(card).getByRole("button", { name: "Change" }));
+    const dialog = await screen.findByRole("dialog");
+    const rent = within(dialog).getByLabelText("Default Rent per month");
+    expect(rent).toHaveValue("350.00");
+    fireEvent.change(rent, { target: { value: "450" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText("Say why the price changes."),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/^Reason/)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(setRentTerms).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "  New price list  " },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(setRentTerms).toHaveBeenCalledWith(terms, {
+        default_monthly_rent_usd_cents: 45_000,
+        required_service_ids: [],
+        reason: "New price list",
+      });
+    });
+    expect(
+      await screen.findByText("The Rent and Services of U103 are saved."),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1125 History shows who changed the price, when, the old and new price and the reason (Parking Step 3)", async () => {
+    window.location.hash = "#/units/unit-U103";
+    const change = (
+      id: string,
+      at: string,
+      before: number | null,
+      after: number | null,
+      reason: string,
+    ) => ({
+      event_id: id,
+      occurred_at: at,
+      actor_id: "actor-1",
+      actor_name: "Sok Dara",
+      action: "unit.rent_terms_changed",
+      entity_type: "unit",
+      reason,
+      previous_state: { default_monthly_rent_usd_cents: before },
+      resulting_state: { default_monthly_rent_usd_cents: after },
+      correlation_id: id,
+      outcome: "SUCCEEDED",
+    });
+    show(
+      unitApi({
+        timeline: vi.fn().mockResolvedValue({
+          items: [
+            change(
+              "event-3",
+              "2026-10-29T03:00:00Z",
+              4500,
+              4500,
+              "Wi-Fi now required",
+            ),
+            change(
+              "event-2",
+              "2026-10-28T03:00:00Z",
+              3500,
+              4500,
+              "New price list",
+            ),
+            change(
+              "event-1",
+              "2026-10-27T03:00:00Z",
+              null,
+              3500,
+              "Opening price",
+            ),
+          ],
+          next_cursor: null,
+        }),
+      }),
+    );
+    const history = (
+      await screen.findByRole("heading", { name: "History" })
+    ).closest("section");
+    if (history === null) throw new Error("no History card");
+    const lines = within(history).getAllByRole("listitem");
+    expect(lines[0]).toHaveTextContent(
+      "Rent and Services changed by Sok Dara: Wi-Fi now required29/10/2026 10:00",
+    );
+    expect(lines[1]).toHaveTextContent(
+      "Default monthly price $35.00 → $45.00 by Sok Dara: New price list28/10/2026 10:00",
+    );
+    expect(lines[2]).toHaveTextContent(
+      "Default monthly price Not set → $35.00 by Sok Dara: Opening price",
+    );
   });
 
   it("TEST-FE-1106 the Parking list shows today's Utility prices, and nothing is read without the right to read Utilities (V1-061)", async () => {
@@ -911,7 +1027,7 @@ describe("Parking page", () => {
     show(client);
     fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
     const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+    fireEvent.change(within(dialog).getByLabelText(/^Parking number/), {
       target: { value: "U107" },
     });
     fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
@@ -935,6 +1051,7 @@ describe("Parking page", () => {
       {
         default_monthly_rent_usd_cents: 35_000,
         required_service_ids: ["svc-parking"],
+        reason: "Set with the new Parking",
       },
     );
   });
@@ -945,7 +1062,7 @@ describe("Parking page", () => {
     show(client);
     fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
     const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+    fireEvent.change(within(dialog).getByLabelText(/^Parking number/), {
       target: { value: "U107" },
     });
     fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
@@ -1006,7 +1123,7 @@ describe("Parking page", () => {
     fireEvent.click(add);
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByLabelText("Water")).toBeChecked();
-    expect(within(dialog).getByLabelText(/^Unit/)).toHaveValue("unit-U101");
+    expect(within(dialog).getByLabelText(/^Parking/)).toHaveValue("unit-U101");
     fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
       target: { value: "WA-U101" },
     });

@@ -248,8 +248,8 @@ const TEXT = {
   u_working: ["Working", "ដំណើរការ"],
   u_broken: ["Broken since {0}", "ខូចតាំងពី {0}"],
   u_no_meter: [
-    "No meter, so this Unit is not billed for it.",
-    "គ្មាននាឡិកាស្ទង់ ដូច្នេះបន្ទប់នេះមិនត្រូវគិតថ្លៃនេះទេ។",
+    "No meter, so this Parking is not billed for it.",
+    "គ្មាននាឡិកាស្ទង់ ដូច្នេះចំណតនេះមិនត្រូវគិតថ្លៃនេះទេ។",
   ],
   u_add_el: ["Add electricity meter", "បន្ថែមនាឡិកាស្ទង់អគ្គិសនី"],
   u_add_wa: ["Add water meter", "បន្ថែមនាឡិកាស្ទង់ទឹក"],
@@ -282,8 +282,8 @@ const TEXT = {
   rt_unknown_service: ["A Service not found", "រកមិនឃើញសេវា"],
   rt_loading: ["Loading…", "កំពុងផ្ទុក…"],
   rt_note: [
-    "A new Reservation or Lease starts at this Rent. Staff may agree more; less needs a Manager or the Owner. Every new Lease of this Unit has the required Services.",
-    "ការកក់ ឬកិច្ចសន្យាថ្មីចាប់ផ្តើមនៅថ្លៃនេះ។ បុគ្គលិកអាចយល់ព្រមថ្លៃខ្ពស់ជាង; ថ្លៃទាបជាងត្រូវការអ្នកគ្រប់គ្រង ឬម្ចាស់។ កិច្ចសន្យាថ្មីទាំងអស់នៃបន្ទប់នេះមានសេវាចាំបាច់។",
+    "A new Reservation or Lease starts at this Rent. Staff may agree more; less needs a Manager or the Owner. Every new Lease of this Parking has the required Services.",
+    "ការកក់ ឬកិច្ចសន្យាថ្មីចាប់ផ្តើមនៅថ្លៃនេះ។ បុគ្គលិកអាចយល់ព្រមថ្លៃខ្ពស់ជាង; ថ្លៃទាបជាងត្រូវការអ្នកគ្រប់គ្រង ឬម្ចាស់។ កិច្ចសន្យាថ្មីទាំងអស់នៃចំណតនេះមានសេវាចាំបាច់។",
   ],
   rt_rent_help: [
     "In US dollars, for example 450.00. Leave it empty for no default Rent.",
@@ -294,8 +294,8 @@ const TEXT = {
     "សូមបញ្ចូលថ្លៃជាដុល្លារ និងសេន លើស 0 ឬទុកទទេ។",
   ],
   rt_err_many: [
-    "A Unit can require at most 20 Services.",
-    "បន្ទប់មួយអាចតម្រូវសេវាបានច្រើនបំផុត 20។",
+    "A Parking can require at most 20 Services.",
+    "ចំណតមួយអាចតម្រូវសេវាបានច្រើនបំផុត 20។",
   ],
   rt_services_failed: [
     "The Services could not be read, so this cannot be saved now. Open it again later.",
@@ -306,14 +306,28 @@ const TEXT = {
     "មិនទាន់មានសេវាទេ។ សូមបន្ថែមនៅ ការកំណត់ › តម្លៃ និងសេវា។",
   ],
   rt_dialog_note: [
-    "Leases that already exist do not change. The change is kept in the Unit's History.",
-    "កិច្ចសន្យាដែលមានរួចមិនផ្លាស់ប្តូរទេ។ ការប្តូរត្រូវបានរក្សាទុកក្នុងប្រវត្តិបន្ទប់។",
+    "Leases that already exist do not change. The change is kept in the Parking's History.",
+    "កិច្ចសន្យាដែលមានរួចមិនផ្លាស់ប្តូរទេ។ ការប្តូរត្រូវបានរក្សាទុកក្នុងប្រវត្តិចំណត។",
   ],
   rt_saved: [
     "The Rent and Services of {0} are saved.",
     "ថ្លៃឈ្នួល និងសេវារបស់ {0} ត្រូវបានរក្សាទុក។",
   ],
   h_rent_terms: ["Rent and Services changed", "ថ្លៃឈ្នួល និងសេវាត្រូវបានប្តូរ"],
+  // Parking Step 3 (owner, 2026-10-29): a price change is a money action; History says who,
+  // the old price, the new price and why.
+  h_rent_terms_by: [
+    "Rent and Services changed by {0}: {1}",
+    "ថ្លៃឈ្នួល និងសេវាត្រូវបានប្តូរ ដោយ {0}៖ {1}",
+  ],
+  h_price: [
+    "Default monthly price {0} → {1} by {2}: {3}",
+    "តម្លៃប្រចាំខែលំនាំដើម {0} → {1} ដោយ {2}៖ {3}",
+  ],
+  rt_reason_req: [
+    "Say why the price changes.",
+    "សូមប្រាប់មូលហេតុនៃការប្តូរតម្លៃ។",
+  ],
 } as const;
 
 export type UnitTextKey = keyof typeof TEXT;

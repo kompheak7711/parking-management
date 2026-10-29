@@ -31,6 +31,7 @@ from test_invoice_migration import migrated_database_url as migrated_database_ur
 from test_move_in_migration import setup_historical_move_in
 from test_physical_move_out_migration import record as record_move_out
 from test_physical_move_out_migration import source as move_out_source
+from unit_type_support import seeded_unit_type
 
 ALL_CAPABILITIES = (
     "invoices.read",
@@ -80,8 +81,8 @@ def second_unit(url: str, human: UUID, prop: UUID) -> UUID:
     with psycopg.connect(url) as connection:
         connection.execute(
             "INSERT INTO app.units (id,property_id,unit_number,floor,unit_type,status,"
-            "created_by,updated_by) VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
-            (unit, prop, f"CLN-{unit.hex[:12]}", human, human),
+            "created_by,updated_by) VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+            (unit, prop, f"CLN-{unit.hex[:12]}", seeded_unit_type(connection, prop), human, human),
         )
     return unit
 

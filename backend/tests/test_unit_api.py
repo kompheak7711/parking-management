@@ -33,6 +33,8 @@ class InMemoryUnitFlow:
     setup_items: dict[UUID, UnitSetupItem] = field(default_factory=dict)
     reasons: list[str | None] = field(default_factory=list)
 
+    rent_reasons: list[str] = field(default_factory=list)
+
     def list(
         self,
         property_id: UUID,
@@ -126,6 +128,7 @@ class InMemoryUnitFlow:
         required_service_ids: tuple[UUID, ...],
         expected_version: int,
         actor_id: str,
+        reason: str,
     ) -> Unit:
         del actor_id
         current = self.get(unit_id)
@@ -138,6 +141,7 @@ class InMemoryUnitFlow:
             required_service_ids=required_service_ids,
         )
         self.units[unit_id] = updated
+        self.rent_reasons.append(reason)
         return updated
 
     def timeline(self, unit_id: UUID, *, limit: int, cursor: str | None) -> UnitTimelinePage:
@@ -249,7 +253,7 @@ def sample_unit(property_id: UUID, *, version: int = 1) -> Unit:
         property_id,
         "101",
         "1",
-        UnitType.ONE_BEDROOM,
+        UnitType.UNCOVERED,
         UnitStatus.UNDER_MAINTENANCE,
         version,
     )
@@ -288,7 +292,7 @@ def test_unit_create_rejects_unscoped_actor_and_unknown_fields() -> None:
     payload = {
         "unit_number": "101",
         "floor_item_id": str(FLOOR_ONE),
-        "unit_type": "STUDIO",
+        "unit_type": "COVERED",
         "status": "VACANT",
     }
 
@@ -320,7 +324,7 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
         json={
             "unit_number": "101",
             "floor_item_id": str(FLOOR_ONE),
-            "unit_type": "STUDIO",
+            "unit_type": "COVERED",
             "status": "VACANT",
         },
     )
@@ -426,6 +430,7 @@ def test_unit_timeline_preserves_event_identity_and_has_no_delete_route() -> Non
         "resulting_state": {"status": "UNDER_MAINTENANCE"},
         "correlation_id": str(event.correlation_id),
         "outcome": "SUCCEEDED",
+        "actor_name": None,
     }
     assert client.delete(f"/units/{unit.unit_id}").status_code == 405
 
@@ -478,7 +483,7 @@ def test_unit_changes_need_the_origin_and_the_csrf_pair() -> None:
     client = TestClient(
         create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
     )
-    payload = {"unit_number": "102", "floor": "1", "unit_type": "STUDIO", "status": "VACANT"}
+    payload = {"unit_number": "102", "floor": "1", "unit_type": "COVERED", "status": "VACANT"}
     for headers in (
         {},
         {**BROWSER, "Origin": "https://elsewhere.example"},
@@ -510,7 +515,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
         json={
             "unit_number": "204",
             "floor_item_id": str(FLOOR_TWO),
-            "unit_type": "ONE_BEDROOM",
+            "unit_type": "UNCOVERED",
             "size_square_metres": "42.5",
             "bedrooms": 1,
             "bathrooms": 1,
@@ -563,7 +568,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
     old_contract = client.post(
         f"/properties/{property_id}/units",
         headers=BROWSER,
-        json={"unit_number": "301", "floor": "3", "unit_type": "STUDIO"},
+        json={"unit_number": "301", "floor": "3", "unit_type": "COVERED"},
     )
     assert old_contract.status_code == 422
 
@@ -653,7 +658,11 @@ def test_rent_terms_are_set_by_a_manager_at_the_unit_version() -> None:
     unit = sample_unit(property_id)
     flow = InMemoryUnitFlow(units={unit.unit_id: unit})
     service = uuid4()
-    body = {"default_monthly_rent_usd_cents": 45_000, "required_service_ids": [str(service)]}
+    body = {
+        "default_monthly_rent_usd_cents": 45_000,
+        "required_service_ids": [str(service)],
+        "reason": "New price list",
+    }
     staff = TestClient(
         create_app(
             actor_resolver=lambda _: actor_with(property_id, "units.read"),
@@ -693,8 +702,32 @@ def test_rent_terms_are_set_by_a_manager_at_the_unit_version() -> None:
     cleared = client.put(
         path,
         headers={**BROWSER, "If-Match": '"2"'},
-        json={"default_monthly_rent_usd_cents": None, "required_service_ids": []},
+        json={"default_monthly_rent_usd_cents": None, "required_service_ids": [], "reason": "x"},
     )
     assert cleared.status_code == 200
     assert cleared.json()["data"]["default_monthly_rent_usd_cents"] is None
     assert cleared.json()["data"]["required_service_ids"] == []
+
+
+def test_rent_terms_need_a_reason_which_is_kept_for_history() -> None:
+    """Parking Step 3 (owner 2026-10-29): a price change is a money action, so Rent and Services
+    asks why; the reason is trimmed and goes to the Unit's History with the old and new price."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    flow = InMemoryUnitFlow(units={unit.unit_id: unit})
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    path = f"/units/{unit.unit_id}/rent-terms"
+    terms = {"default_monthly_rent_usd_cents": 45_000, "required_service_ids": []}
+    for missing in ({}, {"reason": ""}, {"reason": "   "}, {"reason": "x" * 501}):
+        refused = client.put(
+            path, headers={**BROWSER, "If-Match": '"1"'}, json={**terms, **missing}
+        )
+        assert refused.status_code == 422, missing
+    assert flow.rent_reasons == []
+    saved = client.put(
+        path, headers={**BROWSER, "If-Match": '"1"'}, json={**terms, "reason": "  New price list  "}
+    )
+    assert saved.status_code == 200, saved.text
+    assert flow.rent_reasons == ["New price list"]

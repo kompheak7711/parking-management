@@ -8,7 +8,7 @@ describe("Make Reservation saved reason (V1-061 review)", () => {
       "Agreed with the Owner.",
     );
     expect(acceptanceReason("Agreed with the Owner.", "Long stay")).toBe(
-      "Agreed with the Owner. Rent below the Unit default: Long stay",
+      "Agreed with the Owner. Rent below the Parking default: Long stay",
     );
     const long = acceptanceReason(`${"a".repeat(499)} 😀`, null);
     expect(long).toBe("a".repeat(499));

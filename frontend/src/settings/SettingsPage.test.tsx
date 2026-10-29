@@ -171,7 +171,7 @@ function show(
 }
 
 describe("Settings", () => {
-  it("TEST-FE-1116 with no Property open, the Business, Rates, Units and Users tabs say how to open one instead of reading forever, and the earlier form to open it stays (V1-061 Fix 4)", async () => {
+  it("TEST-FE-1116 with no Property open, the Business, Rates, Parking and Users tabs say how to open one instead of reading forever, and the earlier form to open it stays (V1-061 Fix 4)", async () => {
     window.location.hash = "#/settings/business";
     businessApi.property.load.mockClear();
     show(() => new Promise<HealthStatus>(() => undefined), { propertyId: "" });

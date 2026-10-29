@@ -221,7 +221,9 @@ function RentTermsDialog({
   const [chosen, setChosen] = useState<Set<string>>(
     new Set(unit.required_service_ids ?? []),
   );
+  const [reason, setReason] = useState("");
   const [rentProblem, setRentProblem] = useState<string | null>(null);
+  const [reasonProblem, setReasonProblem] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const ready = services !== null && services !== "failed";
@@ -235,6 +237,12 @@ function RentTermsDialog({
       return;
     }
     setRentProblem(null);
+    // Parking Step 3: a price change is a money action, so it says why.
+    if (reason.trim() === "") {
+      setReasonProblem(ut(language, "rt_reason_req"));
+      return;
+    }
+    setReasonProblem(null);
     if (chosen.size > 20) {
       setProblem(ut(language, "rt_err_many"));
       return;
@@ -245,6 +253,7 @@ function RentTermsDialog({
       .setRentTerms(unit, {
         default_monthly_rent_usd_cents: cents,
         required_service_ids: [...chosen],
+        reason: reason.trim(),
       })
       .then(onSaved)
       .catch((error: unknown) => {
@@ -280,6 +289,25 @@ function RentTermsDialog({
         rentProblem={rentProblem}
         services={services}
       />
+      <div className="ui-field">
+        <label htmlFor="unit-rent-reason">{ut(language, "reason")}</label>
+        <textarea
+          aria-invalid={reasonProblem !== null}
+          id="unit-rent-reason"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          rows={2}
+          value={reason}
+        />
+        {reasonProblem !== null && (
+          <p className="ui-error" role="alert">
+            <Icon name="alert" small />
+            <span>{reasonProblem}</span>
+          </p>
+        )}
+      </div>
       <p className="ui-small ui-muted">{ut(language, "rt_dialog_note")}</p>
       {problem !== null && (
         <p className="ui-error" role="alert">

@@ -66,7 +66,7 @@ def create_unit(
     property_id: UUID,
     actor_id: UUID,
     floor_item_id: UUID,
-    unit_type: str = "STUDIO",
+    unit_type: str = "COVERED",
     unit_number: str | None = None,
     size: Decimal | None = None,
     bedrooms: int | None = None,
@@ -126,9 +126,10 @@ def sqlstate_of(
     return None
 
 
-def test_every_property_gets_the_default_unit_types_and_balcony(
+def test_every_property_gets_the_four_parking_types(
     connection: Connection[tuple[object, ...]],
 ) -> None:
+    """Parking Step 3 (owner, 2026-10-29): the seeds are the four Parking Types; no Balcony."""
     actor_id = insert_actor(connection)
     property_id = property_for(connection, actor_id)
 
@@ -137,7 +138,7 @@ def test_every_property_gets_the_default_unit_types_and_balcony(
         SELECT list_kind, code, name_en, name_km IS NOT NULL
         FROM app.unit_setup_items
         WHERE property_id = %s AND code IN (
-            'STUDIO', 'ONE_BEDROOM', 'TWO_BEDROOM', 'THREE_BEDROOM', 'BALCONY'
+            'COVERED', 'UNCOVERED', 'MOTORBIKE', 'TUK_TUK_FOOD_CART', 'BALCONY'
         )
         ORDER BY list_kind, sort_order
         """,
@@ -151,17 +152,16 @@ def test_every_property_gets_the_default_unit_types_and_balcony(
     ).fetchone()
 
     assert rows == [
-        ("ROOM_FEATURE", "BALCONY", "Balcony", True),
-        ("UNIT_TYPE", "STUDIO", "Studio", True),
-        ("UNIT_TYPE", "ONE_BEDROOM", "1 bedroom", True),
-        ("UNIT_TYPE", "TWO_BEDROOM", "2 bedrooms", True),
-        ("UNIT_TYPE", "THREE_BEDROOM", "3 bedrooms", True),
+        ("UNIT_TYPE", "COVERED", "Covered", True),
+        ("UNIT_TYPE", "UNCOVERED", "Uncovered", True),
+        ("UNIT_TYPE", "MOTORBIKE", "Motorbike", True),
+        ("UNIT_TYPE", "TUK_TUK_FOOD_CART", "Tuk-Tuk/Food Cart", True),
     ]
     assert trigger == ("O",)
     assert connection.execute(
         """
         SELECT count(*) FROM app.unit_setup_items AS item
-        WHERE item.property_id = %s AND item.code IN ('STUDIO', 'BALCONY')
+        WHERE item.property_id = %s AND item.code IN ('COVERED', 'MOTORBIKE')
           AND EXISTS (
               SELECT 1 FROM app.audit_events AS event
               WHERE event.entity_id = item.id AND event.action = 'unit_setup_item.created'
@@ -225,11 +225,8 @@ def test_units_save_keep_and_clear_details_and_room_features(
     actor_id, property_id, floor_id = setup(connection)
     view_id, _, _ = create_item(connection, property_id, actor_id, "VIEW", "Pool view")
     kitchen_id, _, _ = create_item(connection, property_id, actor_id, "KITCHEN", "Open kitchen")
-    balcony_id = connection.execute(
-        "SELECT id FROM app.unit_setup_items WHERE property_id = %s AND code = 'BALCONY'",
-        (property_id,),
-    ).fetchone()
-    assert balcony_id is not None
+    balcony_uuid, _, _ = create_item(connection, property_id, actor_id, "ROOM_FEATURE", "Balcony")
+    balcony_id = (balcony_uuid,)
     desk_id, _, _ = create_item(connection, property_id, actor_id, "ROOM_FEATURE", "Desk")
 
     created = create_unit(
@@ -237,7 +234,7 @@ def test_units_save_keep_and_clear_details_and_room_features(
         property_id=property_id,
         actor_id=actor_id,
         floor_item_id=floor_id,
-        unit_type="ONE_BEDROOM",
+        unit_type="UNCOVERED",
         size=Decimal("42.50"),
         bedrooms=1,
         bathrooms=1,
@@ -252,7 +249,7 @@ def test_units_save_keep_and_clear_details_and_room_features(
         (
             unit_id,
             floor_id,
-            "TWO_BEDROOM",
+            "MOTORBIKE",
             "CLEANING",
             1,
             actor_id,
@@ -279,7 +276,7 @@ def test_units_save_keep_and_clear_details_and_room_features(
     assert isinstance(created[14], list)
     assert set(created[14]) == {balcony_id[0], desk_id}
     assert updated is not None
-    assert updated[4:7] == ("TWO_BEDROOM", "CLEANING", 2)
+    assert updated[4:7] == ("MOTORBIKE", "CLEANING", 2)
     assert updated[8:15] == (None, 2, None, None, kitchen_id, None, [desk_id])
 
 
@@ -317,10 +314,10 @@ def test_unit_types_and_items_must_come_from_the_property_lists(
 
     assert unit_refusal(floor_id, "PENTHOUSE", None, None) == "22023"
     assert unit_refusal(floor_id, "commercial", None, None) == "22023"
-    assert unit_refusal(uuid4(), "STUDIO", None, None) == "22023"
-    assert unit_refusal(view_id, "STUDIO", None, None) == "22023"
-    assert unit_refusal(floor_id, "STUDIO", floor_id, None) == "22023"
-    assert unit_refusal(floor_id, "STUDIO", None, view_id) == "22023"
+    assert unit_refusal(uuid4(), "COVERED", None, None) == "22023"
+    assert unit_refusal(view_id, "COVERED", None, None) == "22023"
+    assert unit_refusal(floor_id, "COVERED", floor_id, None) == "22023"
+    assert unit_refusal(floor_id, "COVERED", None, view_id) == "22023"
     assert (
         sqlstate_of(
             connection,
@@ -342,7 +339,7 @@ def test_the_unit_number_never_changes_after_creation(
 
     old_update = sqlstate_of(
         connection,
-        "SELECT * FROM app.update_unit(%s, %s, '1', 'STUDIO', 'VACANT', 1, %s)",
+        "SELECT * FROM app.update_unit(%s, %s, '1', 'COVERED', 'VACANT', 1, %s)",
         (unit_id, f"{number}-B", actor_id),
     )
     direct = sqlstate_of(
@@ -351,14 +348,14 @@ def test_the_unit_number_never_changes_after_creation(
         (unit_id,),
     )
     same_number = connection.execute(
-        "SELECT version FROM app.update_unit(%s, %s, '2', 'STUDIO', 'CLEANING', 1, %s)",
+        "SELECT version FROM app.update_unit(%s, %s, '2', 'COVERED', 'CLEANING', 1, %s)",
         (unit_id, number, actor_id),
     ).fetchone()
     linked = create_unit(
         connection, property_id=property_id, actor_id=actor_id, floor_item_id=floor_id
     )
     connection.execute(
-        "SELECT * FROM app.update_unit(%s, %s, 'Roof', 'STUDIO', 'VACANT', 1, %s)",
+        "SELECT * FROM app.update_unit(%s, %s, 'Roof', 'COVERED', 'VACANT', 1, %s)",
         (linked[0], linked[2], actor_id),
     )
     unlinked = connection.execute(
@@ -389,7 +386,7 @@ def test_items_in_use_cannot_be_removed_and_removed_items_cannot_be_picked(
     studio = connection.execute(
         """
         SELECT id, version FROM app.unit_setup_items
-        WHERE property_id = %s AND list_kind = 'UNIT_TYPE' AND code = 'STUDIO'
+        WHERE property_id = %s AND list_kind = 'UNIT_TYPE' AND code = 'COVERED'
         """,
         (property_id,),
     ).fetchone()
@@ -413,7 +410,7 @@ def test_items_in_use_cannot_be_removed_and_removed_items_cannot_be_picked(
             property_id,
             f"PICK-{uuid4().hex[:8]}",
             spare_floor,
-            "STUDIO",
+            "COVERED",
             actor_id,
             None,
             None,
@@ -545,6 +542,7 @@ def test_the_existing_property_gets_the_defaults_and_its_floors_linked() -> None
                 connection,
                 actor_id=actor_id,
                 property_id=property_id,
+                unit_type="STUDIO",
                 unit_number="101",
                 floor="1",
             )
@@ -560,6 +558,7 @@ def test_the_existing_property_gets_the_defaults_and_its_floors_linked() -> None
                 connection,
                 actor_id=actor_id,
                 property_id=property_id,
+                unit_type="STUDIO",
                 unit_number="201",
                 floor="2",
             )
@@ -568,6 +567,7 @@ def test_the_existing_property_gets_the_defaults_and_its_floors_linked() -> None
                 connection,
                 actor_id=actor_id,
                 property_id=property_id,
+                unit_type="STUDIO",
                 unit_number="301",
                 floor=long_floor,
             )

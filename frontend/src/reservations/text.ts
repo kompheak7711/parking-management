@@ -303,12 +303,12 @@ const TEXT = {
   ],
   // new (V1-061, owner 29/10/2026, DL-110): the Unit's default Rent
   mk_rent_default: [
-    "This Unit's default Rent is {0}. A higher Rent is fine.",
-    "ថ្លៃឈ្នួលលំនាំដើមរបស់បន្ទប់នេះគឺ {0}។ ថ្លៃខ្ពស់ជាងនេះអាចធ្វើបាន។",
+    "This Parking's default Rent is {0}. A higher Rent is fine.",
+    "ថ្លៃឈ្នួលលំនាំដើមរបស់ចំណតនេះគឺ {0}។ ថ្លៃខ្ពស់ជាងនេះអាចធ្វើបាន។",
   ],
   mk_err_rent_below: [
-    "The Rent is below this Unit's default Rent of {0}. Only a Manager or the Owner can agree a lower Rent.",
-    "ថ្លៃឈ្នួលទាបជាងថ្លៃលំនាំដើម {0} របស់បន្ទប់នេះ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ប៉ុណ្ណោះដែលអាចយល់ព្រមថ្លៃទាបជាងនេះ។",
+    "The Rent is below this Parking's default Rent of {0}. Only a Manager or the Owner can agree a lower Rent.",
+    "ថ្លៃឈ្នួលទាបជាងថ្លៃលំនាំដើម {0} របស់ចំណតនេះ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ប៉ុណ្ណោះដែលអាចយល់ព្រមថ្លៃទាបជាងនេះ។",
   ],
   mk_err_rent_rights: [
     "Your rights could not be read just now, so a Rent below {0} cannot be checked before the money is taken. Reload the page, or agree at least {0}.",

@@ -1089,22 +1089,22 @@ const TEXT = {
   ],
   // new (V1-061, owner 29/10/2026, DL-110): the Unit's default Rent and required Services
   rent_default_help: [
-    "This Unit's default Rent is {0}. A higher Rent is fine.",
-    "ថ្លៃឈ្នួលលំនាំដើមរបស់បន្ទប់នេះគឺ {0}។ ថ្លៃខ្ពស់ជាងនេះអាចធ្វើបាន។",
+    "This Parking's default Rent is {0}. A higher Rent is fine.",
+    "ថ្លៃឈ្នួលលំនាំដើមរបស់ចំណតនេះគឺ {0}។ ថ្លៃខ្ពស់ជាងនេះអាចធ្វើបាន។",
   ],
   err_rent_below: [
-    "The Rent is below this Unit's default Rent of {0}. Only a Manager or the Owner can agree a lower Rent.",
-    "ថ្លៃឈ្នួលទាបជាងថ្លៃលំនាំដើម {0} របស់បន្ទប់នេះ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ប៉ុណ្ណោះដែលអាចយល់ព្រមថ្លៃទាបជាងនេះ។",
+    "The Rent is below this Parking's default Rent of {0}. Only a Manager or the Owner can agree a lower Rent.",
+    "ថ្លៃឈ្នួលទាបជាងថ្លៃលំនាំដើម {0} របស់ចំណតនេះ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ប៉ុណ្ណោះដែលអាចយល់ព្រមថ្លៃទាបជាងនេះ។",
   ],
   rent_reason: ["Why is the Rent below {0}?", "ហេតុអ្វីថ្លៃឈ្នួលទាបជាង {0}?"],
   err_rent_reason: [
     "Say why the Rent is lower.",
     "សូមប្រាប់ហេតុអ្វីថ្លៃឈ្នួលទាបជាង។",
   ],
-  svc_required: ["Required for this Unit", "ចាំបាច់សម្រាប់បន្ទប់នេះ"],
+  svc_required: ["Required for this Parking", "ចាំបាច់សម្រាប់ចំណតនេះ"],
   err_svc_required: [
-    "A Service this Unit requires cannot run for these dates. Change the dates, or ask a Manager to change the Unit's Services.",
-    "សេវាដែលបន្ទប់នេះតម្រូវមិនអាចដំណើរការសម្រាប់កាលបរិច្ឆេទទាំងនេះទេ។ សូមប្តូរកាលបរិច្ឆេទ ឬសុំអ្នកគ្រប់គ្រងប្តូរសេវារបស់បន្ទប់។",
+    "A Service this Parking requires cannot run for these dates. Change the dates, or ask a Manager to change the Parking's Services.",
+    "សេវាដែលចំណតនេះតម្រូវមិនអាចដំណើរការសម្រាប់កាលបរិច្ឆេទទាំងនេះទេ។ សូមប្តូរកាលបរិច្ឆេទ ឬសុំអ្នកគ្រប់គ្រងប្តូរសេវារបស់ចំណត។",
   ],
   // new (V1-061, owner 29/10/2026, DL-111): Move out one occupant
   mo_button: ["Move out", "ចាកចេញ"],

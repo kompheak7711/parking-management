@@ -21,13 +21,13 @@ UNIT_MAX_SIZE: Final = Decimal("10000")
 
 
 class UnitType(StrEnum):
-    """The default Unit Types every Property starts with (BR-UNIT-001; a Settings list since
-    DL-075, so a Unit may hold any code of that list)."""
+    """The default Parking Types every Property starts with (owner, 2026-10-29; a Settings list
+    since DL-075, so a Unit may hold any code of that list)."""
 
-    STUDIO = "STUDIO"
-    ONE_BEDROOM = "ONE_BEDROOM"
-    TWO_BEDROOM = "TWO_BEDROOM"
-    THREE_BEDROOM = "THREE_BEDROOM"
+    COVERED = "COVERED"
+    UNCOVERED = "UNCOVERED"
+    MOTORBIKE = "MOTORBIKE"
+    TUK_TUK_FOOD_CART = "TUK_TUK_FOOD_CART"
 
 
 class UnitStatus(StrEnum):

@@ -175,6 +175,8 @@ A Unit has:
 
 Unit Types:
 
+Amended for Parking (owner, 2026-10-29, Parking Step 3): the seeded list is Covered, Uncovered, Motorbike and Tuk-Tuk/Food Cart (codes COVERED, UNCOVERED, MOTORBIKE, TUK_TUK_FOOD_CART); it stays a Settings list.
+
 - Studio
 - One Bedroom
 - Two Bedroom

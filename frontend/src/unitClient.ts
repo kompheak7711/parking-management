@@ -126,6 +126,8 @@ export interface UnitResource extends UnitDetails {
 export interface UnitRentTermsSource {
   default_monthly_rent_usd_cents: number | null;
   required_service_ids: string[];
+  /** Parking Step 3: a price change is a money action, so it says why (kept in History). */
+  reason: string;
 }
 
 export interface UnitListPage {
@@ -145,6 +147,8 @@ export interface UnitTimelineEvent {
   resulting_state: unknown;
   correlation_id: string;
   outcome: string;
+  /** Parking Step 3: the display name of who did it, when the server knows it. */
+  actor_name?: string | null;
 }
 
 export interface UnitTimelinePage {

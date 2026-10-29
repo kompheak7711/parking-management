@@ -21,6 +21,7 @@ from property_rental.lease_api import LeaseResource, PostgresLeaseResourceFlow
 from test_lease_lifecycle_migration import database_now
 from test_lease_migration import setup_sources
 from test_move_in_migration import setup_move_in
+from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -318,7 +319,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             ("lease.sign",),
         ]
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270404_254",
+            "20270405_255",
         )
         assert connection.execute(
             "SELECT has_function_privilege('prm_runtime',"
@@ -456,8 +457,15 @@ def test_http_draft_requires_security_deposit_from_the_same_reservation_unit(
         connection.execute(
             "INSERT INTO app.units("
             "id,property_id,unit_number,floor,unit_type,status,created_by,updated_by) "
-            "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
-            (other_unit_id, property_id, f"LEASE-{other_unit_id.hex[:12]}", actor_id, actor_id),
+            "VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+            (
+                other_unit_id,
+                property_id,
+                f"LEASE-{other_unit_id.hex[:12]}",
+                seeded_unit_type(connection, property_id),
+                actor_id,
+                actor_id,
+            ),
         )
         deposit_by_unit: dict[UUID, UUID] = {}
         for source_unit_id in (unit_id, other_unit_id):
@@ -708,8 +716,15 @@ def test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft(
         connection.execute(
             "INSERT INTO app.units("
             "id,property_id,unit_number,floor,unit_type,status,created_by,updated_by) "
-            "VALUES (%s,%s,%s,'1','ONE_BEDROOM','VACANT',%s,%s)",
-            (other_unit_id, property_id, f"LEASE-{other_unit_id.hex[:12]}", actor_id, actor_id),
+            "VALUES (%s,%s,%s,'1',%s,'VACANT',%s,%s)",
+            (
+                other_unit_id,
+                property_id,
+                f"LEASE-{other_unit_id.hex[:12]}",
+                seeded_unit_type(connection, property_id),
+                actor_id,
+                actor_id,
+            ),
         )
         connection.commit()
 

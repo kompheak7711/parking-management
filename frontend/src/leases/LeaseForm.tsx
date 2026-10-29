@@ -693,7 +693,7 @@ export function LeaseForm({
           : reservation !== null
             ? "Lease drafted from the Booking"
             : "Lease drafted from the New Lease form"
-      }${belowDefault ? `. Rent below the Unit default: ${rentReason.trim()}` : ""}`.slice(
+      }${belowDefault ? `. Rent below the Parking default: ${rentReason.trim()}` : ""}`.slice(
         0,
         500,
       ),

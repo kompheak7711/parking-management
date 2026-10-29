@@ -1015,7 +1015,7 @@ describe("Lease actions", () => {
     expect(money.receiveSecurityDeposit).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1111 Edit draft shows the Unit's default Rent and stops a lower Rent without a Manager; raising it is fine (V1-061, DL-110)", async () => {
+  it("TEST-FE-1111 Edit draft shows the Parking's default Rent and stops a lower Rent without a Manager; raising it is fine (V1-061, DL-110)", async () => {
     window.location.hash = "#/leases/lease-sign";
     const draft = {
       ...signable,
@@ -1042,7 +1042,7 @@ describe("Lease actions", () => {
     const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
     expect(
       await within(dialog).findByText(
-        "This Unit's default Rent is $500.00. A higher Rent is fine.",
+        "This Parking's default Rent is $500.00. A higher Rent is fine.",
       ),
     ).toBeInTheDocument();
     expect(get).toHaveBeenCalledWith("unit-U301");
@@ -1054,7 +1054,7 @@ describe("Lease actions", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(dialog).toHaveTextContent(
-      "The Rent is below this Unit's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
+      "The Rent is below this Parking's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
     );
     expect(update).not.toHaveBeenCalled();
     fireEvent.change(within(dialog).getByLabelText("Monthly Rent"), {

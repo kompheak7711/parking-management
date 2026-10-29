@@ -322,6 +322,9 @@ export function NewUnitDialog({
             .setRentTerms(unit, {
               default_monthly_rent_usd_cents: cents,
               required_service_ids: [...chosen],
+              // Parking Step 3: the first price needs no typed reason; History says it
+              // came with the new Parking.
+              reason: "Set with the new Parking",
             })
             .then(onCreated)
             .catch(() => {

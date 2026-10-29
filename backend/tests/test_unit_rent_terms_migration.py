@@ -101,6 +101,7 @@ def _set(case: dict[str, UUID], rent: int | None, services: tuple[UUID, ...]) ->
         required_service_ids=services,
         expected_version=unit.version,
         actor_id=str(case["actor"]),
+        reason="test set-up",
     )
 
 
@@ -151,6 +152,7 @@ def test_rent_terms_are_set_at_the_unit_version_and_kept_in_history(
         required_service_ids=(case["required"],),
         expected_version=before.version,
         actor_id=str(case["actor"]),
+        reason="Opening price",
     )
     assert updated.version == before.version + 1
     assert updated.default_monthly_rent_usd_cents == 45_000
@@ -163,6 +165,7 @@ def test_rent_terms_are_set_at_the_unit_version_and_kept_in_history(
             required_service_ids=(),
             expected_version=before.version,
             actor_id=str(case["actor"]),
+            reason="stale",
         )
     # A Service of another Property, or one that is not there, is refused.
     with pytest.raises(UnitResourceInvalid):
@@ -172,6 +175,7 @@ def test_rent_terms_are_set_at_the_unit_version_and_kept_in_history(
             required_service_ids=(uuid4(),),
             expected_version=updated.version,
             actor_id=str(case["actor"]),
+            reason="wrong Service",
         )
     cleared = flow.set_rent_terms(
         case["unit"],
@@ -179,15 +183,29 @@ def test_rent_terms_are_set_at_the_unit_version_and_kept_in_history(
         required_service_ids=(),
         expected_version=updated.version,
         actor_id=str(case["actor"]),
+        reason="No default for now",
     )
     assert (cleared.default_monthly_rent_usd_cents, cleared.required_service_ids) == (None, ())
+    # Parking Step 3 (owner 2026-10-29): History keeps who, when, the old price, the new price
+    # and the reason of every change.
     with psycopg.connect(migrated_database_url) as connection:
         changes = connection.execute(
-            "SELECT count(*) FROM app.audit_events "
-            "WHERE entity_id=%s AND action='unit.rent_terms_changed'",
+            "SELECT reason, previous_state->>'default_monthly_rent_usd_cents',"
+            " resulting_state->>'default_monthly_rent_usd_cents'"
+            " FROM app.audit_events WHERE entity_id=%s AND action='unit.rent_terms_changed'"
+            " ORDER BY occurred_at",
             (case["unit"],),
+        ).fetchall()
+        who = connection.execute(
+            "SELECT display_name FROM app.user_accounts WHERE actor_id = %s", (case["actor"],)
         ).fetchone()
-    assert changes is not None and changes[0] == 2
+    assert changes == [("Opening price", None, "45000"), ("No default for now", "45000", None)]
+    assert who is not None
+    events = flow.timeline(case["unit"], limit=5, cursor=None).items
+    assert [(event.action, event.actor_name, event.reason) for event in events[:2]] == [
+        ("unit.rent_terms_changed", str(who[0]), "No default for now"),
+        ("unit.rent_terms_changed", str(who[0]), "Opening price"),
+    ]
 
 
 def test_runtime_role_cannot_write_required_services_directly(migrated_database_url: str) -> None:

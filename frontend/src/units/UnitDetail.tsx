@@ -97,6 +97,16 @@ interface HistoryLine {
   text: string;
 }
 
+function rentOf(state: unknown): number | null {
+  const cents = (state as { default_monthly_rent_usd_cents?: unknown } | null)
+    ?.default_monthly_rent_usd_cents;
+  return typeof cents === "number" ? cents : null;
+}
+
+function priceText(language: Language, cents: number | null): string {
+  return cents === null ? ut(language, "rt_none") : usdFromCents(cents);
+}
+
 /** The Unit's own audit events, with the Lease and Reservation steps for this Unit. */
 function historyLines(
   language: Language,
@@ -109,7 +119,24 @@ function historyLines(
     if (event.action === "unit.created") {
       lines.push({ at: event.occurred_at, text: ut(language, "h_created") });
     } else if (event.action === "unit.rent_terms_changed") {
-      lines.push({ at: event.occurred_at, text: ut(language, "h_rent_terms") });
+      // Parking Step 3: a price change says who, the old price, the new price and why.
+      const before = rentOf(event.previous_state);
+      const after = rentOf(event.resulting_state);
+      const who = event.actor_name ?? event.actor_id;
+      lines.push({
+        at: event.occurred_at,
+        text:
+          before === after
+            ? ut(language, "h_rent_terms_by", who, event.reason)
+            : ut(
+                language,
+                "h_price",
+                priceText(language, before),
+                priceText(language, after),
+                who,
+                event.reason,
+              ),
+      });
     } else if (event.action === "unit.inventory_updated") {
       lines.push({ at: event.occurred_at, text: ut(language, "h_inventory") });
     } else if (event.action === "unit.status_changed") {

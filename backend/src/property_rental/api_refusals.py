@@ -82,14 +82,14 @@ DRAFT_CONFIRM_NOT_AVAILABLE = Refusal(
 RENT_BELOW_UNIT_DEFAULT = Refusal(
     403,
     "RENT_BELOW_UNIT_DEFAULT",
-    "The Rent is below the Unit's default Rent. A Manager or the Owner must agree it.",
+    "The Rent is below the Parking's default Rent. A Manager or the Owner must agree it.",
     ("DL-110",),
     ("monthly_rent_usd_cents",),
 )
 LEASE_REQUIRED_SERVICE_MISSING = Refusal(
     409,
     "LEASE_REQUIRED_SERVICE_MISSING",
-    "The Lease must hold every Service the Unit requires.",
+    "The Lease must hold every Service the Parking requires.",
     ("DL-110",),
     ("service_terms",),
 )

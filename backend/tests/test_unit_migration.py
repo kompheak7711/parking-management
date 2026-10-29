@@ -22,6 +22,7 @@ from property_rental.unit import (
     UnitType,
 )
 from property_rental.unit_api import PostgresUnitResourceFlow, UnitDetails
+from unit_type_support import seeded_unit_type
 
 
 @pytest.fixture(scope="session")
@@ -120,11 +121,16 @@ def insert_unit(
     unit_id: UUID | None = None,
     unit_number: str = "101",
     floor: str = "1",
-    unit_type: str = "STUDIO",
+    unit_type: str | None = None,
     status: str = "VACANT",
 ) -> UUID:
-    """Insert a Unit directly as the migration owner for constraint tests."""
+    """Insert a Unit directly as the migration owner for constraint tests.
+
+    The default Unit Type is the Property's first seeded type (Parking Step 3: COVERED at the
+    head) or STUDIO on a database pinned before the Unit Types list existed (migration 227)."""
     stored_unit_id = uuid4() if unit_id is None else unit_id
+    if unit_type is None:
+        unit_type = seeded_unit_type(connection, property_id)
     connection.execute(
         """
         INSERT INTO app.units (
@@ -162,7 +168,7 @@ def test_migration_persists_unit_identity_type_status_and_provenance(
         connection,
         actor_id=actor_id,
         property_id=property_id,
-        unit_type="TWO_BEDROOM",
+        unit_type="MOTORBIKE",
         status="CLEANING",
     )
 
@@ -187,7 +193,7 @@ def test_migration_persists_unit_identity_type_status_and_provenance(
         property_id,
         "101",
         "1",
-        "TWO_BEDROOM",
+        "MOTORBIKE",
         "CLEANING",
         1,
         actor_id,
@@ -197,7 +203,7 @@ def test_migration_persists_unit_identity_type_status_and_provenance(
 
 @pytest.mark.parametrize(
     "unit_type",
-    ["STUDIO", "ONE_BEDROOM", "TWO_BEDROOM", "THREE_BEDROOM"],
+    ["COVERED", "UNCOVERED", "MOTORBIKE", "TUK_TUK_FOOD_CART"],
 )
 def test_migration_accepts_supported_unit_types(
     connection: Connection[tuple[object, ...]], unit_type: str
@@ -374,7 +380,7 @@ def test_runtime_creates_units_only_through_protected_function(
                 id, property_id, unit_number, floor, unit_type, status,
                 created_by, updated_by
             )
-            VALUES (%s, %s, 'FORGED', '1', 'STUDIO', 'VACANT', %s, %s)
+            VALUES (%s, %s, 'FORGED', '1', 'COVERED', 'VACANT', %s, %s)
             """,
             (uuid4(), property_id, actor_id, actor_id),
         )
@@ -395,7 +401,7 @@ def test_runtime_creates_units_only_through_protected_function(
             property_id,
             "\t101\n",
             "\r1\f",
-            "ONE_BEDROOM",
+            "UNCOVERED",
             "VACANT",
             actor_id,
         ),
@@ -415,7 +421,7 @@ def test_runtime_creates_units_only_through_protected_function(
         property_id,
         "101",
         "1",
-        "ONE_BEDROOM",
+        "UNCOVERED",
         "VACANT",
         1,
     )
@@ -459,7 +465,7 @@ def test_postgres_repository_distinguishes_duplicate_unit_identity(
             property_id=property_id,
             unit_number="101",
             floor="1",
-            unit_type=UnitType.STUDIO,
+            unit_type=UnitType.COVERED,
             status=UnitStatus.VACANT,
         )
     )
@@ -471,7 +477,7 @@ def test_postgres_repository_distinguishes_duplicate_unit_identity(
                 property_id=property_id,
                 unit_number="102",
                 floor="1",
-                unit_type=UnitType.ONE_BEDROOM,
+                unit_type=UnitType.UNCOVERED,
                 status=UnitStatus.VACANT,
             )
         )
@@ -530,7 +536,7 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
         property_id,
         unit_number=unit_number,
         floor_item_id=first_floor.item_id,
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         unit_status=UnitStatus.VACANT,
         details=UnitDetails(),
         actor_id=str(actor_id),
@@ -538,7 +544,7 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
     updated = flow.patch(
         created.unit_id,
         floor_item_id=second_floor.item_id,
-        unit_type=UnitType.ONE_BEDROOM,
+        unit_type=UnitType.UNCOVERED,
         unit_status=UnitStatus.CLEANING,
         details=UnitDetails(),
         expected_version=1,
@@ -555,7 +561,7 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
         "property_id": str(property_id),
         "unit_number": unit_number,
         "floor": first_floor.name_en,
-        "unit_type": "STUDIO",
+        "unit_type": "COVERED",
         "status": "VACANT",
         "version": 1,
         "floor_item_id": str(first_floor.item_id),

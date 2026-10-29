@@ -39,10 +39,10 @@ class InMemoryUnitRepository:
 @pytest.mark.parametrize(
     "unit_type",
     [
-        UnitType.STUDIO,
-        UnitType.ONE_BEDROOM,
-        UnitType.TWO_BEDROOM,
-        UnitType.THREE_BEDROOM,
+        UnitType.COVERED,
+        UnitType.UNCOVERED,
+        UnitType.MOTORBIKE,
+        UnitType.TUK_TUK_FOOD_CART,
     ],
 )
 def test_unit_accepts_each_supported_type(unit_type: UnitType) -> None:
@@ -65,7 +65,7 @@ def test_unit_accepts_each_supported_status(status: UnitStatus) -> None:
         property_id=uuid4(),
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=status,
     )
 
@@ -94,7 +94,7 @@ def test_unit_rejects_invalid_identity_or_attributes(
         "property_id": uuid4(),
         "unit_number": "101",
         "floor": "1",
-        "unit_type": UnitType.STUDIO,
+        "unit_type": UnitType.COVERED,
         "status": UnitStatus.VACANT,
     }
     values[field_name] = value
@@ -114,7 +114,7 @@ def test_service_normalizes_and_persists_unit_with_stable_identity() -> None:
         property_id=property_id,
         unit_number=" 101 ",
         floor=" 1 ",
-        unit_type=UnitType.ONE_BEDROOM,
+        unit_type=UnitType.UNCOVERED,
         status=UnitStatus.CLEANING,
     )
 
@@ -123,7 +123,7 @@ def test_service_normalizes_and_persists_unit_with_stable_identity() -> None:
         property_id=property_id,
         unit_number="101",
         floor="1",
-        unit_type=UnitType.ONE_BEDROOM,
+        unit_type=UnitType.UNCOVERED,
         status=UnitStatus.CLEANING,
     )
     assert repository.units[(property_id, "101")] is created
@@ -138,7 +138,7 @@ def test_service_rejects_unit_outside_authoritative_property_scope() -> None:
             property_id=uuid4(),
             unit_number="101",
             floor="1",
-            unit_type=UnitType.STUDIO,
+            unit_type=UnitType.COVERED,
             status=UnitStatus.VACANT,
         )
 
@@ -152,7 +152,7 @@ def test_service_rejects_duplicate_unit_number_within_property() -> None:
         property_id=property_id,
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=UnitStatus.VACANT,
     )
 
@@ -162,7 +162,7 @@ def test_service_rejects_duplicate_unit_number_within_property() -> None:
             property_id=property_id,
             unit_number=" 101 ",
             floor="2",
-            unit_type=UnitType.TWO_BEDROOM,
+            unit_type=UnitType.MOTORBIKE,
             status=UnitStatus.UNDER_MAINTENANCE,
         )
 
@@ -174,7 +174,7 @@ def availability_unit(status: UnitStatus = UnitStatus.VACANT) -> Unit:
         property_id=uuid4(),
         unit_number="101",
         floor="1",
-        unit_type=UnitType.STUDIO,
+        unit_type=UnitType.COVERED,
         status=status,
     )
 

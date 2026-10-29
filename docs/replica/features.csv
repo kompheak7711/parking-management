@@ -304,3 +304,22 @@ Financial action context / evidence pages for recorded actions,Audit/Timeline,co
 "Brand: ""CHETANA Residence"" in shell header sign-in and Unit subtitle",Home,must,yes,yes,AppShell line 24; signInText au_where; units sub — rename in clone
 "App name ""Property Rental Management"" (index.html title) and ""Residence Management"" (sign-in)",Home,must,yes,yes,rename in clone
 Brand logo SVG (horizontal full colour and reverse),Home,should,yes,yes,assets/brand/*.svg — replace in clone
+Rent and Services card on the Parking page (default Rent; required Services by type and monthly rate),Units,must,yes,yes,V1-061 DL-110
+Rent and Services dialog (Manager or Owner; whole cents; at most 20 Services),Units,must,yes,yes,V1-061 DL-110
+New Parking takes the default Rent and required Services right after saving,Units,should,yes,yes,V1-061 owner test fixes
+Lower Rent than the Parking default needs rent.below_default and a reason (Reservation / draft / renewal),Leases,must,yes,yes,V1-061 DL-110
+New Lease draft holds every required Service of the Parking (ticked and locked),Leases,must,yes,yes,V1-061 DL-110
+Move out one occupant (never the Primary Tenant; Joint Signer only with every other Signer agreeing; never the last Signer),Leases,must,yes,yes,V1-061 DL-111
+Make Reservation and its money saved in one step,Reservations,must,yes,yes,V1-061 DL-112
+Receive Security Deposit and its money saved in one step,Leases,must,yes,yes,V1-061 DL-112
+Back or reload asks before leaving an open money window,Leases,should,yes,yes,V1-061 DL-113
+Khmer words for every server refusal,Shell,must,yes,yes,V1-061 DL-114
+Settings with no Property shows a notice instead of loading forever,Settings,should,yes,yes,V1-061 DL-114
+Meter added / reported broken / replaced show in History,Utilities,should,yes,yes,V1-061 DL-114 migration 254
+Impossible dates refused on every date field,Shell,should,yes,yes,V1-061 DL-114
+At most 20 people on a Lease,Leases,should,yes,yes,V1-061 DL-114
+Utility prices on the Parking list and the Parking page; Add meter from the Parking page,Utilities,should,yes,yes,V1-061 fix 6 and owner test fixes
+Plain Sign Lease route removed (Sign Lease with payment only),Leases,must,yes,yes,V1-061 fix 1
+Start test app in one window (Start test app.command),Local run,could,yes,yes,owner ask 29/10/2026
+Settings seed list is the four Parking Types (Covered Uncovered Motorbike Tuk-Tuk/Food Cart),Unit Types/Settings,must,no,yes,Parking Step 3; migration 255
+Rent and Services asks a reason; History shows who/when/old price/new price/reason,Units,must,no,yes,Parking Step 3 on top of V1-061

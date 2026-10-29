@@ -243,7 +243,7 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
         property_id,
         unit_number=f"INV-{uuid4().hex[:8]}",
         floor_item_id=floor.item_id,
-        unit_type="STUDIO",
+        unit_type="COVERED",
         unit_status=UnitStatus.VACANT,
         details=UnitDetails(),
         actor_id=str(actor_id),
@@ -275,7 +275,7 @@ def test_postgres_inventory_flow_reads_saves_and_offers_used_items(
     cleaning = units.patch(
         unit.unit_id,
         floor_item_id=floor.item_id,
-        unit_type="STUDIO",
+        unit_type="COVERED",
         unit_status=UnitStatus.CLEANING,
         details=UnitDetails(),
         expected_version=unit.version,

@@ -49723,7 +49723,7 @@
       "notes": "V1-058 R2a: the Unit setup lists are read with units.read or settings.manage, removed items show only to Settings users, and only settings.manage may add, change or remove an item; an item in use gives 409 (DL-075 answer 10)."
     },
     {
-      "test_id": "test_every_property_gets_the_default_unit_types_and_balcony",
+      "test_id": "test_every_property_gets_the_four_parking_types",
       "upstream_ids": [
         "DL-075",
         "BR-UNIT-001",
@@ -58871,6 +58871,54 @@
       "test_path": "backend/tests/test_deposit_api.py",
       "status": "implemented",
       "notes": "V1-061 (DL-112): POST /api/v1/leases/{lease_id}/security-deposit/receive needs payments.record and payments.allocate, and deposits.manage for a new Security Deposit; another Deposit or a second Security Deposit is refused; the payer is the Primary Tenant."
+    },
+    {
+      "test_id": "test_a_new_property_gets_the_four_parking_types_and_nothing_else",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_parking_types_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 3 (owner 2026-10-29; migration 20270405_255): a new Property is seeded with Covered, Uncovered, Motorbike and Tuk-Tuk/Food Cart with their Khmer names, no feature, one audit event each."
+    },
+    {
+      "test_id": "test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_parking_types_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 3: seeding a Property that already has items adds only the missing Parking Types and leaves every item's id and version as it is (what the migration does for an existing Property)."
+    },
+    {
+      "test_id": "test_the_parking_types_migration_is_the_head_and_is_forward_only",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_parking_types_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 3: migration 20270405_255 follows 20270404_254, is the head and is forward-only."
+    },
+    {
+      "test_id": "test_rent_terms_need_a_reason_which_is_kept_for_history",
+      "upstream_ids": ["BR-UNIT-015"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 3: PUT /units/{unit_id}/rent-terms without a reason, with a blank one or one over 500 characters answers 422 and writes nothing; the reason is trimmed and handed to the flow for the Unit's History."
+    },
+    {
+      "test_id": "TEST-FE-1124",
+      "upstream_ids": ["BR-UNIT-015"],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 3: Rent and Services needs a reason before it saves (the box is marked invalid), and sends it trimmed."
+    },
+    {
+      "test_id": "TEST-FE-1125",
+      "upstream_ids": ["BR-UNIT-015"],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 3: the Parking History line for a price change shows the old price (or Not set), the new price, who and the reason; a change that keeps the price says who and why."
     }
   ]
 }

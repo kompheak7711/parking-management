@@ -78,7 +78,7 @@ export function acceptanceReason(
   const text =
     rentBelow === null
       ? base
-      : `${base.replace(/\.$/, "")}. Rent below the Unit default: ${rentBelow}`;
+      : `${base.replace(/\.$/, "")}. Rent below the Parking default: ${rentBelow}`;
   return Array.from(text).slice(0, 500).join("").trim();
 }
 

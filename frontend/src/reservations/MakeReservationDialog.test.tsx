@@ -431,7 +431,7 @@ describe("Make Reservation (V1-060 B6)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await within(dialog).findByText(
-        /The Reservation was not saved: the Unit or the Customer changed meanwhile.*Check them, then try again/,
+        /The Reservation was not saved: the Parking or the Customer changed meanwhile.*Check them, then try again/,
       ),
     ).toBeInTheDocument();
     expect(within(dialog).queryByText(/The money is saved/)).toBeNull();
@@ -831,7 +831,7 @@ describe("Date box (V1-060 B7, third review)", () => {
 });
 
 describe("Make Reservation (V1-061)", () => {
-  it("TEST-FE-1110 the Rent starts at the Unit's default Rent; a lower Rent stops before any money without a Manager, and a Manager gives a reason (DL-110)", async () => {
+  it("TEST-FE-1110 the Rent starts at the Parking's default Rent; a lower Rent stops before any money without a Manager, and a Manager gives a reason (DL-110)", async () => {
     const { customerApi, paymentsApi, confirm } = apis();
     const unitApi = {
       list: vi.fn(() =>
@@ -870,7 +870,7 @@ describe("Make Reservation (V1-061)", () => {
       );
     const fill = async (dialog: HTMLElement) => {
       await waitFor(() => {
-        expect(within(dialog).getByLabelText("Unit")).toHaveValue("unit-2");
+        expect(within(dialog).getByLabelText("Parking")).toHaveValue("unit-2");
       });
       const rent = within(dialog).getByLabelText("Agreed monthly Rent (USD)");
       await waitFor(() => {
@@ -878,7 +878,7 @@ describe("Make Reservation (V1-061)", () => {
       });
       expect(
         within(dialog).getByText(
-          "This Unit's default Rent is $500.00. A higher Rent is fine.",
+          "This Parking's default Rent is $500.00. A higher Rent is fine.",
         ),
       ).toBeInTheDocument();
       fireEvent.change(within(dialog).getByLabelText("Customer"), {
@@ -894,7 +894,7 @@ describe("Make Reservation (V1-061)", () => {
     for (const [right, words] of [
       [
         false,
-        "The Rent is below this Unit's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
+        "The Rent is below this Parking's default Rent of $500.00. Only a Manager or the Owner can agree a lower Rent.",
       ],
       [
         null,
@@ -939,7 +939,7 @@ describe("Make Reservation (V1-061)", () => {
     expect(create.mock.calls[0]?.[1]).toMatchObject({
       agreed_monthly_rent_usd_cents: 45_000,
       acceptance_reason:
-        "Suggested 20% of the agreed Rent. Rent below the Unit default: Long stay",
+        "Suggested 20% of the agreed Rent. Rent below the Parking default: Long stay",
     });
   });
 });

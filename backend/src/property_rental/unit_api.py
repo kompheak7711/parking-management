@@ -87,6 +87,8 @@ class UnitTimelineEvent:
     resulting_state: object | None
     correlation_id: UUID
     outcome: str
+    # Parking Step 3: the display name of who did it, for the History line.
+    actor_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -199,6 +201,7 @@ class UnitResourceFlow(Protocol):
         required_service_ids: tuple[UUID, ...],
         expected_version: int,
         actor_id: str,
+        reason: str,
     ) -> Unit: ...
 
     def timeline(
@@ -304,9 +307,10 @@ class UnavailableUnitResourceFlow:
         required_service_ids: tuple[UUID, ...],
         expected_version: int,
         actor_id: str,
+        reason: str,
     ) -> Unit:
         del unit_id, default_monthly_rent_usd_cents, required_service_ids, expected_version
-        del actor_id
+        del actor_id, reason
         self._unavailable()
         raise AssertionError
 
@@ -615,13 +619,15 @@ class PostgresUnitResourceFlow:
         required_service_ids: tuple[UUID, ...],
         expected_version: int,
         actor_id: str,
+        reason: str,
     ) -> Unit:
-        """V1-061 (DL-110): set the Unit's default Rent and required Services, kept in History."""
+        """V1-061 (DL-110): set the Unit's default Rent and required Services, kept in History
+        with the reason (Parking Step 3: a price change is a money action)."""
         try:
             with psycopg.connect(self._database_url) as connection:
                 current_row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
                 if current_row is None:
-                    raise UnitResourceNotFound("Unit was not found")
+                    raise UnitResourceNotFound("Parking was not found")
                 current = _unit(current_row)
                 if current.version != expected_version:
                     raise UnitVersionConflict(current.version)
@@ -640,11 +646,11 @@ class PostgresUnitResourceFlow:
                         "SELECT version FROM app.units WHERE id = %s", (unit_id,)
                     ).fetchone()
                     if latest is None:
-                        raise UnitResourceNotFound("Unit was not found")
+                        raise UnitResourceNotFound("Parking was not found")
                     raise UnitVersionConflict(int(str(latest[0])))
                 row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
                 if row is None:
-                    raise UnitResourceNotFound("Unit was not found")
+                    raise UnitResourceNotFound("Parking was not found")
                 updated = _unit(row)
                 self._audit(
                     connection,
@@ -652,6 +658,7 @@ class PostgresUnitResourceFlow:
                     actor_id=actor_id,
                     action="unit.rent_terms_changed",
                     previous_state=self._state(current),
+                    reason=reason,
                 )
             return updated
         except (UnitResourceNotFound, UnitVersionConflict):
@@ -662,9 +669,9 @@ class PostgresUnitResourceFlow:
             psycopg.errors.InvalidParameterValue,
             psycopg.errors.ForeignKeyViolation,
         ) as exc:
-            raise UnitResourceInvalid("Unit Rent terms are invalid") from exc
+            raise UnitResourceInvalid("Parking Rent terms are invalid") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
     def patch(
         self,
@@ -856,7 +863,9 @@ class PostgresUnitResourceFlow:
                 rows = connection.execute(
                     f"""
                     SELECT id, occurred_at, actor_id, action, entity_type, reason,
-                           previous_state, resulting_state, correlation_id, outcome
+                           previous_state, resulting_state, correlation_id, outcome,
+                           (SELECT account.display_name FROM app.user_accounts AS account
+                            WHERE account.actor_id = app.audit_events.actor_id)
                     FROM app.audit_events
                     WHERE unit_id = %s {cursor_clause}
                     ORDER BY occurred_at DESC, id DESC
@@ -880,6 +889,7 @@ class PostgresUnitResourceFlow:
                 resulting_state=row[7],
                 correlation_id=UUID(str(row[8])),
                 outcome=str(row[9]),
+                actor_name=None if row[10] is None else str(row[10]),
             )
             for row in rows[:limit]
         )
@@ -959,6 +969,14 @@ class UnitRentTermsSource(BaseModel):
 
     default_monthly_rent_usd_cents: int | None = Field(ge=1, le=100_000_000)
     required_service_ids: list[UUID] = Field(max_length=20)
+    # Parking Step 3 (owner 2026-10-29): a price change is a money action, so it says why.
+    reason: str = Field(min_length=1, max_length=500)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def trim_reason(cls, value: object) -> object:
+        del cls
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("required_service_ids", mode="before")
     @classmethod
@@ -1344,6 +1362,7 @@ def create_unit_router(
                 required_service_ids=tuple(source.required_service_ids),
                 expected_version=expected,
                 actor_id=actor.actor_id,
+                reason=source.reason,
             )
         except UnitResourceNotFound as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc

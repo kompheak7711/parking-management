@@ -177,6 +177,8 @@ Amended by DL-078 (owner, 2026-10-20): new Unit columns: size in m², bedrooms, 
 
 Amended by DL-110 (V1-061, owner 2026-10-29; migration `20270401_251`): new column `units.default_monthly_rent_usd_cents bigint NULL` (above zero) and new table `unit_required_services(unit_id, property_service_id, added_at, added_by)` (primary key on both ids; the Service is of the Unit's Property; at most 20 per Unit). The runtime role reads them and changes them only through `app.set_unit_rent_terms`, which moves the Unit version on; `app.create_lease_draft_with_terms` refuses a new draft that leaves out a required Service.
 
+Amended for Parking (owner, 2026-10-29, Parking Step 3; migration `20270405_255`): `app.seed_unit_setup_items` seeds the four Parking Types (COVERED, UNCOVERED, MOTORBIKE, TUK_TUK_FOOD_CART, with Khmer names) and no feature; the migration seeds them into every existing Property (`ON CONFLICT DO NOTHING`). Forward-only.
+
 ## DB-CUST-001 — `customers`
 
 | Column | Type | Null | Rule |

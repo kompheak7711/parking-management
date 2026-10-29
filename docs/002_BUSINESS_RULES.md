@@ -140,6 +140,8 @@ Commercial Unit is not supported.
 
 Amended by DL-075 (owner, 2026-10-20): Unit Types are a Settings list (the Owner or a user with Settings access, DL-074), no longer the four fixed types above, which are today's values. A Unit Type used by a Unit cannot be removed. Commercial Unit stays unsupported (DL-001).
 
+Amended for Parking (owner, 2026-10-29, Parking Step 3; migration `20270405_255`): a new Property starts with the four Parking Types COVERED (Covered, ចំណតមានដំបូល), UNCOVERED (Uncovered, ចំណតគ្មានដំបូល), MOTORBIKE (Motorbike, ម៉ូតូ) and TUK_TUK_FOOD_CART (Tuk-Tuk/Food Cart, តុកតុក/រទេះលក់ម្ហូប) instead of the four Unit Types above, and no Balcony Room feature. A Property that already exists gets the four added; nothing is removed. The list stays a Settings list (DL-075).
+
 ---
 
 ## BR-UNIT-002 — Supported Unit Statuses
@@ -297,6 +299,8 @@ Each Unit has a configured cleaning rate in USD cents. It is the source of the U
 ## BR-UNIT-015 — Default Rent and Required Services
 
 A Unit may have a default monthly Rent in USD cents and a list of required Services (DL-110, owner 2026-10-29). A new Reservation or Lease draft for the Unit starts at the default Rent. Staff may agree a higher Rent; a Rent below the default needs a Manager or the Owner (`rent.below_default`) and the reason of the command. A Lease draft from a Booking may keep the Booking's agreed Rent. Every new Lease draft for the Unit holds each required Service, and staff cannot remove one. Changing either never changes a Reservation or Lease that already exists.
+
+Amended for Parking (owner, 2026-10-29, Parking Step 3): a price change is a money action. Rent and Services asks a reason (1 to 500 characters, required) and the Parking's History shows who changed it, when, the old price, the new price and the reason; a New Parking's first price carries the fixed reason "Set with the new Parking". The permission stays Property Rental's (a Manager or the Owner of the Property).
 
 ---
 
