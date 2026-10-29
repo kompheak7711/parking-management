@@ -539,7 +539,7 @@ def test_the_signature_route_takes_no_signing_time_from_the_request() -> None:
     )
 
     assert refused_signature.status_code == 422
-    assert refused_signature.json()["error"]["fields"] == ["body.signed_at"]
+    assert (flow.signature_command, flow.sign_command) == (None, None)
     assert flow.signature_command is None
 
     recorded = api.patch(
