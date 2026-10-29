@@ -2359,3 +2359,13 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built (migration `20270403_253`):** `app.create_reservation_with_payment` (the Customer's own Payment, then `app.create_reservation` taking its deposit receipt from it) and `app.receive_lease_security_deposit_with_payment` (the Primary Tenant's own Payment, a walk-in Lease's Security Deposit when an amount is given, then the receipt into the Security Deposit), EXECUTE to `prm_financial` only. `POST /properties/{property_id}/reservations/with-payment` needs `reservations.create` and `payments.record` (and the deposit override or `rent.below_default` as before); `POST /api/v1/leases/{lease_id}/security-deposit/receive` needs `payments.record` and `payments.allocate`, and `deposits.manage` to make a walk-in Lease's Security Deposit. The money must be exactly the deposit accepted or received. The older two-step routes stay for other callers. The Make Reservation and Receive Security Deposit screens send only the one request; after a lost answer they send the very same body with the same key (a walk-in Lease's press again names the Security Deposit it made, so it is answered again, not refused as already made).
 - **Links:** DL-099, DL-100, DL-101, DL-108, BR-DEP-002, BR-DEP-004, API-032.
 - **Decision date:** 2026-10-29.
+
+## DL-113 — V1-061: Back or reload asks before leaving a money window
+
+- **Type:** `TECHNICAL DECISION` (a fix on the owner's bug list; no new business rule)
+- **Status:** `APPROVED; BEING BUILT ON THE V1-061 BRANCH`
+- **Source:** the owner's bug list of 2026-10-29 ("Bugs first, then V1.1"): "Back or reload must ask before leaving a money window."
+- **Decision:** while a money window is open (Make Reservation, Receive Security Deposit, Sign Lease, and Receive payment once an amount is typed or a payment is being sent), a reload or closing the tab gets the browser's own "Leave site?" question, and Back or Forward asks first. If the person stays, the address goes back to the money window and the page does not change. A page the app opens itself (Close, or a saved record opening) is not asked about. Which windows count as money windows was decided by Claude under the owner's 2026-10-23 22:30 rule (not a money rule).
+- **Built:** `frontend/src/shell/leaveGuard.ts` (`useLeaveGuard`), listening to the address before any page does.
+- **Links:** DL-108, DL-112.
+- **Decision date:** 2026-10-29.

@@ -31,6 +31,7 @@ import {
 } from "../settlementClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
+import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { Problem } from "./LeaseDialogs";
@@ -143,6 +144,7 @@ export function SignDialog({
     body: SignWithPaymentInput;
   } | null>(null);
   const today = todayInPhnomPenh();
+  useLeaveGuard(true, language);
 
   const initial = preview.state === "done" ? preview.value.initial : null;
   // Reservations that cannot be read are treated as none, as before: the server refuses to sign

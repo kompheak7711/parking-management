@@ -367,7 +367,7 @@ describe("Receive Security Deposit (V1-060 B7, third review)", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1097 a refusal with no lost answer before it says so at once and leaves the boxes open; Close then closes without asking (DL-112)", async () => {
+  it("TEST-FE-1097 a reload asks while the window is open; a refusal with no lost answer before it says so at once and leaves the boxes open; Close then closes without asking (DL-112)", async () => {
     const all = apis();
     all.receive
       .mockReset()
@@ -380,6 +380,10 @@ describe("Receive Security Deposit (V1-060 B7, third review)", () => {
       );
     const onClose = vi.fn();
     const dialog = open(all, { onClose });
+    // V1-061 Fix 3: a reload asks while the money window is open.
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
     await fill(dialog);
     expect(
       await within(dialog).findByText("You may not make Security Deposits."),

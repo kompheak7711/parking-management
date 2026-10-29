@@ -21,6 +21,7 @@ import { dayText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
+import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
@@ -165,6 +166,12 @@ export function ReceivePayment({
   const identity = useRef<{ sent: string; key: string } | null>(null);
   const reading = useRef(0);
   const firstPick = useRef(initialPick);
+  // A payment being typed or sent is a money window: Back or reload asks first.
+  useLeaveGuard(
+    done === null &&
+      (amount.trim() !== "" || confirming || busy || outcome === "out_unknown"),
+    language,
+  );
 
   const customers = [...data.customerLeases.keys()]
     .map((id) => ({

@@ -44,6 +44,7 @@ import {
 import { DateInput, parseDay } from "../shell/DateInput";
 import { todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
+import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
@@ -142,6 +143,7 @@ export function MakeReservationDialog({
   // A lost answer: it may be saved, so nothing may change before Try again.
   const pending = outcome === "unknown";
   const guard = useCloseGuard(pending, onClose);
+  useLeaveGuard(true, language);
 
   const load = () => {
     setFailed(false);

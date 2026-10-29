@@ -58280,6 +58280,7 @@
     {
       "test_id": "TEST-FE-1097",
       "upstream_ids": [
+        "DL-113",
         "DL-112",
         "DL-109",
         "DL-108",
@@ -58289,7 +58290,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/ReceiveDepositDialog.test.tsx",
       "status": "implemented",
-      "notes": "V1-061 Fix 2 (DL-112): a refusal with no lost answer before it is said at once, the boxes stay open and Close closes without asking."
+      "notes": "V1-061 Fix 2 and 3 (DL-112, DL-113): a reload asks while the window is open; a refusal with no lost answer before it is said at once, the boxes stay open and Close closes without asking."
     },
     {
       "test_id": "TEST-FE-1098",
@@ -58658,6 +58659,16 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-061 (DL-111): a Joint Signer moves out only once every other Signer is ticked as agreeing; the only Signer living there gets a note instead of a button, and a person without reservations.complete sees no button."
+    },
+    {
+      "test_id": "TEST-FE-1114",
+      "upstream_ids": [
+        "DL-113"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shell/leaveGuard.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 Fix 3 (DL-113): while a money window is open, reload is asked about and Back asks first; staying keeps the page and its address, leaving follows the address, and with no money window nothing asks."
     },
     {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+// V1-061 Fix 3: its address listener goes first, so a money window can keep the page.
+import "./leaveGuard";
+
 import {
   detailFromHash,
   hashForPage,

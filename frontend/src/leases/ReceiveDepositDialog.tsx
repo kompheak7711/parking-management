@@ -32,6 +32,7 @@ import {
 } from "../settlementClient";
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
+import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { lt } from "./text";
@@ -93,6 +94,7 @@ export function ReceiveDepositDialog({
   // The answer was lost: it may be saved, so nothing that makes it up may change.
   const pending = outcome?.kind === "unknown";
   const guard = useCloseGuard(pending, onClose);
+  useLeaveGuard(true, language);
 
   const requiredCents = security === null ? centsOf(required) : null;
   const outstanding =
