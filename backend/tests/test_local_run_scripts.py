@@ -50,6 +50,7 @@ def test_every_local_script_parses_and_reads_secrets_only_from_files() -> None:
         "prune-sign-in-tries.sh",
         "setup-property.sh",
         "start-api.sh",
+        "start-test-app.sh",
     }
     for script in scripts:
         assert subprocess.run(["sh", "-n", str(script)], check=False).returncode == 0
