@@ -6,12 +6,11 @@ of them; a database pinned before migration 227 (no Unit Types list yet) still a
 
 from __future__ import annotations
 
-from uuid import UUID
 
 from psycopg import Connection
 
 
-def seeded_unit_type(connection: Connection[tuple[object, ...]], property_id: UUID) -> str:
+def seeded_unit_type(connection: Connection[tuple[object, ...]], property_id: object) -> str:
     """The first Unit Type of the Property's Settings list, or STUDIO before migration 227."""
     if connection.execute("SELECT to_regclass('app.unit_setup_items')").fetchone() == (None,):
         return "STUDIO"

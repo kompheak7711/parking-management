@@ -774,13 +774,11 @@ describe("Parking page", () => {
   it("TEST-FE-1124 Rent and Services needs a reason before it saves, and sends it trimmed (Parking Step 3: a price change is a money action)", async () => {
     window.location.hash = "#/units/unit-U103";
     const terms = unit("U103", { default_monthly_rent_usd_cents: 35_000 });
-    const setRentTerms = vi
-      .fn()
-      .mockResolvedValue({
-        ...terms,
-        version: 3,
-        default_monthly_rent_usd_cents: 45_000,
-      });
+    const setRentTerms = vi.fn().mockResolvedValue({
+      ...terms,
+      version: 3,
+      default_monthly_rent_usd_cents: 45_000,
+    });
     show(unitApi({ get: vi.fn().mockResolvedValue(terms), setRentTerms }));
     const card = (
       await screen.findByRole("heading", { name: "Rent and Services" })
