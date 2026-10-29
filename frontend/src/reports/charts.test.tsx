@@ -140,15 +140,15 @@ describe("Report charts and helpers", () => {
         rows={[
           { label: "U203", value: 250000 },
           { label: "U101", value: 125000 },
-          { label: "No Unit", value: -100 },
+          { label: "No Parking", value: -100 },
         ]}
-        title="Top 5 Units"
+        title="Top 5 Parking"
       />,
     );
-    expect(barRows(document.body, "Top 5 Units")).toEqual([
+    expect(barRows(document.body, "Top 5 Parking")).toEqual([
       ["U203", "$2,500.00"],
       ["U101", "$1,250.00"],
-      ["No Unit", "-$1.00"],
+      ["No Parking", "-$1.00"],
     ]);
     expect(
       [...document.querySelectorAll<HTMLElement>(".rp-hc-b i")].map((bar) =>

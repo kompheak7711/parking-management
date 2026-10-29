@@ -243,7 +243,7 @@ def test_units_save_keep_and_clear_details_and_room_features(
         bathrooms=1,
         view_item_id=view_id,
         kitchen_item_id=kitchen_id,
-        notes="  Corner Unit  ",
+        notes="  Corner Parking  ",
         room_feature_ids=[UUID(str(balcony_id[0])), desk_id],
     )
     unit_id = created[0]
@@ -267,7 +267,15 @@ def test_units_save_keep_and_clear_details_and_room_features(
     ).fetchone()
 
     assert created[3] == "Ground floor"
-    assert created[7:14] == (floor_id, Decimal("42.50"), 1, 1, view_id, kitchen_id, "Corner Unit")
+    assert created[7:14] == (
+        floor_id,
+        Decimal("42.50"),
+        1,
+        1,
+        view_id,
+        kitchen_id,
+        "Corner Parking",
+    )
     assert isinstance(created[14], list)
     assert set(created[14]) == {balcony_id[0], desk_id}
     assert updated is not None

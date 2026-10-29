@@ -299,7 +299,7 @@ function rowOf(name: string): HTMLElement {
 }
 
 describe("Customers list", () => {
-  it("TEST-FE-826 shows each Customer with the phone, the Unit and the relationship from the Leases and Reservations", async () => {
+  it("TEST-FE-826 shows each Customer with the phone, the Parking and the relationship from the Leases and Reservations", async () => {
     show();
 
     expect(
@@ -311,7 +311,7 @@ describe("Customers list", () => {
       within(screen.getByRole("table"))
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Legal name", "Phone", "Unit", "Relationship"]);
+    ).toEqual(["Legal name", "Phone", "Parking", "Relationship"]);
     expect(rowOf("Sok Dara")).toHaveTextContent("012 345 678U101Tenant");
     expect(rowOf("Chan Vanna")).toHaveTextContent("U101Signer or occupant");
     expect(rowOf("Lim Srey")).toHaveTextContent("U102Reservation");
@@ -331,7 +331,7 @@ describe("Customers list", () => {
     expect(screen.getByText("6 Customers")).toBeInTheDocument();
   });
 
-  it("TEST-FE-827 filters by count card and by name, phone or Unit, and Search asks the server for a whole ID number", async () => {
+  it("TEST-FE-827 filters by count card and by name, phone or Parking, and Search asks the server for a whole ID number", async () => {
     const client = customerApi();
     show({ customers: client });
     await screen.findByText("6 Customers");
@@ -343,7 +343,7 @@ describe("Customers list", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
 
     const box = screen.getByRole("searchbox", {
-      name: "Search by name, phone, Unit or ID number",
+      name: "Search by name, phone, Parking or ID number",
     });
     fireEvent.change(box, { target: { value: "345678" } });
     expect(screen.getByText("1 Customer")).toBeInTheDocument();
@@ -370,7 +370,7 @@ describe("Customers list", () => {
 
     expect(
       await screen.findByText(
-        "Your account cannot read Leases or Reservations, so Unit and Relationship show “—”.",
+        "Your account cannot read Leases or Reservations, so Parking and Relationship show “—”.",
       ),
     ).toBeInTheDocument();
     expect(rowOf("Sok Dara")).toHaveTextContent("Sok Dara012 345 678——");

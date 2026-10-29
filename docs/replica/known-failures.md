@@ -39,3 +39,13 @@ Found 1 error in 1 file (checked 528 source files)
 Proof on untouched Property Rental df3ec76 (`uv run mypy src`): `mypy: 1 errors in 1 files`,
 `L537: Module has no attribute`. Cause: `os.posix_fadvise` exists on Linux only; the check
 runs on macOS.
+
+## 4. Database: sign-in wait test can answer 299 s instead of 300 s when the Mac is busy (timing)
+
+`tests/test_sign_in_code_enrollment_migration.py::test_a_start_during_a_wait_answers_429_and_writes_nothing`
+expects exactly 300 seconds left of a sign-in wait. Migration 185 rounds the seconds left up, so the
+test passes only when less than one second passes between its third wrong try and the next call. On
+2026-10-29 the full Step 2 database run (37 minutes, Mac also running Property Rental) got
+`assert 299 == 300`; the re-run passed (2897 passed). Not caused by any Parking change; the test file
+is identical to Property Rental's except the business name. Owner's ruling: list it here as a timing
+test and say so in a report when it fails again.

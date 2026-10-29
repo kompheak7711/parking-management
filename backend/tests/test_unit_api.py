@@ -493,7 +493,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
             "bedrooms": 1,
             "bathrooms": 1,
             "view_item_id": str(view),
-            "notes": "  Corner Unit  ",
+            "notes": "  Corner Parking  ",
             "room_feature_ids": [str(feature)],
         },
     )
@@ -502,7 +502,7 @@ def test_unit_details_are_saved_kept_and_cleared_and_the_unit_number_never_chang
     assert (data["size_square_metres"], data["bedrooms"], data["notes"]) == (
         "42.50",
         1,
-        "Corner Unit",
+        "Corner Parking",
     )
     assert data["room_feature_ids"] == [str(feature)] and data["view_item_id"] == str(view)
     unit_path = f"/units/{data['unit_id']}"

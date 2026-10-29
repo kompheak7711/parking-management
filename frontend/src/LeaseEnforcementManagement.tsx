@@ -674,7 +674,7 @@ function EnforcementWorkspace({
         )}
         {leaseRows.map((row) => (
           <option key={financialId(row.id)} value={financialId(row.id)}>
-            Unit {enforcementValue(row.unit_number)} ·{" "}
+            Parking {enforcementValue(row.unit_number)} ·{" "}
             {enforcementValue(row.start_date)} to{" "}
             {enforcementValue(row.end_date)} · {enforcementValue(row.status)}
           </option>

@@ -26,11 +26,11 @@ const TEXT = {
     "The meters of {0} could not be read. Try again.",
     "មិនអាចអាននាឡិកាស្ទង់របស់ {0} បានទេ។ សូមព្យាយាមម្តងទៀត។",
   ],
-  unit: ["Unit", "បន្ទប់"],
-  all_units: ["All Units", "គ្រប់បន្ទប់"],
+  unit: ["Parking", "ចំណត"],
+  all_units: ["All Parking", "គ្រប់ចំណត"],
   unit_bad: [
-    'No Unit "{0}". Type a Unit number such as {1}, or clear the box to see all Units.',
-    'គ្មានបន្ទប់ "{0}"។ វាយលេខបន្ទប់ដូចជា {1} ឬលុបប្រអប់ ដើម្បីមើលគ្រប់បន្ទប់។',
+    'No Parking "{0}". Type a Parking number such as {1}, or clear the box to see all Parking.',
+    'គ្មានចំណត "{0}"។ វាយលេខចំណតដូចជា {1} ឬលុបប្រអប់ ដើម្បីមើលគ្រប់ចំណត។',
   ],
   period: ["Month", "ខែ"],
   p_all: ["All", "ទាំងអស់"],
@@ -47,7 +47,7 @@ const TEXT = {
   // new (the mock-up names the date in the words)
   next_inv: [
     "Read every meter, including empty rooms. Invoices are made on {0} from these readings.",
-    "អានគ្រប់នាឡិកាស្ទង់ រួមទាំងបន្ទប់ទំនេរ។ វិក្កយបត្រនឹងចេញថ្ងៃ {0} ពីអំណានទាំងនេះ។",
+    "អានគ្រប់នាឡិកាស្ទង់ រួមទាំងចំណតទំនេរ។ វិក្កយបត្រនឹងចេញថ្ងៃ {0} ពីអំណានទាំងនេះ។",
   ],
   all_done: [
     "All meters are read. Invoices will be made on the 25th.",
@@ -68,7 +68,7 @@ const TEXT = {
     "Reading day is {0}. The list to type the readings opens that day.",
     "ថ្ងៃអានគឺ {0}។ បញ្ជីសម្រាប់វាយអំណានបើកនៅថ្ងៃនោះ។",
   ],
-  col_unit_meter: ["Unit · Meter", "បន្ទប់ · នាឡិកាស្ទង់"],
+  col_unit_meter: ["Parking · Meter", "ចំណត · នាឡិកាស្ទង់"],
   col_last: ["Last reading", "អំណានចុងក្រោយ"],
   col_new: ["New reading", "អំណានថ្មី"],
   col_used: ["Used", "បានប្រើ"],
@@ -155,7 +155,7 @@ const TEXT = {
   // R4b Meters
   mt_c_el: ["Electricity meters", "នាឡិកាស្ទង់អគ្គិសនី"],
   mt_c_wa: ["Water meters", "នាឡិកាស្ទង់ទឹក"],
-  mt_c_inuse: ["In use, one per Unit", "កំពុងប្រើ មួយក្នុងមួយបន្ទប់"],
+  mt_c_inuse: ["In use, one per Parking", "កំពុងប្រើ មួយក្នុងមួយចំណត"],
   mt_c_nbroken: ["{0} broken", "ខូច {0}"],
   mt_c_allok: ["All working", "ដំណើរការទាំងអស់"],
   mt_c_broken: ["Broken meters", "នាឡិកាស្ទង់ខូច"],
@@ -183,20 +183,20 @@ const TEXT = {
   mt_add: ["Add meter", "បន្ថែមនាឡិកាស្ទង់"],
   manager: ["Manager", "អ្នកគ្រប់គ្រង"],
   mt_add_intro: [
-    "For a Unit that has no meter of this kind, such as a new Unit. A Unit has one electricity meter and one water meter. To change a broken meter, open it and choose Replace meter.",
-    "សម្រាប់បន្ទប់ដែលគ្មាននាឡិកាស្ទង់ប្រភេទនេះ ដូចជាបន្ទប់ថ្មី។ បន្ទប់មួយមាននាឡិកាស្ទង់អគ្គិសនីមួយ និងទឹកមួយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
+    "For a Parking that has no meter of this kind, such as a new Parking. A Parking has one electricity meter and one water meter. To change a broken meter, open it and choose Replace meter.",
+    "សម្រាប់ចំណតដែលគ្មាននាឡិកាស្ទង់ប្រភេទនេះ ដូចជាចំណតថ្មី។ ចំណតមួយមាននាឡិកាស្ទង់អគ្គិសនីមួយ និងទឹកមួយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
   ],
-  mt_e_unit: ["Choose a Unit.", "សូមជ្រើសបន្ទប់។"],
+  mt_e_unit: ["Choose a Parking.", "សូមជ្រើសចំណត។"],
   // new
-  mt_pick_unit: ["Choose a Unit", "ជ្រើសបន្ទប់"],
+  mt_pick_unit: ["Choose a Parking", "ជ្រើសចំណត"],
   // V1-060 B6 (owner, 28/10/2026): Add meter offers only Units without this kind of meter.
   mt_none_free: [
-    "Every Unit already has a {0} meter. To change a broken meter, open it and choose Replace meter.",
-    "បន្ទប់ទាំងអស់មាននាឡិកាស្ទង់{0}រួចហើយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
+    "Every Parking already has a {0} meter. To change a broken meter, open it and choose Replace meter.",
+    "ចំណតទាំងអស់មាននាឡិកាស្ទង់{0}រួចហើយ។ ដើម្បីប្តូរនាឡិកាស្ទង់ខូច សូមបើកវា ហើយជ្រើស ប្តូរនាឡិកាស្ទង់។",
   ],
   mt_e_have: [
-    "{0} already has a working {1} meter ({2}). A Unit can have only one.",
-    "{0} មាននាឡិកាស្ទង់{1}កំពុងប្រើរួចហើយ ({2})។ បន្ទប់មួយអាចមានតែមួយ។",
+    "{0} already has a working {1} meter ({2}). A Parking can have only one.",
+    "{0} មាននាឡិកាស្ទង់{1}កំពុងប្រើរួចហើយ ({2})។ ចំណតមួយអាចមានតែមួយ។",
   ],
   mt_add_done: ["{0} added to {1}.", "បានបន្ថែម {0} ទៅ {1}។"],
   mt_serial: ["Serial", "លេខសៀរៀល"],
@@ -308,13 +308,13 @@ const TEXT = {
     "នាំចូលអំណានសម្រាប់ថ្ងៃអាន {0} ពីឯកសារ .xlsx ឬ .csv។",
   ],
   im_cols: [
-    "One row for each Unit, with three columns: Unit, Electricity, Water. The Units are already filled in, so staff type only the readings. No meter numbers.",
-    "មួយជួរសម្រាប់បន្ទប់នីមួយៗ មានបីជួរឈរ៖ បន្ទប់ អគ្គិសនី ទឹក។ បន្ទប់បានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
+    "One row for each Parking, with three columns: Parking, Electricity, Water. The Parking is already filled in, so staff type only the readings. No meter numbers.",
+    "មួយជួរសម្រាប់ចំណតនីមួយៗ មានបីជួរឈរ៖ ចំណត អគ្គិសនី ទឹក។ ចំណតបានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
   ],
   im_blank: ["Download the blank file", "ទាញយកឯកសារទទេ"],
   im_blank_s: [
-    "Every Unit is filled in. Print it or fill it in on the tablet.",
-    "បន្ទប់ទាំងអស់បានបំពេញរួច។ បោះពុម្ព ឬបំពេញលើថេប្លេត។",
+    "Every Parking is filled in. Print it or fill it in on the tablet.",
+    "ចំណតទាំងអស់បានបំពេញរួច។ បោះពុម្ព ឬបំពេញលើថេប្លេត។",
   ],
   // new
   im_blank_failed: [
@@ -336,18 +336,18 @@ const TEXT = {
   ],
   // new
   im_e_big: [
-    "The file is bigger than 2 MB. It needs only one row for each Unit.",
-    "ឯកសារធំជាង 2 MB។ វាត្រូវការតែមួយជួរសម្រាប់បន្ទប់នីមួយៗ។",
+    "The file is bigger than 2 MB. It needs only one row for each Parking.",
+    "ឯកសារធំជាង 2 MB។ វាត្រូវការតែមួយជួរសម្រាប់ចំណតនីមួយៗ។",
   ],
   // new
   im_e_columns: [
-    "The first row needs the three column names Unit, Electricity and Water.",
-    "ជួរទីមួយត្រូវមានឈ្មោះជួរឈរបី៖ Unit, Electricity និង Water។",
+    "The first row needs the three column names Parking, Electricity and Water.",
+    "ជួរទីមួយត្រូវមានឈ្មោះជួរឈរបី៖ Parking, Electricity និង Water។",
   ],
   // new
   im_e_rows: [
-    "The file has too many rows. It needs one row for each Unit.",
-    "ឯកសារមានជួរច្រើនពេក។ វាត្រូវការមួយជួរសម្រាប់បន្ទប់នីមួយៗ។",
+    "The file has too many rows. It needs one row for each Parking.",
+    "ឯកសារមានជួរច្រើនពេក។ វាត្រូវការមួយជួរសម្រាប់ចំណតនីមួយៗ។",
   ],
   // new
   im_e_empty_file: ["The file has no readings.", "ឯកសារគ្មានអំណានទេ។"],
@@ -373,9 +373,9 @@ const TEXT = {
     "Meter broken. Replace it first.",
     "នាឡិកាស្ទង់ខូច។ សូមប្តូរជាមុនសិន។",
   ],
-  im_e_unit: ["There is no Unit {0}.", "គ្មានបន្ទប់ {0} ទេ។"],
+  im_e_unit: ["There is no Parking {0}.", "គ្មានចំណត {0} ទេ។"],
   // new
-  im_e_no_unit: ["Row {0} has no Unit.", "ជួរទី {0} គ្មានបន្ទប់។"],
+  im_e_no_unit: ["Row {0} has no Parking.", "ជួរទី {0} គ្មានចំណត។"],
   // new
   im_e_twice: [
     "{0} is on more than one row (rows {1}). Keep one row.",
@@ -383,8 +383,8 @@ const TEXT = {
   ],
   // new
   im_e_no_meter: [
-    "This Unit has no {0} meter. A Manager adds it on the Meters tab.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់{0}ទេ។ អ្នកគ្រប់គ្រងបន្ថែមវានៅផ្ទាំងនាឡិកាស្ទង់។",
+    "This Parking has no {0} meter. A Manager adds it on the Meters tab.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់{0}ទេ។ អ្នកគ្រប់គ្រងបន្ថែមវានៅផ្ទាំងនាឡិកាស្ទង់។",
   ],
   // new
   im_e_number: ["Not a whole number", "មិនមែនលេខគត់"],
@@ -419,8 +419,8 @@ const TEXT = {
     "អ្នកគ្រប់គ្រង ឬអ្នកប្រើដែលមានសិទ្ធិបញ្ជាក់អំណាន ពិនិត្យបញ្ជីនេះ ហើយបញ្ជាក់។",
   ],
   im_photo: [
-    "No meter photos are needed. Report a meter problem on a Unit Check.",
-    "មិនត្រូវការរូបថតនាឡិកាស្ទង់ទេ។ រាយការណ៍បញ្ហានាឡិកាស្ទង់លើការពិនិត្យបន្ទប់។",
+    "No meter photos are needed. Report a meter problem on a Parking Check.",
+    "មិនត្រូវការរូបថតនាឡិកាស្ទង់ទេ។ រាយការណ៍បញ្ហានាឡិកាស្ទង់លើការពិនិត្យចំណត។",
   ],
   im_save: ["Confirm readings", "បញ្ជាក់អំណាន"],
   // new

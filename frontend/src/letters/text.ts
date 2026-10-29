@@ -46,7 +46,7 @@ const TEXT = {
     "ថ្ងៃទី២០ និងទី៣០ បានកន្លងទាំងពីរ ហើយមិនទាន់កត់ត្រាលិខិតទេ។",
   ],
   cases: ["Unpaid Rent after day 20", "ថ្លៃឈ្នួលមិនទាន់បង់ក្រោយថ្ងៃទី២០"],
-  col_case: ["Unit and Customer", "បន្ទប់ និងអតិថិជន"],
+  col_case: ["Parking and Customer", "ចំណត និងអតិថិជន"],
   col_month: ["Rent month", "ខែថ្លៃឈ្នួល"],
   col_20: ["Day-20 letter", "លិខិតថ្ងៃទី២០"],
   col_30: ["Day-30 letter", "លិខិតថ្ងៃទី៣០"],
@@ -77,8 +77,8 @@ const TEXT = {
     "ថ្ងៃទី១ គឺថ្ងៃទី១ នៃខែថ្លៃឈ្នួល។ ថ្លៃឈ្នួលខែវិច្ឆិកា ផ្តល់លិខិតថ្ងៃទី២០ នៅ 20/11 និងលិខិតថ្ងៃទី៣០ នៅ 30/11។ គិតតែថ្លៃឈ្នួលមិនទាន់បង់ មិនគិតសេវា ឬទឹកភ្លើងទេ។ ថ្ងៃផុតកំណត់វិក្កយបត្រ ជាថ្ងៃផ្សេង៖ វាចាប់ផ្តើមថ្លៃពិន័យបង់យឺត។",
   ],
   nothing: [
-    "A letter never ends the Lease, adds a fee or changes the Unit by itself. The Owner or a Manager decides each next step.",
-    "លិខិតមិនបញ្ចប់កិច្ចសន្យា បន្ថែមថ្លៃ ឬប្តូរបន្ទប់ដោយខ្លួនឯងទេ។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងសម្រេចជំហានបន្ទាប់នីមួយៗ។",
+    "A letter never ends the Lease, adds a fee or changes the Parking by itself. The Owner or a Manager decides each next step.",
+    "លិខិតមិនបញ្ចប់កិច្ចសន្យា បន្ថែមថ្លៃ ឬប្តូរចំណតដោយខ្លួនឯងទេ។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងសម្រេចជំហានបន្ទាប់នីមួយៗ។",
   ],
   // new
   letters_failed: [
@@ -105,7 +105,7 @@ const TEXT = {
   d_how: ["How it was given", "របៀបផ្តល់"],
   d_how_e: ["Choose how it was given.", "សូមជ្រើសរបៀបផ្តល់។"],
   h_HAND: ["Handed to the tenant", "ប្រគល់ដល់អ្នកជួល"],
-  h_DOOR: ["Left at the Unit with a witness", "ទុកនៅបន្ទប់ ដោយមានសាក្សី"],
+  h_DOOR: ["Left at the Parking with a witness", "ទុកនៅចំណត ដោយមានសាក្សី"],
   // new (owner 2026-10-25)
   h_EMAIL: ["Sent by email", "ផ្ញើតាមអ៊ីមែល"],
   h_TG: ["Sent by Telegram", "ផ្ញើតាម Telegram"],

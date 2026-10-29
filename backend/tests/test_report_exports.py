@@ -251,7 +251,7 @@ def test_a_small_xlsx_file_downloads_at_once_and_its_event_keeps_its_fingerprint
     assert rows[0] == ("Invoice register and balances",)
     assert ("Scope: Floor 1",) in rows and ("Period: From 01/09/2026",) in rows
     header = rows.index(next(row for row in rows if row and row[0] == "Invoice"))
-    assert rows[header][:3] == ("Invoice", "Customer", "Unit")
+    assert rows[header][:3] == ("Invoice", "Customer", "Parking")
     assert rows[header + 1][1:3] == ("Sok Dara", "U101")
     assert float(rows[header + 1][6]) == 300.0
     [(kind, capability, details)] = exports.records
@@ -300,7 +300,7 @@ def test_a_utility_file_has_amounts_only_with_the_report_right() -> None:
     )
     assert answer.status_code == 200
     rows = sheet_rows(answer.content)
-    header = next(row for row in rows if row and row[0] == "Unit")
+    header = next(row for row in rows if row and row[0] == "Parking")
     assert "Amount" not in header and "Used" in header
     assert ("Amounts in USD; riel shown as information only.",) in rows
     manager = client(person(*MANAGER))
@@ -352,7 +352,7 @@ def test_the_audit_file_needs_audit_export_and_keeps_its_fingerprint() -> None:
         "Action",
         "Record type",
         "Record",
-        "Unit",
+        "Parking",
         "Customer",
         "Reason",
         "Outcome",

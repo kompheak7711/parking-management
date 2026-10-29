@@ -72,7 +72,7 @@ const TEXT = {
   col_amount: ["Amount", "ចំនួនទឹកប្រាក់"],
   col_balance: ["Balance", "សមតុល្យ"],
   col_status: ["Status", "ស្ថានភាព"],
-  col_unit: ["Unit", "បន្ទប់"],
+  col_unit: ["Parking", "ចំណត"],
   ni_draft_no: ["Draft", "សេចក្តីព្រាង"],
   ni_due_later: ["Set when issued", "កំណត់ពេលចេញ"],
   none_found: [

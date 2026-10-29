@@ -231,14 +231,14 @@ describe("Make Reservation (V1-060 B6)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    await within(dialog).findByLabelText("Unit");
+    await within(dialog).findByLabelText("Parking");
     expect(within(dialog).getByLabelText("Reservation Date")).toHaveValue(
       dayText(today),
     );
     expect(within(dialog).getByLabelText("Expires on")).toHaveValue(
       dayText(addDays(today, 21)),
     );
-    fireEvent.change(within(dialog).getByLabelText("Unit"), {
+    fireEvent.change(within(dialog).getByLabelText("Parking"), {
       target: { value: "unit-2" },
     });
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
@@ -316,7 +316,9 @@ describe("Make Reservation (V1-060 B6)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    expect(await within(dialog).findByLabelText("Unit")).toHaveValue("unit-2");
+    expect(await within(dialog).findByLabelText("Parking")).toHaveValue(
+      "unit-2",
+    );
     fireEvent.change(
       within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
       {
@@ -375,7 +377,7 @@ describe("Make Reservation (V1-060 B6)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    await within(dialog).findByLabelText("Unit");
+    await within(dialog).findByLabelText("Parking");
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
       target: { value: "customer-dara" },
     });
@@ -420,7 +422,7 @@ describe("Make Reservation (V1-060 B6)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await within(dialog).findByText(
-        /The Reservation was not saved: the Unit or the Customer changed meanwhile/,
+        /The Reservation was not saved: the Parking or the Customer changed meanwhile/,
       ),
     ).toBeInTheDocument();
     expect(
@@ -482,7 +484,7 @@ describe("Make Reservation (V1-060 B7)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    await within(dialog).findByLabelText("Unit");
+    await within(dialog).findByLabelText("Parking");
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
       target: { value: "customer-dara" },
     });
@@ -500,7 +502,7 @@ describe("Make Reservation (V1-060 B7)", () => {
     "We could not tell whether this was saved. “Try again” sends the very same request; it is never saved twice.";
   const boxes = (dialog: HTMLElement) =>
     [
-      "Unit",
+      "Parking",
       "Customer",
       "Reservation Date",
       "Expires on",
@@ -510,7 +512,7 @@ describe("Make Reservation (V1-060 B7)", () => {
       "How the money came",
     ].map((label) => within(dialog).getByLabelText(label));
 
-  it("TEST-FE-1092 a Unit from the address that is not free is not kept; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost Reservation answer finds that Reservation saved", async () => {
+  it("TEST-FE-1092 a Parking from the address that is not free is not kept; less than the suggestion waits while the rights are not known; after a lost answer every box stays fixed; a refusal after a lost Reservation answer finds that Reservation saved", async () => {
     const { unitApi, customerApi, paymentsApi, confirm } = apis();
     confirm
       .mockReset()
@@ -541,8 +543,8 @@ describe("Make Reservation (V1-060 B7)", () => {
     const away = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    expect(await within(away).findByLabelText("Unit")).toHaveValue("");
-    fireEvent.change(within(away).getByLabelText("Unit"), {
+    expect(await within(away).findByLabelText("Parking")).toHaveValue("");
+    fireEvent.change(within(away).getByLabelText("Parking"), {
       target: { value: "unit-2" },
     });
     fireEvent.change(within(away).getByLabelText("Customer"), {
@@ -642,7 +644,7 @@ describe("Make Reservation (V1-060 B7)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
       await within(dialog).findByText(
-        /The Reservation was not saved: the Unit or the Customer changed meanwhile/,
+        /The Reservation was not saved: the Parking or the Customer changed meanwhile/,
       ),
     ).toBeInTheDocument();
     expect(
@@ -770,7 +772,7 @@ describe("Make Reservation (V1-060 B7)", () => {
     expect(confirm).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1100 a Unit from the address that is not vacant never reaches the money step", async () => {
+  it("TEST-FE-1100 a Parking from the address that is not vacant never reaches the money step", async () => {
     const { unitApi, customerApi, paymentsApi, confirm } = apis();
     render(
       <MakeReservationDialog
@@ -804,11 +806,11 @@ describe("Make Reservation (V1-060 B7)", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Save Reservation" }),
     );
-    expect(within(dialog).getByText("Choose a Unit.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Choose a Parking.")).toBeInTheDocument();
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1101 the money saved but the Reservation refused as changed does not ask to change the Unit or the Customer, which are fixed with the money", async () => {
+  it("TEST-FE-1101 the money saved but the Reservation refused as changed does not ask to change the Parking or the Customer, which are fixed with the money", async () => {
     const { unitApi, customerApi, paymentsApi } = apis();
     const create = vi
       .fn<ReservationApi["create"]>()
@@ -827,14 +829,14 @@ describe("Make Reservation (V1-060 B7)", () => {
     );
     expect(
       await within(dialog).findByText(
-        "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first).",
+        "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first).",
       ),
     ).toBeInTheDocument();
     expect(within(dialog).queryByText(/Check them, then try again/)).toBeNull();
     expect(
       within(dialog).getByText(/The money is saved with Receipt RC0001/),
     ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Unit")).toBeDisabled();
+    expect(within(dialog).getByLabelText("Parking")).toBeDisabled();
     expect(within(dialog).getByLabelText("Customer")).toBeDisabled();
   });
 });

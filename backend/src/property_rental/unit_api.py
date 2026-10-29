@@ -69,7 +69,7 @@ class UnitVersionConflict(RuntimeError):
     """Raised when a Unit update does not target the current version."""
 
     def __init__(self, current_version: int) -> None:
-        super().__init__("the Unit version precondition was not met")
+        super().__init__("the Parking version precondition was not met")
         self.current_version = current_version
 
 
@@ -234,7 +234,7 @@ class UnavailableUnitResourceFlow:
     """Fail closed until Unit persistence is configured."""
 
     def _unavailable(self) -> None:
-        raise UnitResourceUnavailable("Unit persistence is unavailable")
+        raise UnitResourceUnavailable("Parking persistence is unavailable")
 
     def list(
         self,
@@ -427,7 +427,7 @@ class PostgresUnitResourceFlow:
             with psycopg.connect(self._database_url) as connection:
                 rows = connection.execute(query, tuple(parameters)).fetchall()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         units = tuple(_unit(row) for row in rows[:limit])
         next_cursor = None
         if len(rows) > limit and units:
@@ -442,9 +442,9 @@ class PostgresUnitResourceFlow:
                     "SELECT * FROM app.unit_with_details(%s)", (unit_id,)
                 ).fetchone()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         if row is None:
-            raise UnitResourceNotFound("Unit was not found")
+            raise UnitResourceNotFound("Parking was not found")
         return _unit(row)
 
     @staticmethod
@@ -497,7 +497,7 @@ class PostgresUnitResourceFlow:
                 UUID(actor_id),
                 action,
                 unit.unit_id,
-                reason or "Unit source data changed through the authorized Unit API",
+                reason or "Parking source data changed through the authorized Parking API",
                 unit.property_id,
                 None if previous_state is None else Jsonb(previous_state),
                 Jsonb(PostgresUnitResourceFlow._state(unit)),
@@ -548,7 +548,7 @@ class PostgresUnitResourceFlow:
                     ),
                 ).fetchone()
                 if row is None:
-                    raise UnitResourceUnavailable("Unit creation returned no result")
+                    raise UnitResourceUnavailable("Parking creation returned no result")
                 created = _unit(row)
                 self._audit(
                     connection,
@@ -564,11 +564,11 @@ class PostgresUnitResourceFlow:
             psycopg.errors.InvalidParameterValue,
             psycopg.errors.ForeignKeyViolation,
         ) as exc:
-            raise UnitResourceInvalid("Unit source fields are invalid") from exc
+            raise UnitResourceInvalid("Parking source fields are invalid") from exc
         except psycopg.errors.UniqueViolation as exc:
-            raise UnitResourceInvalid("Unit identity or number already exists") from exc
+            raise UnitResourceInvalid("Parking identity or number already exists") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
     def patch(
         self,
@@ -588,7 +588,7 @@ class PostgresUnitResourceFlow:
                     "SELECT * FROM app.unit_with_details(%s)", (unit_id,)
                 ).fetchone()
                 if current_row is None:
-                    raise UnitResourceNotFound("Unit was not found")
+                    raise UnitResourceNotFound("Parking was not found")
                 current = _unit(current_row)
                 if current.version != expected_version:
                     raise UnitVersionConflict(current.version)
@@ -611,7 +611,7 @@ class PostgresUnitResourceFlow:
                         "SELECT version FROM app.units WHERE id = %s", (unit_id,)
                     ).fetchone()
                     if latest is None:
-                        raise UnitResourceNotFound("Unit was not found")
+                        raise UnitResourceNotFound("Parking was not found")
                     raise UnitVersionConflict(int(str(latest[0])))
                 updated = _unit(row)
                 # V1-058 R2: Change status keeps the person's reason in the Unit's History.
@@ -633,11 +633,11 @@ class PostgresUnitResourceFlow:
             psycopg.errors.InvalidParameterValue,
             psycopg.errors.ForeignKeyViolation,
         ) as exc:
-            raise UnitResourceInvalid("Unit source fields are invalid") from exc
+            raise UnitResourceInvalid("Parking source fields are invalid") from exc
         except psycopg.errors.UniqueViolation as exc:
-            raise UnitResourceInvalid("Unit identity or number already exists") from exc
+            raise UnitResourceInvalid("Parking identity or number already exists") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
     def setup_lists(self, property_id: UUID, *, include_removed: bool) -> UnitSetupLists:
         try:
@@ -650,7 +650,7 @@ class PostgresUnitResourceFlow:
                     (property_id,),
                 ).fetchall()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit setup lists are unavailable") from exc
+            raise UnitResourceUnavailable("Parking setup lists are unavailable") from exc
         return UnitSetupLists(tuple(_setup_item(row) for row in rows))
 
     def get_setup_item(self, item_id: UUID) -> UnitSetupItem:
@@ -662,9 +662,9 @@ class PostgresUnitResourceFlow:
                     (item_id,),
                 ).fetchone()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit setup lists are unavailable") from exc
+            raise UnitResourceUnavailable("Parking setup lists are unavailable") from exc
         if row is None:
-            raise UnitResourceNotFound("Unit setup item was not found")
+            raise UnitResourceNotFound("Parking setup item was not found")
         return _setup_item(row)
 
     def _setup_command(self, sql: str, parameters: tuple[object, ...]) -> UnitSetupItem | None:
@@ -672,15 +672,15 @@ class PostgresUnitResourceFlow:
             with psycopg.connect(self._database_url) as connection:
                 row = connection.execute(sql, parameters).fetchone()
         except psycopg.errors.ObjectNotInPrerequisiteState as exc:
-            raise UnitSetupItemInUse("A Unit uses this item") from exc
+            raise UnitSetupItemInUse("A Parking uses this item") from exc
         except (
             psycopg.errors.CheckViolation,
             psycopg.errors.InvalidParameterValue,
             psycopg.errors.ForeignKeyViolation,
         ) as exc:
-            raise UnitResourceInvalid("Unit setup item fields are invalid") from exc
+            raise UnitResourceInvalid("Parking setup item fields are invalid") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit setup lists are unavailable") from exc
+            raise UnitResourceUnavailable("Parking setup lists are unavailable") from exc
         return None if row is None else _setup_item(row)
 
     def create_setup_item(
@@ -698,7 +698,7 @@ class PostgresUnitResourceFlow:
             (uuid4(), property_id, list_kind, name_en, name_km, sort_order, UUID(actor_id)),
         )
         if created is None:
-            raise UnitResourceUnavailable("Unit setup item creation returned no result")
+            raise UnitResourceUnavailable("Parking setup item creation returned no result")
         return created
 
     def _versioned(self, item_id: UUID, result: UnitSetupItem | None) -> UnitSetupItem:
@@ -755,7 +755,7 @@ class PostgresUnitResourceFlow:
                     "SELECT 1 FROM app.units WHERE id = %s", (unit_id,)
                 ).fetchone()
                 if exists is None:
-                    raise UnitResourceNotFound("Unit was not found")
+                    raise UnitResourceNotFound("Parking was not found")
                 rows = connection.execute(
                     f"""
                     SELECT id, occurred_at, actor_id, action, entity_type, reason,
@@ -770,7 +770,7 @@ class PostgresUnitResourceFlow:
         except UnitResourceNotFound:
             raise
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         events = tuple(
             UnitTimelineEvent(
                 event_id=UUID(str(row[0])),
@@ -801,7 +801,7 @@ UnitTypeCode = Annotated[str, Field(min_length=1, max_length=40)]
 
 def _unit_type_code(value: str | None) -> str | None:
     if value is not None and UNIT_SETUP_CODE.fullmatch(value) is None:
-        raise ValueError("unit_type must be a code of the Unit Types list")
+        raise ValueError("unit_type must be a code of the Parking Types list")
     return value
 
 

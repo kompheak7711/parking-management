@@ -411,7 +411,7 @@ describe("Leases list", () => {
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
-      "Unit",
+      "Parking",
       "Primary Tenant",
       "Period",
       "Monthly Rent",
@@ -837,7 +837,7 @@ describe("Lease actions", () => {
     vi.setSystemTime(new Date("2026-10-28T03:00:15.000Z"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
     expect(
-      await screen.findByText(/This Lease or its Unit changed meanwhile/),
+      await screen.findByText(/This Lease or its Parking changed meanwhile/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     const calls = money.signWithPayment.mock.calls;
@@ -904,7 +904,7 @@ describe("Lease actions", () => {
     expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
   });
 
-  it("TEST-FE-853 a draft whose Customer has an active Booking of the Unit takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
+  it("TEST-FE-853 a draft whose Customer has an active Booking of the Parking takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
     window.location.hash = "#/leases/lease-sign";
     const reservation = (
       id: string,
@@ -967,7 +967,7 @@ describe("Lease actions", () => {
       ["property-1", "ACTIVE", "page-2"],
     ]);
     expect(dialog).toHaveTextContent(
-      "An active Reservation of this Customer for this Unit is completed in the same step",
+      "An active Reservation of this Customer for this Parking is completed in the same step",
     );
     expect(dialog).toHaveTextContent(
       "Rest of the Security Deposit ($100.00 of $500.00 received with the Booking)$400.00",
@@ -1353,7 +1353,7 @@ describe("Lease actions", () => {
     expect(
       await within(sheet).findByText("Total to receive"),
     ).toBeInTheDocument();
-    expect(sheet).toHaveTextContent("UnitU301");
+    expect(sheet).toHaveTextContent("ParkingU301");
     expect(sheet).toHaveTextContent("Other SignersGuarantor B");
     expect(sheet).toHaveTextContent("Monthly Rent$500.00");
     expect(sheet).toHaveTextContent("Parking, 10/12/2026 to 31/12/2026$14.19");
@@ -1629,7 +1629,7 @@ describe("Lease actions", () => {
     expect(dialog).toHaveTextContent("Write why it is cancelled.");
     expect(cancel).not.toHaveBeenCalled();
     fireEvent.change(within(dialog).getByLabelText(/Memo/), {
-      target: { value: " Customer chose another Unit " },
+      target: { value: " Customer chose another Parking " },
     });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Cancel the draft" }),
@@ -1641,7 +1641,7 @@ describe("Lease actions", () => {
       await screen.findByText("The draft was cancelled."),
     ).toBeInTheDocument();
     expect(cancel.mock.calls[0]?.[1]).toMatchObject({
-      reason: "Customer chose another Unit",
+      reason: "Customer chose another Parking",
     });
     expect(cancel.mock.calls[1]?.[1]).toEqual(cancel.mock.calls[0]?.[1]);
     expect(cancel.mock.calls[1]?.[2]).toBe(cancel.mock.calls[0]?.[2]);
@@ -1889,7 +1889,7 @@ describe("New Lease and Renew", () => {
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
   };
 
-  it("TEST-FE-857 New Lease offers open Units, fills a one-year End Date, previews the bill, asks before saving and keeps the Lease id on Try again", async () => {
+  it("TEST-FE-857 New Lease offers open Parking, fills a one-year End Date, previews the bill, asks before saving and keeps the Lease id on Try again", async () => {
     const create = vi
       .fn<LeaseApi["create"]>()
       .mockRejectedValueOnce(new LeaseUnavailableError())
@@ -1913,13 +1913,13 @@ describe("New Lease and Renew", () => {
     );
 
     fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
-    const unitBox = await screen.findByLabelText("Unit");
+    const unitBox = await screen.findByLabelText("Parking");
     expect(
       within(unitBox)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["Choose a Unit", "U401", "U402"]);
-    pickIn("Unit", "unit-U402");
+    ).toEqual(["Choose a Parking", "U401", "U402"]);
+    pickIn("Parking", "unit-U402");
     pickIn("Primary Tenant", "customer-a");
     pickIn("Other Signers", "customer-b");
     pickIn("Other occupants", "customer-c");
@@ -2019,10 +2019,10 @@ describe("New Lease and Renew", () => {
       undefined,
       money,
     );
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     await waitFor(() => {
-      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+      expect(screen.getByLabelText("Parking")).toHaveValue("unit-U402");
     });
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
@@ -2090,10 +2090,10 @@ describe("New Lease and Renew", () => {
       undefined,
       money,
     );
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     await waitFor(() => {
-      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+      expect(screen.getByLabelText("Parking")).toHaveValue("unit-U402");
     });
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
@@ -2125,7 +2125,7 @@ describe("New Lease and Renew", () => {
     });
   });
 
-  it("TEST-FE-1010 New Lease says when the chosen Unit has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
+  it("TEST-FE-1010 New Lease says when the chosen Parking has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
     const loadMeters = vi.fn<UtilityApi["loadMeters"]>().mockResolvedValue({
       items: [meterOf("WATER", "2027-01-01")],
       nextCursor: null,
@@ -2142,14 +2142,14 @@ describe("New Lease and Renew", () => {
       { loadMeters },
     );
     fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     fireEvent.change(screen.getByLabelText("Start Date"), {
       target: { value: "2026-12-22" },
     });
     expect(
       await screen.findByText(
-        "This Unit has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
+        "This Parking has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
       ),
     ).toBeInTheDocument();
     expect(loadMeters).toHaveBeenLastCalledWith("unit-U402", undefined);
@@ -2159,7 +2159,7 @@ describe("New Lease and Renew", () => {
     });
     expect(
       await screen.findByText(
-        "This Unit has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
+        "This Parking has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
       ),
     ).toBeInTheDocument();
     loadMeters.mockRejectedValue(new Error("not allowed"));
@@ -2377,8 +2377,8 @@ describe("New Lease and Renew", () => {
       { read },
     );
     fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Start Date"), {
       target: { value: "2027-01-10" },
@@ -2459,7 +2459,7 @@ describe("New Lease and Renew", () => {
     ]);
   });
 
-  it("TEST-FE-1075 New Lease from a Unit page opens with that Unit chosen and still lets it change; a Unit a walk-in Lease may not use is not chosen", async () => {
+  it("TEST-FE-1075 New Lease from a Parking page opens with that Parking chosen and still lets it change; a Parking a walk-in Lease may not use is not chosen", async () => {
     expect(formModeOf("unit:unit-U401")).toEqual({
       kind: "unit",
       unitId: "unit-U401",
@@ -2483,13 +2483,13 @@ describe("New Lease and Renew", () => {
       units,
     );
 
-    const unitBox = await screen.findByLabelText("Unit");
+    const unitBox = await screen.findByLabelText("Parking");
     expect(unitBox).toHaveValue("unit-U401");
     expect(
       within(unitBox)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["Choose a Unit", "U401", "U402"]);
+    ).toEqual(["Choose a Parking", "U401", "U402"]);
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
       target: { value: "300" },
@@ -2514,10 +2514,10 @@ describe("New Lease and Renew", () => {
     // A Reserved Unit comes only with its Booking (DL-066), so nothing is chosen.
     window.location.hash = "#/leases/unit%3Aunit-U403";
     show(api(), deposits(), null, undefined, people(), units);
-    expect(await screen.findByLabelText("Unit")).toHaveValue("");
+    expect(await screen.findByLabelText("Parking")).toHaveValue("");
   });
 
-  it("TEST-FE-858 a Lease from a Booking takes its Unit, Customer, Rent and Security Deposit", async () => {
+  it("TEST-FE-858 a Lease from a Booking takes its Parking, Customer, Rent and Security Deposit", async () => {
     window.location.hash = "#/leases/new%3Aresv-1";
     const get = vi.fn<ReservationApi["get"]>().mockResolvedValue({
       reservation_id: "resv-1",
@@ -2538,7 +2538,7 @@ describe("New Lease and Renew", () => {
       );
     show(api({ create }), deposits(), null, { get }, people(), units);
 
-    expect(await screen.findByLabelText("Unit")).toHaveValue("U403");
+    expect(await screen.findByLabelText("Parking")).toHaveValue("U403");
     expect(screen.getByLabelText("Primary Tenant")).toHaveValue("Bopha");
     expect(screen.getByLabelText("Monthly Rent")).toHaveValue("400.00");
     expect(
@@ -2648,7 +2648,7 @@ describe("New Lease and Renew", () => {
     });
   });
 
-  it("TEST-FE-859 Renew starts the day after the old End Date with the same Unit, tenant and other Signers, linked to the old Lease", async () => {
+  it("TEST-FE-859 Renew starts the day after the old End Date with the same Parking, tenant and other Signers, linked to the old Lease", async () => {
     window.location.hash = "#/leases/lease-U101";
     const create = vi
       .fn<LeaseApi["create"]>()
@@ -2658,7 +2658,7 @@ describe("New Lease and Renew", () => {
     show(api({ create }), deposits(), null, undefined, people(), units);
 
     fireEvent.click(await screen.findByRole("link", { name: "Renew" }));
-    expect(await screen.findByLabelText("Unit")).toHaveValue("U101");
+    expect(await screen.findByLabelText("Parking")).toHaveValue("U101");
     const next = addDays(running.end_date ?? today, 1);
     expect(screen.getByLabelText("Start Date")).toHaveValue(dayText(next));
     expect(screen.getByText("Guarantor")).toBeInTheDocument();
@@ -2707,10 +2707,10 @@ describe("New Lease and Renew", () => {
     window.location.hash = "#/leases/new";
     show(api({ create, get }), deposits(), null, undefined, people(), units);
 
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     await waitFor(() => {
-      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+      expect(screen.getByLabelText("Parking")).toHaveValue("unit-U402");
     });
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
@@ -2827,7 +2827,7 @@ describe("New Lease and Renew", () => {
     ).toBeInTheDocument();
     expect(
       within(dialog).getByText(
-        "The Unit stays Occupied until the hand-back is recorded.",
+        "The Parking stays Occupied until the hand-back is recorded.",
       ),
     ).toBeInTheDocument();
     // A day after today cannot be recorded.

@@ -237,7 +237,7 @@ def test_an_audit_file_for_a_unit_holds_the_events_about_the_unit_itself(
             "INSERT INTO app.audit_events (id,occurred_at,business_date,actor_id,action,"
             "entity_type,entity_id,reason,property_id,resulting_state,correlation_id,source,"
             "outcome) VALUES (%s,now(),current_date,%s,'unit.status_changed','unit',%s,"
-            "'Unit check',%s,'{\"status\":\"VACANT\"}'::jsonb,%s,'API','SUCCEEDED')",
+            "'Parking check',%s,'{\"status\":\"VACANT\"}'::jsonb,%s,'API','SUCCEEDED')",
             (uuid4(), human, unit, prop, uuid4()),
         )
     rows = PostgresExportStore(runtime_database_url()).audit_rows(

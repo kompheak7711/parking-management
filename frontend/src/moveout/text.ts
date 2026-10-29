@@ -7,8 +7,8 @@ import type { Language } from "../signInText";
 const TEXT = {
   title: ["Move-out", "ការចាកចេញ"],
   sub: [
-    "Leases ending, Units handed back and Final Settlements",
-    "កិច្ចសន្យាជិតបញ្ចប់ បន្ទប់បានប្រគល់ និងការទូទាត់ចុងក្រោយ",
+    "Leases ending, Parking handed back and Final Settlements",
+    "កិច្ចសន្យាជិតបញ្ចប់ ចំណតបានប្រគល់ និងការទូទាត់ចុងក្រោយ",
   ],
   moveout_of: ["Move-out · {0}", "ការចាកចេញ · {0}"],
   c_soon: ["Leaving soon", "ជិតចាកចេញ"],
@@ -16,7 +16,7 @@ const TEXT = {
     "Lease ends within 60 days, or terminated and still in",
     "កិច្ចសន្យាបញ្ចប់ក្នុង 60 ថ្ងៃ ឬបានបញ្ចប់ហើយនៅមិនទាន់ចេញ",
   ],
-  c_out: ["Handed back", "បានប្រគល់បន្ទប់"],
+  c_out: ["Handed back", "បានប្រគល់ចំណត"],
   c_out_s: [
     "Readings, inspection and charges to finish",
     "អំណាន ការត្រួតពិនិត្យ និងថ្លៃត្រូវបញ្ចប់",
@@ -38,14 +38,14 @@ const TEXT = {
   n1: ["1 move-out", "ការចាកចេញ 1"],
   n: ["{0} move-outs", "ការចាកចេញ {0}"],
   none: ["Nothing here.", "គ្មានអ្វីនៅទីនេះទេ។"],
-  col_unit: ["Unit", "បន្ទប់"],
+  col_unit: ["Parking", "ចំណត"],
   col_cust: ["Customer", "អតិថិជន"],
   col_end: ["Lease ends", "កិច្ចសន្យាបញ្ចប់"],
   col_hb: ["Handed back", "បានប្រគល់"],
   col_step: ["Step", "ជំហាន"],
   col_dep: ["Deposits held", "ប្រាក់កក់កាន់កាប់"],
   was: ["End Date was {0}", "ថ្ងៃបញ្ចប់គឺ {0}"],
-  next_hb: ["Record the hand-back", "កត់ត្រាការប្រគល់បន្ទប់"],
+  next_hb: ["Record the hand-back", "កត់ត្រាការប្រគល់ចំណត"],
   next_final: ["Record final readings", "កត់ត្រាអំណានចុងក្រោយ"],
   next_settle: ["Prepare the Final Settlement", "រៀបចំការទូទាត់ចុងក្រោយ"],
   next_confirm: ["A Manager confirms it", "អ្នកគ្រប់គ្រងបញ្ជាក់"],
@@ -60,10 +60,10 @@ const TEXT = {
   in1: ["in 1 day", "ក្នុង 1 ថ្ងៃ"],
   rule_note: [
     "Order of work: hand-back, final readings, inspection and charges, Final Settlement (BR-MOVEOUT-012). One Final Settlement per Lease; corrections after closure are separate records.",
-    "លំដាប់ការងារ៖ ប្រគល់បន្ទប់ អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
+    "លំដាប់ការងារ៖ ប្រគល់ចំណត អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
   ],
   s_soon: ["Leaving soon", "ជិតចាកចេញ"],
-  s_in: ["Still in the Unit", "នៅក្នុងបន្ទប់"],
+  s_in: ["Still in the Parking", "នៅក្នុងចំណត"],
   s_out: ["Handed back", "បានប្រគល់"],
   // new: terminated before anybody moved in.
   s_skip: ["Never moved in", "មិនដែលចូលស្នាក់នៅ"],
@@ -86,15 +86,15 @@ const TEXT = {
   // new: the termination's ground is in its reason.
   st1_term: ["Terminated as of {0}.", "បានបញ្ចប់ត្រឹម {0}។"],
   st1_reason: ["Reason: {0}", "មូលហេតុ៖ {0}"],
-  st2_t: ["Hand back the Unit", "ប្រគល់បន្ទប់"],
+  st2_t: ["Hand back the Parking", "ប្រគល់ចំណត"],
   // new: the record keeps the keys in its evidence and the Unit status it set.
   st2_done: [
-    "Handed back on {0}. Unit set to {1}.",
-    "បានប្រគល់នៅ {0}។ បន្ទប់ត្រូវបានកំណត់ជា {1}។",
+    "Handed back on {0}. Parking set to {1}.",
+    "បានប្រគល់នៅ {0}។ ចំណតត្រូវបានកំណត់ជា {1}។",
   ],
   st2_todo: [
-    "The Customer is still in the Unit. Record the real hand-back date when the keys come back.",
-    "អតិថិជននៅក្នុងបន្ទប់។ កត់ត្រាថ្ងៃប្រគល់ពិតប្រាកដ ពេលទទួលកូនសោ។",
+    "The Customer is still in the Parking. Record the real hand-back date when the keys come back.",
+    "អតិថិជននៅក្នុងចំណត។ កត់ត្រាថ្ងៃប្រគល់ពិតប្រាកដ ពេលទទួលកូនសោ។",
   ],
   // new
   st2_wait: [
@@ -131,7 +131,7 @@ const TEXT = {
     "កិច្ចសន្យានេះមិនបញ្ចប់ក្នុង 60 ថ្ងៃទេ ដូច្នេះមិនទាន់មានការចាកចេញ។",
   ],
   st2_btn: ["Record hand-back", "កត់ត្រាការប្រគល់"],
-  st2_date: ["Hand-back date", "ថ្ងៃប្រគល់បន្ទប់"],
+  st2_date: ["Hand-back date", "ថ្ងៃប្រគល់ចំណត"],
   st2_date_help: [
     "The real date the keys came back. Not later than today.",
     "ថ្ងៃពិតដែលទទួលកូនសោ។ មិនក្រោយថ្ងៃនេះ។",
@@ -140,11 +140,11 @@ const TEXT = {
   st2_keys: ["All keys returned", "បានប្រគល់កូនសោទាំងអស់"],
   st2_who: ["Who moved out", "អ្នកចាកចេញ"],
   // new
-  st2_unit: ["The Unit after the hand-back", "បន្ទប់បន្ទាប់ពីប្រគល់"],
+  st2_unit: ["The Parking after the hand-back", "ចំណតបន្ទាប់ពីប្រគល់"],
   st2_note: ["Note (optional)", "កំណត់ចំណាំ (ស្រេចចិត្ត)"],
   st2_c: [
-    "The Unit leaves Occupied. Rent for the month of hand-back follows the rule shown.",
-    "បន្ទប់លែងមានអ្នកស្នាក់នៅ។ ថ្លៃឈ្នួលខែប្រគល់ តាមច្បាប់បង្ហាញ។",
+    "The Parking leaves Occupied. Rent for the month of hand-back follows the rule shown.",
+    "ចំណតលែងមានអ្នកស្នាក់នៅ។ ថ្លៃឈ្នួលខែប្រគល់ តាមច្បាប់បង្ហាញ។",
   ],
   // new
   st2_ends_too: [
@@ -173,7 +173,7 @@ const TEXT = {
     "Read both meters on the hand-back day. The app issues the final Utility Invoice at once (off-cycle).",
     "អាននាឡិកាស្ទង់ទាំងពីរនៅថ្ងៃប្រគល់។ កម្មវិធីចេញវិក្កយបត្រទឹកភ្លើងចុងក្រោយភ្លាម។",
   ],
-  st3_wait: ["After the hand-back.", "បន្ទាប់ពីប្រគល់បន្ទប់។"],
+  st3_wait: ["After the hand-back.", "បន្ទាប់ពីប្រគល់ចំណត។"],
   st3_btn: ["Record final readings", "កត់ត្រាអំណានចុងក្រោយ"],
   st3_ok: ["Save and issue the Invoice", "រក្សាទុក និងចេញវិក្កយបត្រ"],
   // new
@@ -193,22 +193,22 @@ const TEXT = {
   st3_taken: ["{0}, read on {1}", "{0} អាននៅ {1}"],
   // new
   st3_meters_failed: [
-    "The meters of this Unit could not be read just now. Close and try again.",
-    "មិនអាចអាននាឡិកាស្ទង់នៃបន្ទប់នេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+    "The meters of this Parking could not be read just now. Close and try again.",
+    "មិនអាចអាននាឡិកាស្ទង់នៃចំណតនេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
   st3_no_meters: [
-    "This Unit has no meter on {0}. Add the meters in Utilities first.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើងជាមុនសិន។",
+    "This Parking has no meter on {0}. Add the meters in Utilities first.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើងជាមុនសិន។",
   ],
   // new
   st3_none: [
-    "This Unit has no meter on {0}, so there are no final readings and no final Utility Invoice.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ ដូច្នេះគ្មានអំណានចុងក្រោយ និងគ្មានវិក្កយបត្រទឹកភ្លើងចុងក្រោយទេ។",
+    "This Parking has no meter on {0}, so there are no final readings and no final Utility Invoice.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ ដូច្នេះគ្មានអំណានចុងក្រោយ និងគ្មានវិក្កយបត្រទឹកភ្លើងចុងក្រោយទេ។",
   ],
   st3_note: [
     "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date (BR-UTIL-021).",
-    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់បន្ទប់។",
+    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់ចំណត។",
   ],
   // new
   st3_note_only: [
@@ -320,8 +320,8 @@ const TEXT = {
   ],
   st4_t: ["Inspection and charges", "ការត្រួតពិនិត្យ និងថ្លៃ"],
   st4_todo: [
-    "Inspect the Unit after the hand-back. Each damage charge needs an amount, a reason and evidence; it is recorded once per finding.",
-    "ត្រួតពិនិត្យបន្ទប់បន្ទាប់ពីប្រគល់។ ថ្លៃខូចខាតនីមួយៗត្រូវមានចំនួន មូលហេតុ និងភស្តុតាង; កត់ត្រាម្តងក្នុងមួយការរកឃើញ។",
+    "Inspect the Parking after the hand-back. Each damage charge needs an amount, a reason and evidence; it is recorded once per finding.",
+    "ត្រួតពិនិត្យចំណតបន្ទាប់ពីប្រគល់។ ថ្លៃខូចខាតនីមួយៗត្រូវមានចំនួន មូលហេតុ និងភស្តុតាង; កត់ត្រាម្តងក្នុងមួយការរកឃើញ។",
   ],
   st4_insp: ["Inspected on {0}.", "បានត្រួតពិនិត្យនៅ {0}។"],
   st4_findings: ["Damage findings", "ការរកឃើញការខូចខាត"],
@@ -404,16 +404,16 @@ const TEXT = {
   st4_draft: ["Draft", "ព្រាង"],
   st4_open: ["Open", "បើក"],
   st4_clean_rate: [
-    "This Unit's cleaning rate: {0}.",
-    "អត្រាសម្អាតរបស់បន្ទប់នេះ៖ {0}។",
+    "This Parking's cleaning rate: {0}.",
+    "អត្រាសម្អាតរបស់ចំណតនេះ៖ {0}។",
   ],
   st4_clean_none: [
-    "This Unit has no cleaning rate yet. Set it in Settings, then add the charge.",
-    "បន្ទប់នេះមិនទាន់មានអត្រាសម្អាតទេ។ កំណត់វាក្នុងការកំណត់ ហើយបន្ថែមថ្លៃ។",
+    "This Parking has no cleaning rate yet. Set it in Settings, then add the charge.",
+    "ចំណតនេះមិនទាន់មានអត្រាសម្អាតទេ។ កំណត់វាក្នុងការកំណត់ ហើយបន្ថែមថ្លៃ។",
   ],
   st4_clean_zero: [
-    "This Unit's cleaning rate is zero: no cleaning charge.",
-    "អត្រាសម្អាតរបស់បន្ទប់នេះគឺសូន្យ៖ គ្មានថ្លៃសម្អាត។",
+    "This Parking's cleaning rate is zero: no cleaning charge.",
+    "អត្រាសម្អាតរបស់ចំណតនេះគឺសូន្យ៖ គ្មានថ្លៃសម្អាត។",
   ],
   st4_clean_hidden: [
     "Your account cannot see the cleaning rate.",
@@ -492,12 +492,12 @@ const TEXT = {
     "អត្រាសម្អាតបានផ្លាស់ប្តូរ។ បិទ ពិនិត្យអត្រាថ្មី ហើយបន្ថែមម្តងទៀត។",
   ],
   cr_CLEANING_RATE_NOT_SET: [
-    "This Unit has no cleaning rate. Set the rate first.",
-    "បន្ទប់នេះគ្មានអត្រាសម្អាតទេ។ កំណត់អត្រាជាមុនសិន។",
+    "This Parking has no cleaning rate. Set the rate first.",
+    "ចំណតនេះគ្មានអត្រាសម្អាតទេ។ កំណត់អត្រាជាមុនសិន។",
   ],
   cr_CLEANING_RATE_ZERO: [
-    "This Unit's cleaning rate is zero, so there is no cleaning charge.",
-    "អត្រាសម្អាតរបស់បន្ទប់នេះគឺសូន្យ ដូច្នេះគ្មានថ្លៃសម្អាត។",
+    "This Parking's cleaning rate is zero, so there is no cleaning charge.",
+    "អត្រាសម្អាតរបស់ចំណតនេះគឺសូន្យ ដូច្នេះគ្មានថ្លៃសម្អាត។",
   ],
   cr_CLEANING_CHARGE_NEEDS_MOVE_OUT: [
     "Record the hand-back before the cleaning charge.",
@@ -522,8 +522,8 @@ const TEXT = {
   ],
   st5_t: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
   st5_wait: [
-    "After the Lease ends and the Unit is handed back.",
-    "បន្ទាប់ពីកិច្ចសន្យាបញ្ចប់ និងប្រគល់បន្ទប់។",
+    "After the Lease ends and the Parking is handed back.",
+    "បន្ទាប់ពីកិច្ចសន្យាបញ្ចប់ និងប្រគល់ចំណត។",
   ],
   st5_todo: [
     "Prepare the statement. Staff prepare the draft; a Manager confirms and closes it.",
@@ -915,16 +915,16 @@ const TEXT = {
   history_t: ["History", "ប្រវត្តិ"],
   h_none: ["Nothing recorded yet.", "មិនទាន់មានកំណត់ត្រា។"],
   mh_hb: [
-    "Handed back on {0}; Unit set to {1}.",
-    "បានប្រគល់នៅ {0}; បន្ទប់ត្រូវបានកំណត់ជា {1}។",
+    "Handed back on {0}; Parking set to {1}.",
+    "បានប្រគល់នៅ {0}; ចំណតត្រូវបានកំណត់ជា {1}។",
   ],
   // new
   mh_hb_fixed: [
-    "Hand-back corrected: {0}; Unit {1}.",
-    "ការប្រគល់ត្រូវបានកែ៖ {0}; បន្ទប់ {1}។",
+    "Hand-back corrected: {0}; Parking {1}.",
+    "ការប្រគល់ត្រូវបានកែ៖ {0}; ចំណត {1}។",
   ],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
-  open_unit: ["Open Unit", "បើកបន្ទប់"],
+  open_unit: ["Open Parking", "បើកចំណត"],
   back: ["Move-out", "ការចាកចេញ"],
   loading: ["Reading the move-outs…", "កំពុងអានការចាកចេញ…"],
   failed: [
@@ -952,8 +952,8 @@ const TEXT = {
     "ការប្រគល់មិនត្រូវបានរក្សាទុកទេ។ ពិនិត្យថ្ងៃ ហើយព្យាយាមម្តងទៀត ឬអានកិច្ចសន្យាម្តងទៀត។",
   ],
   conflict: [
-    "The Lease or the Unit changed meanwhile. The page was read again; check it and record again.",
-    "កិច្ចសន្យា ឬបន្ទប់បានផ្លាស់ប្តូរ។ ទំព័រត្រូវបានអានម្តងទៀត; សូមពិនិត្យ ហើយកត់ត្រាម្តងទៀត។",
+    "The Lease or the Parking changed meanwhile. The page was read again; check it and record again.",
+    "កិច្ចសន្យា ឬចំណតបានផ្លាស់ប្តូរ។ ទំព័រត្រូវបានអានម្តងទៀត; សូមពិនិត្យ ហើយកត់ត្រាម្តងទៀត។",
   ],
   required: ["required", "ត្រូវការ"],
   // new

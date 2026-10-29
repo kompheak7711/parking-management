@@ -113,7 +113,7 @@ def test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once(
     body = {
         "action": "VOID",
         "expected_outstanding_usd_cents": data["outstanding_usd_cents"],
-        "reason": "Customer handed back the Unit on 3 August",
+        "reason": "Customer handed back the Parking on 3 August",
     }
     key, first_version = uuid4(), version(url, august)
     first = {**headers(who, version=first_version), "Idempotency-Key": str(key)}

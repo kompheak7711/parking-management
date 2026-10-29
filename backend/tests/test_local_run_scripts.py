@@ -63,7 +63,7 @@ def test_every_local_script_parses_and_reads_secrets_only_from_files() -> None:
     assert 'IFS= read -r APP_DATABASE_URL < "$PRM_SECRETS/runtime_database_url"' in start_api
     assert "APP_ENVIRONMENT=production" in start_api
     assert "APP_TOTP_KEY_FILE=/dev/fd/4" in start_api
-    assert "--host 127.0.0.1 --port 8000" in start_api
+    assert "--host 127.0.0.1 --port 8001" in start_api
     bootstrap = (LOCAL_SCRIPTS / "bootstrap-owner.sh").read_text(encoding="utf-8")
     assert '3< "$PRM_SECRETS/bootstrap_database_url"' in bootstrap
     assert '5< "$PRM_BLOCKLIST"' in bootstrap

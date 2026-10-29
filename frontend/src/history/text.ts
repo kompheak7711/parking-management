@@ -19,9 +19,9 @@ const TEXT = {
   hi_anyone: ["Anyone", "អ្នកណាក៏បាន"],
   hi_kind: ["Action", "សកម្មភាព"],
   // new: the server finds events by Unit.
-  hi_unit: ["Unit", "បន្ទប់"],
+  hi_unit: ["Parking", "ចំណត"],
   // new
-  hi_any_unit: ["All Units", "គ្រប់បន្ទប់"],
+  hi_any_unit: ["All Parking", "គ្រប់ចំណត"],
   hi_search: ["Search", "ស្វែងរក"],
   hi_col_what: ["What happened", "មានអ្វីកើតឡើង"],
   hi_col_rec: ["Record", "កំណត់ត្រា"],
@@ -82,7 +82,7 @@ const TEXT = {
   k_reservation: ["Reservation", "ការកក់"],
   k_lease: ["Lease", "កិច្ចសន្យា"],
   k_customer: ["Customer", "អតិថិជន"],
-  k_unit: ["Unit", "បន្ទប់"],
+  k_unit: ["Parking", "ចំណត"],
   k_moveout: ["Move-out", "ការចាកចេញ"],
   k_settle: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
   k_deposit: ["Deposit", "ប្រាក់កក់"],
@@ -169,6 +169,8 @@ export function actionText(action: string): string {
     .replace(/[._]+/g, " ")
     .trim()
     .replace(/\s+/g, " ")
-    .toLowerCase();
+    .toLowerCase()
+    // The server's code name "unit" is the word "Parking" on the screen.
+    .replace(/\bunits?\b/g, "parking");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }

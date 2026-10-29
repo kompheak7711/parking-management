@@ -5,42 +5,42 @@
 import type { Language } from "../signInText";
 
 const TEXT = {
-  sub: ["{0} Units at CHETANA Parking", "បន្ទប់ {0} នៅ CHETANA Parking"],
-  loading: ["Loading the Units…", "កំពុងផ្ទុកបន្ទប់…"],
+  sub: ["{0} Parking at CHETANA Parking", "ចំណត {0} នៅ CHETANA Parking"],
+  loading: ["Loading Parking…", "កំពុងផ្ទុកចំណត…"],
   // new
   failed: [
-    "The Units could not be read. Retry when the service is available.",
-    "មិនអាចអានបន្ទប់បានទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
+    "The Parking could not be read. Retry when the service is available.",
+    "មិនអាចអានចំណតបានទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
   ],
   // new
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
   // new
   no_property: [
-    "The Property is not known yet, so the Units cannot be shown.",
-    "មិនទាន់ស្គាល់អគារ ដូច្នេះមិនអាចបង្ហាញបន្ទប់បានទេ។",
+    "The Property is not known yet, so the Parking cannot be shown.",
+    "មិនទាន់ស្គាល់អគារ ដូច្នេះមិនអាចបង្ហាញចំណតបានទេ។",
   ],
   // new
   lists_failed: [
-    "The Settings lists could not be read, so Units cannot be added or changed now.",
-    "មិនអាចអានបញ្ជីការកំណត់បានទេ ដូច្នេះមិនអាចបន្ថែម ឬកែបន្ទប់បានឥឡូវនេះ។",
+    "The Settings lists could not be read, so Parking cannot be added or changed now.",
+    "មិនអាចអានបញ្ជីការកំណត់បានទេ ដូច្នេះមិនអាចបន្ថែម ឬកែចំណតបានឥឡូវនេះ។",
   ],
   // new
   tenants_hidden: [
     "Your account cannot read Leases or Reservations, so Until shows “—”.",
     "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះរហូតដល់ បង្ហាញ “—”។",
   ],
-  new_unit: ["New Unit", "បន្ទប់ថ្មី"],
+  new_unit: ["New Parking", "ចំណតថ្មី"],
   all_floors: ["All floors", "គ្រប់ជាន់"],
   all_types: ["All types", "គ្រប់ប្រភេទ"],
   floor: ["Floor", "ជាន់"],
   floor_n: ["Floor {0}", "ជាន់ទី {0}"],
-  type: ["Unit Type", "ប្រភេទបន្ទប់"],
+  type: ["Parking Type", "ប្រភេទចំណត"],
   c_occupied: ["Occupied", "មានអ្នកជួល"],
   c_occupied_s: ["A signed Lease is running", "មានកិច្ចសន្យាបានចុះហត្ថលេខា"],
   c_reserved: ["Reserved", "បានកក់"],
   c_reserved_s: [
-    "An active Reservation holds the Unit",
-    "ការកក់កំពុងរក្សាបន្ទប់",
+    "An active Reservation holds the Parking",
+    "ការកក់កំពុងរក្សាចំណត",
   ],
   c_vacant: ["Vacant", "ទំនេរ"],
   c_vacant_s: ["Ready to reserve or lease", "រួចរាល់សម្រាប់កក់ ឬជួល"],
@@ -51,14 +51,14 @@ const TEXT = {
   ],
   showing: ["Showing: {0}.", "កំពុងបង្ហាញ៖ {0}។"],
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
-  col_unit: ["Unit", "បន្ទប់"],
+  col_unit: ["Parking", "ចំណត"],
   col_status: ["Status", "ស្ថានភាព"],
   rent: ["Monthly Rent", "ថ្លៃឈ្នួលប្រចាំខែ"],
   until: ["Until", "រហូតដល់"],
   reserved_until: ["Reserved until", "កក់រហូតដល់"],
-  n1: ["1 Unit", "បន្ទប់ 1"],
-  n: ["{0} Units", "បន្ទប់ {0}"],
-  none: ["No Units match these filters.", "គ្មានបន្ទប់ត្រូវនឹងតម្រងនេះទេ។"],
+  n1: ["1 Parking", "ចំណត 1"],
+  n: ["{0} Parking", "ចំណត {0}"],
+  none: ["No Parking matches these filters.", "គ្មានចំណតត្រូវនឹងតម្រងនេះទេ។"],
   s_VACANT: ["Vacant", "ទំនេរ"],
   s_RESERVED: ["Reserved", "បានកក់"],
   s_OCCUPIED: ["Occupied", "មានអ្នកជួល"],
@@ -68,8 +68,8 @@ const TEXT = {
   back: ["Back", "ត្រឡប់ក្រោយ"],
   // new
   unit_missing: [
-    "This Unit was not found. Go back to the Units list.",
-    "រកមិនឃើញបន្ទប់នេះទេ។ ត្រឡប់ទៅបញ្ជីបន្ទប់។",
+    "This Parking was not found. Go back to the Parking list.",
+    "រកមិនឃើញចំណតនេះទេ។ ត្រឡប់ទៅបញ្ជីចំណត។",
   ],
   make_reservation: ["Make Reservation", "ធ្វើការកក់"],
   new_lease: ["New Lease", "កិច្ចសន្យាថ្មី"],
@@ -78,9 +78,9 @@ const TEXT = {
   open_draft: ["Open draft Lease", "បើកសេចក្តីព្រាងកិច្ចសន្យា"],
   open_reservation: ["Open Reservation", "បើកការកក់"],
   change_status: ["Change status", "ប្តូរស្ថានភាព"],
-  update_unit: ["Update Unit", "ធ្វើបច្ចុប្បន្នភាពបន្ទប់"],
-  details: ["Unit details", "ព័ត៌មានលម្អិតបន្ទប់"],
-  no_photo: ["No photo of this Unit yet.", "មិនទាន់មានរូបថតបន្ទប់នេះទេ។"],
+  update_unit: ["Update Parking", "ធ្វើបច្ចុប្បន្នភាពចំណត"],
+  details: ["Parking details", "ព័ត៌មានលម្អិតចំណត"],
+  no_photo: ["No photo of this Parking yet.", "មិនទាន់មានរូបថតចំណតនេះទេ។"],
   // new
   photo_later: [
     "Adding a photo comes with the file storage step.",
@@ -88,11 +88,11 @@ const TEXT = {
   ],
   size: ["Size", "ទំហំ"],
   m2: ["{0} m²", "{0} ម²"],
-  beds: ["Bedrooms", "បន្ទប់គេង"],
-  baths: ["Bathrooms", "បន្ទប់ទឹក"],
+  beds: ["Bedrooms", "ចំណតគេង"],
+  baths: ["Bathrooms", "ចំណតទឹក"],
   view: ["View", "ទេសភាព"],
   kitchen: ["Kitchen", "ផ្ទះបាយ"],
-  features: ["Room features", "លក្ខណៈបន្ទប់"],
+  features: ["Room features", "លក្ខណៈចំណត"],
   has: ["Yes", "មាន"],
   hasnt: ["No", "គ្មាន"],
   // new
@@ -112,8 +112,8 @@ const TEXT = {
   deposit_received: ["Deposit received", "ប្រាក់កក់បានទទួល"],
   availability: ["Availability", "ភាពទំនេរ"],
   a_VACANT: [
-    "This Unit is vacant. It can be reserved, or a Lease can be drafted for a walk-in Customer.",
-    "បន្ទប់នេះទំនេរ។ អាចកក់ ឬព្រាងកិច្ចសន្យាសម្រាប់អតិថិជនដែលមកផ្ទាល់។",
+    "This Parking is vacant. It can be reserved, or a Lease can be drafted for a walk-in Customer.",
+    "ចំណតនេះទំនេរ។ អាចកក់ ឬព្រាងកិច្ចសន្យាសម្រាប់អតិថិជនដែលមកផ្ទាល់។",
   ],
   a_CLEANING: [
     "Being cleaned after a move-out. It becomes Vacant when it is ready. A walk-in Lease can still be signed.",
@@ -129,8 +129,8 @@ const TEXT = {
   ],
   // new
   a_unknown: [
-    "Your account cannot read Leases or Reservations for this Unit.",
-    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់សម្រាប់បន្ទប់នេះបានទេ។",
+    "Your account cannot read Leases or Reservations for this Parking.",
+    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់សម្រាប់ចំណតនេះបានទេ។",
   ],
   past_leases: ["Lease history", "ប្រវត្តិកិច្ចសន្យា"],
   no_past: ["No earlier Leases.", "គ្មានកិច្ចសន្យាពីមុន។"],
@@ -142,23 +142,23 @@ const TEXT = {
     "Each meter with its last reading shows here when Utilities are rebuilt (step R4).",
     "នាឡិកាស្ទង់នីមួយៗ និងអំណានចុងក្រោយនឹងបង្ហាញនៅទីនេះ ពេលរៀបចំទឹកភ្លើងឡើងវិញ (ជំហាន R4)។",
   ],
-  invoices: ["Invoices for this Unit", "វិក្កយបត្រសម្រាប់បន្ទប់នេះ"],
+  invoices: ["Invoices for this Parking", "វិក្កយបត្រសម្រាប់ចំណតនេះ"],
   // new
   invoices_later: [
-    "Unpaid Invoices for this Unit show here when Invoices are rebuilt (step R5).",
-    "វិក្កយបត្រមិនទាន់បង់សម្រាប់បន្ទប់នេះនឹងបង្ហាញនៅទីនេះ ពេលរៀបចំវិក្កយបត្រឡើងវិញ (ជំហាន R5)។",
+    "Unpaid Invoices for this Parking show here when Invoices are rebuilt (step R5).",
+    "វិក្កយបត្រមិនទាន់បង់សម្រាប់ចំណតនេះនឹងបង្ហាញនៅទីនេះ ពេលរៀបចំវិក្កយបត្រឡើងវិញ (ជំហាន R5)។",
   ],
   history: ["History", "ប្រវត្តិ"],
   // new
   history_none: ["No history yet.", "មិនទាន់មានប្រវត្តិ។"],
   // new
-  h_created: ["Unit created.", "បានបង្កើតបន្ទប់។"],
+  h_created: ["Parking created.", "បានបង្កើតចំណត។"],
   // new
-  h_updated: ["Unit details updated.", "បានធ្វើបច្ចុប្បន្នភាពព័ត៌មានបន្ទប់។"],
+  h_updated: ["Parking details updated.", "បានធ្វើបច្ចុប្បន្នភាពព័ត៌មានចំណត។"],
   // new
   h_status: ["Status changed to {0}: {1}", "ស្ថានភាពបានប្តូរទៅ {0}៖ {1}"],
   // new
-  h_inventory: ["Unit inventory updated.", "បានធ្វើបច្ចុប្បន្នភាពសម្ភារៈ។"],
+  h_inventory: ["Parking inventory updated.", "បានធ្វើបច្ចុប្បន្នភាពសម្ភារៈ។"],
   h_signed: ["Lease signed by {0}.", "កិច្ចសន្យាបានចុះហត្ថលេខាដោយ {0}។"],
   h_movein: ["{0} moved in.", "{0} បានចូលស្នាក់នៅ។"],
   h_moveout: ["{0} moved out.", "{0} បានចាកចេញ។"],
@@ -173,39 +173,39 @@ const TEXT = {
   lk_terminated: ["Terminated", "បានបញ្ចប់មុនកំណត់"],
   lk_cancelled: ["Cancelled", "បានលុបចោល"],
   rs_active: ["Active", "កំពុងដំណើរការ"],
-  unit_no: ["Unit number", "លេខបន្ទប់"],
+  unit_no: ["Parking number", "លេខចំណត"],
   required: ["Required", "ចាំបាច់"],
   pick_floor: ["Choose a floor", "ជ្រើសជាន់"],
-  no_req: ["Enter the Unit number.", "សូមបញ្ចូលលេខបន្ទប់។"],
+  no_req: ["Enter the Parking number.", "សូមបញ្ចូលលេខចំណត។"],
   floor_req: ["Choose the floor.", "សូមជ្រើសជាន់។"],
   // new
   no_features: [
     "No Room features are in Settings yet.",
-    "មិនទាន់មានលក្ខណៈបន្ទប់ក្នុងការកំណត់ទេ។",
+    "មិនទាន់មានលក្ខណៈចំណតក្នុងការកំណត់ទេ។",
   ],
   // new
   new_note: [
-    "A new Unit starts as Vacant with an empty inventory; add its items on the Unit page.",
-    "បន្ទប់ថ្មីចាប់ផ្តើមជាទំនេរ ជាមួយបញ្ជីសម្ភារៈទទេ; បន្ថែមសម្ភារៈនៅទំព័របន្ទប់។",
+    "A new Parking starts as Vacant with an empty inventory; add its items on the Parking page.",
+    "ចំណតថ្មីចាប់ផ្តើមជាទំនេរ ជាមួយបញ្ជីសម្ភារៈទទេ; បន្ថែមសម្ភារៈនៅទំព័រចំណត។",
   ],
   edit_note: [
-    "Changes are dated and kept in History. The Unit number cannot change.",
-    "ការផ្លាស់ប្តូរមានកាលបរិច្ឆេទ និងរក្សាទុកក្នុងប្រវត្តិ។ លេខបន្ទប់មិនអាចប្តូរបានទេ។",
+    "Changes are dated and kept in History. The Parking number cannot change.",
+    "ការផ្លាស់ប្តូរមានកាលបរិច្ឆេទ និងរក្សាទុកក្នុងប្រវត្តិ។ លេខចំណតមិនអាចប្តូរបានទេ។",
   ],
   save: ["Save", "រក្សាទុក"],
   cancel: ["Cancel", "បោះបង់"],
   ok: ["OK", "យល់ព្រម"],
-  new_saved: ["Unit {0} added as Vacant.", "បានបន្ថែមបន្ទប់ {0} ជាទំនេរ។"],
-  saved: ["Unit {0} updated.", "បានធ្វើបច្ចុប្បន្នភាពបន្ទប់ {0}។"],
+  new_saved: ["Parking {0} added as Vacant.", "បានបន្ថែមចំណត {0} ជាទំនេរ។"],
+  saved: ["Parking {0} updated.", "បានធ្វើបច្ចុប្បន្នភាពចំណត {0}។"],
   // new
   invalid: [
-    "Check the Unit details. The Unit number may already be used, or a list item may have been removed.",
-    "សូមពិនិត្យព័ត៌មានបន្ទប់។ លេខបន្ទប់អាចត្រូវបានប្រើរួច ឬធាតុក្នុងបញ្ជីអាចត្រូវបានដកចេញ។",
+    "Check the Parking details. The Parking number may already be used, or a list item may have been removed.",
+    "សូមពិនិត្យព័ត៌មានចំណត។ លេខចំណតអាចត្រូវបានប្រើរួច ឬធាតុក្នុងបញ្ជីអាចត្រូវបានដកចេញ។",
   ],
   // new
   conflict: [
-    "Someone else changed this Unit first. Its latest details are shown now; try again if needed.",
-    "មាននរណាម្នាក់បានកែបន្ទប់នេះមុន។ ព័ត៌មានចុងក្រោយត្រូវបានបង្ហាញឥឡូវ; សូមព្យាយាមម្តងទៀតបើចាំបាច់។",
+    "Someone else changed this Parking first. Its latest details are shown now; try again if needed.",
+    "មាននរណាម្នាក់បានកែចំណតនេះមុន។ ព័ត៌មានចុងក្រោយត្រូវបានបង្ហាញឥឡូវ; សូមព្យាយាមម្តងទៀតបើចាំបាច់។",
   ],
   // new
   not_saved: [
@@ -213,12 +213,12 @@ const TEXT = {
     "ការផ្លាស់ប្តូរមិនត្រូវបានរក្សាទុកទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
   ],
   blocked_lease: [
-    "This Unit has a signed Lease. Its status changes only through Move-out.",
-    "បន្ទប់នេះមានកិច្ចសន្យាបានចុះហត្ថលេខា។ ស្ថានភាពប្តូរបានតែតាមរយៈការចាកចេញប៉ុណ្ណោះ។",
+    "This Parking has a signed Lease. Its status changes only through Move-out.",
+    "ចំណតនេះមានកិច្ចសន្យាបានចុះហត្ថលេខា។ ស្ថានភាពប្តូរបានតែតាមរយៈការចាកចេញប៉ុណ្ណោះ។",
   ],
   blocked_res: [
-    "This Unit has an active Reservation. Cancel the Reservation first.",
-    "បន្ទប់នេះមានការកក់កំពុងដំណើរការ។ សូមលុបចោលការកក់ជាមុន។",
+    "This Parking has an active Reservation. Cancel the Reservation first.",
+    "ចំណតនេះមានការកក់កំពុងដំណើរការ។ សូមលុបចោលការកក់ជាមុន។",
   ],
   new_status: ["New status", "ស្ថានភាពថ្មី"],
   reason: ["Reason", "មូលហេតុ"],

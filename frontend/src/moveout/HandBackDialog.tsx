@@ -40,12 +40,12 @@ const TERMINATE_AUTHORITY =
 const END_PROVISION =
   "Signed Lease: the Lease ends on its End Date (BR-LEASE-023)";
 const END_GROUNDS =
-  "The Lease reached its End Date and the Unit was handed back";
+  "The Lease reached its End Date and the Parking was handed back";
 const END_NO_NOTICE =
   "No landlord notice: the Lease ended on its End Date as signed";
 const END_REASON = "Lease ended on its End Date";
 const END_EVIDENCE = "Hand-back recorded in the app on or after the End Date";
-const HAND_BACK_REASON = "Unit handed back";
+const HAND_BACK_REASON = "Parking handed back";
 const CONDITIONS: UnitCondition[] = [
   "CLEANING",
   "UNDER_MAINTENANCE",

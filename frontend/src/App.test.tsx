@@ -2257,7 +2257,7 @@ describe("local sign-in", () => {
         within(menu)
           .getAllByRole("link")
           .map((link) => link.textContent),
-      ).toEqual(["Home", "Customers", "Units"]);
+      ).toEqual(["Home", "Customers", "Parking"]);
     });
     // On Home, the Units page is mounted but neither shown nor in the accessibility tree.
     const unitsPage = document.querySelector('[data-page="units"]');
@@ -2265,7 +2265,7 @@ describe("local sign-in", () => {
     expect(unitsPage).not.toBeVisible();
     openPage("units");
     expect(unitsPage).toBeVisible();
-    expect(screen.getByRole("main")).toHaveAccessibleName("Units");
+    expect(screen.getByRole("main")).toHaveAccessibleName("Parking");
     // A page the person may not use says so and shows nothing of it.
     openPage("settings");
     expect(screen.getByText(/Your account cannot use this page/)).toBeVisible();

@@ -383,7 +383,7 @@ def test_credit_and_pending_drafts_on_settlement_sources_are_shown_to_allowed_re
             uuid4(),
             allocation_ids(posted)[0],
             correct,
-            "Paid on this Unit by mistake",
+            "Paid on this Parking by mistake",
             SOURCE_ACK,
             TARGET_ACK,
         ),

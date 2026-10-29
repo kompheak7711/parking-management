@@ -35,7 +35,7 @@ def test_an_xlsx_file_gives_one_row_per_unit_with_the_text_people_see() -> None:
     content = xlsx(
         [
             [None, None, None],
-            ["Water", "Unit", "Electricity"],
+            ["Water", "Parking", "Electricity"],
             [12, "U101", 2430],
             [None, "U102", 3142.0],
             [None, None, None],
@@ -63,12 +63,12 @@ def test_a_csv_file_with_a_byte_order_mark_reads_the_same_way() -> None:
         ("r.xls", b"x", "FILE_TYPE"),
         ("r.xlsx", b"not a zip", "UNREADABLE"),
         ("r.csv", b"\xff\xfe\x00", "UNREADABLE"),
-        ("r.csv", b"Unit,Electricity\nU101,1\n", "COLUMNS"),
-        ("r.csv", b"Unit,Electricity,Water\n", "EMPTY"),
+        ("r.csv", b"Parking,Electricity\nU101,1\n", "COLUMNS"),
+        ("r.csv", b"Parking,Electricity,Water\n", "EMPTY"),
         ("r.csv", b"", "EMPTY"),
         (
             "r.csv",
-            ("Unit,Electricity,Water\n" + "U1,1,1\n" * (MAX_ROWS + 1)).encode(),
+            ("Parking,Electricity,Water\n" + "U1,1,1\n" * (MAX_ROWS + 1)).encode(),
             "TOO_MANY_ROWS",
         ),
     ],
@@ -83,7 +83,7 @@ def test_the_blank_file_lists_every_unit_under_the_three_columns() -> None:
     workbook = load_workbook(io.BytesIO(blank_sheet(["U101", "U102"])))
     sheet = workbook.worksheets[0]
     assert [list(row) for row in sheet.iter_rows(values_only=True)] == [
-        ["Unit", "Electricity", "Water"],
+        ["Parking", "Electricity", "Water"],
         ["U101", None, None],
         ["U102", None, None],
     ]
@@ -99,14 +99,14 @@ def test_a_unit_that_looks_like_a_formula_stays_text_in_the_blank_file() -> None
 
 
 def test_empty_rows_are_not_counted_and_a_semicolon_csv_reads_the_same_way() -> None:
-    padded = "Unit,Electricity,Water\nU101,1,2\n" + ",,\n" * (MAX_ROWS + 100)
+    padded = "Parking,Electricity,Water\nU101,1,2\n" + ",,\n" * (MAX_ROWS + 100)
     assert read_sheet("r.csv", padded.encode()) == [
         SheetRow(row=2, unit="U101", electricity="1", water="2")
     ]
-    rows: list[list[object]] = [["Unit", "Electricity", "Water"], ["U101", 1, 2]]
+    rows: list[list[object]] = [["Parking", "Electricity", "Water"], ["U101", 1, 2]]
     formatted = xlsx(rows + [[None]] * 1000)
     assert len(read_sheet("r.xlsx", formatted)) == 1
-    assert read_sheet("r.csv", b"Unit;Electricity;Water\nU101;1300;12\n") == [
+    assert read_sheet("r.csv", b"Parking;Electricity;Water\nU101;1300;12\n") == [
         SheetRow(row=2, unit="U101", electricity="1300", water="12")
     ]
 
@@ -121,9 +121,9 @@ def _replace_part(content: bytes, name: str, data: bytes) -> bytes:
 
 
 def test_a_broken_or_swollen_file_is_unreadable_not_a_server_error() -> None:
-    good = xlsx([["Unit", "Electricity", "Water"], ["U101", 1, 2]])
+    good = xlsx([["Parking", "Electricity", "Water"], ["U101", 1, 2]])
     cases = [
-        ("r.csv", ("Unit,Electricity,Water\nU101," + "9" * 200_000 + ",1\n").encode()),
+        ("r.csv", ("Parking,Electricity,Water\nU101," + "9" * 200_000 + ",1\n").encode()),
         ("r.xlsx", _replace_part(good, "xl/worksheets/sheet1.xml", b"<worksheet><broken")),
         ("r.xlsx", _replace_part(good, "xl/workbook.xml", b"<workbook")),
         # A part that unpacks to far more than any readings sheet needs.
@@ -143,7 +143,7 @@ def test_the_sheet_route_names_the_problem_of_a_file() -> None:
         f"/api/v1/properties/{flow.property_id}/utility-readings/sheet",
         json={
             "file_name": "r.csv",
-            "content_base64": base64.b64encode(b"Unit,Meter\nU101,1\n").decode(),
+            "content_base64": base64.b64encode(b"Parking,Meter\nU101,1\n").decode(),
         },
         headers=browser_headers(),
     )
@@ -157,7 +157,7 @@ def test_the_sheet_routes_need_their_rights_and_the_browser_checks() -> None:
     blank_path = f"/api/v1/properties/{flow.property_id}/utility-readings/blank-sheet"
     body = {
         "file_name": "r.csv",
-        "content_base64": base64.b64encode(b"Unit,Electricity,Water\nU101,5,6\n").decode(),
+        "content_base64": base64.b64encode(b"Parking,Electricity,Water\nU101,5,6\n").decode(),
     }
     reader = client_for(flow, "utility.read")
     assert reader.post(sheet_path, json=body, headers=browser_headers()).status_code == 403

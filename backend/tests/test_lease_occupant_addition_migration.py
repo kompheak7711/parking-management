@@ -324,7 +324,7 @@ def test_add_occupant_is_refused_on_a_renewal_without_its_own_move_in_or_a_cance
             event_id=uuid4(),
             lease_id=cancelled.lease_id,
             expected_version=1,
-            reason="Customer chose another Unit",
+            reason="Customer chose another Parking",
             authorization_reference=LEASE_DRAFT_CAPABILITY,
         ),
         actor=who,

@@ -778,7 +778,7 @@ def unit_floor_audit_row(state: object, entity_type: str = "unit") -> tuple[obje
         RESOURCE_ID,
         datetime(2026, 8, 23, 9, 30, tzinfo=UTC),
         date(2026, 8, 23),
-        "Unit readiness confirmed",
+        "Parking readiness confirmed",
         None,
         state,
         state,

@@ -132,7 +132,7 @@ export function ReceiptDocument({
           <Label en="Received from" kh="ទទួលពី" />
           <div className="v">
             {name ?? "—"}
-            {unit !== "" && <small>Unit {unit}</small>}
+            {unit !== "" && <small>Parking {unit}</small>}
           </div>
         </div>
       </div>

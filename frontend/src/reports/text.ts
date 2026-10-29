@@ -11,7 +11,7 @@ const TEXT = {
     "Every report comes from the records. USD and riel are always shown apart.",
     "របាយការណ៍នីមួយៗមកពីកំណត់ត្រា។ ដុល្លារ និងរៀល បង្ហាញដាច់ដោយឡែកជានិច្ច។",
   ],
-  g_totals: ["Totals by Unit and month", "សរុបតាមបន្ទប់ និងខែ"],
+  g_totals: ["Totals by Parking and month", "សរុបតាមចំណត និងខែ"],
   g_registers: ["Registers and lists", "បញ្ជី"],
   tag: ["Owner and Manager", "ម្ចាស់ និងអ្នកគ្រប់គ្រង"],
   open: ["Open report", "បើករបាយការណ៍"],
@@ -33,23 +33,23 @@ const TEXT = {
   // Report names and their one-line descriptions.
   r_total_income: ["Total Income", "ចំណូលសរុប"],
   d_total_income: [
-    "Invoiced amounts for each Unit, month by month",
-    "ចំនួនក្នុងវិក្កយបត្រ សម្រាប់បន្ទប់នីមួយៗ តាមខែ",
+    "Invoiced amounts for each Parking, month by month",
+    "ចំនួនក្នុងវិក្កយបត្រ សម្រាប់ចំណតនីមួយៗ តាមខែ",
   ],
   r_total_payment: ["Total Payment", "ការបង់ប្រាក់សរុប"],
   d_total_payment: [
-    "Money received from each Unit, month by month",
-    "ប្រាក់បានទទួលពីបន្ទប់នីមួយៗ តាមខែ",
+    "Money received from each Parking, month by month",
+    "ប្រាក់បានទទួលពីចំណតនីមួយៗ តាមខែ",
   ],
   r_total_electricity: ["Total Electricity", "អគ្គិសនីសរុប"],
   d_total_electricity: [
-    "Electricity billed for each Unit, reading period by period",
-    "អគ្គិសនីគិតថ្លៃ សម្រាប់បន្ទប់នីមួយៗ តាមរយៈពេលអាន",
+    "Electricity billed for each Parking, reading period by period",
+    "អគ្គិសនីគិតថ្លៃ សម្រាប់ចំណតនីមួយៗ តាមរយៈពេលអាន",
   ],
   r_total_water: ["Total Water", "ទឹកសរុប"],
   d_total_water: [
-    "Water billed for each Unit, reading period by period",
-    "ទឹកគិតថ្លៃ សម្រាប់បន្ទប់នីមួយៗ តាមរយៈពេលអាន",
+    "Water billed for each Parking, reading period by period",
+    "ទឹកគិតថ្លៃ សម្រាប់ចំណតនីមួយៗ តាមរយៈពេលអាន",
   ],
   r_invoice_register: [
     "Invoice register and balances",
@@ -66,8 +66,8 @@ const TEXT = {
   ],
   r_utility_consumption: ["Utility consumption", "ការប្រើប្រាស់ទឹកភ្លើង"],
   d_utility_consumption: [
-    "kWh and m³ per Unit and reading period, with the amounts billed",
-    "kWh និង m³ តាមបន្ទប់ និងរយៈពេលអាន ជាមួយចំនួនគិតថ្លៃ",
+    "kWh and m³ per Parking and reading period, with the amounts billed",
+    "kWh និង m³ តាមចំណត និងរយៈពេលអាន ជាមួយចំនួនគិតថ្លៃ",
   ],
   r_credit_ledger: ["Customer Credit ledger", "បញ្ជីឥណទានអតិថិជន"],
   d_credit_ledger: [
@@ -87,10 +87,10 @@ const TEXT = {
     "Charges, deposits applied or kept, refunds and open balances",
     "ថ្លៃ ប្រាក់កក់បានប្រើ ឬរក្សា ការសងវិញ និងសមតុល្យបើក",
   ],
-  r_unit_occupancy: ["Unit occupancy", "ការកាន់កាប់បន្ទប់"],
+  r_unit_occupancy: ["Parking occupancy", "ការកាន់កាប់ចំណត"],
   d_unit_occupancy: [
-    "Every Unit: status, Customer, Lease or Reservation end",
-    "បន្ទប់នីមួយៗ៖ ស្ថានភាព អតិថិជន ចុងកិច្ចសន្យា ឬការកក់",
+    "Every Parking: status, Customer, Lease or Reservation end",
+    "ចំណតនីមួយៗ៖ ស្ថានភាព អតិថិជន ចុងកិច្ចសន្យា ឬការកក់",
   ],
   r_lease_dates: ["Lease dates", "កាលបរិច្ឆេទកិច្ចសន្យា"],
   // changed: the list comes earliest End Date first (the server's order).
@@ -111,8 +111,8 @@ const TEXT = {
   // new
   whole: ["Whole Property", "អចលនទ្រព្យទាំងមូល"],
   floor_n: ["Floor {0}", "ជាន់ទី {0}"],
-  unit: ["Unit", "បន្ទប់"],
-  all_units: ["All Units", "គ្រប់បន្ទប់"],
+  unit: ["Parking", "ចំណត"],
+  all_units: ["All Parking", "គ្រប់ចំណត"],
   period: ["Period", "រយៈពេល"],
   // changed: "All", as on Payments and Invoices (the mock-up said "Everything").
   p_all: ["All", "ទាំងអស់"],
@@ -188,13 +188,13 @@ const TEXT = {
   // new: the first column of a chart's table for screen readers.
   month: ["Month", "ខែ"],
   best_m: ["Highest month", "ខែខ្ពស់បំផុត"],
-  best_u: ["Highest Unit", "បន្ទប់ខ្ពស់បំផុត"],
+  best_u: ["Highest Parking", "ចំណតខ្ពស់បំផុត"],
   // new
   used: ["Used", "បានប្រើ"],
   // new: money that belongs to no Unit counts only in the whole-Property table.
-  no_unit: ["Not tied to a Unit", "មិនភ្ជាប់នឹងបន្ទប់"],
+  no_unit: ["Not tied to a Parking", "មិនភ្ជាប់នឹងចំណត"],
   estimate: ["Estimate", "ការប៉ាន់ស្មាន"],
-  top5: ["Top 5 Units", "បន្ទប់ 5 ខ្ពស់បំផុត"],
+  top5: ["Top 5 Parking", "ចំណត 5 ខ្ពស់បំផុត"],
   ch_total_income: ["Income by month", "ចំណូលតាមខែ"],
   ch_total_payment: ["Money received by month", "ប្រាក់ទទួលតាមខែ"],
   ch_total_electricity: [
@@ -204,22 +204,22 @@ const TEXT = {
   ch_total_water: ["Water billed by reading month", "ទឹកគិតថ្លៃតាមខែអាន"],
   // changed: a kept Deposit counts as income in the month it is kept (DL-079 answer 2).
   note_total_income: [
-    "Each Invoice counts in the month it is for: Rent in its Rent month, Utilities in the month their reading period ends. Deposits held are not income; a kept Deposit counts in the month it is kept. With All Units, every Unit is added together.",
-    "វិក្កយបត្រនីមួយៗរាប់ក្នុងខែដែលវាសម្រាប់៖ ថ្លៃឈ្នួលក្នុងខែឈ្នួល ទឹកភ្លើងក្នុងខែដែលរយៈពេលអានបញ្ចប់។ ប្រាក់កក់ដែលកាន់កាប់មិនមែនចំណូលទេ; ប្រាក់កក់ដែលរក្សាទុក រាប់ក្នុងខែដែលវាត្រូវបានរក្សាទុក។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Each Invoice counts in the month it is for: Rent in its Rent month, Utilities in the month their reading period ends. Deposits held are not income; a kept Deposit counts in the month it is kept. With All Parking, every Parking is added together.",
+    "វិក្កយបត្រនីមួយៗរាប់ក្នុងខែដែលវាសម្រាប់៖ ថ្លៃឈ្នួលក្នុងខែឈ្នួល ទឹកភ្លើងក្នុងខែដែលរយៈពេលអានបញ្ចប់។ ប្រាក់កក់ដែលកាន់កាប់មិនមែនចំណូលទេ; ប្រាក់កក់ដែលរក្សាទុក រាប់ក្នុងខែដែលវាត្រូវបានរក្សាទុក។ ពេលជ្រើសគ្រប់ចំណត ចំណតទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   // V1-060 B7: a reversed Payment comes off in its month, so the figure that matches is the
   // Payments report's Received less reversals (shown only when there are reversals).
   note_total_payment: [
-    "Every Receipt counts on the day the money came in, deposits included; a reversed Payment comes off in the month it is reversed. For the same whole months this total matches the Payments report: Received less reversals, or Money received when there are none. With All Units, every Unit is added together.",
-    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់; ការបង់ប្រាក់ដែលត្រូវបានត្រឡប់វិញ ត្រូវដកចេញក្នុងខែដែលវាត្រូវបានត្រឡប់។ សម្រាប់ខែពេញដូចគ្នា សរុបនេះដូចរបាយការណ៍ការបង់ប្រាក់៖ «ប្រាក់ទទួល ដកការត្រឡប់វិញ» ឬ «ប្រាក់បានទទួល» ពេលគ្មានការត្រឡប់វិញ។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Every Receipt counts on the day the money came in, deposits included; a reversed Payment comes off in the month it is reversed. For the same whole months this total matches the Payments report: Received less reversals, or Money received when there are none. With All Parking, every Parking is added together.",
+    "បង្កាន់ដៃនីមួយៗរាប់នៅថ្ងៃដែលលុយចូល រួមទាំងប្រាក់កក់; ការបង់ប្រាក់ដែលត្រូវបានត្រឡប់វិញ ត្រូវដកចេញក្នុងខែដែលវាត្រូវបានត្រឡប់។ សម្រាប់ខែពេញដូចគ្នា សរុបនេះដូចរបាយការណ៍ការបង់ប្រាក់៖ «ប្រាក់ទទួល ដកការត្រឡប់វិញ» ឬ «ប្រាក់បានទទួល» ពេលគ្មានការត្រឡប់វិញ។ ពេលជ្រើសគ្រប់ចំណត ចំណតទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   note_total_electricity: [
-    "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Units, every Unit is added together.",
-    "ខែនីមួយៗ មានរយៈពេលអានដែលបញ្ចប់នៅថ្ងៃទី 24 នៃខែនោះ (តុលា = 25/09 – 24/10) តាមអត្រានៃរយៈពេលនោះ។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Parking, every Parking is added together.",
+    "ខែនីមួយៗ មានរយៈពេលអានដែលបញ្ចប់នៅថ្ងៃទី 24 នៃខែនោះ (តុលា = 25/09 – 24/10) តាមអត្រានៃរយៈពេលនោះ។ ពេលជ្រើសគ្រប់ចំណត ចំណតទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   note_total_water: [
-    "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Units, every Unit is added together.",
-    "ខែនីមួយៗ មានរយៈពេលអានដែលបញ្ចប់នៅថ្ងៃទី 24 នៃខែនោះ (តុលា = 25/09 – 24/10) តាមអត្រានៃរយៈពេលនោះ។ ពេលជ្រើសគ្រប់បន្ទប់ បន្ទប់ទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
+    "Each month holds the reading period that ends on the 24th of that month (October = 25/09 – 24/10), at the Rate of that period. With All Parking, every Parking is added together.",
+    "ខែនីមួយៗ មានរយៈពេលអានដែលបញ្ចប់នៅថ្ងៃទី 24 នៃខែនោះ (តុលា = 25/09 – 24/10) តាមអត្រានៃរយៈពេលនោះ។ ពេលជ្រើសគ្រប់ចំណត ចំណតទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   // The parts of the stacked month charts.
   s_rent: ["Rent and Services", "ថ្លៃឈ្នួល និងសេវា"],
@@ -244,7 +244,7 @@ const TEXT = {
   // Columns and words of the registers.
   c_invoice: ["Invoice No.", "លេខវិក្កយបត្រ"],
   c_customer: ["Customer", "អតិថិជន"],
-  c_unit: ["Unit", "បន្ទប់"],
+  c_unit: ["Parking", "ចំណត"],
   c_type: ["Type", "ប្រភេទ"],
   c_issued: ["Issued on", "ថ្ងៃចេញ"],
   c_due: ["Due date", "ថ្ងៃកំណត់បង់"],
@@ -291,7 +291,7 @@ const TEXT = {
   // new
   c_deposits_kept: ["Deposits kept", "ប្រាក់កក់រក្សាទុក"],
   c_balance: ["Balance still owed", "សមតុល្យនៅជំពាក់"],
-  c_unit_type: ["Unit Type", "ប្រភេទបន្ទប់"],
+  c_unit_type: ["Parking Type", "ប្រភេទចំណត"],
   c_rent: ["Monthly Rent", "ថ្លៃឈ្នួលប្រចាំខែ"],
   c_until: ["Until", "រហូតដល់"],
   c_lease: ["Lease", "កិច្ចសន្យា"],
@@ -454,12 +454,12 @@ const TEXT = {
   s_vacant: ["Vacant", "ទំនេរ"],
   s_not_available: ["Not available", "មិនអាចប្រើបាន"],
   // new
-  s_units: ["Units", "បន្ទប់"],
+  s_units: ["Parking", "ចំណត"],
   // new
-  n_units1: ["1 Unit", "បន្ទប់ 1"],
+  n_units1: ["1 Parking", "ចំណត 1"],
   // new
-  n_units: ["{0} Units", "បន្ទប់ {0}"],
-  ch_unit_occupancy: ["Units by status", "បន្ទប់តាមស្ថានភាព"],
+  n_units: ["{0} Parking", "ចំណត {0}"],
+  ch_unit_occupancy: ["Parking by status", "ចំណតតាមស្ថានភាព"],
 
   // Lease dates.
   s_current: ["Current", "បច្ចុប្បន្ន"],
@@ -510,8 +510,8 @@ const TEXT = {
   // new
   ex_pdf: ["PDF", "PDF"],
   ex_sens: [
-    "This file has personal data (names, Units, phone numbers). Keep it inside the business and delete it when done.",
-    "ឯកសារនេះមានទិន្នន័យផ្ទាល់ខ្លួន (ឈ្មោះ បន្ទប់ លេខទូរស័ព្ទ)។ រក្សាក្នុងអាជីវកម្ម និងលុបពេលរួចរាល់។",
+    "This file has personal data (names, Parking, phone numbers). Keep it inside the business and delete it when done.",
+    "ឯកសារនេះមានទិន្នន័យផ្ទាល់ខ្លួន (ឈ្មោះ ចំណត លេខទូរស័ព្ទ)។ រក្សាក្នុងអាជីវកម្ម និងលុបពេលរួចរាល់។",
   ],
   ex_logged: [
     "Every export is written to History with who, when and which filters. Small files are not kept; big files are kept 24 hours.",

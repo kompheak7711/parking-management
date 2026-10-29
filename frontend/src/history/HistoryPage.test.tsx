@@ -154,8 +154,8 @@ describe("History", () => {
       [
         "24/10/2026 17:00",
         "Kompheak (you)",
-        "Unit",
-        "Unit status changedReason: Repair done",
+        "Parking",
+        "Parking status changedReason: Repair done",
         "U203",
       ],
       [
@@ -167,7 +167,7 @@ describe("History", () => {
       ],
     ]);
     expect(
-      screen.getByRole("link", { name: "Unit U203" }).getAttribute("href"),
+      screen.getByRole("link", { name: "Parking U203" }).getAttribute("href"),
     ).toBe(`#/units/${UNIT}`);
     expect(
       screen
@@ -232,7 +232,7 @@ describe("History", () => {
     expect(kindOf("something_new")).toBe("other");
   });
 
-  it("TEST-FE-959 Search sends the period, the person and the Unit; Export audit sends the same filters and saves the file; a refused export says why; no audit.export hides it", async () => {
+  it("TEST-FE-959 Search sends the period, the person and the Parking; Export audit sends the same filters and saves the file; a refused export says why; no audit.export hides it", async () => {
     const createObjectURL = vi.fn(() => "blob:x");
     vi.stubGlobal(
       "URL",
@@ -251,10 +251,10 @@ describe("History", () => {
     });
     await waitFor(() => {
       expect(
-        within(screen.getByLabelText("Unit")).getAllByRole("option").length,
+        within(screen.getByLabelText("Parking")).getAllByRole("option").length,
       ).toBe(2);
     });
-    fireEvent.change(screen.getByLabelText("Unit"), {
+    fireEvent.change(screen.getByLabelText("Parking"), {
       target: { value: UNIT },
     });
     fireEvent.click(screen.getByRole("button", { name: "Search" }));

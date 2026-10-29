@@ -194,7 +194,7 @@ function record(overrides: Partial<MoveOutRecord> = {}): MoveOutRecord {
     actual_move_out_date: "2026-10-25",
     unit_condition: "CLEANING",
     resulting_unit_status: "CLEANING",
-    reason: "Unit handed back",
+    reason: "Parking handed back",
     evidence_reference: "Keys returned: all",
     supersedes_event_id: null,
     occurred_at: "2026-10-25T05:00:00Z",
@@ -392,7 +392,7 @@ const handedBackPage: MoveOutPage = {
       actual_move_out_date: "2026-10-12",
       unit_condition: "CLEANING",
       resulting_unit_status: "CLEANING",
-      reason: "Unit handed back",
+      reason: "Parking handed back",
       evidence_reference: "Keys returned: all",
       supersedes_event_id: null,
       occurred_at: "2026-10-12T05:00:00Z",
@@ -860,7 +860,7 @@ describe("Move-out", () => {
         "Tenant U104",
         "20/10/2026End Date was 24/10/2026",
         "—",
-        "Still in the Unit5 days agoRecord the hand-back",
+        "Still in the Parking5 days agoRecord the hand-back",
         "$500.00",
       ],
       [
@@ -889,7 +889,7 @@ describe("Move-out", () => {
     ).toBe("#/moveout/lease-U101");
   });
 
-  it("TEST-FE-963 a Lease past its End Date: Record hand-back ends it on the End Date as signed, then records the move-out with the new Lease version, the Unit version and every open Occupancy; Try again after no answer sends the same request", async () => {
+  it("TEST-FE-963 a Lease past its End Date: Record hand-back ends it on the End Date as signed, then records the move-out with the new Lease version, the Parking version and every open Occupancy; Try again after no answer sends the same request", async () => {
     window.location.hash = "#/moveout/lease-U101";
     let fail = true;
     const { leaseApi, moveOutApi } = setup([ended], {
@@ -955,7 +955,7 @@ describe("Move-out", () => {
       unit_condition: "CLEANING",
       occupancies: [{ occupancy_id: "occupancy-U101", expected_version: 2 }],
       evidence_reference: "Keys returned: not all",
-      reason: "Unit handed back",
+      reason: "Parking handed back",
       supersedes_event_id: null,
     });
     fail = false;
@@ -984,7 +984,7 @@ describe("Move-out", () => {
       target: { value: "2026-10-03" },
     });
     expect(within(dialog).getByText(/before the 5th/)).toBeTruthy();
-    fireEvent.change(within(dialog).getByLabelText(/The Unit after/), {
+    fireEvent.change(within(dialog).getByLabelText(/The Parking after/), {
       target: { value: "UNDER_MAINTENANCE" },
     });
     fireEvent.click(
@@ -1012,7 +1012,7 @@ describe("Move-out", () => {
     });
     expect(
       await screen.findByText(
-        "Handed back on 12/10/2026. Unit set to Cleaning.",
+        "Handed back on 12/10/2026. Parking set to Cleaning.",
       ),
     ).toBeTruthy();
     expect(
@@ -1045,7 +1045,7 @@ describe("Move-out", () => {
     expect(screen.getByText("Your account cannot see Deposits.")).toBeTruthy();
   });
 
-  it("TEST-FE-966 ending the Lease answers nothing: Try again ends it with the same request; a Unit read failure after that is not called a refusal; closing reads the page again; a Lease with a signed renewal shows no hand-back", async () => {
+  it("TEST-FE-966 ending the Lease answers nothing: Try again ends it with the same request; a Parking read failure after that is not called a refusal; closing reads the page again; a Lease with a signed renewal shows no hand-back", async () => {
     window.location.hash = "#/moveout/lease-U101";
     let calls = 0;
     const { leaseApi, unitApi } = setup([ended], {
@@ -1226,7 +1226,7 @@ describe("Move-out", () => {
     );
   });
 
-  it("TEST-FE-1009 a Unit with no meter on the hand-back day (a store room with no electricity or water) has no final readings or Utility Invoice: the step is done and offers no button; a failed meter read keeps the usual step", async () => {
+  it("TEST-FE-1009 a Parking with no meter on the hand-back day (a store room with no electricity or water) has no final readings or Utility Invoice: the step is done and offers no button; a failed meter read keeps the usual step", async () => {
     window.location.hash = "#/moveout/lease-U105";
     const { utilityApi, invoiceApi } = setup([out], {
       page: handedBackPage,
@@ -1234,7 +1234,7 @@ describe("Move-out", () => {
     });
     expect(
       await screen.findByText(
-        /This Unit has no meter on .*, so there are no final readings and no final Utility Invoice\./,
+        /This Parking has no meter on .*, so there are no final readings and no final Utility Invoice\./,
       ),
     ).toBeTruthy();
     expect(
@@ -2084,7 +2084,7 @@ describe("Move-out", () => {
     await screen.findByText("Draft Invoice made for $25.00.");
   });
 
-  it("TEST-FE-978 Add cleaning charge records the Unit's rate with the Lease's id and makes its Draft, also when that id was recorded before; a refusal names why, a server failure offers Try again; no rate, a zero rate or a hidden rate say so", async () => {
+  it("TEST-FE-978 Add cleaning charge records the Parking's rate with the Lease's id and makes its Draft, also when that id was recorded before; a refusal names why, a server failure offers Try again; no rate, a zero rate or a hidden rate say so", async () => {
     window.location.hash = "#/moveout/lease-U105";
     const current = inspectionOf("inspection-1", []);
     const { settlementApi, invoiceApi } = setup([out], {
@@ -2096,7 +2096,7 @@ describe("Move-out", () => {
         ),
     });
     const step = await step4();
-    await within(step).findByText("This Unit's cleaning rate: $35.00.");
+    await within(step).findByText("This Parking's cleaning rate: $35.00.");
     expect(settlementApi.cleaningRate).toHaveBeenCalledWith(
       "property-1",
       "unit-U105",
@@ -2204,11 +2204,11 @@ describe("Move-out", () => {
     for (const [rate, words] of [
       [
         { rate: null },
-        "This Unit has no cleaning rate yet. Set it in Settings, then add the charge.",
+        "This Parking has no cleaning rate yet. Set it in Settings, then add the charge.",
       ],
       [
         { rate: { id: "rate-0", rate_usd_cents: 0 } },
-        "This Unit's cleaning rate is zero: no cleaning charge.",
+        "This Parking's cleaning rate is zero: no cleaning charge.",
       ],
     ] as const) {
       window.location.hash = "#/moveout/lease-U105";
@@ -2565,12 +2565,12 @@ describe("Move-out", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-987 the step waits until the Unit is handed back; a person who may only approve sees it but cannot start it; a person with neither right is told so; a refused start says why and no answer offers Try again with the same key", async () => {
+  it("TEST-FE-987 the step waits until the Parking is handed back; a person who may only approve sees it but cannot start it; a person with neither right is told so; a refused start says why and no answer offers Try again with the same key", async () => {
     window.location.hash = "#/moveout/lease-U104";
     const still = setup([terminated]);
     expect(
       await screen.findByText(
-        "After the Lease ends and the Unit is handed back.",
+        "After the Lease ends and the Parking is handed back.",
       ),
     ).toBeTruthy();
     expect(still.settlementApi.settlements).toHaveBeenCalled();

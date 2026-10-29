@@ -332,7 +332,7 @@ export function ReservationManagement({
           <thead>
             <tr>
               <th>Status</th>
-              <th>Unit</th>
+              <th>Parking</th>
               <th>Customer</th>
               <th>Dates</th>
               <th>Deposit</th>
@@ -384,7 +384,7 @@ export function ReservationManagement({
         <form className="form-stack" onSubmit={create}>
           <h3>Create Reservation</h3>
           <label>
-            Available Unit identifier
+            Available Parking identifier
             <input name="unit-id" required />
           </label>
           <label>
@@ -568,8 +568,9 @@ export function ReservationManagement({
                 <input name="coordination-reference" />
               </label>
               <p>
-                Cancellation releases the Unit at once. No free-form forfeiture
-                is offered: the {money(selected.deposit_received_usd_cents)}
+                Cancellation releases the Parking at once. No free-form
+                forfeiture is offered: the{" "}
+                {money(selected.deposit_received_usd_cents)}
                 Security Deposit stays held until a financial.approve holder
                 confirms a draft. Customer responsibility leads to a forfeiture
                 draft; Property responsibility leads to a full Refund draft to

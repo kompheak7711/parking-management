@@ -143,7 +143,7 @@ def create_reports_router(
 
     @router.get(
         "/properties/{property_id}/reports/totals/{report}",
-        summary="A Totals by Unit and month report",
+        summary="A Totals by Parking and month report",
     )
     def totals(
         property_id: UUID,

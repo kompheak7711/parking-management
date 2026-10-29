@@ -208,7 +208,7 @@ describe("Settings", () => {
     expect(tabs).toEqual([
       ["Business", "#/settings/business"],
       ["Rates and services", "#/settings/rates"],
-      ["Unit setup", "#/settings/units"],
+      ["Parking setup", "#/settings/units"],
       ["Users and sign-in", "#/settings/users"],
     ]);
     // The first tab opens; a tab not rebuilt yet keeps its earlier forms, folded.

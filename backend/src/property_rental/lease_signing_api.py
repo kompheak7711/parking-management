@@ -163,30 +163,30 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
     "Unit has an open Occupancy": Refusal(
         409,
         "SIGNING_UNIT_OCCUPIED",
-        "Someone still lives in this Unit (an open Occupancy). Nothing was saved.",
+        "Someone still lives in this Parking (an open Occupancy). Nothing was saved.",
     ),
     "Unit cannot be occupied by this signing": Refusal(
         409,
         "SIGNING_UNIT_NOT_FREE",
-        "This Unit cannot be signed now: it is Reserved for someone else, Out of Service or "
+        "This Parking cannot be signed now: it is Reserved for someone else, Out of Service or "
         "Occupied. Nothing was saved.",
     ),
     "Reservation cannot be completed by this signing": Refusal(
         409,
         "SIGNING_RESERVATION_ENDED",
-        "The Customer's Reservation of this Unit has ended or changed, so this draft cannot take "
-        "its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
+        "The Customer's Reservation of this Parking has ended or changed, so this draft cannot "
+        "take its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
     ),
     "The Reservation has no Security Deposit": Refusal(
         409,
         "SIGNING_RESERVATION_NO_DEPOSIT",
-        "The Customer's Reservation of this Unit has no Security Deposit. Nothing was saved.",
+        "The Customer's Reservation of this Parking has no Security Deposit. Nothing was saved.",
     ),
     "The Deposit's Reservation is not active; this receipt is not recorded here": Refusal(
         409,
         "SIGNING_RESERVATION_ENDED",
-        "The Customer's Reservation of this Unit has ended or changed, so this draft cannot take "
-        "its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
+        "The Customer's Reservation of this Parking has ended or changed, so this draft cannot "
+        "take its Security Deposit. Nothing was saved. Ask the Owner or a Manager.",
     ),
     "Sign Lease key reused": Refusal(
         409,
@@ -205,7 +205,7 @@ SIGNED_PERIOD_EXCLUSION: Final = "leases_signed_period_exclusive"
 SIGNING_DATES_TAKEN: Final = Refusal(
     409,
     "SIGNING_DATES_TAKEN",
-    "Another signed Lease of this Unit covers these dates. Nothing was saved. Check the dates "
+    "Another signed Lease of this Parking covers these dates. Nothing was saved. Check the dates "
     "with Edit draft, or ask the Owner.",
 )
 
@@ -487,7 +487,7 @@ SIGNING_REFUSED = Refusal(
     409,
     "SIGNING_REFUSED",
     "The Lease could not be signed with the records as they are now. Nothing was saved. "
-    "Check the Lease, its Unit and its Customer, or ask the Owner.",
+    "Check the Lease, its Parking and its Customer, or ask the Owner.",
 )
 
 

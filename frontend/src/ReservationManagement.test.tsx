@@ -162,7 +162,7 @@ describe("Reservation staff workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Load Reservations" }));
     await screen.findByRole("heading", { name: "Create Reservation" });
     const fields: [string, string][] = [
-      ["Available Unit identifier", "unit-1"],
+      ["Available Parking identifier", "unit-1"],
       ["Customer identifier", "customer-1"],
       ["Reservation Date", "2026-08-26"],
       ["Expiration Date (maximum initial period: 21 days)", "2026-09-05"],

@@ -155,9 +155,9 @@ ROUTES: Final = (
         {
             "allocation_id": str(ALLOCATION),
             "target_invoice_id": str(TARGET),
-            "reason": "The money was for Unit 205",
-            "source_acknowledgement": "The Unit 204 Customer agreed on 2026-10-24",
-            "target_acknowledgement": "The Unit 205 Customer agreed on 2026-10-24",
+            "reason": "The money was for Parking 205",
+            "source_acknowledgement": "The Parking 204 Customer agreed on 2026-10-24",
+            "target_acknowledgement": "The Parking 205 Customer agreed on 2026-10-24",
         },
         "PAYMENT_MOVE",
         {"source_allocation_id": str(ALLOCATION)},
@@ -313,9 +313,9 @@ def _commands(flow: Flow, key: UUID) -> dict[str, object]:
             settlement,
             ALLOCATION,
             TARGET,
-            "The money was for Unit 205",
-            "The Unit 204 Customer agreed on 2026-10-24",
-            "The Unit 205 Customer agreed on 2026-10-24",
+            "The money was for Parking 205",
+            "The Parking 204 Customer agreed on 2026-10-24",
+            "The Parking 205 Customer agreed on 2026-10-24",
         ),
         "adjustment_reversal_correction": RecordSettlementAdjustmentReversalCommand(
             key, settlement, ADJUSTMENT, "The reduction was recorded by mistake"

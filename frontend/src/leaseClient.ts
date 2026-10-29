@@ -363,7 +363,7 @@ export class LeaseUnavailableError extends Error {
 export class LeaseConflictError extends Error {
   constructor() {
     super(
-      "The Lease changed or conflicts with current Unit availability. Reload before retrying.",
+      "The Lease changed or conflicts with current Parking availability. Reload before retrying.",
     );
     this.name = "LeaseConflictError";
   }

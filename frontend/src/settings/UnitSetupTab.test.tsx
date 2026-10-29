@@ -150,33 +150,41 @@ function show(
 
 const list = (name: string) => screen.getByRole("region", { name });
 
-describe("Settings: Unit setup", () => {
-  it("TEST-FE-940 shows the five lists with how many Units use each item; an item in use offers no Remove; Floors have no Edit", async () => {
+describe("Settings: Parking setup", () => {
+  it("TEST-FE-940 shows the five lists with how many Parking use each item; an item in use offers no Remove; Floors have no Edit", async () => {
     const api = show();
     const floors = await screen.findByRole("region", { name: "Floors" });
     expect(api.setupLists).toHaveBeenCalledWith("property-1");
     expect(
-      ["Floors", "Unit Types", "Views", "Kitchens", "Room features"].map(
+      ["Floors", "Parking Types", "Views", "Kitchens", "Room features"].map(
         (name) => list(name).querySelector("h2")?.textContent,
       ),
-    ).toEqual(["Floors", "Unit Types", "Views", "Kitchens", "Room features"]);
+    ).toEqual([
+      "Floors",
+      "Parking Types",
+      "Views",
+      "Kitchens",
+      "Room features",
+    ]);
     const [first, second] = within(floors).getAllByRole("listitem");
     if (first === undefined || second === undefined) throw new Error("rows");
     const rows = [first, second];
-    expect(rows[0]?.textContent).toContain("Floor 12 Units");
+    expect(rows[0]?.textContent).toContain("Floor 12 Parking");
     expect(within(first).queryByRole("button")).toBeNull();
     expect(
       within(second).getByRole("button", {
         name: "Remove: Floor 2",
       }),
     ).toBeTruthy();
-    expect(rows[1]?.textContent).toContain("No Units yet");
-    expect(list("Room features").textContent).toContain("Balcony1 Unit");
+    expect(rows[1]?.textContent).toContain("No Parking yet");
+    expect(list("Room features").textContent).toContain("Balcony1 Parking");
     expect(
-      within(list("Unit Types")).getByRole("button", { name: "Edit: Studio" }),
+      within(list("Parking Types")).getByRole("button", {
+        name: "Edit: Studio",
+      }),
     ).toBeTruthy();
-    expect(list("Unit Types").textContent).toContain(
-      "Rename keeps every Unit of this type.",
+    expect(list("Parking Types").textContent).toContain(
+      "Rename keeps every Parking of this type.",
     );
   });
 
@@ -238,7 +246,7 @@ describe("Settings: Unit setup", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Edit: One Bedroom" }));
-    dialog = screen.getByRole("dialog", { name: "Edit · Unit Type" });
+    dialog = screen.getByRole("dialog", { name: "Edit · Parking Type" });
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
       target: { value: "One Bedroom Deluxe" },
     });
@@ -275,7 +283,7 @@ describe("Settings: Unit setup", () => {
     );
     expect(
       await screen.findByText(
-        "Someone changed this list, or a Unit now uses the item. The lists were read again; check and try again.",
+        "Someone changed this list, or a Parking now uses the item. The lists were read again; check and try again.",
       ),
     ).toBeTruthy();
     expect(api.setupLists).toHaveBeenCalledTimes(2);
@@ -329,19 +337,19 @@ describe("Settings: Unit setup", () => {
     expect(await screen.findByRole("region", { name: "Floors" })).toBeTruthy();
   });
 
-  it("TEST-FE-943 Khmer shows the Khmer list names and the mock-up words; without the Units list an item shows only that a Unit uses it", async () => {
+  it("TEST-FE-943 Khmer shows the Khmer list names and the mock-up words; without the Parking list an item shows only that a Parking uses it", async () => {
     const api = apiOf();
     api.list.mockRejectedValue(new Error("no units.read"));
     show(api, "km");
     const floors = await screen.findByRole("region", { name: "ជាន់" });
     expect(floors.textContent).toContain("ជាន់ទី 1");
-    expect(floors.textContent).toContain("បន្ទប់កំពុងប្រើ");
-    expect(floors.textContent).toContain("មិនទាន់មានបន្ទប់");
+    expect(floors.textContent).toContain("ចំណតកំពុងប្រើ");
+    expect(floors.textContent).toContain("មិនទាន់មានចំណត");
   });
 
-  it("TEST-FE-1006 a Unit Type with no move-out cleaning rate shows a No cleaning rate chip; when the rates cannot be read no chip shows", async () => {
+  it("TEST-FE-1006 a Parking Type with no move-out cleaning rate shows a No cleaning rate chip; when the rates cannot be read no chip shows", async () => {
     show(apiOf(), "en", cleaningOf(["ONE_BEDROOM"]));
-    const types = await screen.findByRole("region", { name: "Unit Types" });
+    const types = await screen.findByRole("region", { name: "Parking Types" });
     const one = within(types).getByText("One Bedroom").closest("li");
     await within(one ?? types).findByText("No cleaning rate");
     const studio = within(types).getByText("Studio").closest("li");
@@ -350,7 +358,7 @@ describe("Settings: Unit setup", () => {
     const failing = cleaningOf(["ONE_BEDROOM"]);
     failing.read.mockImplementation(() => Promise.reject(new Error("down")));
     show(apiOf(), "en", failing);
-    const again = await screen.findByRole("region", { name: "Unit Types" });
+    const again = await screen.findByRole("region", { name: "Parking Types" });
     expect(within(again).queryByText("No cleaning rate")).toBeNull();
   });
 });

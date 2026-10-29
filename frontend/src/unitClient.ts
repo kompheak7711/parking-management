@@ -186,21 +186,21 @@ export interface UnitApi {
 
 export class UnitUnavailableError extends Error {
   constructor() {
-    super("Unit management is unavailable for this session.");
+    super("Parking management is unavailable for this session.");
     this.name = "UnitUnavailableError";
   }
 }
 
 export class UnitConflictError extends Error {
   constructor() {
-    super("The Unit changed. Reload it before retrying.");
+    super("The Parking changed. Reload it before retrying.");
     this.name = "UnitConflictError";
   }
 }
 
 export class UnitRequestError extends Error {
   constructor() {
-    super("The Unit request was not completed.");
+    super("The Parking request was not completed.");
     this.name = "UnitRequestError";
   }
 }
@@ -208,7 +208,7 @@ export class UnitRequestError extends Error {
 export class UnitInvalidError extends Error {
   constructor() {
     super(
-      "Check the Unit details. The Unit number may already be used, or a list item may have been removed.",
+      "Check the Parking details. The Parking number may already be used, or a list item may have been removed.",
     );
     this.name = "UnitInvalidError";
   }

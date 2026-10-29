@@ -269,7 +269,7 @@ def test_expired_reservation_stays_on_the_waiting_list_until_its_draft_is_confir
         property_id,
         ReservationDepositDecision.DEPOSIT_FORFEITURE,
         RecordReservationDepositDraftCommand(
-            uuid4(), reservation_id, uuid4(), "Reservation expired; Unit stayed available"
+            uuid4(), reservation_id, uuid4(), "Reservation expired; Parking stayed available"
         ),
         actor=staff,
     )
@@ -287,7 +287,7 @@ def test_expired_reservation_stays_on_the_waiting_list_until_its_draft_is_confir
         property_id,
         ReservationDepositDecision.DEPOSIT_FORFEITURE,
         RecordReservationDepositDraftCommand(
-            uuid4(), reservation_id, uuid4(), "Reservation expired while the Unit was available"
+            uuid4(), reservation_id, uuid4(), "Reservation expired while the Parking was available"
         ),
         actor=staff,
     )
@@ -316,7 +316,7 @@ def test_property_cancellation_refund_goes_to_the_reservation_customer_with_meth
             property_id,
             ReservationDepositDecision.REFUND,
             RecordReservationDepositDraftCommand(
-                uuid4(), reservation_id, uuid4(), "Property could not provide the Unit"
+                uuid4(), reservation_id, uuid4(), "Property could not provide the Parking"
             ),
             actor=staff,
         )
@@ -328,7 +328,7 @@ def test_property_cancellation_refund_goes_to_the_reservation_customer_with_meth
             uuid4(),
             reservation_id,
             outcome_id,
-            "Property could not provide the Unit",
+            "Property could not provide the Parking",
             RefundMethodChoice(method_id, NOTE),
         ),
         actor=staff,
@@ -570,7 +570,7 @@ def test_a_completed_earlier_outcome_does_not_read_as_waiting(migrated_database_
             uuid4(),
             reservation_id,
             outcome_id,
-            "Property could not provide the Unit",
+            "Property could not provide the Parking",
             RefundMethodChoice(cash_method_id(property_id, actor_id), NOTE),
         ),
         actor=person(actor_id, property_id, "reservation_deposits.refund"),

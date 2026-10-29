@@ -63,7 +63,7 @@ describe("V1-058 R1 app shell", () => {
       "Bookings",
       "Leases",
       "Customers",
-      "Units",
+      "Parking",
       "Reports",
       "History",
       "Settings",
@@ -77,15 +77,15 @@ describe("V1-058 R1 app shell", () => {
   it("TEST-FE-802 marks only the open page in the menu and names the work area after it", () => {
     renderShell("units");
     const menu = screen.getByRole("navigation", { name: "Menu" });
-    expect(within(menu).getByRole("link", { name: "Units" })).toHaveAttribute(
+    expect(within(menu).getByRole("link", { name: "Parking" })).toHaveAttribute(
       "aria-current",
       "page",
     );
     expect(
       within(menu).getByRole("link", { name: "Home" }),
     ).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("main")).toHaveAccessibleName("Units");
-    expect(within(menu).getByRole("link", { name: "Units" })).toHaveAttribute(
+    expect(screen.getByRole("main")).toHaveAccessibleName("Parking");
+    expect(within(menu).getByRole("link", { name: "Parking" })).toHaveAttribute(
       "href",
       "#/units",
     );
@@ -109,7 +109,7 @@ describe("V1-058 R1 app shell", () => {
     expect(document.documentElement.lang).toBe("km");
     const menu = screen.getByRole("navigation", { name: "ម៉ឺនុយ" });
     expect(
-      within(menu).getByRole("link", { name: "បន្ទប់" }),
+      within(menu).getByRole("link", { name: "ចំណត" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ខ្មែរ" })).toHaveAttribute(
       "aria-pressed",
@@ -172,7 +172,7 @@ describe("V1-058 R1 app shell", () => {
     ).toEqual([
       ["Home", "#/home"],
       ["Leases", "#/moveout"],
-      ["Units", "#/units"],
+      ["Parking", "#/units"],
       // audit.view reads the Audit activity report (V1-060 B6).
       ["Reports", "#/reports"],
       ["History", "#/history"],

@@ -117,7 +117,9 @@ class RecordPhysicalMoveOut:
         if type(self.actual_move_out_date) is not date:
             raise PhysicalMoveOutInvalidError("actual_move_out_date must be a calendar date")
         if type(self.unit_condition) is not str or self.unit_condition not in MOVE_OUT_CONDITIONS:
-            raise PhysicalMoveOutInvalidError("An explicit nonavailable Unit condition is required")
+            raise PhysicalMoveOutInvalidError(
+                "An explicit nonavailable Parking condition is required"
+            )
         if (
             type(self.occupancies) is not tuple
             or not 1 <= len(self.occupancies) <= MAX_ENDED_OCCUPANCIES

@@ -16,7 +16,7 @@ const TEXT = {
   tabs: ["Settings tabs", "ផ្ទាំងការកំណត់"],
   se_tab_biz: ["Business", "អាជីវកម្ម"],
   se_tab_rates: ["Rates and services", "អត្រា និងសេវា"],
-  se_tab_units: ["Unit setup", "ការរៀបចំបន្ទប់"],
+  se_tab_units: ["Parking setup", "ការរៀបចំចំណត"],
   se_tab_users: ["Users and sign-in", "អ្នកប្រើ និងការចូល"],
   se_tab_health: ["System health", "សុខភាពប្រព័ន្ធ"],
   // new: tabs not rebuilt yet keep the earlier forms.
@@ -105,19 +105,19 @@ const TEXT = {
   checked_at: ["Read at {0}", "អាននៅ {0}"],
 
   cf_note: [
-    "These lists fill the choices on New Unit and Update Unit. An item used by a Unit cannot be removed; rename it instead.",
-    "បញ្ជីទាំងនេះបំពេញជម្រើសនៅលើបន្ទប់ថ្មី និងកែបន្ទប់។ ធាតុដែលបន្ទប់កំពុងប្រើ មិនអាចដកចេញបានទេ សូមប្តូរឈ្មោះវិញ។",
+    "These lists fill the choices on New Parking and Update Parking. An item used by a Parking cannot be removed; rename it instead.",
+    "បញ្ជីទាំងនេះបំពេញជម្រើសនៅលើចំណតថ្មី និងកែចំណត។ ធាតុដែលចំណតកំពុងប្រើ មិនអាចដកចេញបានទេ សូមប្តូរឈ្មោះវិញ។",
   ],
   cf_FLOOR: ["Floors", "ជាន់"],
-  cf_UNIT_TYPE: ["Unit Types", "ប្រភេទបន្ទប់"],
+  cf_UNIT_TYPE: ["Parking Types", "ប្រភេទចំណត"],
   cf_VIEW: ["Views", "ទេសភាព"],
   cf_KITCHEN: ["Kitchens", "ផ្ទះបាយ"],
-  cf_ROOM_FEATURE: ["Room features", "លក្ខណៈបន្ទប់"],
+  cf_ROOM_FEATURE: ["Room features", "លក្ខណៈចំណត"],
   cf_one_FLOOR: ["Floor", "ជាន់"],
-  cf_one_UNIT_TYPE: ["Unit Type", "ប្រភេទបន្ទប់"],
+  cf_one_UNIT_TYPE: ["Parking Type", "ប្រភេទចំណត"],
   cf_one_VIEW: ["View", "ទេសភាព"],
   cf_one_KITCHEN: ["Kitchen", "ផ្ទះបាយ"],
-  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈបន្ទប់"],
+  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈចំណត"],
   cf_add: ["Add", "បន្ថែម"],
   cf_edit: ["Edit", "កែ"],
   cf_floor_no: ["Floor number", "លេខជាន់"],
@@ -129,19 +129,19 @@ const TEXT = {
   ],
   cf_e_dup: ['"{0}" is already in the list.', '"{0}" មាននៅក្នុងបញ្ជីរួចហើយ។'],
   cf_type_note: [
-    "Rename keeps every Unit of this type. Add the new type to a move-out cleaning rate on the Rates and services tab.",
-    "ការប្តូរឈ្មោះរក្សាបន្ទប់ទាំងអស់នៃប្រភេទនេះ។ សូមបន្ថែមប្រភេទថ្មីទៅអត្រាសម្អាតពេលចាកចេញ នៅផ្ទាំងអត្រា និងសេវា។",
+    "Rename keeps every Parking of this type. Add the new type to a move-out cleaning rate on the Rates and services tab.",
+    "ការប្តូរឈ្មោះរក្សាចំណតទាំងអស់នៃប្រភេទនេះ។ សូមបន្ថែមប្រភេទថ្មីទៅអត្រាសម្អាតពេលចាកចេញ នៅផ្ទាំងអត្រា និងសេវា។",
   ],
   cf_feat_note: [
-    "Room features show as Yes or No on each Unit page.",
-    "លក្ខណៈបន្ទប់បង្ហាញជា មាន ឬ គ្មាន នៅលើទំព័របន្ទប់នីមួយៗ។",
+    "Room features show as Yes or No on each Parking page.",
+    "លក្ខណៈចំណតបង្ហាញជា មាន ឬ គ្មាន នៅលើទំព័រចំណតនីមួយៗ។",
   ],
   cf_saved: ["Saved.", "បានរក្សា។"],
   u_floor_n: ["Floor {0}", "ជាន់ទី {0}"],
   se_e_name: ["Enter a name.", "បញ្ចូលឈ្មោះ។"],
-  set_n_unit1: ["1 Unit", "1 បន្ទប់"],
-  set_n_units: ["{0} Units", "{0} បន្ទប់"],
-  set_none_units: ["No Units yet", "មិនទាន់មានបន្ទប់"],
+  set_n_unit1: ["1 Parking", "1 ចំណត"],
+  set_n_units: ["{0} Parking", "{0} ចំណត"],
+  set_none_units: ["No Parking yet", "មិនទាន់មានចំណត"],
   set_remove: ["Remove", "ដកចេញ"],
   set_removed: ["{0} removed.", "បានដក {0} ចេញ។"],
   set_remove_q: [
@@ -152,7 +152,7 @@ const TEXT = {
   required: ["Required", "ចាំបាច់"],
   cancel: ["Cancel", "បោះបង់"],
   // new: the Units could not be read, so only "in use" is known.
-  in_use: ["Used by a Unit", "បន្ទប់កំពុងប្រើ"],
+  in_use: ["Used by a Parking", "ចំណតកំពុងប្រើ"],
   // new
   units_loading: ["Reading the lists…", "កំពុងអានបញ្ជី…"],
   // new
@@ -162,8 +162,8 @@ const TEXT = {
   ],
   // new
   changed: [
-    "Someone changed this list, or a Unit now uses the item. The lists were read again; check and try again.",
-    "មាននរណាម្នាក់បានប្តូរបញ្ជីនេះ ឬបន្ទប់មួយកំពុងប្រើធាតុនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+    "Someone changed this list, or a Parking now uses the item. The lists were read again; check and try again.",
+    "មាននរណាម្នាក់បានប្តូរបញ្ជីនេះ ឬចំណតមួយកំពុងប្រើធាតុនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
   refused: [
@@ -223,8 +223,8 @@ const TEXT = {
   se_bundles: ["What each role can do", "តួនាទីនីមួយៗធ្វើអ្វីបាន"],
   se_cap: ["Work", "ការងារ"],
   cap_daily: [
-    "Daily work: Payments, Invoices, readings, Units, Customers, Reservations, Leases, move-out steps",
-    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន បន្ទប់ អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
+    "Daily work: Payments, Invoices, readings, Parking, Customers, Reservations, Leases, move-out steps",
+    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន ចំណត អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
   ],
   cap_drafts: [
     "Prepare drafts: Final Settlements, Refunds, corrections",
@@ -441,7 +441,7 @@ const TEXT = {
   address: ["Address", "អាសយដ្ឋាន"],
   // new
   no_address: ["Not given", "មិនទាន់ផ្តល់"],
-  se_units: ["Units", "បន្ទប់"],
+  se_units: ["Parking", "ចំណត"],
   se_tz: ["Time zone", "ល្វែងម៉ោង"],
   se_tz_n: [
     "Due dates, expiry and reading days use Phnom Penh time.",
@@ -717,7 +717,7 @@ const TEXT = {
   cl_title: ["Move-out cleaning rates", "អត្រាសម្អាតពេលចាកចេញ"],
   cl_add: ["Add a cleaning rate", "បន្ថែមអត្រាសម្អាត"],
   cl_name: ["Name", "ឈ្មោះ"],
-  cl_types: ["Unit Types", "ប្រភេទបន្ទប់"],
+  cl_types: ["Parking Types", "ប្រភេទចំណត"],
   cl_rate: ["Rate", "អត្រា"],
   cl_none: ["No cleaning rates yet.", "មិនទាន់មានអត្រាសម្អាត។"],
   cl_missing: [
@@ -725,16 +725,16 @@ const TEXT = {
     "មិនទាន់មានអត្រាសម្អាត៖ {0}។ សូមធីកពួកវានៅក្នុងអត្រាសម្អាតមួយ។",
   ],
   cl_needs: [
-    "{0} has Units and needs a cleaning rate. Put it in another rate first.",
-    "{0} មានបន្ទប់ ហើយត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។",
+    "{0} has Parking and needs a cleaning rate. Put it in another rate first.",
+    "{0} មានចំណត ហើយត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។",
   ],
   cl_moves: [
     "Now in {0}; ticking moves it here.",
     "ឥឡូវនៅក្នុង {0}។ ការធីកនឹងផ្លាស់វាមកទីនេះ។",
   ],
   cl_note: [
-    "A move-out has a cleaning charge at the rate of the Unit's type. A new amount applies to every Unit of its types from now on; charges already made keep theirs.",
-    "ការចាកចេញមានថ្លៃសម្អាត តាមអត្រានៃប្រភេទបន្ទប់។ ចំនួនថ្មីអនុវត្តចំពោះបន្ទប់ទាំងអស់នៃប្រភេទរបស់វា ចាប់ពីពេលនេះតទៅ ថ្លៃដែលបានធ្វើរួចរក្សាចំនួនដើម។",
+    "A move-out has a cleaning charge at the rate of the Parking's type. A new amount applies to every Parking of its types from now on; charges already made keep theirs.",
+    "ការចាកចេញមានថ្លៃសម្អាត តាមអត្រានៃប្រភេទចំណត។ ចំនួនថ្មីអនុវត្តចំពោះចំណតទាំងអស់នៃប្រភេទរបស់វា ចាប់ពីពេលនេះតទៅ ថ្លៃដែលបានធ្វើរួចរក្សាចំនួនដើម។",
   ],
   cl_chip: ["No cleaning rate", "គ្មានអត្រាសម្អាត"],
   cl_read_failed: [
@@ -742,8 +742,8 @@ const TEXT = {
     "មិនអាចអានអត្រាសម្អាតបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   f_needs_rate: [
-    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first. The list was read again.",
-    "ប្រភេទបន្ទប់ដែលមានបន្ទប់ ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
+    "A Parking Type that has Parking needs a cleaning rate. Put it in another rate first. The list was read again.",
+    "ប្រភេទចំណតដែលមានចំណត ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
   ],
   // new
   note_l: ["Note", "កំណត់ចំណាំ"],

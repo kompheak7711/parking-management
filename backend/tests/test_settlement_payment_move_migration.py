@@ -74,7 +74,7 @@ INTERNAL = (
 )
 PATCHED = {"app.validate_payment_move()"}
 REVISION = "20261222_148"
-REASON = "Paid on the first Lease's Unit by mistake; meant for the second Lease's Unit"
+REASON = "Paid on the first Lease's Parking by mistake; meant for the second Lease's Parking"
 SOURCE_ACK = "Sok Dara (first Lease), 2026-10-16, in person at the office"
 TARGET_ACK = "Chea Vanna (second Lease), 2026-10-16, by telephone"
 WAITING = "A move draft for this allocation is already waiting"

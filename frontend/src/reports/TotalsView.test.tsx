@@ -27,8 +27,8 @@ afterEach(() => {
 
 const NONE = "—";
 
-describe("Totals by Unit and month", () => {
-  it("TEST-FE-1038 Total Income: years newest first with January to December and a Total, — for a month with no record; the Summary gives the total, the highest month and Unit and the money not tied to a Unit; the chart stacks the parts by month beside the Top 5 Units", async () => {
+describe("Totals by Parking and month", () => {
+  it("TEST-FE-1038 Total Income: years newest first with January to December and a Total, — for a month with no record; the Summary gives the total, the highest month and Parking and the money not tied to a Parking; the chart stacks the parts by month beside the Top 5 Parking", async () => {
     const page = openReports({ hash: "#/reports/total_income" });
     const table = await screen.findByRole("table", { name: "Total Income" });
     expect(page.totals).toHaveBeenCalledWith(PROPERTY, "total_income", {});
@@ -86,14 +86,14 @@ describe("Totals by Unit and month", () => {
     // The Year column stays in place when the table scrolls sideways.
     expect(table).toHaveClass("ui-grid");
     // Over the table: the scope of the numbers.
-    expect(screen.getByText("All Units", { selector: "span" })).toBeTruthy();
+    expect(screen.getByText("All Parking", { selector: "span" })).toBeTruthy();
 
     const summary = screen.getByRole("region", { name: "Summary" });
     expect(facts(summary)).toEqual([
       ["Total", "$4,830.00"],
       ["Highest month", "January 2026 · $1,000.00"],
-      ["Highest Unit", "U203 · $2,500.00"],
-      ["Not tied to a Unit", "$50.00"],
+      ["Highest Parking", "U203 · $2,500.00"],
+      ["Not tied to a Parking", "$50.00"],
     ]);
     expect(
       within(summary).getByText(/^Each Invoice counts in the month it is for/),
@@ -127,14 +127,14 @@ describe("Totals by Unit and month", () => {
         (label) => label.textContent,
       ),
     ).toEqual(["$1,000.00"]);
-    expect(barRows(summary, "Top 5 Units")).toEqual([
+    expect(barRows(summary, "Top 5 Parking")).toEqual([
       ["U203", "$2,500.00"],
       ["U101", "$1,800.00"],
       ["U204", "$480.00"],
     ]);
   });
 
-  it("TEST-FE-1039 the Unit filter asks for one Unit's table and All Units for every Unit added together; the scope shows over the table and stays for the other Totals tables", async () => {
+  it("TEST-FE-1039 the Parking filter asks for one Parking's table and All Parking for every Parking added together; the scope shows over the table and stays for the other Totals tables", async () => {
     const page = openReports({
       hash: "#/reports/total_income",
       totals: (_property, report, filter) =>
@@ -145,13 +145,13 @@ describe("Totals by Unit and month", () => {
         ),
     });
     await screen.findByRole("table", { name: "Total Income" });
-    const unit = screen.getByRole("combobox", { name: "Unit" });
+    const unit = screen.getByRole("combobox", { name: "Parking" });
     await waitFor(() => {
       expect(
         within(unit)
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["All Units", "U101", "U203", "U204"]);
+      ).toEqual(["All Parking", "U101", "U203", "U204"]);
     });
     expect(unit).toHaveValue("");
 
@@ -171,7 +171,7 @@ describe("Totals by Unit and month", () => {
     expect(facts(screen.getByRole("region", { name: "Summary" }))).toEqual([
       ["Total", "$2,500.00"],
       ["Highest month", "December 2025 · $520.00"],
-      ["Highest Unit", "U203 · $2,500.00"],
+      ["Highest Parking", "U203 · $2,500.00"],
     ]);
 
     act(() => {
@@ -181,11 +181,11 @@ describe("Totals by Unit and month", () => {
     expect(page.totals).toHaveBeenLastCalledWith(PROPERTY, "total_payment", {
       unitId: "unit-203",
     });
-    expect(screen.getByRole("combobox", { name: "Unit" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Parking" })).toHaveValue(
       "unit-203",
     );
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Unit" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Parking" }), {
       target: { value: "" },
     });
     await waitFor(() => {
@@ -196,7 +196,7 @@ describe("Totals by Unit and month", () => {
       );
     });
     expect(
-      await screen.findByText("All Units", { selector: "span" }),
+      await screen.findByText("All Parking", { selector: "span" }),
     ).toBeTruthy();
   });
 
@@ -311,7 +311,7 @@ describe("Totals by Unit and month", () => {
       ["Total", "$347.63"],
       ["Used", "1,390.5 kWh"],
       ["Highest month", "September 2026 · $295.00"],
-      ["Highest Unit", "U101 · $200.00"],
+      ["Highest Parking", "U101 · $200.00"],
     ]);
     expect(
       headRow(
@@ -343,7 +343,9 @@ describe("Totals by Unit and month", () => {
       screen.getByRole("heading", { level: 2, name: "Total Water" }),
     ).toBeTruthy();
     expect(
-      screen.getByText("Water billed for each Unit, reading period by period"),
+      screen.getByText(
+        "Water billed for each Parking, reading period by period",
+      ),
     ).toBeTruthy();
     expect(screen.getByText("Owner and Manager")).toBeTruthy();
     expect(

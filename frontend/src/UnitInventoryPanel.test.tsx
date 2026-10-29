@@ -41,7 +41,7 @@ function api(overrides: Partial<UnitApi> = {}): UnitApi {
   };
 }
 
-describe("Unit inventory", () => {
+describe("Parking inventory", () => {
   it("TEST-FE-819 shows the count line and items, and Edit inventory saves every item with a number above 0", async () => {
     const client = api();
     const onSaved = vi.fn();
@@ -80,7 +80,7 @@ describe("Unit inventory", () => {
 
     expect(
       await screen.findByText(
-        "Unit inventory saved. The earlier list stays in History.",
+        "Parking inventory saved. The earlier list stays in History.",
       ),
     ).toBeInTheDocument();
     expect(client.saveInventory).toHaveBeenCalledWith(saved, [
@@ -111,7 +111,7 @@ describe("Unit inventory", () => {
     );
     expect(
       await screen.findByText(
-        "No inventory has been recorded for this Unit yet.",
+        "No inventory has been recorded for this Parking yet.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -142,7 +142,7 @@ describe("Unit inventory", () => {
     ).toBeEnabled();
   });
 
-  it("TEST-FE-822 adds an Another item that is already listed to that item and loads the new Unit after a switch", async () => {
+  it("TEST-FE-822 adds an Another item that is already listed to that item and loads the new Parking after a switch", async () => {
     const client = api();
     const { rerender } = render(
       <UnitInventoryPanel
@@ -163,7 +163,7 @@ describe("Unit inventory", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save inventory" }));
     await screen.findByText(
-      "Unit inventory saved. The earlier list stays in History.",
+      "Parking inventory saved. The earlier list stays in History.",
     );
     expect(client.saveInventory).toHaveBeenCalledWith(saved, [
       { item_group: "FURNITURE", item_name: "Bed", quantity: 3 },

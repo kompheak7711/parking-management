@@ -290,15 +290,15 @@ class PostgresUnitRepository:
         except psycopg.errors.UniqueViolation as error:
             if error.diag.constraint_name == "units_property_unit_number_unique":
                 raise UnitNumberAlreadyExistsError(
-                    f"Unit number {unit.unit_number!r} already exists in this Property"
+                    f"Parking number {unit.unit_number!r} already exists in this Property"
                 ) from error
             if error.diag.constraint_name == "units_pkey":
                 raise UnitIdentityAlreadyExistsError(
-                    f"Unit identity {unit.unit_id} already exists"
+                    f"Parking identity {unit.unit_id} already exists"
                 ) from error
             raise
         if row is None or _unit_from_row(row) != unit:
-            raise RuntimeError("Unit creation returned an invalid result")
+            raise RuntimeError("Parking creation returned an invalid result")
 
 
 @dataclass(frozen=True, slots=True)
@@ -324,12 +324,12 @@ class UnitService:
     ) -> Unit:
         """Validate and persist a new stable Unit identity."""
         if property_id != self.property_id:
-            raise UnitOutsidePropertyScopeError("Unit is assigned to a different Property ID")
+            raise UnitOutsidePropertyScopeError("Parking is assigned to a different Property ID")
 
         normalized_number = unit_number.strip()
         if self.repository.get_by_unit_number(property_id, normalized_number) is not None:
             raise UnitNumberAlreadyExistsError(
-                f"Unit number {normalized_number!r} already exists in this Property"
+                f"Parking number {normalized_number!r} already exists in this Property"
             )
 
         unit = Unit(

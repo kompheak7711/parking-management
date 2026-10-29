@@ -163,8 +163,8 @@ const TEXT = {
   // new
   dk_REFUND: ["Refund", "សងប្រាក់"],
   dk_PAYMENT_MOVE: [
-    "Move payment to the right Unit",
-    "ផ្ទេរការបង់ទៅបន្ទប់ត្រឹមត្រូវ",
+    "Move payment to the right Parking",
+    "ផ្ទេរការបង់ទៅចំណតត្រឹមត្រូវ",
   ],
   // new
   dk_FORFEIT_UNDO: ["Undo: kept Deposit", "មិនធ្វើវិញ៖ ប្រាក់កក់ដែលរក្សាទុក"],

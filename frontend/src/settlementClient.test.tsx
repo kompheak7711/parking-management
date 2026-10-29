@@ -321,7 +321,7 @@ describe("settlementClient", () => {
       rate_id: KEY,
       expected_current_rate_id: null,
       rate_usd_cents: 2500,
-      reason: "Move-out cleaning rate for this Unit",
+      reason: "Move-out cleaning rate for this Parking",
     });
     await settlementApi.chargeCleaning(PROPERTY, SETTLEMENT, {
       charge_id: KEY,

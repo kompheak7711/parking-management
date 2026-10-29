@@ -161,7 +161,7 @@ describe("Home", () => {
       document.querySelectorAll(".ui-home-kpi .ui-kpi-label"),
     ).map((element) => element.textContent);
     expect(labels).toEqual([
-      "Units occupied",
+      "Parking occupied",
       "Pending payment",
       "Paid for November",
       "Overdue",
@@ -170,7 +170,7 @@ describe("Home", () => {
       "Meter readings missing",
       "Letters due",
     ]);
-    expect(card(/Units occupied/).textContent).toContain(
+    expect(card(/Parking occupied/).textContent).toContain(
       "1 reserved · 1 vacant",
     );
     expect(card(/Waiting for approval/).textContent).toContain(
@@ -342,7 +342,7 @@ describe("Home", () => {
     cleanup();
 
     show(() => Promise.resolve(PAGE), { language: "km" });
-    expect(await screen.findByText("បន្ទប់មានអ្នកជួល")).toBeTruthy();
+    expect(await screen.findByText("ចំណតមានអ្នកជួល")).toBeTruthy();
     expect(screen.getByText("អ្វីដែលត្រូវធ្វើ")).toBeTruthy();
     await waitFor(() => {
       expect(screen.getByText("បានបង់សម្រាប់ខែវិច្ឆិកា")).toBeTruthy();

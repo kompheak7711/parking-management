@@ -28,7 +28,7 @@ class InMemoryInventoryFlow:
 
     def current(self, unit_id: UUID) -> UnitInventory:
         if unit_id not in self.units:
-            raise UnitResourceNotFound("Unit was not found")
+            raise UnitResourceNotFound("Parking was not found")
         saved = self.records.get(unit_id, [])
         if saved:
             return saved[-1]

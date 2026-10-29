@@ -108,7 +108,7 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   invoices: ["Invoices", "វិក្កយបត្រ"],
   utilities: ["Utilities", "ទឹកភ្លើង"],
   approvals: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
-  units: ["Units", "បន្ទប់"],
+  units: ["Parking", "ចំណត"],
   customers: ["Customers", "អតិថិជន"],
   reservations: ["Reservations", "ការកក់ទុក"],
   leases: ["Leases", "កិច្ចសន្យាជួល"],

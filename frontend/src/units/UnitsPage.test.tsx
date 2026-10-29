@@ -285,19 +285,19 @@ function rowOf(number: string): HTMLElement {
   return row;
 }
 
-describe("Units list", () => {
-  it("TEST-FE-027 shows the Units table with status chips, Until from the Lease or Reservation, and New Unit for a manager", async () => {
+describe("Parking list", () => {
+  it("TEST-FE-027 shows the Parking table with status chips, Until from the Lease or Reservation, and New Parking for a manager", async () => {
     show(unitApi());
 
     expect(
-      await screen.findByText("4 Units at CHETANA Parking"),
+      await screen.findByText("4 Parking at CHETANA Parking"),
     ).toBeInTheDocument();
     const table = screen.getByRole("table");
     expect(
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Unit", "Floor", "Unit Type", "Status", "Until"]);
+    ).toEqual(["Parking", "Floor", "Parking Type", "Status", "Until"]);
     // The owner removed Customer and Monthly Rent (28/10/2026).
     const occupied = rowOf("U101");
     expect(occupied).toHaveTextContent("Floor 1");
@@ -311,9 +311,9 @@ describe("Units list", () => {
     expect(reserved).not.toHaveTextContent("Lim Srey");
     expect(rowOf("U202")).toHaveTextContent("Under maintenance");
     expect(rowOf("U201")).toHaveTextContent("Vacant");
-    expect(screen.getByText("4 Units")).toBeInTheDocument();
+    expect(screen.getByText("4 Parking")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "New Unit" }),
+      screen.getByRole("button", { name: "New Parking" }),
     ).toBeInTheDocument();
   });
 
@@ -340,7 +340,7 @@ describe("Units list", () => {
       can_create: true,
     });
     show(unitApi(), { leases: { list } as unknown as LeaseApi });
-    await screen.findByText("4 Units at CHETANA Parking");
+    await screen.findByText("4 Parking at CHETANA Parking");
 
     expect(rowOf("U101")).toHaveTextContent("31/12/2026");
     expect(rowOf("U201")).toHaveTextContent("31/10/2100");
@@ -348,7 +348,7 @@ describe("Units list", () => {
     expect(list).toHaveBeenCalledWith("property-1", { status: "SIGNED" });
   });
 
-  it("TEST-FE-028 hides New Unit, Change status and Update Unit without the server's permission", async () => {
+  it("TEST-FE-028 hides New Parking, Change status and Update Parking without the server's permission", async () => {
     const client = unitApi({
       list: vi.fn().mockResolvedValue({
         items: units.map((entry) => ({ ...entry, can_manage: false })),
@@ -358,9 +358,9 @@ describe("Units list", () => {
       get: vi.fn().mockResolvedValue({ ...u201, can_manage: false }),
     });
     show(client);
-    await screen.findByText("4 Units at CHETANA Parking");
+    await screen.findByText("4 Parking at CHETANA Parking");
     expect(
-      screen.queryByRole("button", { name: "New Unit" }),
+      screen.queryByRole("button", { name: "New Parking" }),
     ).not.toBeInTheDocument();
 
     window.location.hash = "#/units/unit-U201";
@@ -372,13 +372,13 @@ describe("Units list", () => {
       screen.queryByRole("button", { name: "Change status" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Update Unit" }),
+      screen.queryByRole("button", { name: "Update Parking" }),
     ).not.toBeInTheDocument();
   });
 
-  it("TEST-FE-823 filters by floor, Unit Type and the four count cards", async () => {
+  it("TEST-FE-823 filters by floor, Parking Type and the four count cards", async () => {
     show(unitApi());
-    await screen.findByText("4 Units at CHETANA Parking");
+    await screen.findByText("4 Parking at CHETANA Parking");
     const card = (name: RegExp) => screen.getByRole("button", { name });
 
     expect(card(/^Occupied: 1/)).toBeInTheDocument();
@@ -391,19 +391,19 @@ describe("Units list", () => {
     expect(screen.getAllByRole("row")).toHaveLength(5);
 
     fireEvent.click(screen.getByRole("button", { name: "Floor 2" }));
-    expect(screen.getByText("2 Units")).toBeInTheDocument();
+    expect(screen.getByText("2 Parking")).toBeInTheDocument();
     expect(card(/^Occupied: 0/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "All floors" }));
-    fireEvent.change(screen.getByLabelText("Unit Type"), {
+    fireEvent.change(screen.getByLabelText("Parking Type"), {
       target: { value: "ONE_BEDROOM" },
     });
-    expect(screen.getByText("1 Unit")).toBeInTheDocument();
+    expect(screen.getByText("1 Parking")).toBeInTheDocument();
     expect(
       screen.queryByRole("option", { name: "Penthouse" }),
     ).not.toBeInTheDocument();
   });
 
-  it("TEST-FE-825 opens a Unit by its address and shows “—” when Leases cannot be read", async () => {
+  it("TEST-FE-825 opens a Parking by its address and shows “—” when Leases cannot be read", async () => {
     expect(pageFromHash("#/units/unit-U101")).toBe("units");
     expect(detailFromHash("#/units/unit-U101")).toBe("unit-U101");
     expect(detailFromHash("#/units")).toBeNull();
@@ -435,20 +435,22 @@ describe("Units list", () => {
     show(client);
     expect(
       await screen.findByText(
-        "The Units could not be read. Retry when the service is available.",
+        "The Parking could not be read. Retry when the service is available.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    await screen.findByText("4 Units at CHETANA Parking");
+    await screen.findByText("4 Parking at CHETANA Parking");
 
     window.location.hash = "#/units/unit-U201";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
-    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Update Parking" }),
+    );
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: "Save" }),
     );
     expect(
-      await screen.findByText(/Someone else changed this Unit first\./),
+      await screen.findByText(/Someone else changed this Parking first\./),
     ).toBeInTheDocument();
     // The dialog closes, so the next save starts from the latest details.
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -458,8 +460,8 @@ describe("Units list", () => {
   });
 });
 
-describe("Unit page", () => {
-  it("TEST-FE-029 keeps the Unit details, Lease, Meters, Invoices and History apart and lists the History", async () => {
+describe("Parking page", () => {
+  it("TEST-FE-029 keeps the Parking details, Lease, Meters, Invoices and History apart and lists the History", async () => {
     window.location.hash = "#/units/unit-U101";
     const client = unitApi({
       timeline: vi.fn().mockResolvedValue({
@@ -501,17 +503,17 @@ describe("Unit page", () => {
       screen.getByText("Floor 1 · Studio · 36 m² · CHETANA Parking"),
     ).toBeInTheDocument();
     for (const name of [
-      "Unit details",
+      "Parking details",
       "Current Lease",
       "Lease history",
       "Meters",
-      "Invoices for this Unit",
+      "Invoices for this Parking",
       "History",
     ]) {
       expect(screen.getByRole("heading", { name })).toBeInTheDocument();
     }
     const details = screen
-      .getByRole("heading", { name: "Unit details" })
+      .getByRole("heading", { name: "Parking details" })
       .closest("section");
     if (details === null) throw new Error("no details card");
     expect(details).toHaveTextContent("BalconyYes");
@@ -534,13 +536,13 @@ describe("Unit page", () => {
     );
     expect(history).toHaveTextContent("Lease signed by Sok Dara.");
     expect(history).toHaveTextContent("Sok Dara moved in.");
-    expect(history).toHaveTextContent("Unit created.");
+    expect(history).toHaveTextContent("Parking created.");
     for (const link of screen.getAllByRole("link", { name: "Open Lease" })) {
       expect(link).toHaveAttribute("href", "#/leases/lease-1");
     }
   });
 
-  it("TEST-FE-1074 each button opens its own place: New Lease opens the form with the Unit chosen or the draft from its Reservation, and Open Lease, Open draft Lease and Open Reservation open that record", async () => {
+  it("TEST-FE-1074 each button opens its own place: New Lease opens the form with the Parking chosen or the draft from its Reservation, and Open Lease, Open draft Lease and Open Reservation open that record", async () => {
     const all = [
       lease(),
       lease({
@@ -609,7 +611,7 @@ describe("Unit page", () => {
     expect(screen.queryByRole("link", { name: "New Lease" })).toBeNull();
   });
 
-  it("TEST-FE-824 changes the status only with a reason and not while a Lease holds the Unit", async () => {
+  it("TEST-FE-824 changes the status only with a reason and not while a Lease holds the Parking", async () => {
     window.location.hash = "#/units/unit-U101";
     const update = vi
       .fn()
@@ -622,7 +624,7 @@ describe("Unit page", () => {
       await screen.findByRole("button", { name: "Change status" }),
     );
     expect(screen.getByRole("dialog")).toHaveTextContent(
-      "This Unit has a signed Lease. Its status changes only through Move-out.",
+      "This Parking has a signed Lease. Its status changes only through Move-out.",
     );
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -656,14 +658,14 @@ describe("Unit page", () => {
     });
   });
 
-  it("TEST-FE-818 adds a Unit with the Floor and Unit Type from the Settings lists, and Update Unit never sends the Unit number", async () => {
+  it("TEST-FE-818 adds a Parking with the Floor and Parking Type from the Settings lists, and Update Parking never sends the Parking number", async () => {
     const client = unitApi();
     show(client);
-    fireEvent.click(await screen.findByRole("button", { name: "New Unit" }));
+    fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      await within(dialog).findByText("Enter the Unit number."),
+      await within(dialog).findByText("Enter the Parking number."),
     ).toBeInTheDocument();
     expect(within(dialog).getByText("Choose the floor.")).toBeInTheDocument();
     expect(client.create).not.toHaveBeenCalled();
@@ -674,16 +676,16 @@ describe("Unit page", () => {
         .map((option) => option.textContent),
     ).toEqual(["Choose a floor", "1", "2"]);
     expect(
-      within(within(dialog).getByLabelText("Unit Type"))
+      within(within(dialog).getByLabelText("Parking Type"))
         .getAllByRole("option")
         .map((option) => option.textContent),
     ).toEqual(["Studio", "1 bedroom"]);
 
-    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+    fireEvent.change(within(dialog).getByLabelText(/^Parking number/), {
       target: { value: " u107 " },
     });
     fireEvent.change(floors, { target: { value: "FLOOR-F002" } });
-    fireEvent.change(within(dialog).getByLabelText("Unit Type"), {
+    fireEvent.change(within(dialog).getByLabelText("Parking Type"), {
       target: { value: "ONE_BEDROOM" },
     });
     fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
@@ -714,20 +716,24 @@ describe("Unit page", () => {
     cleanup();
     window.location.hash = "#/units/unit-U201";
     show(client);
-    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Update Parking" }),
+    );
     const edit = screen.getByRole("dialog");
-    expect(edit).toHaveTextContent("Update Unit · U201");
-    expect(within(edit).queryByLabelText(/^Unit number/)).toBeNull();
+    expect(edit).toHaveTextContent("Update Parking · U201");
+    expect(within(edit).queryByLabelText(/^Parking number/)).toBeNull();
     fireEvent.change(within(edit).getByLabelText("Notes"), {
-      target: { value: "Corner Unit" },
+      target: { value: "Corner Parking" },
     });
     fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
-    expect(await screen.findByText("Unit U201 updated.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Parking U201 updated."),
+    ).toBeInTheDocument();
     const [, sent] = vi.mocked(client.update).mock.calls[0] ?? [];
     expect(sent).toMatchObject({
       floor_item_id: "FLOOR-F002",
       unit_type: "STUDIO",
-      notes: "Corner Unit",
+      notes: "Corner Parking",
       room_feature_ids: ["ROOM_FEATURE-BALCONY"],
     });
     expect(sent).not.toHaveProperty("unit_number");

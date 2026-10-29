@@ -36,7 +36,7 @@ MOVE_PREPARE = "payments.allocations.reverse"
 def _body(case: WrongAllocation, target: UUID | None = None) -> dict[str, str]:
     return {
         "target_invoice_id": str(target or case.invoice_right),
-        "reason": "Paid on Unit 203 by mistake; meant for Unit 201",
+        "reason": "Paid on Parking 203 by mistake; meant for Parking 201",
         "source_acknowledgement": SOURCE_ACK,
         "target_acknowledgement": TARGET_ACK,
     }

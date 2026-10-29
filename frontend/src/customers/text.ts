@@ -11,8 +11,8 @@ const TEXT = {
   ],
   add: ["Add Customer", "បន្ថែមអតិថិជន"],
   search: [
-    "Search by name, phone, Unit or ID number",
-    "ស្វែងរកតាមឈ្មោះ ទូរស័ព្ទ បន្ទប់ ឬលេខអត្តសញ្ញាណ",
+    "Search by name, phone, Parking or ID number",
+    "ស្វែងរកតាមឈ្មោះ ទូរស័ព្ទ ចំណត ឬលេខអត្តសញ្ញាណ",
   ],
   search_button: ["Search", "ស្វែងរក"],
   // new
@@ -25,8 +25,8 @@ const TEXT = {
   ],
   // new
   search_failed: [
-    "The search could not run. The list still filters by name, phone and Unit.",
-    "មិនអាចស្វែងរកបានទេ។ បញ្ជីនៅតែត្រងតាមឈ្មោះ ទូរស័ព្ទ និងបន្ទប់។",
+    "The search could not run. The list still filters by name, phone and Parking.",
+    "មិនអាចស្វែងរកបានទេ។ បញ្ជីនៅតែត្រងតាមឈ្មោះ ទូរស័ព្ទ និងចំណត។",
   ],
   // new
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -37,8 +37,8 @@ const TEXT = {
   ],
   // new
   tenants_hidden: [
-    "Your account cannot read Leases or Reservations, so Unit and Relationship show “—”.",
-    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះបន្ទប់ និងទំនាក់ទំនង បង្ហាញ “—”។",
+    "Your account cannot read Leases or Reservations, so Parking and Relationship show “—”.",
+    "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះចំណត និងទំនាក់ទំនង បង្ហាញ “—”។",
   ],
   c_tenant: ["Current tenants", "អ្នកជួលបច្ចុប្បន្ន"],
   c_tenant_s: [
@@ -52,8 +52,8 @@ const TEXT = {
   ],
   c_res: ["Reservations", "ការកក់"],
   c_res_s: [
-    "Holding a Unit, Lease not signed yet",
-    "កំពុងកក់បន្ទប់ មិនទាន់ចុះហត្ថលេខាកិច្ចសន្យា",
+    "Holding a Parking, Lease not signed yet",
+    "កំពុងកក់ចំណត មិនទាន់ចុះហត្ថលេខាកិច្ចសន្យា",
   ],
   c_former: ["Former", "ពីមុន"],
   c_former_s: [
@@ -64,7 +64,7 @@ const TEXT = {
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   name: ["Legal name", "ឈ្មោះតាមច្បាប់"],
   phone: ["Phone", "ទូរស័ព្ទ"],
-  unit: ["Unit", "បន្ទប់"],
+  unit: ["Parking", "ចំណត"],
   relationship: ["Relationship", "ទំនាក់ទំនង"],
   not_saved: ["Not saved", "មិនបានរក្សាទុក"],
   n1: ["1 Customer", "អតិថិជន 1"],

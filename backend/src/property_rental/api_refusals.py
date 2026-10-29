@@ -107,13 +107,13 @@ CLEANING_CHARGE_ALREADY_RECORDED = Refusal(
 CLEANING_RATE_NOT_SET = Refusal(
     409,
     "CLEANING_RATE_NOT_SET",
-    "This Unit has no cleaning rate. Set the rate first.",
+    "This Parking has no cleaning rate. Set the rate first.",
     ("BR-UNIT-014",),
 )
 CLEANING_RATE_ZERO = Refusal(
     409,
     "CLEANING_RATE_ZERO",
-    "This Unit's cleaning rate is zero, so there is no cleaning charge.",
+    "This Parking's cleaning rate is zero, so there is no cleaning charge.",
     ("BR-UNIT-014",),
 )
 CLEANING_RATE_CHANGED = Refusal(
@@ -549,7 +549,7 @@ PAYMENT_MOVE_NOT_INVOICE_ALLOCATION = Refusal(
 PAYMENT_MOVE_TARGET_SAME_UNIT = Refusal(
     422,
     "PAYMENT_MOVE_TARGET_SAME_UNIT",
-    "Choose an Invoice of a Lease on another Unit as the correct Invoice.",
+    "Choose an Invoice of a Lease on another Parking as the correct Invoice.",
     ("BR-PAY-042",),
     ("target_invoice_id",),
 )
@@ -627,7 +627,7 @@ PAYMENT_MOVE_TOO_LARGE = Refusal(
 ALLOCATION_MOVED = Refusal(
     409,
     "ALLOCATION_MOVED",
-    "This allocation was moved to another Unit's Invoice. Correct it with another move draft or "
+    "This allocation was moved to another Parking's Invoice. Correct it with another move draft or "
     "a credit Adjustment.",
     ("BR-PAY-042",),
 )

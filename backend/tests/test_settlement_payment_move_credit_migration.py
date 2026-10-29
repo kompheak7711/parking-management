@@ -165,7 +165,7 @@ def slice_7_draft_refusal(case: dict[str, Any], allocation: UUID, target: UUID) 
                 idempotency_key=uuid4(),
                 allocation_id=allocation,
                 target_invoice_id=target,
-                reason="Paid on the first Lease's Unit by mistake",
+                reason="Paid on the first Lease's Parking by mistake",
                 source_acknowledgement=SOURCE_ACK,
                 target_acknowledgement=TARGET_ACK,
             ),

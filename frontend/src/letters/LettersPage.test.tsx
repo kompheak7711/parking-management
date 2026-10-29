@@ -173,7 +173,7 @@ const EVENTS: Record<string, RentLetterEvent[]> = {
     letter(
       "THIRTY_DAY_SERIOUS_DEFAULT",
       "2026-10-30",
-      "Left at the Unit with a witness: Sok Dara",
+      "Left at the Parking with a witness: Sok Dara",
       null,
     ),
   ],
@@ -319,7 +319,7 @@ describe("Letters page (V1-058 R3)", () => {
     expect(within(u103).getByText("October 2026")).toBeTruthy();
     expect(within(u103).getByText("Given 30/10/2026")).toBeTruthy();
     expect(
-      within(u103).getByText("Left at the Unit with a witness"),
+      within(u103).getByText("Left at the Parking with a witness"),
     ).toBeTruthy();
     const notice = within(u103).getByRole("link", {
       name: /Termination notice/,
@@ -379,7 +379,7 @@ describe("Letters page (V1-058 R3)", () => {
     ).toEqual([
       "—",
       "Handed to the tenant",
-      "Left at the Unit with a witness",
+      "Left at the Parking with a witness",
       "Sent by email",
       "Sent by Telegram",
       "Sent by WhatsApp",
@@ -485,7 +485,7 @@ describe("Letters page (V1-058 R3)", () => {
         event_kind: "THIRTY_DAY_SERIOUS_DEFAULT",
         reason: "Day-30 default notice given",
         communication_record:
-          "Left at the Unit with a witness: Witness Sok Dara",
+          "Left at the Parking with a witness: Witness Sok Dara",
       },
       expect.any(String),
     );

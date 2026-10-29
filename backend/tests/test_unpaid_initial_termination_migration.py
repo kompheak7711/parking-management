@@ -268,7 +268,7 @@ def test_never_moved_in_partly_paid_keeps_the_payment_and_credits_the_remainder(
     )
     event = terminate(migrated_database_url, source)
     cleaning = ResolveNeverMovedInCommand(
-        uuid4(), uuid4(), event, "CLEANING", "Customer never moved in", "Unit needs cleaning"
+        uuid4(), uuid4(), event, "CLEANING", "Customer never moved in", "Parking needs cleaning"
     )
     with pytest.raises(UnpaidInitialTerminationAuthorizationError):
         service(source).resolve_never_moved_in(
@@ -537,7 +537,7 @@ def test_never_moved_in_route_resolves_replays_and_needs_every_capability(
     body = {
         "resolution_id": str(uuid4()),
         "unit_status": "CLEANING",
-        "unit_status_reason": "Unit needs cleaning",
+        "unit_status_reason": "Parking needs cleaning",
         "reason": "Customer never moved in and did not pay",
     }
     weak = actor(source["actor"], source["property"], *ALL[:-1])

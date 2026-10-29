@@ -148,7 +148,7 @@ describe("Settings: Business", () => {
     expect(pairs(property)).toEqual([
       "Property: CHETANA Parking",
       "Address: Street 271, Phnom Penh",
-      "Units: 0",
+      "Parking: 0",
       "Time zone: Asia/Phnom_Penh (UTC+7)Due dates, expiry and reading days use Phnom Penh time.",
       "Screen language: English and Khmer",
     ]);

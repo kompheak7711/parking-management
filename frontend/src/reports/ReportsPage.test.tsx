@@ -67,7 +67,7 @@ function stubSave() {
 describe("Reports list", () => {
   it("TEST-FE-1030 lists every report in two groups in the owner's order, each with its line, the Owner and Manager tag on the money and audit reports, and Open report; a card opens its report", async () => {
     const page = openReports();
-    expect(cardNames("Totals by Unit and month")).toEqual(TOTALS_NAMES);
+    expect(cardNames("Totals by Parking and month")).toEqual(TOTALS_NAMES);
     expect(cardNames("Registers and lists")).toEqual([
       "Invoice register and balances",
       "Payments and allocations",
@@ -75,7 +75,7 @@ describe("Reports list", () => {
       "Customer Credit ledger",
       "Deposit liability and disposition",
       "Final Settlement register",
-      "Unit occupancy",
+      "Parking occupancy",
       "Lease dates",
       "Audit activity",
     ]);
@@ -83,15 +83,15 @@ describe("Reports list", () => {
     expect(income).toHaveAttribute("href", "#/reports/total_income");
     expect(
       within(income).getByText(
-        "Invoiced amounts for each Unit, month by month",
+        "Invoiced amounts for each Parking, month by month",
       ),
     ).toBeTruthy();
     expect(within(income).getByText("Owner and Manager")).toBeTruthy();
     expect(within(income).getByText("Open report")).toBeTruthy();
     expect(
-      within(screen.getByRole("link", { name: /^Unit occupancy/ })).queryByText(
-        "Owner and Manager",
-      ),
+      within(
+        screen.getByRole("link", { name: /^Parking occupancy/ }),
+      ).queryByText("Owner and Manager"),
     ).toBeNull();
     expect(screen.getAllByText("Owner and Manager")).toHaveLength(10);
     expect(screen.getAllByText("Open report")).toHaveLength(13);
@@ -113,14 +113,14 @@ describe("Reports list", () => {
     );
   });
 
-  it("TEST-FE-1031 shows only the reports the account may read: Staff see Utility consumption, Unit occupancy and Lease dates; History adds Audit activity; the money right adds the Totals tables and the money registers", () => {
+  it("TEST-FE-1031 shows only the reports the account may read: Staff see Utility consumption, Parking occupancy and Lease dates; History adds Audit activity; the money right adds the Totals tables and the money registers", () => {
     openReports({ capabilities: STAFF });
     expect(
-      screen.queryByRole("region", { name: "Totals by Unit and month" }),
+      screen.queryByRole("region", { name: "Totals by Parking and month" }),
     ).toBeNull();
     expect(cardNames("Registers and lists")).toEqual([
       "Utility consumption",
-      "Unit occupancy",
+      "Parking occupancy",
       "Lease dates",
     ]);
     expect(screen.queryByText("Owner and Manager")).toBeNull();
@@ -129,7 +129,7 @@ describe("Reports list", () => {
     openReports({ capabilities: new Set([...STAFF, "audit.view"]) });
     expect(cardNames("Registers and lists")).toEqual([
       "Utility consumption",
-      "Unit occupancy",
+      "Parking occupancy",
       "Lease dates",
       "Audit activity",
     ]);
@@ -137,7 +137,7 @@ describe("Reports list", () => {
 
     // Units without Leases and Reservations are not enough for Unit occupancy.
     openReports({ capabilities: new Set(["reports.read", "units.read"]) });
-    expect(cardNames("Totals by Unit and month")).toEqual(TOTALS_NAMES);
+    expect(cardNames("Totals by Parking and month")).toEqual(TOTALS_NAMES);
     expect(cardNames("Registers and lists")).toEqual([
       "Invoice register and balances",
       "Payments and allocations",
@@ -180,7 +180,7 @@ describe("Report states", () => {
     ).toBeTruthy();
     expect(cardNames("Registers and lists")).toEqual([
       "Utility consumption",
-      "Unit occupancy",
+      "Parking occupancy",
       "Lease dates",
     ]);
   });
@@ -311,7 +311,7 @@ describe("Export", () => {
     ).toBeChecked();
     expect(
       within(dialog).getByText(
-        "This file has personal data (names, Units, phone numbers). Keep it inside the business and delete it when done.",
+        "This file has personal data (names, Parking, phone numbers). Keep it inside the business and delete it when done.",
       ),
     ).toBeTruthy();
     expect(
@@ -349,7 +349,7 @@ describe("Export", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("TEST-FE-1053 a Totals export sends the Unit and the period, has no Rows line, and fetches a big file from its export job", async () => {
+  it("TEST-FE-1053 a Totals export sends the Parking and the period, has no Rows line, and fetches a big file from its export job", async () => {
     const save = stubSave();
     const page = openReports({
       hash: "#/reports/total_payment",
@@ -371,13 +371,13 @@ describe("Export", () => {
         }),
     });
     await screen.findByRole("table", { name: "Total Payment" });
-    const unit = screen.getByRole("combobox", { name: "Unit" });
+    const unit = screen.getByRole("combobox", { name: "Parking" });
     await waitFor(() => {
       expect(
         within(unit)
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["All Units", "U101", "U203", "U204"]);
+      ).toEqual(["All Parking", "U101", "U203", "U204"]);
     });
     fireEvent.change(unit, { target: { value: "unit-203" } });
     fireEvent.click(screen.getByRole("button", { name: "Last month" }));
@@ -512,7 +512,7 @@ describe("Export", () => {
       hash: "#/reports/unit_occupancy",
       capabilities: new Set([...STAFF, "data.export"]),
     });
-    await screen.findByRole("table", { name: "Unit occupancy" });
+    await screen.findByRole("table", { name: "Parking occupancy" });
     expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
   });
 });
@@ -521,9 +521,9 @@ describe("Language and parameters", () => {
   it("TEST-FE-1056 the page follows the language switch: the list and a Totals table in Khmer, with the same numbers and no new request", async () => {
     openReports({ language: "km" });
     expect(
-      screen.getByRole("region", { name: "សរុបតាមបន្ទប់ និងខែ" }),
+      screen.getByRole("region", { name: "សរុបតាមចំណត និងខែ" }),
     ).toBeTruthy();
-    expect(cardNames("សរុបតាមបន្ទប់ និងខែ")[0]).toBe("ចំណូលសរុប");
+    expect(cardNames("សរុបតាមចំណត និងខែ")[0]).toBe("ចំណូលសរុប");
     expect(screen.getAllByText("បើករបាយការណ៍")).toHaveLength(13);
     cleanup();
 

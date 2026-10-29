@@ -729,7 +729,7 @@ def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() 
         f"/reservations/{refund.reservation_id}/deposit-drafts",
         json={
             "outcome_id": str(uuid4()),
-            "reason": "Property could not provide the Unit",
+            "reason": "Property could not provide the Parking",
             "refund_method_id": str(method_id),
             "reference_note": "Cash at the office",
         },
@@ -741,7 +741,7 @@ def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() 
         f"/reservations/{refund.reservation_id}/deposit-drafts",
         json={
             "outcome_id": str(uuid4()),
-            "reason": "Property could not provide the Unit",
+            "reason": "Property could not provide the Parking",
             "refund_method_id": str(method_id),
             "reference_note": "Cash at the office",
         },
@@ -755,7 +755,7 @@ def test_deposit_draft_kind_and_capability_follow_cancellation_responsibility() 
         f"/reservations/{refund.reservation_id}/deposit-drafts",
         json={
             "outcome_id": str(uuid4()),
-            "reason": "Property could not provide the Unit",
+            "reason": "Property could not provide the Parking",
             "refund_number": "RF-1",
             "refund_method_id": str(method_id),
             "reference_note": "Cash at the office",

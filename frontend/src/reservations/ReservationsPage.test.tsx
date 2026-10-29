@@ -168,14 +168,14 @@ describe("Reservations list", () => {
     show(api());
 
     expect(
-      await screen.findByText(/^5 Reservations · a Unit held/),
+      await screen.findByText(/^5 Reservations · a Parking held/),
     ).toBeInTheDocument();
     expect(
       within(screen.getByRole("table"))
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
-      "Unit",
+      "Parking",
       "Customer",
       "Reserved on",
       "Expires",
@@ -191,7 +191,7 @@ describe("Reservations list", () => {
     );
     expect(rowOf("U201")).toHaveTextContent("CompletedLease signed");
     expect(rowOf("U202")).toHaveTextContent(
-      "CancelledCustomer no longer wants the Unit",
+      "CancelledCustomer no longer wants the Parking",
     );
     expect(rowOf("U203")).toHaveTextContent("CancelledExpired");
     for (const label of [
@@ -266,7 +266,7 @@ describe("Reservation page", () => {
     window.location.hash = "#/reservations/U202";
     show(api());
     const card = await screen.findByRole("region", { name: "Cancellation" });
-    expect(card).toHaveTextContent("Customer no longer wants the Unit");
+    expect(card).toHaveTextContent("Customer no longer wants the Parking");
     expect(card).toHaveTextContent("Found a house");
     expect(
       screen.getByText(
@@ -519,7 +519,9 @@ describe("Make Reservation on the list (V1-060 B7)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    expect(await within(dialog).findByLabelText("Unit")).toHaveValue("unit-2");
+    expect(await within(dialog).findByLabelText("Parking")).toHaveValue(
+      "unit-2",
+    );
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
       target: { value: "customer-dara" },
     });
@@ -618,7 +620,9 @@ describe("Make Reservation on the list (V1-060 B7)", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Make Reservation",
     });
-    expect(await within(dialog).findByLabelText("Unit")).toHaveValue("unit-2");
+    expect(await within(dialog).findByLabelText("Parking")).toHaveValue(
+      "unit-2",
+    );
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
       target: { value: "customer-dara" },
     });

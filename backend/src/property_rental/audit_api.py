@@ -810,7 +810,7 @@ def _freeze_event_state(value: object, entity_type: str) -> AuditValue:
         return _freeze_loaded(value)
     floor = value["floor"]
     if not isinstance(floor, str) or not 1 <= len(floor) <= 100 or floor != floor.strip():
-        raise ValueError("stored Unit floor is not a canonical text label")
+        raise ValueError("stored Parking floor is not a canonical text label")
     # Only this canonical top-level Unit attribute uses label classification.
     # All other fields and every nested value retain the existing validation.
     ordinary = _freeze_loaded({key: item for key, item in value.items() if key != "floor"})

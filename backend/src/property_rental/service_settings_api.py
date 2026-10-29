@@ -88,7 +88,7 @@ SERVICE_TYPE_HAS_SERVICES: Final = Refusal(
 UNIT_TYPE_NEEDS_CLEANING_RATE: Final = Refusal(
     409,
     "UNIT_TYPE_NEEDS_CLEANING_RATE",
-    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first.",
+    "A Parking Type that has Parking needs a cleaning rate. Put it in another rate first.",
 )
 
 

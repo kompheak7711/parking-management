@@ -27,7 +27,7 @@ function response(body: object, status = 200): Response {
 }
 
 describe("Lease API client", () => {
-  it("TEST-FE-185 sends bounded status, Unit, Customer, date, and period filters", async () => {
+  it("TEST-FE-185 sends bounded status, Parking, Customer, date, and period filters", async () => {
     const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       response({
         data: [],

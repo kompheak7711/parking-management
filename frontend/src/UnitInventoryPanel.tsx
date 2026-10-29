@@ -34,7 +34,7 @@ const countWords: Record<UnitInventoryGroup, string> = {
 
 function failure(error: unknown): string {
   if (error instanceof UnitUnavailableError) {
-    return "Unit inventory is unavailable for this session.";
+    return "Parking inventory is unavailable for this session.";
   }
   if (error instanceof UnitConflictError) {
     return "Someone else saved this inventory first. Their list is shown now; edit it again if needed.";
@@ -42,7 +42,7 @@ function failure(error: unknown): string {
   if (error instanceof UnitInvalidError) {
     return "Check the items: each name once in its group, quantities from 0 to 999.";
   }
-  return "The Unit inventory request was not completed. Retry when the service is available.";
+  return "The Parking inventory request was not completed. Retry when the service is available.";
 }
 
 function text(data: FormData, name: string): string {
@@ -161,14 +161,14 @@ export function UnitInventoryPanel({
     }
     const operation = ++sequence.current;
     setBusy(true);
-    setNote("Saving the Unit inventory…");
+    setNote("Saving the Parking inventory…");
     void api
       .saveInventory(inventory, lines)
       .then((saved) => {
         if (operation !== sequence.current) return;
         setInventory(saved);
         setEditing(false);
-        setNote("Unit inventory saved. The earlier list stays in History.");
+        setNote("Parking inventory saved. The earlier list stays in History.");
         onSaved?.();
       })
       .catch((error: unknown) => {
@@ -215,7 +215,7 @@ export function UnitInventoryPanel({
   const editForm = (
     <>
       <p className="ui-small ui-muted">
-        Enter how many of each item are in the Unit. 0 takes an item out.
+        Enter how many of each item are in the Parking. 0 takes an item out.
       </p>
       {unitInventoryGroups.map((group) => {
         const items = choices().filter((item) => item.item_group === group);
@@ -294,7 +294,7 @@ export function UnitInventoryPanel({
     <section aria-labelledby="unit-inventory-heading">
       <div className="ui-chead gap">
         <div>
-          <h3 id="unit-inventory-heading">Unit inventory</h3>
+          <h3 id="unit-inventory-heading">Parking inventory</h3>
           {inventory !== null && (
             <p className="ui-small ui-muted">
               {unitInventoryGroups
@@ -328,7 +328,7 @@ export function UnitInventoryPanel({
       {inventory !== null &&
         (inventory.lines.length === 0 ? (
           <p className="ui-small ui-muted">
-            No inventory has been recorded for this Unit yet.
+            No inventory has been recorded for this Parking yet.
           </p>
         ) : (
           unitInventoryGroups

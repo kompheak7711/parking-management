@@ -310,7 +310,7 @@ function rows(): string[] {
 }
 
 describe("Invoices page (V1-058 R5)", () => {
-  it("TEST-FE-896 The list shows the four cards with their amounts, the add-up line and every Invoice with the Draft first, its Customer and Unit, Due Date, amount, balance and status", async () => {
+  it("TEST-FE-896 The list shows the four cards with their amounts, the add-up line and every Invoice with the Draft first, its Customer and Parking, Due Date, amount, balance and status", async () => {
     show();
     expect(await screen.findByText("All Invoices")).toBeTruthy();
     const card = (name: RegExp) => screen.getByRole("button", { name });
@@ -400,7 +400,7 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(within(sheet).getByText("ថ្លៃឈ្នួល")).toBeTruthy();
     expect(within(sheet).getByText("01/10/2026 - 31/10/2026")).toBeTruthy();
     expect(within(sheet).getByText("Phone 012 345 678")).toBeTruthy();
-    expect(within(sheet).getByText("Unit U101")).toBeTruthy();
+    expect(within(sheet).getByText("Parking U101")).toBeTruthy();
     expect(sheet.querySelector(".due .n")?.textContent).toBe("$450.00");
     expect(
       within(sheet).getByRole("img", {

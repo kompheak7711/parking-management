@@ -56,8 +56,8 @@ function respond(status: number, data: unknown) {
   });
 }
 
-describe("Unit API client", () => {
-  it("TEST-FE-817 reads Unit details and setup lists, never sends a Unit number on update, and names a refused pick", async () => {
+describe("Parking API client", () => {
+  it("TEST-FE-817 reads Parking details and setup lists, never sends a Parking number on update, and names a refused pick", async () => {
     Object.defineProperty(document, "cookie", {
       configurable: true,
       value: "__Host-prm_csrf=token-1",
@@ -129,7 +129,7 @@ describe("Unit API client", () => {
     );
   });
 
-  it("TEST-FE-821 reads the Unit inventory and saves it against the record number it showed", async () => {
+  it("TEST-FE-821 reads the Parking inventory and saves it against the record number it showed", async () => {
     Object.defineProperty(document, "cookie", {
       configurable: true,
       value: "__Host-prm_csrf=token-1",

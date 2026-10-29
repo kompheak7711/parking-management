@@ -516,7 +516,7 @@ export function UtilityManagement({
           />
         </div>
         <div className="form-field">
-          <label htmlFor="utility-unit-id">Unit identifier</label>
+          <label htmlFor="utility-unit-id">Parking identifier</label>
           <input
             id="utility-unit-id"
             onChange={(event) => {
@@ -541,7 +541,7 @@ export function UtilityManagement({
           <section aria-labelledby="meter-history-heading">
             <h4 id="meter-history-heading">Meter and Reading history</h4>
             {snapshot.meters.length === 0 ? (
-              <p>No Meters are recorded for this Unit.</p>
+              <p>No Meters are recorded for this Parking.</p>
             ) : (
               <ul className="record-list utility-records">
                 {snapshot.meters.map((meter) => (
@@ -1338,8 +1338,8 @@ export function UtilityManagement({
                     <strong>PENDING_FUTURE_ACTUAL_BASIS:</strong> zero complete
                     historical actual periods exist. The charge remains pending
                     until the first complete future actual period for this same
-                    Unit and Utility Type is available. No comparable Unit or
-                    arbitrary estimate is allowed.
+                    Parking and Utility Type is available. No comparable Parking
+                    or arbitrary estimate is allowed.
                   </p>
                 )}
                 <dl className="detail-list">

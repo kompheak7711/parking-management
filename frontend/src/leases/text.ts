@@ -40,7 +40,7 @@ const TEXT = {
   none: ["No Leases here.", "គ្មានកិច្ចសន្យានៅទីនេះទេ។"],
   n1: ["1 Lease", "កិច្ចសន្យា 1"],
   n: ["{0} Leases", "កិច្ចសន្យា {0}"],
-  unit: ["Unit", "បន្ទប់"],
+  unit: ["Parking", "ចំណត"],
   primary: ["Primary Tenant", "អ្នកជួលចម្បង"],
   start: ["Start Date", "ថ្ងៃចាប់ផ្តើម"],
   end: ["End Date", "ថ្ងៃបញ្ចប់"],
@@ -86,8 +86,8 @@ const TEXT = {
     "សេចក្តីព្រាង។ អ្នកចុះហត្ថលេខានៅអាចប្តូរបាន។ គ្មានការគិតប្រាក់រហូតដល់ចុះហត្ថលេខា។",
   ],
   no_movein_banner: [
-    "Signed, Unit is Occupied. Record the move-in when the Customer receives the keys (Start Date {0}).",
-    "បានចុះហត្ថលេខា បន្ទប់មានអ្នកជួល។ កត់ត្រាការចូលស្នាក់នៅពេលអតិថិជនទទួលកូនសោ (ថ្ងៃចាប់ផ្តើម {0})។",
+    "Signed, Parking is Occupied. Record the move-in when the Customer receives the keys (Start Date {0}).",
+    "បានចុះហត្ថលេខា ចំណតមានអ្នកជួល។ កត់ត្រាការចូលស្នាក់នៅពេលអតិថិជនទទួលកូនសោ (ថ្ងៃចាប់ផ្តើម {0})។",
   ],
   // new
   renewed_banner: [
@@ -116,8 +116,8 @@ const TEXT = {
   to_sign: ["To sign", "ត្រូវចុះហត្ថលេខា"],
   signed_at: ["Signed {0}", "ចុះហត្ថលេខា {0}"],
   signers_note: [
-    "Every Signer is responsible for the whole balance, not a share. A Signer need not live in the Unit.",
-    "អ្នកចុះហត្ថលេខាម្នាក់ៗទទួលខុសត្រូវលើសមតុល្យទាំងមូល មិនមែនចំណែកទេ។ អ្នកចុះហត្ថលេខាមិនចាំបាច់រស់នៅក្នុងបន្ទប់ទេ។",
+    "Every Signer is responsible for the whole balance, not a share. A Signer need not live in the Parking.",
+    "អ្នកចុះហត្ថលេខាម្នាក់ៗទទួលខុសត្រូវលើសមតុល្យទាំងមូល មិនមែនចំណែកទេ។ អ្នកចុះហត្ថលេខាមិនចាំបាច់រស់នៅក្នុងចំណតទេ។",
   ],
   signers_draft: [
     "Signers are added or removed only while the Lease is a draft.",
@@ -176,7 +176,7 @@ const TEXT = {
   ],
   ao_saved: [
     "{0} added as an occupant of {1}.",
-    "បានបន្ថែម {0} ជាអ្នករស់នៅបន្ទប់ {1}។",
+    "បានបន្ថែម {0} ជាអ្នករស់នៅចំណត {1}។",
   ],
   rent_t: ["Rent and services", "ថ្លៃឈ្នួល និងសេវា"],
   initial_rent: ["Initial Rent", "ថ្លៃឈ្នួលដំបូង"],
@@ -260,7 +260,7 @@ const TEXT = {
   // new
   term_recorded: ["Recorded on", "កត់ត្រានៅ"],
   moveout_on: ["Moved out on", "ចាកចេញនៅ"],
-  still_in: ["Still in the Unit", "នៅក្នុងបន្ទប់"],
+  still_in: ["Still in the Parking", "នៅក្នុងចំណត"],
   history: ["History", "ប្រវត្តិ"],
   // new
   more: ["Show earlier events", "បង្ហាញព្រឹត្តិការណ៍មុនៗ"],
@@ -348,13 +348,13 @@ const TEXT = {
   ],
   // new: the mock-up line, shown when an active Reservation was found
   sign_s2: [
-    "An active Reservation of this Customer for this Unit is completed in the same step; its deposit continues as the Security Deposit.",
-    "ការកក់កំពុងដំណើរការរបស់អតិថិជននេះសម្រាប់បន្ទប់នេះ បានបញ្ចប់ក្នុងជំហានតែមួយ។ ប្រាក់កក់របស់វាបន្តជាប្រាក់កក់សុវត្ថិភាព។",
+    "An active Reservation of this Customer for this Parking is completed in the same step; its deposit continues as the Security Deposit.",
+    "ការកក់កំពុងដំណើរការរបស់អតិថិជននេះសម្រាប់ចំណតនេះ បានបញ្ចប់ក្នុងជំហានតែមួយ។ ប្រាក់កក់របស់វាបន្តជាប្រាក់កក់សុវត្ថិភាព។",
   ],
   // new
   sign_res_failed: [
-    "The Reservations could not be read. If this Unit is Reserved, the signing will be refused; ask someone who can see Reservations.",
-    "មិនអាចអានការកក់បានទេ។ បើបន្ទប់នេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
+    "The Reservations could not be read. If this Parking is Reserved, the signing will be refused; ask someone who can see Reservations.",
+    "មិនអាចអានការកក់បានទេ។ បើចំណតនេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
   ],
   // new
   sign_refused: [
@@ -403,8 +403,8 @@ const TEXT = {
   ],
   // new
   conflict: [
-    "This Lease or its Unit changed meanwhile, so nothing more was saved. It was read again: check it and try again.",
-    "កិច្ចសន្យានេះ ឬបន្ទប់របស់វាបានប្តូរក្នុងពេលនេះ ដូច្នេះគ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។ វាត្រូវបានអានម្តងទៀត៖ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
+    "This Lease or its Parking changed meanwhile, so nothing more was saved. It was read again: check it and try again.",
+    "កិច្ចសន្យានេះ ឬចំណតរបស់វាបានប្តូរក្នុងពេលនេះ ដូច្នេះគ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។ វាត្រូវបានអានម្តងទៀត៖ សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
   // L2b
   cancel_draft: ["Cancel draft", "លុបសេចក្តីព្រាង"],
@@ -413,8 +413,8 @@ const TEXT = {
   cancel_title: ["Cancel draft · {0}", "លុបសេចក្តីព្រាង · {0}"],
   // new
   cancel_note: [
-    "Only a draft is cancelled; a signed Lease never is. The Unit and any Booking stay as they are.",
-    "មានតែសេចក្តីព្រាងប៉ុណ្ណោះដែលត្រូវលុប កិច្ចសន្យាដែលបានចុះហត្ថលេខាមិនដែលលុបទេ។ បន្ទប់ និងការកក់ណាមួយ នៅដដែល។",
+    "Only a draft is cancelled; a signed Lease never is. The Parking and any Booking stay as they are.",
+    "មានតែសេចក្តីព្រាងប៉ុណ្ណោះដែលត្រូវលុប កិច្ចសន្យាដែលបានចុះហត្ថលេខាមិនដែលលុបទេ។ ចំណត និងការកក់ណាមួយ នៅដដែល។",
   ],
   memo: ["Memo", "កំណត់ចំណាំ"],
   // new
@@ -473,26 +473,26 @@ const TEXT = {
   ],
   // new
   from_booking: [
-    "From the Booking of {0}: the Unit, the Customer, the agreed Rent and the deposit come from it.",
-    "ពីការកក់របស់ {0}៖ បន្ទប់ អតិថិជន ថ្លៃឈ្នួលដែលបានព្រមព្រៀង និងប្រាក់កក់ មកពីវា។",
+    "From the Booking of {0}: the Parking, the Customer, the agreed Rent and the deposit come from it.",
+    "ពីការកក់របស់ {0}៖ ចំណត អតិថិជន ថ្លៃឈ្នួលដែលបានព្រមព្រៀង និងប្រាក់កក់ មកពីវា។",
   ],
   // new
   renew_sub: [
-    "The new Lease for {0} starts the day after the old End Date and is linked to it. The Unit stays Occupied.",
-    "កិច្ចសន្យាថ្មីសម្រាប់ {0} ចាប់ផ្តើមថ្ងៃបន្ទាប់ពីថ្ងៃបញ្ចប់ចាស់ ហើយភ្ជាប់ទៅវា។ បន្ទប់នៅតែមានអ្នកជួល។",
+    "The new Lease for {0} starts the day after the old End Date and is linked to it. The Parking stays Occupied.",
+    "កិច្ចសន្យាថ្មីសម្រាប់ {0} ចាប់ផ្តើមថ្ងៃបន្ទាប់ពីថ្ងៃបញ្ចប់ចាស់ ហើយភ្ជាប់ទៅវា។ ចំណតនៅតែមានអ្នកជួល។",
   ],
   // new
   form_failed: [
-    "The Units and Customers could not be read just now. Check the connection and your access, and try again.",
-    "មិនអាចអានបន្ទប់ និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
+    "The Parking and Customers could not be read just now. Check the connection and your access, and try again.",
+    "មិនអាចអានចំណត និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
   ],
   terms: ["Lease terms", "លក្ខខណ្ឌកិច្ចសន្យា"],
   // new
-  choose_unit: ["Choose a Unit", "ជ្រើសបន្ទប់"],
+  choose_unit: ["Choose a Parking", "ជ្រើសចំណត"],
   // new
   unit_help: [
-    "Vacant, cleaning or maintenance Units. A Reserved Unit gets its Lease from its Booking.",
-    "បន្ទប់ទំនេរ កំពុងសម្អាត ឬកំពុងជួសជុល។ បន្ទប់ដែលបានកក់ ទទួលកិច្ចសន្យាពីការកក់របស់វា។",
+    "Vacant, cleaning or maintenance Parking. A Reserved Parking gets its Lease from its Booking.",
+    "ចំណតទំនេរ កំពុងសម្អាត ឬកំពុងជួសជុល។ ចំណតដែលបានកក់ ទទួលកិច្ចសន្យាពីការកក់របស់វា។",
   ],
   // new
   choose_customer: ["Choose a Customer", "ជ្រើសអតិថិជន"],
@@ -519,7 +519,7 @@ const TEXT = {
   // new
   err_pet: ["Say which pet.", "សូមប្រាប់សត្វចិញ្ចឹមអ្វី។"],
   // new
-  err_unit: ["Choose the Unit.", "សូមជ្រើសបន្ទប់។"],
+  err_unit: ["Choose the Parking.", "សូមជ្រើសចំណត។"],
   // new
   err_tenant: ["Choose the Primary Tenant.", "សូមជ្រើសអ្នកជួលចម្បង។"],
   // new
@@ -535,16 +535,16 @@ const TEXT = {
     "សូមបញ្ចូលថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់ ដើម្បីជ្រើសសេវា។",
   ],
   no_meter_e: [
-    "This Unit has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់អគ្គិសនីទេ ដូច្នេះមិនគិតថ្លៃអគ្គិសនីទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+    "This Parking has no electricity meter, so no electricity is billed. Add the meter in Utilities when it is put in.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់អគ្គិសនីទេ ដូច្នេះមិនគិតថ្លៃអគ្គិសនីទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
   ],
   no_meter_w: [
-    "This Unit has no water meter, so no water is billed. Add the meter in Utilities when it is put in.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់ទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+    "This Parking has no water meter, so no water is billed. Add the meter in Utilities when it is put in.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់ទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
   ],
   no_meter_both: [
-    "This Unit has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
-    "បន្ទប់នេះគ្មាននាឡិកាស្ទង់អគ្គិសនី ឬទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកភ្លើងទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
+    "This Parking has no electricity or water meter, so no Utilities are billed. Add the meters in Utilities when they are put in.",
+    "ចំណតនេះគ្មាននាឡិកាស្ទង់អគ្គិសនី ឬទឹកទេ ដូច្នេះមិនគិតថ្លៃទឹកភ្លើងទេ។ សូមបន្ថែមនាឡិកាស្ទង់ក្នុងទឹកភ្លើង ពេលដំឡើងរួច។",
   ],
   svc_new: ["New Service", "សេវាថ្មី"],
   svc_added: [
@@ -662,8 +662,8 @@ const TEXT = {
   ],
   // new
   draft_refused: [
-    "The server refused the draft. Another Lease may already cover this Unit for these dates, or the details do not fit the rules. Nothing more was saved.",
-    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់បន្ទប់នេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
+    "The server refused the draft. Another Lease may already cover this Parking for these dates, or the details do not fit the rules. Nothing more was saved.",
+    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់ចំណតនេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
   ],
   // Terminate dialog (mock-up i18n3.js "tg_"; lines marked new are not in the mock-up)
   terminate: ["Terminate", "បញ្ចប់កិច្ចសន្យា"],
@@ -795,13 +795,13 @@ const TEXT = {
     "ប្រាក់កក់សត្វចិញ្ចឹមក៏រក្សាទុកដែរ (បញ្ចប់ព្រោះច្បាប់សត្វចិញ្ចឹម)។",
   ],
   tg_c4: [
-    "The Unit stays Occupied until the hand-back is recorded.",
-    "បន្ទប់នៅមានអ្នកជួល រហូតដល់កត់ត្រាការប្រគល់។",
+    "The Parking stays Occupied until the hand-back is recorded.",
+    "ចំណតនៅមានអ្នកជួល រហូតដល់កត់ត្រាការប្រគល់។",
   ],
   // new
   tg_c5: [
-    "Never moved in: release the Unit and settle the Initial Rent Invoice in the next step.",
-    "មិនដែលចូលស្នាក់នៅ៖ ដោះលែងបន្ទប់ និងដោះស្រាយវិក្កយបត្រថ្លៃឈ្នួលដំបូង នៅជំហានបន្ទាប់។",
+    "Never moved in: release the Parking and settle the Initial Rent Invoice in the next step.",
+    "មិនដែលចូលស្នាក់នៅ៖ ដោះលែងចំណត និងដោះស្រាយវិក្កយបត្រថ្លៃឈ្នួលដំបូង នៅជំហានបន្ទាប់។",
   ],
   // new
   tg_final: [
@@ -1055,7 +1055,7 @@ const TEXT = {
     "Printed {0}. This is a draft: the Lease is signed only after the money below is received.",
     "បោះពុម្ព {0}។ នេះជាសេចក្តីព្រាង៖ កិច្ចសន្យាចុះហត្ថលេខាបានតែក្រោយទទួលប្រាក់ខាងក្រោម។",
   ],
-  lp_unit: ["Unit", "បន្ទប់"],
+  lp_unit: ["Parking", "ចំណត"],
   lp_tenant: ["Primary Tenant", "អ្នកជួលចម្បង"],
   lp_signers: ["Other Signers", "អ្នកចុះហត្ថលេខាផ្សេងទៀត"],
   lp_dates: ["Lease dates", "កាលបរិច្ឆេទកិច្ចសន្យា"],

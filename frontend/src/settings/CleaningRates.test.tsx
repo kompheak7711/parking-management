@@ -22,7 +22,7 @@ afterEach(() => {
 const SMALL = {
   cleaning_rate_id: "rate-small",
   name_en: "Small rooms",
-  name_km: "បន្ទប់តូច",
+  name_km: "ចំណតតូច",
   rate_usd_cents: 1500,
   version: 2,
   unit_types: ["STUDIO", "SPARE"],
@@ -102,7 +102,7 @@ const save = (dialog: HTMLElement) => {
 };
 
 describe("Settings: move-out cleaning rates", () => {
-  it("TEST-FE-1005 lists each rate with its Unit Types and warns of a type with no rate; Add sends its own id and the ticked types (a type of another rate moves); Edit sends the version; untick and Remove of a type with Units are refused with its name", async () => {
+  it("TEST-FE-1005 lists each rate with its Parking Types and warns of a type with no rate; Add sends its own id and the ticked types (a type of another rate moves); Edit sends the version; untick and Remove of a type with Parking are refused with its name", async () => {
     const api = show();
     const card = await screen.findByRole("region", {
       name: "Move-out cleaning rates",
@@ -173,7 +173,7 @@ describe("Settings: move-out cleaning rates", () => {
     save(dialog);
     expect(
       within(dialog).getByText(
-        "Studio has Units and needs a cleaning rate. Put it in another rate first.",
+        "Studio has Parking and needs a cleaning rate. Put it in another rate first.",
       ),
     ).toBeTruthy();
     expect(api.change).not.toHaveBeenCalled();
@@ -207,7 +207,7 @@ describe("Settings: move-out cleaning rates", () => {
       "rate-small",
       {
         name_en: "Small rooms",
-        name_km: "បន្ទប់តូច",
+        name_km: "ចំណតតូច",
         rate_usd_cents: 1650,
         unit_types: ["STUDIO"],
         version: 2,
@@ -221,7 +221,7 @@ describe("Settings: move-out cleaning rates", () => {
     dialog = screen.getByRole("dialog", { name: "Remove · Large rooms" });
     expect(
       within(dialog).getByText(
-        "Two Bedroom has Units and needs a cleaning rate. Put it in another rate first.",
+        "Two Bedroom has Parking and needs a cleaning rate. Put it in another rate first.",
       ),
     ).toBeTruthy();
     expect(within(dialog).queryByRole("button", { name: "Remove" })).toBeNull();
@@ -287,7 +287,7 @@ describe("Settings: move-out cleaning rates", () => {
     const khmer = await screen.findByRole("region", {
       name: "អត្រាសម្អាតពេលចាកចេញ",
     });
-    expect(within(khmer).getByText("បន្ទប់តូច")).toBeTruthy();
+    expect(within(khmer).getByText("ចំណតតូច")).toBeTruthy();
     expect(within(khmer).getByText(/ស្ទូឌីយោ/)).toBeTruthy();
   });
 });

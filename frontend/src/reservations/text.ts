@@ -7,8 +7,8 @@ import type { Language } from "../signInText";
 
 const TEXT = {
   sub: [
-    "{0} Reservations · a Unit held for a Customer until the Lease is signed",
-    "ការកក់ {0} · បន្ទប់ដែលរក្សាទុកសម្រាប់អតិថិជន រហូតដល់ចុះហត្ថលេខាកិច្ចសន្យា",
+    "{0} Reservations · a Parking held for a Customer until the Lease is signed",
+    "ការកក់ {0} · ចំណតដែលរក្សាទុកសម្រាប់អតិថិជន រហូតដល់ចុះហត្ថលេខាកិច្ចសន្យា",
   ],
   make: ["Make Reservation", "ធ្វើការកក់"],
   loading: ["Loading the Reservations…", "កំពុងផ្ទុកការកក់…"],
@@ -24,7 +24,7 @@ const TEXT = {
     "មិនទាន់ស្គាល់អគារ ដូច្នេះមិនអាចបង្ហាញការកក់បានទេ។",
   ],
   c_active: ["Active", "កំពុងដំណើរការ"],
-  c_active_s: ["Holding a Unit now", "កំពុងរក្សាបន្ទប់ឥឡូវនេះ"],
+  c_active_s: ["Holding a Parking now", "កំពុងរក្សាចំណតឥឡូវនេះ"],
   c_ending: ["Ending within 7 days", "ផុតកំណត់ក្នុង 7 ថ្ងៃ"],
   c_ending_s: [
     "Sign the Lease or extend soon",
@@ -36,7 +36,7 @@ const TEXT = {
   c_cancelled_s: ["Cancelled or expired", "បានលុបចោល ឬផុតកំណត់"],
   showing: ["Showing: {0}.", "កំពុងបង្ហាញ៖ {0}។"],
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
-  unit: ["Unit", "បន្ទប់"],
+  unit: ["Parking", "ចំណត"],
   customer: ["Customer", "អតិថិជន"],
   reserved_on: ["Reserved on", "កក់នៅ"],
   expires: ["Expires", "ផុតកំណត់"],
@@ -53,10 +53,10 @@ const TEXT = {
   s_CANCELLED: ["Cancelled", "បានលុបចោល"],
   r_lease: ["Lease signed", "បានចុះហត្ថលេខាកិច្ចសន្យា"],
   r_expired: ["Expired", "ផុតកំណត់"],
-  r_customer: ["Customer no longer wants the Unit", "អតិថិជនលែងចង់បានបន្ទប់"],
+  r_customer: ["Customer no longer wants the Parking", "អតិថិជនលែងចង់បានចំណត"],
   r_property: [
-    "Property could not provide the Unit",
-    "អគារមិនអាចផ្តល់បន្ទប់បាន",
+    "Property could not provide the Parking",
+    "អគារមិនអាចផ្តល់ចំណតបាន",
   ],
   none: ["No Reservations match.", "គ្មានការកក់ត្រូវនឹងការជ្រើសរើសទេ។"],
   n1: ["1 Reservation", "ការកក់ 1"],
@@ -165,12 +165,12 @@ const TEXT = {
   cancel_title: ["Cancel Reservation · {0}", "លុបចោលការកក់ · {0}"],
   why: ["Why is it cancelled?", "ហេតុអ្វីលុបចោល?"],
   why_customer: [
-    "The Customer no longer wants the Unit. Under the rules the Security Deposit is kept.",
-    "អតិថិជនលែងចង់បានបន្ទប់។ តាមវិធាន ប្រាក់កក់សុវត្ថិភាពត្រូវរក្សាទុក។",
+    "The Customer no longer wants the Parking. Under the rules the Security Deposit is kept.",
+    "អតិថិជនលែងចង់បានចំណត។ តាមវិធាន ប្រាក់កក់សុវត្ថិភាពត្រូវរក្សាទុក។",
   ],
   why_property: [
-    "The Property cannot provide the Unit, and the Customer declined a later date or another Unit. Under the rules the Security Deposit is refunded.",
-    "អគារមិនអាចផ្តល់បន្ទប់បាន ហើយអតិថិជនបដិសេធកាលបរិច្ឆេទក្រោយ ឬបន្ទប់ផ្សេង។ តាមវិធាន ប្រាក់កក់សុវត្ថិភាពត្រូវសងវិញ។",
+    "The Property cannot provide the Parking, and the Customer declined a later date or another Parking. Under the rules the Security Deposit is refunded.",
+    "អគារមិនអាចផ្តល់ចំណតបាន ហើយអតិថិជនបដិសេធកាលបរិច្ឆេទក្រោយ ឬចំណតផ្សេង។ តាមវិធាន ប្រាក់កក់សុវត្ថិភាពត្រូវសងវិញ។",
   ],
   e_why: ["Choose why.", "សូមជ្រើសរើសមូលហេតុ។"],
   memo_req: ["Memo", "កំណត់ចំណាំ"],
@@ -185,8 +185,8 @@ const TEXT = {
     "សូមប្រាប់អ្វីដែលបានផ្តល់ជូនអតិថិជន។",
   ],
   cancel_effects: [
-    "The Unit goes back to Vacant at once. No money moves now: the deposit decision is recorded as a draft, and the Owner or a Manager confirms it.",
-    "បន្ទប់ត្រឡប់ទៅទំនេរភ្លាមៗ។ គ្មានប្រាក់ផ្លាស់ទីឥឡូវទេ៖ ការសម្រេចលើប្រាក់កក់ត្រូវកត់ត្រាជាសេចក្តីព្រាង ហើយម្ចាស់ ឬអ្នកគ្រប់គ្រងបញ្ជាក់វា។",
+    "The Parking goes back to Vacant at once. No money moves now: the deposit decision is recorded as a draft, and the Owner or a Manager confirms it.",
+    "ចំណតត្រឡប់ទៅទំនេរភ្លាមៗ។ គ្មានប្រាក់ផ្លាស់ទីឥឡូវទេ៖ ការសម្រេចលើប្រាក់កក់ត្រូវកត់ត្រាជាសេចក្តីព្រាង ហើយម្ចាស់ ឬអ្នកគ្រប់គ្រងបញ្ជាក់វា។",
   ],
   deposit_now: [
     "Security Deposit received: {0}",
@@ -220,9 +220,9 @@ const TEXT = {
   saved_cancel: ["The Reservation was cancelled.", "ការកក់ត្រូវបានលុបចោល។"],
   // V1-060 B6: Make Reservation in the new design (owner 27/10/2026).
   mk_title: ["Make Reservation", "ធ្វើការកក់"],
-  mk_unit: ["Unit", "បន្ទប់"],
-  mk_choose_unit: ["Choose a vacant Unit", "ជ្រើសរើសបន្ទប់ទំនេរ"],
-  mk_no_units: ["No Unit is vacant now.", "ឥឡូវនេះមិនមានបន្ទប់ទំនេរទេ។"],
+  mk_unit: ["Parking", "ចំណត"],
+  mk_choose_unit: ["Choose a vacant Parking", "ជ្រើសរើសចំណតទំនេរ"],
+  mk_no_units: ["No Parking is vacant now.", "ឥឡូវនេះមិនមានចំណតទំនេរទេ។"],
   mk_customer: ["Customer", "អតិថិជន"],
   mk_choose_customer: ["Choose a Customer", "ជ្រើសរើសអតិថិជន"],
   mk_new_customer: ["New Customer", "អតិថិជនថ្មី"],
@@ -256,7 +256,7 @@ const TEXT = {
     "More than the suggested 20% received.",
   ],
   mk_save: ["Save Reservation", "រក្សាទុកការកក់"],
-  mk_err_unit: ["Choose a Unit.", "សូមជ្រើសរើសបន្ទប់។"],
+  mk_err_unit: ["Choose a Parking.", "សូមជ្រើសរើសចំណត។"],
   mk_err_customer: ["Choose a Customer.", "សូមជ្រើសរើសអតិថិជន។"],
   mk_err_date: ["Type a real day.", "សូមវាយថ្ងៃដែលត្រឹមត្រូវ។"],
   mk_err_expires: [
@@ -290,21 +290,21 @@ const TEXT = {
     "មិនអាចអានសិទ្ធិរបស់អ្នកបានទេឥឡូវនេះ ដូច្នេះមិនអាចពិនិត្យចំនួនតិចជាងការណែនាំ {0} មុនពេលទទួលប្រាក់បានទេ។ សូមផ្ទុកទំព័រឡើងវិញ ឬទទួលយ៉ាងហោចណាស់ {0}។",
   ],
   mk_conflict: [
-    "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first). Check them, then try again.",
-    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ បន្ទប់ ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់បន្ទប់នេះមុន)។ សូមពិនិត្យពួកវា រួចព្យាយាមម្តងទៀត។",
+    "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first). Check them, then try again.",
+    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ ចំណត ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់ចំណតនេះមុន)។ សូមពិនិត្យពួកវា រួចព្យាយាមម្តងទៀត។",
   ],
   // V1-060 B7 (third review): the money is saved, so the Unit and the Customer are fixed here.
   mk_conflict_paid: [
-    "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first).",
-    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ បន្ទប់ ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់បន្ទប់នេះមុន)។",
+    "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first).",
+    "ការកក់មិនត្រូវបានរក្សាទុកទេ៖ ចំណត ឬអតិថិជនបានផ្លាស់ប្តូរក្នុងពេលនេះ (ឧទាហរណ៍ មានអ្នកផ្សេងបានកក់ចំណតនេះមុន)។",
   ],
   mk_memo: [
     "Security Deposit received with the Reservation of {0}",
     "Security Deposit received with the Reservation of {0}",
   ],
   mk_loading: [
-    "Reading the Units and Customers…",
-    "កំពុងអានបន្ទប់ និងអតិថិជន…",
+    "Reading the Parking and Customers…",
+    "កំពុងអានចំណត និងអតិថិជន…",
   ],
 } as const;
 

@@ -251,7 +251,7 @@ def test_cleaning_charge_due_date_override_and_reduction_by_credit_adjustment(
         AdjustmentType.CREDIT,
         1_000,
         "cleaning-reduction/approved",
-        "Unit was left mostly clean",
+        "Parking was left mostly clean",
         int(row[3]),
     )
     with pytest.raises(InvoiceAuthorizationError):
@@ -269,7 +269,7 @@ def test_cleaning_charge_due_date_override_and_reduction_by_credit_adjustment(
             "SELECT adjustment_type,amount_usd_cents,reason FROM app.invoice_adjustments "
             "WHERE invoice_id=%s",
             (invoice,),
-        ).fetchall() == [("CREDIT", 1_000, "Unit was left mostly clean")]
+        ).fetchall() == [("CREDIT", 1_000, "Parking was left mostly clean")]
         assert connection.execute(
             "SELECT o.authorized_amount_usd_cents,c.rate_usd_cents,l.amount_usd_cents "
             "FROM app.authorized_nonrecurring_obligations o "
@@ -373,7 +373,7 @@ def test_cleaning_rate_chain_is_linear_scoped_replay_safe_and_authorized(
             connection.execute(
                 "INSERT INTO app.unit_cleaning_rates(id,property_id,unit_id,rate_usd_cents,"
                 "supersedes_rate_id,reason,recorded_by,recorded_at,audit_event_id) "
-                "SELECT %s,%s,%s,1,%s,'Cross Unit',%s,clock_timestamp(),audit_event_id "
+                "SELECT %s,%s,%s,1,%s,'Cross Parking',%s,clock_timestamp(),audit_event_id "
                 "FROM app.unit_cleaning_rates WHERE id=%s",
                 (uuid4(), prop, other_unit, first["id"], human, first["id"]),
             )

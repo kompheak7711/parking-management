@@ -64,7 +64,7 @@ TITLES: Final[Mapping[str, str]] = {
     "credit_ledger": "Customer Credit ledger",
     "deposits": "Deposit liability and disposition",
     "final_settlements": "Final Settlement register",
-    "unit_occupancy": "Unit occupancy",
+    "unit_occupancy": "Parking occupancy",
     "lease_dates": "Lease dates",
     "audit_activity": "Audit activity",
     "audit": "Audit history",
@@ -116,7 +116,9 @@ def heading_lines(
 ) -> list[str]:
     """The lines every report shows: scope, period, when it was made and the currency."""
     scope = (
-        f"Unit {unit_number}" if unit_number else (f"Floor {floor}" if floor else "Whole Property")
+        f"Parking {unit_number}"
+        if unit_number
+        else (f"Floor {floor}" if floor else "Whole Property")
     )
     if not period_applies:
         period = f"As of {_day(generated_at.date())}"
@@ -546,7 +548,7 @@ class ExportService:
             )
         elif request.report in REGISTER_NAMES:
             if request.unit_id is not None:
-                raise ReportInvalidError("A register is filtered by floor, not by Unit")
+                raise ReportInvalidError("A register is filtered by floor, not by Parking")
             name = request.report
             register = RegisterFilter(
                 request.floor, request.from_date, request.to_date, 0, MAX_EXPORT_ROWS

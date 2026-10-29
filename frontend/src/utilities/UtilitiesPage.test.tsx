@@ -451,7 +451,7 @@ describe("Utilities page (V1-058 R4)", () => {
     expect(api.recordReading).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1062 Much less than usual in an Occupied Unit asks to check the meter first; an empty Unit is not checked", async () => {
+  it("TEST-FE-1062 Much less than usual in an Occupied Parking asks to check the meter first; an empty Parking is not checked", async () => {
     const { api } = show();
     await screen.findByText("1 of 6 meters read");
     // Usual use is 100 kWh; 20 kWh is less than a third of it.
@@ -572,7 +572,7 @@ describe("Utilities page (V1-058 R4)", () => {
       .getAllByRole("columnheader")
       .map((cell) => cell.textContent);
     expect(heads).toEqual([
-      "Unit",
+      "Parking",
       "October 2026",
       "September 2026",
       "August 2026",
@@ -596,7 +596,7 @@ describe("Utilities page (V1-058 R4)", () => {
       within(water)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Unit", "September 2026", "August 2026"]);
+    ).toEqual(["Parking", "September 2026", "August 2026"]);
     const waterRow = within(water)
       .getByRole("rowheader", { name: /U201/ })
       .closest("tr");
@@ -612,11 +612,11 @@ describe("Utilities page (V1-058 R4)", () => {
     ).toBe("40");
   });
 
-  it("TEST-FE-879 The Unit box takes U201, u201 or 201, shows that Unit's readings with the meter on each line, and names a Unit that does not exist", async () => {
+  it("TEST-FE-879 The Parking box takes U201, u201 or 201, shows that Parking's readings with the meter on each line, and names a Parking that does not exist", async () => {
     show({ today: "2026-10-10" });
     await screen.findByText(/Reading day is 24\/10\/2026/);
     fireEvent.click(screen.getByRole("button", { name: "All" }));
-    const box = screen.getByLabelText("Unit");
+    const box = screen.getByLabelText("Parking");
     fireEvent.change(box, { target: { value: "201" } });
     fireEvent.submit(box);
     expect(screen.getAllByText("EL-OLD-201")).toHaveLength(2);
@@ -629,12 +629,12 @@ describe("Utilities page (V1-058 R4)", () => {
     fireEvent.blur(box);
     expect(
       screen.getByText(
-        'No Unit "u999". Type a Unit number such as U101, or clear the box to see all Units.',
+        'No Parking "u999". Type a Parking number such as U101, or clear the box to see all Parking.',
       ),
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "All Units" }));
-    expect(screen.queryByText(/No Unit/)).toBeNull();
-    expect(screen.getByRole("columnheader", { name: "Unit" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "All Parking" }));
+    expect(screen.queryByText(/No Parking/)).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "Parking" })).toBeTruthy();
   });
 
   it("TEST-FE-880 A person who may not record readings sees no Save; a broken meter cannot be read and points to Replace meter; the Meters tab has its own address", async () => {
@@ -725,7 +725,7 @@ describe("Utilities page (V1-058 R4)", () => {
     expect(keys[2]).not.toBe(keys[3]);
   });
 
-  it("TEST-FE-882 A Unit whose readings cannot be read is named and the list is never called done without it; the Unit box waits while U10 may still become U101", async () => {
+  it("TEST-FE-882 A Parking whose readings cannot be read is named and the list is never called done without it; the Parking box waits while U10 may still become U101", async () => {
     const api = utilityApi({
       loadReadings: vi.fn((meterId: string) =>
         meterId === "wa-201"
@@ -771,11 +771,11 @@ describe("Utilities page (V1-058 R4)", () => {
       />,
     );
     await screen.findByText(/Reading day is/);
-    const box = screen.getByLabelText("Unit");
+    const box = screen.getByLabelText("Parking");
     fireEvent.change(box, { target: { value: "U10" } });
-    expect(screen.queryByRole("button", { name: "All Units" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "All Parking" })).toBeNull();
     fireEvent.change(box, { target: { value: "U101" } });
-    expect(screen.getByRole("button", { name: "All Units" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "All Parking" })).toBeTruthy();
   });
 });
 
@@ -784,12 +784,12 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     window.location.hash = hash;
   }
 
-  it("TEST-FE-883 The Meters list counts the meters in use, shows replaced meters last, and filters by card, status and Unit", async () => {
+  it("TEST-FE-883 The Meters list counts the meters in use, shows replaced meters last, and filters by card, status and Parking", async () => {
     openMeters();
     show();
     expect(
       await screen.findByRole("button", {
-        name: "Electricity meters: 3. In use, one per Unit · All working",
+        name: "Electricity meters: 3. In use, one per Parking · All working",
       }),
     ).toBeTruthy();
     expect(
@@ -826,13 +826,13 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     fireEvent.change(screen.getByLabelText("Status"), {
       target: { value: "all" },
     });
-    fireEvent.change(screen.getByLabelText("Unit"), {
+    fireEvent.change(screen.getByLabelText("Parking"), {
       target: { value: "U102" },
     });
     expect(serials()).toEqual(["EL-U102", "WA-U102"]);
   });
 
-  it("TEST-FE-884 Add meter does not offer a Unit that has a working meter of the kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
+  it("TEST-FE-884 Add meter does not offer a Parking that has a working meter of the kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
     openMeters();
     const installMeter = vi
       .fn()
@@ -844,15 +844,17 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     // V1-060 B6: a Unit with a working electricity meter (U101, U102, U201) is not offered.
     expect(
       [
-        ...within(dialog).getByLabelText(/^Unit/).querySelectorAll("option"),
+        ...within(dialog)
+          .getByLabelText(/^Parking/)
+          .querySelectorAll("option"),
       ].map((option) => option.textContent),
-    ).toEqual(["Choose a Unit", "U301"]);
+    ).toEqual(["Choose a Parking", "U301"]);
     fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
       target: { value: "EL-U101-B" },
     });
     expect(installMeter).not.toHaveBeenCalled();
 
-    fireEvent.change(within(dialog).getByLabelText(/^Unit/), {
+    fireEvent.change(within(dialog).getByLabelText(/^Parking/), {
       target: { value: "unit-U301" },
     });
     expect(
@@ -893,35 +895,36 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     });
   });
 
-  it("TEST-FE-1061 Add meter offers only Units without a current meter of the chosen kind, clears a Unit that has the newly chosen kind, and says to use Replace meter when no Unit is left", async () => {
+  it("TEST-FE-1061 Add meter offers only Parking without a current meter of the chosen kind, clears a Parking that has the newly chosen kind, and says to use Replace meter when no Parking is left", async () => {
     openMeters();
     show({
       api: utilityApi({}, [...meters(), meter("wa-301", "U301", "WATER")]),
     });
     fireEvent.click(await screen.findByRole("button", { name: /Add meter/ }));
     const dialog = screen.getByRole("dialog");
-    const unitBox = within(dialog).getByLabelText<HTMLSelectElement>(/^Unit/);
+    const unitBox =
+      within(dialog).getByLabelText<HTMLSelectElement>(/^Parking/);
     const offered = () =>
       [...unitBox.querySelectorAll("option")].map(
         (option) => option.textContent,
       );
-    expect(offered()).toEqual(["Choose a Unit", "U301"]);
+    expect(offered()).toEqual(["Choose a Parking", "U301"]);
     fireEvent.change(unitBox, { target: { value: "unit-U301" } });
     expect(unitBox.value).toBe("unit-U301");
 
     // U301 already has a water meter: it is no longer offered and the choice is cleared.
     fireEvent.click(within(dialog).getByLabelText("Water"));
-    expect(offered()).toEqual(["Choose a Unit"]);
+    expect(offered()).toEqual(["Choose a Parking"]);
     expect(unitBox.value).toBe("");
     expect(
       within(dialog).getByText(
-        "Every Unit already has a water meter. To change a broken meter, open it and choose Replace meter.",
+        "Every Parking already has a water meter. To change a broken meter, open it and choose Replace meter.",
       ),
     ).toBeTruthy();
     expect(unitBox.getAttribute("aria-describedby")).toBe("add-unit-none");
 
     fireEvent.click(within(dialog).getByLabelText("Electricity"));
-    expect(offered()).toEqual(["Choose a Unit", "U301"]);
+    expect(offered()).toEqual(["Choose a Parking", "U301"]);
     expect(unitBox.getAttribute("aria-describedby")).toBeNull();
   });
 
@@ -1320,7 +1323,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
     // Nothing chosen: the cursor goes to the Unit and its error is linked to it.
-    const unitBox = within(dialog).getByLabelText(/^Unit/);
+    const unitBox = within(dialog).getByLabelText(/^Parking/);
     expect(unitBox.getAttribute("aria-describedby")).toBe("add-unit-err");
     await waitFor(() => {
       expect(document.activeElement).toBe(unitBox);
@@ -1356,7 +1359,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
 });
 
 describe("Utilities Import readings (V1-058 R4c)", () => {
-  it("TEST-FE-890 Import opens from the reading list, downloads the blank file with every Unit, asks for a file, and sends the chosen file to be read", async () => {
+  it("TEST-FE-890 Import opens from the reading list, downloads the blank file with every Parking, asks for a file, and sends the chosen file to be read", async () => {
     const blob = new Blob(["xlsx"]);
     const blankSheet = vi.fn().mockResolvedValue(blob);
     const readSheet = vi.fn().mockResolvedValue({
@@ -1408,20 +1411,20 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
     expect(fileBox.getAttribute("aria-describedby")).toBe("im-file-err");
 
     fireEvent.change(fileBox, {
-      target: { files: [new File(["Unit,Meter\n"], "readings.csv")] },
+      target: { files: [new File(["Parking,Meter\n"], "readings.csv")] },
     });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Check the file" }),
     );
     expect(
       await within(dialog).findByText(
-        "The first row needs the three column names Unit, Electricity and Water.",
+        "The first row needs the three column names Parking, Electricity and Water.",
       ),
     ).toBeTruthy();
     expect(readSheet).toHaveBeenCalledWith(
       "property-1",
       "readings.csv",
-      btoa("Unit,Meter\n"),
+      btoa("Parking,Meter\n"),
     );
     click.mockRestore();
     vi.unstubAllGlobals();
@@ -1476,7 +1479,7 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
       "Lower than previous",
       "Already saved this month: 330",
       "Empty. Type the reading.",
-      "There is no Unit U999.",
+      "There is no Parking U999.",
     ]) {
       expect(within(dialog).getByText(text)).toBeTruthy();
     }
@@ -1611,7 +1614,7 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
     expect(within(dialog).getByText("Empty. Type the reading.")).toBeTruthy();
     expect(
       within(dialog).getByText(
-        "This Unit has no electricity meter. A Manager adds it on the Meters tab.",
+        "This Parking has no electricity meter. A Manager adds it on the Meters tab.",
       ),
     ).toBeTruthy();
     expect(within(dialog).getAllByRole("row")).toHaveLength(4);
@@ -1627,7 +1630,7 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
     expect(screen.queryByRole("button", { name: /^Import/ })).toBeNull();
   });
 
-  it("TEST-FE-1063 Import marks a reading much less than usual in an Occupied Unit as ready with a check note", async () => {
+  it("TEST-FE-1063 Import marks a reading much less than usual in an Occupied Parking as ready with a check note", async () => {
     show({
       api: utilityApi({
         readSheet: sheetOf([

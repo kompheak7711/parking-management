@@ -162,7 +162,7 @@ export function InvoiceDocument({
         </div>
         <div>
           <div className="v">
-            {unit !== "" ? `Unit ${unit}` : ""}
+            {unit !== "" ? `Parking ${unit}` : ""}
             {period !== null && <small>{period}</small>}
           </div>
         </div>

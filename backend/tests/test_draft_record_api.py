@@ -160,7 +160,7 @@ BODY: dict[str, dict[str, str]] = {
     RETURN: {"reason": "The transfer came back", "evidence_reference": "ABA return notice 4471"},
     MOVE: {
         "target_invoice_id": str(uuid4()),
-        "reason": "Paid for Unit 204 by mistake",
+        "reason": "Paid for Parking 204 by mistake",
         "source_acknowledgement": "Sokha, by phone, 24/10",
         "target_acknowledgement": "Dara, in person, 24/10",
     },

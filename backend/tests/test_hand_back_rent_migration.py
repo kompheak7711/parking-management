@@ -377,7 +377,11 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
         assessment
     )
     request = ResolveHandBackRentCommand(
-        uuid4(), "VOID", 81_000, "Customer handed back the Unit on 3 August", version(url, august)
+        uuid4(),
+        "VOID",
+        81_000,
+        "Customer handed back the Parking on 3 August",
+        version(url, august),
     )
     with pytest.raises(InvoiceAuthorizationError):
         invoices().resolve_hand_back_rent(
@@ -416,7 +420,9 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
         void_event = connection.execute(
             "SELECT id,reason FROM app.invoice_void_events WHERE invoice_id=%s", (august,)
         ).fetchall()
-        assert [reason for _, reason in void_event] == ["Customer handed back the Unit on 3 August"]
+        assert [reason for _, reason in void_event] == [
+            "Customer handed back the Parking on 3 August"
+        ]
         resolution = connection.execute(
             "SELECT physical_move_out_event_id,hand_back_date,coverage,action,"
             "authorization_reference,expected_outstanding_usd_cents,invoice_void_event_id,"
@@ -442,7 +448,7 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
             "invoice.hand_back_rent.resolved",
             "invoices.void",
             august,
-            "Customer handed back the Unit on 3 August",
+            "Customer handed back the Parking on 3 August",
         )
     assert lines(url, august) == original
     for statement in (

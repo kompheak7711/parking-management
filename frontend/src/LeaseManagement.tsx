@@ -447,7 +447,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
     )
       return;
     command(
-      "Revalidating parties, terms, and non-overlapping Unit periods…",
+      "Revalidating parties, terms, and non-overlapping Parking periods…",
       () =>
         api.sign(
           selected,
@@ -579,7 +579,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           },
           retry.key,
         ),
-      "Lease terminated for an unpaid Initial obligation. Resolve the Security Deposit, Invoice and Unit explicitly below; nothing was changed automatically.",
+      "Lease terminated for an unpaid Initial obligation. Resolve the Security Deposit, Invoice and Parking explicitly below; nothing was changed automatically.",
       () => {
         attempts.current.delete("terminate-unpaid-initial");
         setFollowUp(null);
@@ -602,14 +602,14 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
     const unitReason = formString(data, "follow-up-unit-reason");
     if (!terminationEvent || !reason || (cleaning && !unitReason)) {
       setNotice(
-        "Enter the termination event, the reason and, for CLEANING, the Unit reason.",
+        "Enter the termination event, the reason and, for CLEANING, the Parking reason.",
       );
       return;
     }
     if (
       !window.confirm(
         name === "never-moved-in"
-          ? "VOID or credit the Initial Rent Invoice and release the Unit? The Security Deposit stays held until a forfeiture draft is confirmed. This cannot be edited afterwards."
+          ? "VOID or credit the Initial Rent Invoice and release the Parking? The Security Deposit stays held until a forfeiture draft is confirmed. This cannot be edited afterwards."
           : "Credit the Initial Rent for the days after the termination date? This cannot be edited afterwards.",
       )
     )
@@ -670,7 +670,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
     const data = new FormData(event.currentTarget);
     if (
       !window.confirm(
-        "Complete the coordinated Reservation, Lease, Unit, and Occupancy transition?",
+        "Complete the coordinated Reservation, Lease, Parking, and Occupancy transition?",
       )
     ) {
       return;
@@ -703,7 +703,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
       .then((result) => {
         if (operation !== sequence.current) return;
         setNotice(
-          `Move-in completed atomically. Reservation version ${String(result.reservation_version)}, Unit version ${String(result.unit_version)}, and Deposit ${result.deposit_id} remain linked.`,
+          `Move-in completed atomically. Reservation version ${String(result.reservation_version)}, Parking version ${String(result.unit_version)}, and Deposit ${result.deposit_id} remain linked.`,
         );
       })
       .catch((error: unknown) => {
@@ -748,7 +748,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           </select>
         </label>
         <label>
-          Unit identifier
+          Parking identifier
           <input name="unit-id" />
         </label>
         <label>
@@ -795,7 +795,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           <thead>
             <tr>
               <th>Status</th>
-              <th>Unit</th>
+              <th>Parking</th>
               <th>Primary Tenant</th>
               <th>Period</th>
               <th>Rent</th>
@@ -847,7 +847,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
         <form className="form-stack" onSubmit={create}>
           <h3>Create Lease draft</h3>
           <label>
-            Unit identifier
+            Parking identifier
             <input name="unit-id" required />
           </label>
           <label>
@@ -1085,7 +1085,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
             <dd>
               {selected.status}, version {selected.version}
             </dd>
-            <dt>Unit</dt>
+            <dt>Parking</dt>
             <dd>
               {selected.unit_number} ({selected.unit_id})
             </dd>
@@ -1236,10 +1236,11 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
             <form className="form-stack confirmation-panel" onSubmit={sign}>
               <h4>Pre-signing summary</h4>
               <p>
-                {selected.signers.length} Signer(s); Unit {selected.unit_number}
-                ; {selected.start_date}–{selected.end_date};{" "}
-                {money(selected.monthly_rent_usd_cents)} monthly. The server
-                rechecks required parties, source terms, and non-overlap.
+                {selected.signers.length} Signer(s); Parking{" "}
+                {selected.unit_number}; {selected.start_date}–
+                {selected.end_date}; {money(selected.monthly_rent_usd_cents)}{" "}
+                monthly. The server rechecks required parties, source terms, and
+                non-overlap.
               </p>
               <label>
                 Signing reason and evidence
@@ -1317,7 +1318,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
               <ul>
                 <li>Lease is SIGNED.</li>
                 <li>
-                  Reservation and Unit identities and versions will be
+                  Reservation and Parking identities and versions will be
                   server-validated.
                 </li>
                 <li>
@@ -1340,7 +1341,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                 />
               </label>
               <label>
-                Unit version
+                Parking version
                 <input min="1" name="unit-version" required type="number" />
               </label>
               <label>
@@ -1489,9 +1490,9 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                 <h5>Customer never moved in</h5>
                 <p>
                   VOIDs the Initial Rent Invoice when nothing was applied or
-                  credits its unpaid lines, and releases the Unit. The Security
-                  Deposit stays held until a forfeiture draft under BR-LEASE-005
-                  is confirmed by a financial.approve holder.
+                  credits its unpaid lines, and releases the Parking. The
+                  Security Deposit stays held until a forfeiture draft under
+                  BR-LEASE-005 is confirmed by a financial.approve holder.
                 </p>
                 <label>
                   Termination event identifier
@@ -1502,14 +1503,14 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                   />
                 </label>
                 <label>
-                  Unit after release
+                  Parking after release
                   <select name="follow-up-unit">
                     <option value="VACANT">VACANT</option>
                     <option value="CLEANING">CLEANING</option>
                   </select>
                 </label>
                 <label>
-                  Unit status reason (required for CLEANING)
+                  Parking status reason (required for CLEANING)
                   <input maxLength={500} name="follow-up-unit-reason" />
                 </label>
                 <label>
@@ -1558,7 +1559,7 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                       : "Moved in"}
                     : credit {money(followUp.credit_usd_cents)}
                     {followUp.resulting_unit_status !== null &&
-                      `; Unit ${followUp.resulting_unit_status}`}
+                      `; Parking ${followUp.resulting_unit_status}`}
                     {followUp.invoice_void_event_id !== null &&
                       "; Initial Rent Invoice VOIDED"}
                     {followUp.deposit_disposition_id !== null &&

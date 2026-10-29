@@ -742,7 +742,7 @@ def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> 
     flow = InMemoryLeaseFlow({draft.lease_id: draft, signed.lease_id: signed})
     cancel_path = f"/api/v1/leases/{draft.lease_id}/cancel"
     move_in_path = f"/api/v1/leases/{signed.lease_id}/move-in"
-    cancel_body = {"event_id": str(uuid4()), "reason": "Customer chose another Unit"}
+    cancel_body = {"event_id": str(uuid4()), "reason": "Customer chose another Parking"}
     occupant_id = uuid4()
     occupancy_id = uuid4()
     move_in_body = {
@@ -771,7 +771,7 @@ def test_cancel_draft_and_lease_move_in_routes_need_capability_and_version() -> 
     assert cancelled.headers["etag"] == '"2"'
     assert flow.cancel_command is not None
     assert flow.cancel_command.expected_version == 1
-    assert flow.cancel_command.reason == "Customer chose another Unit"
+    assert flow.cancel_command.reason == "Customer chose another Parking"
     assert flow.cancel_command.authorization_reference == "leases.draft"
     assert moved_in.status_code == 200, moved_in.text
     assert moved_in.headers["etag"] == '"3"'

@@ -331,7 +331,7 @@ class ReportService:
         if chosen.unit_id is not None and all(
             str(unit["id"]) != str(chosen.unit_id) for unit in units
         ):
-            raise ReportInvalidError("Unknown Unit")
+            raise ReportInvalidError("Unknown Parking")
         return build_totals(report, facts, units, chosen)
 
     def register(

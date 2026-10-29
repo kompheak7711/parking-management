@@ -193,7 +193,7 @@ def test_a_charge_reduction_and_its_adjustment_reversal_are_recorded_over_http(
         {
             "allocation_id": str(uuid4()),
             "target_invoice_id": str(invoice),
-            "reason": "The money was for another Unit",
+            "reason": "The money was for another Parking",
             "source_acknowledgement": "The Customer agreed on 2026-10-24",
             "target_acknowledgement": "The other Customer agreed on 2026-10-24",
         },

@@ -38,7 +38,7 @@ function summaryCard(): HTMLElement {
 }
 
 describe("Registers", () => {
-  it("TEST-FE-1043 Invoice register: the Summary gives issued, paid, settled another way and still owed with the void count, the overdue groups 1 to 19, 20 to 29 and 30 days or more, and the chart by issue month; every Invoice, Customer and Unit links to its page and the footer adds up the amounts", async () => {
+  it("TEST-FE-1043 Invoice register: the Summary gives issued, paid, settled another way and still owed with the void count, the overdue groups 1 to 19, 20 to 29 and 30 days or more, and the chart by issue month; every Invoice, Customer and Parking links to its page and the footer adds up the amounts", async () => {
     const page = openReports({ hash: "#/reports/invoice_register" });
     const table = await screen.findByRole("table", {
       name: "Invoice register and balances",
@@ -72,7 +72,7 @@ describe("Registers", () => {
     expect(headRow(table)).toEqual([
       "Invoice No.",
       "Customer",
-      "Unit",
+      "Parking",
       "Type",
       "Issued on",
       "Due date",
@@ -339,13 +339,13 @@ describe("Registers", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-1046 Utility consumption: one line for each Unit and reading period with kWh and m³ side by side, estimates and amounts not billed yet marked; the Summary splits by kind with the Utility Rates; without the money right there are no amounts and no Rates", async () => {
+  it("TEST-FE-1046 Utility consumption: one line for each Parking and reading period with kWh and m³ side by side, estimates and amounts not billed yet marked; the Summary splits by kind with the Utility Rates; without the money right there are no amounts and no Rates", async () => {
     openReports({ hash: "#/reports/utility_consumption" });
     const table = await screen.findByRole("table", {
       name: "Utility consumption",
     });
     expect(headRow(table)).toEqual([
-      "Unit",
+      "Parking",
       "Period",
       "kWh",
       "Electricity",
@@ -410,7 +410,7 @@ describe("Registers", () => {
     const plain = await screen.findByRole("table", {
       name: "Utility consumption",
     });
-    expect(headRow(plain)).toEqual(["Unit", "Period", "kWh", "m³"]);
+    expect(headRow(plain)).toEqual(["Parking", "Period", "kWh", "m³"]);
     expect(bodyRows(plain)).toEqual([
       ["U101", "25/08/2026 – 24/09/2026", "180", "4.5"],
       ["U203", "25/09/2026 – 24/10/2026", "1,210.5Estimate", NONE],
@@ -536,12 +536,14 @@ describe("Registers", () => {
     );
   });
 
-  it("TEST-FE-1048 Unit occupancy lists every Unit with its Unit Type, status, Customer, Lease or Reservation, Monthly Rent and Until, counts the Units by status, and has no Monthly Rent without the money right", async () => {
+  it("TEST-FE-1048 Parking occupancy lists every Parking with its Parking Type, status, Customer, Lease or Reservation, Monthly Rent and Until, counts the Parking by status, and has no Monthly Rent without the money right", async () => {
     openReports({ hash: "#/reports/unit_occupancy" });
-    const table = await screen.findByRole("table", { name: "Unit occupancy" });
+    const table = await screen.findByRole("table", {
+      name: "Parking occupancy",
+    });
     expect(headRow(table)).toEqual([
-      "Unit",
-      "Unit Type",
+      "Parking",
+      "Parking Type",
       "Status",
       "Customer",
       "Lease",
@@ -574,16 +576,16 @@ describe("Registers", () => {
       ["U204", "ONE_BED", "Vacant", NONE, NONE, "$400.00", NONE],
       ["U302", "Studio", "Under maintenance", NONE, NONE, NONE, NONE],
     ]);
-    expect(footRow(table)).toEqual(["Total", "4 Units", "", "", "", "", ""]);
+    expect(footRow(table)).toEqual(["Total", "4 Parking", "", "", "", "", ""]);
     const summary = summaryCard();
     expect(facts(summary)).toEqual([
-      ["Units", "4"],
+      ["Parking", "4"],
       ["Occupied", "1"],
       ["Reserved", "1"],
       ["Vacant", "1"],
       ["Not available", "1"],
     ]);
-    expect(barRows(summary, "Units by status")).toEqual([
+    expect(barRows(summary, "Parking by status")).toEqual([
       ["Occupied", "1"],
       ["Reserved", "1"],
       ["Vacant", "1"],
@@ -615,23 +617,25 @@ describe("Registers", () => {
           }),
         }),
     });
-    const plain = await screen.findByRole("table", { name: "Unit occupancy" });
+    const plain = await screen.findByRole("table", {
+      name: "Parking occupancy",
+    });
     expect(headRow(plain)).toEqual([
-      "Unit",
-      "Unit Type",
+      "Parking",
+      "Parking Type",
       "Status",
       "Customer",
       "Lease",
       "Until",
     ]);
-    expect(footRow(plain)).toEqual(["Total", "4 Units", "", "", "", ""]);
+    expect(footRow(plain)).toEqual(["Total", "4 Parking", "", "", "", ""]);
   });
 
-  it("TEST-FE-1049 Lease dates: each Lease is named by its Unit and opens the Lease; a Lease ending within 60 days shows the days left, an early end and a drafted renewal are shown; the Summary counts current, ending, no renewal and terminated", async () => {
+  it("TEST-FE-1049 Lease dates: each Lease is named by its Parking and opens the Lease; a Lease ending within 60 days shows the days left, an early end and a drafted renewal are shown; the Summary counts current, ending, no renewal and terminated", async () => {
     openReports({ hash: "#/reports/lease_dates" });
     const table = await screen.findByRole("table", { name: "Lease dates" });
     expect(headRow(table)).toEqual([
-      "Unit",
+      "Parking",
       "Customer",
       "Start Date",
       "End Date",
@@ -734,7 +738,7 @@ describe("Registers", () => {
     ).toEqual([
       ["Invoice", "25"],
       ["Payment", "10"],
-      ["Unit", "7"],
+      ["Parking", "7"],
     ]);
     expect(
       within(summary).getByRole("button", { name: "27/10/2026, 30" }),
@@ -749,7 +753,7 @@ describe("Registers", () => {
     ).toHaveAttribute("href", hashForPage("history"));
   });
 
-  it("TEST-FE-1051 the Customer Credit ledger links each Credit to its Customer, Unit and Receipt and adds up Credit, used, refunded, reversed and left; the Final Settlement register names each by its Unit, opens the Final Settlement and shows open and closed", async () => {
+  it("TEST-FE-1051 the Customer Credit ledger links each Credit to its Customer, Parking and Receipt and adds up Credit, used, refunded, reversed and left; the Final Settlement register names each by its Parking, opens the Final Settlement and shows open and closed", async () => {
     openReports({ hash: "#/reports/credit_ledger" });
     const credits = await screen.findByRole("table", {
       name: "Customer Credit ledger",

@@ -75,8 +75,8 @@ INTERNAL = (
     "app.validate_moved_credit_reversal()",
 )
 MOVE_REASON = "Wrong-Unit Payment move confirmed (BR-PAY-042)"
-SOURCE_ACK = "Sok Dara (Unit 203), 2026-10-04, in person at the office"
-TARGET_ACK = "Chea Vanna (Unit 201), 2026-10-04, by telephone"
+SOURCE_ACK = "Sok Dara (Parking 203), 2026-10-04, in person at the office"
+TARGET_ACK = "Chea Vanna (Parking 201), 2026-10-04, by telephone"
 
 
 @dataclass(frozen=True)
@@ -211,7 +211,7 @@ def move(case: WrongAllocation, **changes: Any) -> RecordPaymentMoveCommand:
         "idempotency_key": uuid4(),
         "allocation_id": case.allocation,
         "target_invoice_id": case.invoice_right,
-        "reason": "Paid on Unit 203 by mistake; meant for Unit 201",
+        "reason": "Paid on Parking 203 by mistake; meant for Parking 201",
         "source_acknowledgement": SOURCE_ACK,
         "target_acknowledgement": TARGET_ACK,
         **changes,
@@ -303,7 +303,7 @@ def test_wrong_unit_move_is_a_draft_until_an_approver_confirms(
     ) == [
         (
             case.approver,
-            "Paid on Unit 203 by mistake; meant for Unit 201",
+            "Paid on Parking 203 by mistake; meant for Parking 201",
             "payments.allocations.reverse",
         )
     ]
@@ -657,7 +657,7 @@ def test_already_reversed_allocation_moves_while_the_payment_holds_its_value(
     case = wrong_allocation(url)
     staff = preparer(case)
     reversal = allocations().reverse_allocation(
-        case.prop, case.allocation, ReverseAllocationCommand(uuid4(), "Wrong Unit"), actor=staff
+        case.prop, case.allocation, ReverseAllocationCommand(uuid4(), "Wrong Parking"), actor=staff
     )
     draft = moves().record(case.prop, move(case), actor=staff)
     assert cast(dict[str, Any], draft["payload"])["source"]["source_reversed"] is True
@@ -842,7 +842,7 @@ def test_late_payment_charge_allocation_does_not_move(
         moves().record(
             prop,
             RecordPaymentMoveCommand(
-                uuid4(), allocation_ids(posted)[0], target, "Wrong Unit", SOURCE_ACK, TARGET_ACK
+                uuid4(), allocation_ids(posted)[0], target, "Wrong Parking", SOURCE_ACK, TARGET_ACK
             ),
             actor=person(human, prop, "payments.allocations.reverse"),
         )
@@ -888,7 +888,7 @@ def test_one_customer_two_unit_one_call_path_stays_an_ordinary_correction(
     allocations().reverse_allocation(
         case.prop,
         case.allocation,
-        ReverseAllocationCommand(uuid4(), "Meant for the other Unit"),
+        ReverseAllocationCommand(uuid4(), "Meant for the other Parking"),
         actor=staff,
     )
     allocations().post(
@@ -910,7 +910,7 @@ def test_database_guards_need_a_confirmed_move_and_keep_moves_append_only(
     case = wrong_allocation(url)
     staff = preparer(case)
     allocations().reverse_allocation(
-        case.prop, case.allocation, ReverseAllocationCommand(uuid4(), "Wrong Unit"), actor=staff
+        case.prop, case.allocation, ReverseAllocationCommand(uuid4(), "Wrong Parking"), actor=staff
     )
     # Even the database owner cannot post a WRONG_UNIT_MOVE allocation without a confirmed move.
     with psycopg.connect(url) as connection:
@@ -1334,7 +1334,10 @@ def test_normal_payment_identified_invoice_moves_only_through_a_draft(
         allocations().post(prop, payment, designated(first, first_line, 80_000), actor=staff)
     )[0]
     allocations().reverse_allocation(
-        prop, allocation, ReverseAllocationCommand(uuid4(), "Meant for the other Unit"), actor=staff
+        prop,
+        allocation,
+        ReverseAllocationCommand(uuid4(), "Meant for the other Parking"),
+        actor=staff,
     )
     # The Payment names the first Invoice, so an ordinary allocation to the other Unit's Invoice
     # is refused even for the same Customer (identified intent, BR-PAY-025 amendment).
@@ -1344,7 +1347,7 @@ def test_normal_payment_identified_invoice_moves_only_through_a_draft(
     draft = moves().record(
         prop,
         RecordPaymentMoveCommand(
-            uuid4(), allocation, second, "Meant for the other Unit", SOURCE_ACK, TARGET_ACK
+            uuid4(), allocation, second, "Meant for the other Parking", SOURCE_ACK, TARGET_ACK
         ),
         actor=staff,
     )

@@ -402,7 +402,7 @@ describe("V1-058 R5c-3 Receipt page", () => {
 
     const sheet = screen.getByRole("article");
     expect(within(sheet).getByText("Lim Sophal")).toBeInTheDocument();
-    expect(within(sheet).getByText("Unit U204")).toBeInTheDocument();
+    expect(within(sheet).getByText("Parking U204")).toBeInTheDocument();
     // No Payer note on the paper: the Paid for lines say what the money paid (owner, 28/10/2026).
     expect(within(sheet).queryByText("Payer note")).toBeNull();
     expect(within(sheet).queryByText("INV260007, INV260009")).toBeNull();

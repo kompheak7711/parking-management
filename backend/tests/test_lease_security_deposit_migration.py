@@ -261,7 +261,7 @@ def refund_reservation(case: dict[str, Any]) -> UUID:
             uuid4(),
             reservation,
             refund,
-            "Property could not provide the Unit",
+            "Property could not provide the Parking",
             RefundMethodChoice(cash_method_id(prop, human), "Cash handed over at the office"),
         ),
         actor=person(human, prop, "reservation_deposits.refund"),
@@ -638,7 +638,7 @@ def test_dl_009_keeps_or_refunds_all_security_deposit_money_paid_before_signing(
             uuid4(),
             refunded["reservation"],
             refund,
-            "Property could not provide the Unit",
+            "Property could not provide the Parking",
             RefundMethodChoice(cash_method_id(prop, human), "Cash handed over at the office"),
         ),
         actor=person(human, prop, "reservation_deposits.refund"),
@@ -683,7 +683,9 @@ def test_dl_009_keeps_or_refunds_all_security_deposit_money_paid_before_signing(
         35_000,
         DepositOutcomeState.AWAITING_DECISION,
     )
-    outcome = forfeit(human, prop, reservation, "Reservation expired while the Unit was available")
+    outcome = forfeit(
+        human, prop, reservation, "Reservation expired while the Parking was available"
+    )
     assert value(url, DISPOSED, outcome) == 35_000
     assert held(url, deposit) == 0
 

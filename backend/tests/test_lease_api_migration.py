@@ -768,7 +768,7 @@ def test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft(
     cancelled = client.post(
         f"/api/v1/leases/{other['lease_id']}/cancel",
         headers=headers(int(str(other["version"]))),
-        json={"event_id": str(uuid4()), "reason": "Customer chose another Unit"},
+        json={"event_id": str(uuid4()), "reason": "Customer chose another Parking"},
     )
     assert cancelled.status_code == 200, cancelled.text
     assert cancelled.json()["data"]["status"] == "CANCELLED"

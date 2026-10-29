@@ -178,7 +178,7 @@ const rowLabels = () =>
     .map((row) => row.querySelector("b")?.textContent);
 
 describe("Waiting for approval", () => {
-  it("TEST-FE-932 shows the four cards, the waiting drafts oldest first with their names, Unit, Customer, preparer and amount, the cards filter the list, and what was decided today", async () => {
+  it("TEST-FE-932 shows the four cards, the waiting drafts oldest first with their names, Parking, Customer, preparer and amount, the cards filter the list, and what was decided today", async () => {
     const { api } = show(() => Promise.resolve(PAGE));
     expect(await screen.findByText("Refund: Reservation Deposit")).toBeTruthy();
     expect(api.waiting).toHaveBeenCalledWith("property-1");
@@ -200,7 +200,7 @@ describe("Waiting for approval", () => {
     expect(rowLabels()).toEqual([
       "Refund: Reservation Deposit",
       "Keep: Security Deposit",
-      "Move payment to the right Unit",
+      "Move payment to the right Parking",
       "Correction: extra charge",
     ]);
     const first = screen.getAllByRole("row")[1];
@@ -325,7 +325,7 @@ describe("Waiting for approval", () => {
     });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Move payment to the right Unit",
+        name: "Open: Move payment to the right Parking",
       }),
     );
     const dialog = screen.getByRole("dialog");
@@ -358,7 +358,7 @@ describe("Waiting for approval", () => {
     fireEvent.click(within(withdraw).getByRole("button", { name: "Withdraw" }));
     expect(
       await screen.findByText(
-        "Move payment to the right Unit withdrawn. No money moved.",
+        "Move payment to the right Parking withdrawn. No money moved.",
       ),
     ).toBeTruthy();
     const calls = withdrawDraft.mock.calls as unknown[][];

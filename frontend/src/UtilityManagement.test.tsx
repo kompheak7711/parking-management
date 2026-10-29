@@ -127,7 +127,7 @@ function api(): UtilityApi {
 
 async function loadWorkspace(client: UtilityApi) {
   render(<UtilityManagement api={client} propertyId={propertyId} />);
-  fireEvent.change(screen.getByLabelText("Unit identifier"), {
+  fireEvent.change(screen.getByLabelText("Parking identifier"), {
     target: { value: unitId },
   });
   fireEvent.click(

@@ -22,7 +22,7 @@ const TEXT = {
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
 
-  k_occ: ["Units occupied", "បន្ទប់មានអ្នកជួល"],
+  k_occ: ["Parking occupied", "ចំណតមានអ្នកជួល"],
   k_occ_s: ["{0} reserved · {1} vacant", "បានកក់ {0} · ទំនេរ {1}"],
   k_pend: ["Pending payment", "ប្រាក់មិនទាន់បង់"],
   k_pend_s: ["{0} Invoices not fully paid", "វិក្កយបត្រ {0} មិនទាន់បង់គ្រប់"],

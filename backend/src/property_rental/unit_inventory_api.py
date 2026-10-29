@@ -122,7 +122,7 @@ class UnavailableUnitInventoryFlow:
 
     def current(self, unit_id: UUID) -> UnitInventory:
         del unit_id
-        raise UnitResourceUnavailable("Unit persistence is unavailable")
+        raise UnitResourceUnavailable("Parking persistence is unavailable")
 
     def record(
         self,
@@ -133,16 +133,16 @@ class UnavailableUnitInventoryFlow:
         actor_id: str,
     ) -> UnitInventory:
         del unit_id, lines, expected_record_number, actor_id
-        raise UnitResourceUnavailable("Unit persistence is unavailable")
+        raise UnitResourceUnavailable("Parking persistence is unavailable")
 
     def known_items(self, property_id: UUID) -> tuple[UnitInventoryItemName, ...]:
         del property_id
-        raise UnitResourceUnavailable("Unit persistence is unavailable")
+        raise UnitResourceUnavailable("Parking persistence is unavailable")
 
 
 def _lines(value: object) -> tuple[UnitInventoryLine, ...]:
     if not isinstance(value, list):
-        raise UnitResourceUnavailable("Unit inventory lines are unreadable")
+        raise UnitResourceUnavailable("Parking inventory lines are unreadable")
     return tuple(
         UnitInventoryLine(
             item_group=str(line["item_group"]),
@@ -182,9 +182,9 @@ class PostgresUnitInventoryFlow:
                     (unit_id,),
                 ).fetchone()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         if row is None:
-            raise UnitResourceNotFound("Unit was not found")
+            raise UnitResourceNotFound("Parking was not found")
         return UnitInventory(
             unit_id=UUID(str(row[0])),
             property_id=UUID(str(row[1])),
@@ -217,10 +217,10 @@ class PostgresUnitInventoryFlow:
                 ).fetchone()
         except psycopg.Error as exc:
             if exc.sqlstate == "P0002":
-                raise UnitResourceNotFound("Unit was not found") from exc
+                raise UnitResourceNotFound("Parking was not found") from exc
             if exc.sqlstate in {"22023", "23502", "23505", "23514", "22P02"}:
-                raise UnitResourceInvalid("Unit inventory is invalid") from exc
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+                raise UnitResourceInvalid("Parking inventory is invalid") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         if row is None:
             raise UnitVersionConflict(self.current(unit_id).record_number)
         return UnitInventory(
@@ -248,7 +248,7 @@ class PostgresUnitInventoryFlow:
                     (property_id,),
                 ).fetchall()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         return _merge_known(UnitInventoryItemName(str(group), str(name)) for group, name in rows)
 
 

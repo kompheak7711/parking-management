@@ -926,7 +926,7 @@ class PostgresInvoiceService:
         except psycopg.Error as exc:
             raise self._map_error(exc) from exc
         if row is None:
-            raise InvoiceServiceUnavailableError("Unit cleaning rate read returned no result")
+            raise InvoiceServiceUnavailableError("Parking cleaning rate read returned no result")
         return None if row[0] is None else self._resource(row[0])
 
     def _runtime_execute(self, query: str, parameters: tuple[object, ...]) -> dict[str, object]:

@@ -309,7 +309,7 @@ describe("Lease staff workflow", () => {
     fireEvent.change(screen.getByLabelText("Reservation version"), {
       target: { value: "1" },
     });
-    fireEvent.change(screen.getByLabelText("Unit version"), {
+    fireEvent.change(screen.getByLabelText("Parking version"), {
       target: { value: "3" },
     });
     fireEvent.change(screen.getByLabelText("Actual Move-in Date"), {
@@ -357,10 +357,10 @@ describe("Lease staff workflow", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Load Leases" }));
     await screen.findByRole("heading", { name: "Create Lease draft" });
-    const units = screen.getAllByLabelText("Unit identifier");
+    const units = screen.getAllByLabelText("Parking identifier");
     const createUnit = units.at(-1);
     if (createUnit === undefined)
-      throw new Error("Create Lease Unit input is absent");
+      throw new Error("Create Lease Parking input is absent");
     fireEvent.change(createUnit, { target: { value: "unit-1" } });
     fireEvent.change(
       screen.getByLabelText("Primary Tenant Customer identifier"),
@@ -454,10 +454,10 @@ describe("Lease staff workflow", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Load Leases" }));
     await screen.findByRole("heading", { name: "Create Lease draft" });
-    const units = screen.getAllByLabelText("Unit identifier");
+    const units = screen.getAllByLabelText("Parking identifier");
     const createUnit = units.at(-1);
     if (createUnit === undefined)
-      throw new Error("Create Lease Unit input is absent");
+      throw new Error("Create Lease Parking input is absent");
     fireEvent.change(createUnit, { target: { value: "unit-preserved" } });
     fireEvent.change(
       screen.getByLabelText("Primary Tenant Customer identifier"),
@@ -788,7 +788,7 @@ describe("Lease staff workflow", () => {
       expect(
         within(region).getByLabelText("Termination event identifier"),
       ).toHaveValue("termination-event-1");
-      fireEvent.change(within(region).getByLabelText("Unit after release"), {
+      fireEvent.change(within(region).getByLabelText("Parking after release"), {
         target: { value: "CLEANING" },
       });
       fireEvent.change(
@@ -806,7 +806,7 @@ describe("Lease staff workflow", () => {
       expect(resolveNeverMovedIn).not.toHaveBeenCalled();
       fireEvent.change(
         within(region).getByLabelText(
-          "Unit status reason (required for CLEANING)",
+          "Parking status reason (required for CLEANING)",
         ),
         { target: { value: "Needs cleaning" } },
       );
@@ -834,7 +834,7 @@ describe("Lease staff workflow", () => {
       const recorded = await screen.findByRole("article", {
         name: "Recorded unpaid Initial follow-up",
       });
-      expect(recorded).toHaveTextContent("Unit CLEANING");
+      expect(recorded).toHaveTextContent("Parking CLEANING");
       expect(recorded).toHaveTextContent("Security Deposit forfeited");
     });
     it("TEST-FE-655 credits the Rent after the termination date for a Customer who moved in", async () => {
