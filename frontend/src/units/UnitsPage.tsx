@@ -170,6 +170,7 @@ export function UnitsPage({
       {adding && lists !== null && (
         <NewUnitDialog
           api={unitApi}
+          servicesApi={servicesApi}
           language={language}
           lists={lists}
           onClose={() => {

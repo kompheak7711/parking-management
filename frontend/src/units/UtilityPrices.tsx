@@ -3,11 +3,14 @@
 // Meters hold; nothing here changes money. A Unit with no Meter of a kind is not billed for it
 // (DL-098), so the page says so.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ratePerUnit } from "../settings/RatesTab";
 import { dayText } from "../shell/format";
+import { Icon } from "../shell/icons";
 import { Chip } from "../shell/ui";
+import type { UnitResource } from "../unitClient";
+import { AddMeterDialog } from "../utilities/MetersTab";
 import type { Language } from "../signInText";
 import type {
   UtilityApi,
@@ -17,10 +20,12 @@ import type {
 } from "../utilityClient";
 import { ut } from "./text";
 
-export type UtilityPricesApi = Pick<UtilityApi, "loadMeters" | "loadRates">;
+export type UtilityPricesApi = Pick<UtilityApi, "loadMeters" | "loadRates"> &
+  Partial<Pick<UtilityApi, "installMeter">>;
 
 const KINDS: readonly UtilityType[] = ["ELECTRICITY", "WATER"];
 const KIND_TEXT = { ELECTRICITY: "u_el", WATER: "u_wa" } as const;
+const ADD_TEXT = { ELECTRICITY: "u_add_el", WATER: "u_add_wa" } as const;
 const KIND_UNIT = { ELECTRICITY: "kWh", WATER: "m³" } as const;
 // A Property has few rates and meters; a few pages are plenty and stop a runaway loop.
 const MAX_PAGES = 10;
@@ -187,24 +192,33 @@ function currentMeter(
 export function UnitUtilitiesCard({
   language,
   propertyId,
-  unitId,
+  unit,
   api,
   allowed,
+  canAddMeter,
   today,
 }: {
   language: Language;
   propertyId: string;
-  unitId: string;
+  unit: UnitResource;
   api: UtilityPricesApi;
   allowed: boolean;
+  /** V1-061 (owner 29/10/2026): a new Unit's meters are added right here. */
+  canAddMeter: boolean;
   today: string;
 }) {
+  const unitId = unit.unit_id;
   const rates = useRates(api, propertyId, allowed);
   const [meters, setMeters] = useState<Loaded<UtilityMeter[]>>(null);
+  const [adding, setAdding] = useState<UtilityType | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [reads, setReads] = useState(0);
+  const reload = useCallback(() => {
+    setReads((count) => count + 1);
+  }, []);
   useEffect(() => {
     if (!allowed) return;
     let live = true;
-    setMeters(null);
     all((cursor) => api.loadMeters(unitId, cursor))
       .then((found) => {
         if (live) setMeters(found);
@@ -215,7 +229,8 @@ export function UnitUtilitiesCard({
     return () => {
       live = false;
     };
-  }, [allowed, api, unitId]);
+  }, [allowed, api, unitId, reads]);
+  const install = api.installMeter;
 
   let body;
   if (!allowed) {
@@ -247,6 +262,19 @@ export function UnitUtilitiesCard({
                     )}
                   </small>
                 </span>
+                {meter === null && canAddMeter && install !== undefined && (
+                  <button
+                    className="ui-btn"
+                    onClick={() => {
+                      setNotice(null);
+                      setAdding(kind);
+                    }}
+                    type="button"
+                  >
+                    <Icon name="plus" />
+                    {ut(language, ADD_TEXT[kind])}
+                  </button>
+                )}
                 {meter !== null && (
                   <span>
                     <small className="ui-num">
@@ -274,7 +302,36 @@ export function UnitUtilitiesCard({
   return (
     <section aria-labelledby="unit-utilities" className="ui-card">
       <h2 id="unit-utilities">{ut(language, "utilities")}</h2>
+      {notice !== null && (
+        <div className="ui-notice ok" role="status">
+          <Icon name="check" />
+          <p>{notice}</p>
+        </div>
+      )}
       {body}
+      {adding !== null && install !== undefined && Array.isArray(meters) && (
+        <AddMeterDialog
+          api={{ installMeter: install }}
+          data={{ units: [unit], meters }}
+          language={language}
+          onClose={(unsure) => {
+            setAdding(null);
+            // After a lost answer the meter may have been added: read the list again.
+            if (unsure) reload();
+          }}
+          onConflict={() => {
+            setAdding(null);
+            reload();
+          }}
+          onSaved={(text) => {
+            setAdding(null);
+            setNotice(text);
+            reload();
+          }}
+          preset={{ type: adding, unitId }}
+          today={today}
+        />
+      )}
     </section>
   );
 }

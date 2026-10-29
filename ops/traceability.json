@@ -58755,6 +58755,47 @@
       "notes": "V1-061 review: the Make Reservation reason keeps the person's words, adds the Rent-below reason after them, and is cut at 500 characters by whole characters with no space at the end, so the server never refuses it."
     },
     {
+      "test_id": "TEST-FE-1120",
+      "upstream_ids": [
+        "DL-114"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/shell/DateInput.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 owner test 29/10: a date box that holds a day that does not exist, such as 30/02, says so as soon as the person leaves the box, in English and Khmer, and the message goes away when the day is fixed."
+    },
+    {
+      "test_id": "TEST-FE-1121",
+      "upstream_ids": [
+        "DL-110"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 owner test 29/10: New Unit has the default Rent box and the required Services ticks; a wrong amount is refused before anything is sent, and the Rent and Services are saved right after the Unit in whole cents."
+    },
+    {
+      "test_id": "TEST-FE-1122",
+      "upstream_ids": [
+        "DL-110"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061: when the Unit is saved but its Rent and Services are not, New Unit says so, does not send the Unit again, and only closes."
+    },
+    {
+      "test_id": "TEST-FE-1123",
+      "upstream_ids": [
+        "DL-098",
+        "DL-114"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 owner ask 29/10: the Unit page offers Add electricity meter and Add water meter for each kind with no meter, opens Add meter set to this Unit and kind, and shows nothing to a person who may not manage meters."
+    },
+    {
       "test_id": "test_make_reservation_saves_the_money_and_the_reservation_together",
       "upstream_ids": [
         "DL-112",

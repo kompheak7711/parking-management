@@ -749,26 +749,29 @@ function OutcomeLine({
   );
 }
 
-function AddMeterDialog({
+export function AddMeterDialog({
   language,
   api,
   data,
   today,
+  preset,
   onClose,
   onSaved,
   onConflict,
 }: {
   language: Language;
-  api: UtilityApi;
-  data: UtilitiesData;
+  api: Pick<UtilityApi, "installMeter">;
+  data: Pick<UtilitiesData, "units" | "meters">;
   today: string;
+  /** V1-061: the Unit page opens it for its own Unit and the kind it lacks. */
+  preset?: { unitId: string; type: UtilityType };
   /** True when the last try got no answer, so it may have been saved. */
   onClose: (unsure: boolean) => void;
   onSaved: (message: string) => void;
   onConflict: () => void;
 }) {
-  const [unitId, setUnitId] = useState("");
-  const [type, setType] = useState<UtilityType>("ELECTRICITY");
+  const [unitId, setUnitId] = useState(preset?.unitId ?? "");
+  const [type, setType] = useState<UtilityType>(preset?.type ?? "ELECTRICITY");
   const [serial, setSerial] = useState("");
   const [installed, setInstalled] = useState(today);
   const [first, setFirst] = useState("0");

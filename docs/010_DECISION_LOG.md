@@ -2383,5 +2383,6 @@ The unpublished due-attribution implementation is removed by a forward commit: m
   - **Impossible dates:** every rebuilt form checks a date with the same real-day check as the date box (`isDay`), so a typed 2026-02-30 is refused before anything is sent.
   - **Review fix:** a refusal code with no Khmer words yet shows the general Khmer line with the server's English after it in brackets, so staff can still see what to fix.
   - **Add occupant stops at 20:** the database already refused a 21st person; the Lease page now shows no Add occupant button at 20 and says why.
+  - **Owner test fixes (29/10/2026, 11:04):** a date box that holds a day that does not exist (for example 30/02) says "This is not a real day" as soon as the person leaves it, not only on Save. New Unit has the default Rent box and the required Services ticks (DL-110); they are saved right after the Unit with the same Change command, and if that second save fails the dialog says the Unit is saved and only closes. The Unit page offers Add electricity meter and Add water meter for each kind with no meter (the same Add meter dialog as Utilities › Meters, set to this Unit), for a person who may manage meters.
 - **Links:** DL-102, DL-111, DL-113, BR-OCC-004.
 - **Decision date:** 2026-10-29.

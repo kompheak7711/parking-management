@@ -32,7 +32,7 @@ function serviceName(service: ServiceSetting, language: Language): string {
 }
 
 /** The Property's Services, read once; null while reading, "failed" when they cannot be read. */
-function useServices(
+export function useServices(
   api: RentTermsServicesApi,
   propertyId: string,
 ): ServiceSetting[] | "failed" | null {
@@ -182,8 +182,8 @@ function RentTermsDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !ready) return;
-    const cents = rent.trim() === "" ? null : centsOf(rent);
-    if (rent.trim() !== "" && cents === null) {
+    const cents = rentCents(rent);
+    if (cents === "wrong") {
       setRentProblem(ut(language, "rt_err_rent"));
       return;
     }
@@ -224,6 +224,47 @@ function RentTermsDialog({
       submitLabel={ut(language, "save")}
       title={`${ut(language, "rt_title")} · ${unit.unit_number}`}
     >
+      <RentTermsFields
+        chosen={chosen}
+        language={language}
+        onChosen={setChosen}
+        onRent={setRent}
+        rent={rent}
+        rentProblem={rentProblem}
+        services={services}
+      />
+      <p className="ui-small ui-muted">{ut(language, "rt_dialog_note")}</p>
+      {problem !== null && (
+        <p className="ui-error" role="alert">
+          <Icon name="alert" small />
+          <span>{problem}</span>
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
+/** The default Rent box and the required Services ticks, shared by New Unit and Change. */
+export function RentTermsFields({
+  language,
+  rent,
+  onRent,
+  chosen,
+  onChosen,
+  services,
+  rentProblem,
+}: {
+  language: Language;
+  rent: string;
+  onRent: (rent: string) => void;
+  chosen: ReadonlySet<string>;
+  onChosen: (chosen: Set<string>) => void;
+  services: ServiceSetting[] | "failed" | null;
+  rentProblem: string | null;
+}) {
+  const ready = services !== null && services !== "failed";
+  return (
+    <>
       <div className="ui-field">
         <label htmlFor="unit-rent-default">{ut(language, "rt_rent")}</label>
         <input
@@ -231,7 +272,7 @@ function RentTermsDialog({
           id="unit-rent-default"
           inputMode="decimal"
           onChange={(event) => {
-            setRent(event.currentTarget.value);
+            onRent(event.currentTarget.value);
           }}
           value={rent}
         />
@@ -269,7 +310,7 @@ function RentTermsDialog({
                   const next = new Set(chosen);
                   if (event.currentTarget.checked) next.add(service.service_id);
                   else next.delete(service.service_id);
-                  setChosen(next);
+                  onChosen(next);
                 }}
                 type="checkbox"
               />
@@ -277,13 +318,12 @@ function RentTermsDialog({
             </label>
           ))}
       </fieldset>
-      <p className="ui-small ui-muted">{ut(language, "rt_dialog_note")}</p>
-      {problem !== null && (
-        <p className="ui-error" role="alert">
-          <Icon name="alert" small />
-          <span>{problem}</span>
-        </p>
-      )}
-    </Dialog>
+    </>
   );
+}
+
+/** The Rent box's cents, or "wrong" when it is not an amount; a blank box is no default. */
+export function rentCents(rent: string): number | null | "wrong" {
+  if (rent.trim() === "") return null;
+  return centsOf(rent) ?? "wrong";
 }

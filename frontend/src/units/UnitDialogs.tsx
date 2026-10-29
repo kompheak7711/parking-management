@@ -16,6 +16,12 @@ import {
   UnitSetupLists,
   UnitStatus,
 } from "../unitClient";
+import {
+  RentTermsFields,
+  type RentTermsServicesApi,
+  rentCents,
+  useServices,
+} from "./RentTerms";
 import { ut } from "./text";
 
 function text(data: FormData, name: string): string {
@@ -236,6 +242,7 @@ function DetailFields({
 /** New Unit: the number and floor are required; the Unit starts as Vacant. */
 export function NewUnitDialog({
   api,
+  servicesApi,
   language,
   lists,
   propertyId,
@@ -243,12 +250,21 @@ export function NewUnitDialog({
   onCreated,
 }: {
   api: UnitApi;
+  servicesApi: RentTermsServicesApi;
   language: Language;
   lists: UnitSetupLists;
   propertyId: string;
   onClose: () => void;
   onCreated: (unit: UnitResource) => void;
 }) {
+  // V1-061 (owner 29/10/2026): the default Rent and the required Services are set here too, saved
+  // right after the Unit with the same Change command the Unit page uses.
+  const services = useServices(servicesApi, propertyId);
+  const [rent, setRent] = useState("");
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [rentProblem, setRentProblem] = useState<string | null>(null);
+  // The Unit is saved but its Rent and Services were not; the next press only closes.
+  const [saved, setSaved] = useState<UnitResource | null>(null);
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState<{ no: boolean; floor: boolean }>({
     no: false,
@@ -258,6 +274,10 @@ export function NewUnitDialog({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saved !== null) {
+      onCreated(saved);
+      return;
+    }
     const form = event.currentTarget;
     const data = new FormData(form);
     // Unit numbers are kept in capitals, as in the mock-up (U107).
@@ -271,6 +291,16 @@ export function NewUnitDialog({
         ?.focus();
       return;
     }
+    const cents = rentCents(rent);
+    setRentProblem(cents === "wrong" ? ut(language, "rt_err_rent") : null);
+    if (cents === "wrong") {
+      form.querySelector<HTMLElement>("#unit-rent-default")?.focus();
+      return;
+    }
+    if (chosen.size > 20) {
+      setProblem(ut(language, "rt_err_many"));
+      return;
+    }
     setBusy(true);
     setProblem(null);
     void api
@@ -281,11 +311,29 @@ export function NewUnitDialog({
         status: "VACANT",
         ...detailsFrom(data),
       })
-      .then(onCreated)
-      .catch((error: unknown) => {
-        setProblem(failure(language, error));
-        setBusy(false);
-      });
+      .then(
+        (unit) => {
+          if (cents === null && chosen.size === 0) {
+            onCreated(unit);
+            return;
+          }
+          api
+            .setRentTerms(unit, {
+              default_monthly_rent_usd_cents: cents,
+              required_service_ids: [...chosen],
+            })
+            .then(onCreated)
+            .catch(() => {
+              setSaved(unit);
+              setProblem(ut(language, "rt_new_not_saved", unit.unit_number));
+              setBusy(false);
+            });
+        },
+        (error: unknown) => {
+          setProblem(failure(language, error));
+          setBusy(false);
+        },
+      );
   }
 
   return (
@@ -294,7 +342,7 @@ export function NewUnitDialog({
       closeLabel={ut(language, "cancel")}
       onClose={onClose}
       onSubmit={submit}
-      submitLabel={ut(language, "save")}
+      submitLabel={ut(language, saved === null ? "save" : "ok")}
       title={ut(language, "new_unit")}
     >
       <div className="ui-row2">
@@ -322,6 +370,15 @@ export function NewUnitDialog({
         />
       </div>
       <DetailFields language={language} lists={lists} unit={null} />
+      <RentTermsFields
+        chosen={chosen}
+        language={language}
+        onChosen={setChosen}
+        onRent={setRent}
+        rent={rent}
+        rentProblem={rentProblem}
+        services={services}
+      />
       <p className="ui-small ui-muted">{ut(language, "new_note")}</p>
       <Problem message={problem} />
     </Dialog>

@@ -689,10 +689,11 @@ export function UnitDetail({
           <UnitUtilitiesCard
             allowed={may("utility.read")}
             api={utilityApi}
+            canAddMeter={canManage && may("utility_meters.manage")}
             language={language}
             propertyId={propertyId}
             today={today}
-            unitId={unit.unit_id}
+            unit={unit}
           />
           <section aria-labelledby="unit-invoices" className="ui-card">
             <h2 id="unit-invoices">{ut(language, "invoices")}</h2>

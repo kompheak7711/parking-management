@@ -119,6 +119,11 @@ const WORDS = {
   },
 } as const;
 
+const WRONG_DAY = {
+  en: "This is not a real day. Type it as dd/mm/yyyy, for example 28/02/2026.",
+  km: "នេះមិនមែនជាថ្ងៃពិតទេ។ សូមវាយជា ថ្ងៃ/ខែ/ឆ្នាំ ឧទាហរណ៍ 28/02/2026។",
+} as const;
+
 function iso(year: number, month: number, day: number): string {
   return `${String(year).padStart(4, "0")}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -377,6 +382,9 @@ export function DateInput({
   const current = value ?? own;
   const [text, setText] = useState(dayText(current));
   const [open, setOpen] = useState(false);
+  // V1-061 (owner test 29/10): a whole date that is not a real day (30/02/2026) is said at once
+  // when the box is left, not only when the form is saved.
+  const [wrong, setWrong] = useState(false);
   const wrapper = useRef<HTMLSpanElement>(null);
   const button = useRef<HTMLButtonElement>(null);
 
@@ -417,7 +425,7 @@ export function DateInput({
     >
       <input
         aria-describedby={describedBy}
-        aria-invalid={invalid}
+        aria-invalid={invalid === true || wrong}
         autoComplete="off"
         disabled={disabled}
         id={id}
@@ -425,6 +433,7 @@ export function DateInput({
         onBlur={() => {
           const parsed = parseDay(text);
           if (parsed !== "") setText(dayText(parsed));
+          setWrong(parsed === "" && text.trim() !== "");
         }}
         onChange={(event) => {
           const box = event.currentTarget;
@@ -434,6 +443,7 @@ export function DateInput({
             box.selectionStart === box.value.length,
           );
           setText(typed);
+          setWrong(false);
           const parsed = parseDay(typed);
           const next = parsed === "" ? typed.trim() : parsed;
           if (next !== current) set(next);
@@ -467,12 +477,18 @@ export function DateInput({
           min={min}
           onClose={close}
           onPick={(picked) => {
+            setWrong(false);
             setText(dayText(picked));
             set(picked);
             close(true);
           }}
           value={parseDay(current)}
         />
+      )}
+      {wrong && (
+        <span className="ui-date-wrong" lang={language} role="alert">
+          {WRONG_DAY[language]}
+        </span>
       )}
     </span>
   );

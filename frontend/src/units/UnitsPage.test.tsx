@@ -869,6 +869,139 @@ describe("Parking page", () => {
     });
   });
 
+  it("TEST-FE-1121 New Parking takes the default Rent and the required Services and saves them right after the Parking; a wrong amount is refused first (V1-061, DL-110)", async () => {
+    const setRentTerms = vi
+      .fn()
+      .mockResolvedValue(unit("U107", { version: 2 }));
+    const client = unitApi({ setRentTerms });
+    show(client);
+    fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+      target: { value: "U107" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
+      target: { value: "FLOOR-F002" },
+    });
+    const rent = within(dialog).getByLabelText("Default Rent per month");
+    fireEvent.change(rent, { target: { value: "350.555" } });
+    fireEvent.click(await within(dialog).findByLabelText("Parking"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(rent).toHaveAttribute("aria-invalid", "true");
+    expect(client.create).not.toHaveBeenCalled();
+
+    fireEvent.change(rent, { target: { value: "350" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/units/unit-U107");
+    });
+    expect(client.create).toHaveBeenCalledTimes(1);
+    expect(setRentTerms).toHaveBeenCalledWith(
+      expect.objectContaining({ unit_id: "unit-U107" }),
+      {
+        default_monthly_rent_usd_cents: 35_000,
+        required_service_ids: ["svc-parking"],
+      },
+    );
+  });
+
+  it("TEST-FE-1122 when the Parking is saved but its Rent and Services are not, New Parking says so and only closes (V1-061)", async () => {
+    const setRentTerms = vi.fn().mockRejectedValue(new Error("offline"));
+    const client = unitApi({ setRentTerms });
+    show(client);
+    fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+      target: { value: "U107" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
+      target: { value: "FLOOR-F002" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Default Rent per month"), {
+      target: { value: "350" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "Parking U107 is saved, but its Rent and Services are not. Set them on the Parking page with Change.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "OK" }));
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/units/unit-U107");
+    });
+    expect(client.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-1123 the Parking page offers Add electricity meter and Add water meter for a kind with no meter, set to this Parking (V1-061)", async () => {
+    window.location.hash = "#/units/unit-U101";
+    const installMeter = vi.fn().mockResolvedValue({
+      id: "meter-2",
+      unit_id: "unit-U101",
+      utility_type: "WATER",
+      serial_number: "WA-U101",
+      current: true,
+      deactivated_date: null,
+      failure_date: null,
+    });
+    const utilities = {
+      ...utilityApi([
+        {
+          id: "meter-1",
+          unit_id: "unit-U101",
+          utility_type: "ELECTRICITY",
+          serial_number: "EL-101",
+          current: true,
+          deactivated_date: null,
+          failure_date: null,
+        },
+      ]),
+      installMeter,
+    };
+    show(unitApi(), { utilities });
+    const card = (
+      await screen.findByRole("heading", { name: "Electricity and water" })
+    ).closest("section");
+    if (card === null) throw new Error("no Utilities card");
+    const add = await within(card).findByRole("button", {
+      name: "Add water meter",
+    });
+    expect(
+      within(card).queryByRole("button", { name: "Add electricity meter" }),
+    ).toBeNull();
+    fireEvent.click(add);
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Water")).toBeChecked();
+    expect(within(dialog).getByLabelText(/^Unit/)).toHaveValue("unit-U101");
+    fireEvent.change(within(dialog).getByLabelText(/^Serial/), {
+      target: { value: "WA-U101" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add meter" }));
+    await waitFor(() => {
+      expect(installMeter).toHaveBeenCalledTimes(1);
+    });
+    expect(installMeter.mock.calls[0]?.[0]).toBe("unit-U101");
+    expect(installMeter.mock.calls[0]?.[1]).toMatchObject({
+      utility_type: "WATER",
+      serial_number: "WA-U101",
+    });
+    expect(
+      await within(card).findByText("WA-U101 added to U101."),
+    ).toBeInTheDocument();
+
+    cleanup();
+    show(unitApi(), {
+      capabilities: new Set(["utility.read"]),
+      utilities,
+    });
+    const quiet = (
+      await screen.findByRole("heading", { name: "Electricity and water" })
+    ).closest("section");
+    if (quiet === null) throw new Error("no Utilities card");
+    await within(quiet).findByText(/Meter EL-101/);
+    expect(within(quiet).queryByRole("button")).toBeNull();
+  });
+
   it("TEST-FE-818 adds a Parking with the Floor and Parking Type from the Settings lists, and Update Parking never sends the Parking number", async () => {
     const client = unitApi();
     show(client);

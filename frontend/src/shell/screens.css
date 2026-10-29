@@ -2090,6 +2090,16 @@ a.ui-kpi.ui-home-kpi {
   min-width: 0;
 }
 
+.ui-date {
+  flex-wrap: wrap;
+}
+
+.ui-date .ui-date-wrong {
+  flex: 1 0 100%;
+  color: var(--err);
+  font-size: 0.9em;
+}
+
 .ui-date .ui-date-button {
   flex: 0 0 46px;
   min-height: 46px;
