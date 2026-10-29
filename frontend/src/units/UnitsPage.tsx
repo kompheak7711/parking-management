@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { LeaseApi } from "../leaseClient";
 import type { ReservationApi } from "../reservationClient";
+import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
@@ -15,6 +16,7 @@ import { NewUnitDialog } from "./UnitDialogs";
 import { UnitDetail } from "./UnitDetail";
 import { UnitsList } from "./UnitsList";
 import { ut } from "./text";
+import { type UtilityPricesApi, UtilityPricesStrip } from "./UtilityPrices";
 import { UnitsData, loadUnitsData, reservationFor } from "./unitsData";
 
 export interface UnitsPageProps {
@@ -26,6 +28,8 @@ export interface UnitsPageProps {
   leaseApi: LeaseApi;
   reservationApi: ReservationApi;
   capabilities: ReadonlySet<string> | null;
+  /** V1-061: the Utility prices and the Unit's Meters. */
+  utilityApi: UtilityPricesApi;
 }
 
 export function UnitsPage({
@@ -36,6 +40,7 @@ export function UnitsPage({
   leaseApi,
   reservationApi,
   capabilities,
+  utilityApi,
 }: UnitsPageProps) {
   const detail = useHashDetail("units");
   const [data, setData] = useState<UnitsData | null>(null);
@@ -117,6 +122,7 @@ export function UnitsPage({
         tenanciesKnown={data.leases !== null && data.reservations !== null}
         unitApi={unitApi}
         unitId={detail}
+        utilityApi={utilityApi}
       />
     );
   }
@@ -136,6 +142,13 @@ export function UnitsPage({
           <p>{ut(language, "lists_failed")}</p>
         </div>
       )}
+      <UtilityPricesStrip
+        allowed={capabilities === null || capabilities.has("utility.read")}
+        api={utilityApi}
+        language={language}
+        propertyId={propertyId}
+        today={todayInPhnomPenh()}
+      />
       <UnitsList
         data={data}
         language={language}

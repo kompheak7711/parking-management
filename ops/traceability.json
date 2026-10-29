@@ -58370,6 +58370,30 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "V1-060 B7 third review (DL-109): closing Receive Security Deposit reads the Lease again, as the money may be saved after a lost answer."
+    },
+    {
+      "test_id": "TEST-FE-1105",
+      "upstream_ids": [
+        "DL-110",
+        "DL-098",
+        "BR-UTIL-003",
+        "UI-026"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026): the Unit page shows each Meter with the Utility price in force and the next one; a kind with no Meter says the Unit is not billed for it (DL-098)."
+    },
+    {
+      "test_id": "TEST-FE-1106",
+      "upstream_ids": [
+        "DL-110",
+        "UI-026"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1-061 (owner 29/10/2026): the Units list shows today's electricity and water prices; without utility.read nothing is read or shown."
     }
   ]
 }

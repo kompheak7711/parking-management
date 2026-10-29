@@ -20,7 +20,9 @@ import {
   UnitSetupListKind,
   UnitSetupLists,
 } from "../unitClient";
+import type { UtilityMeter, UtilityRate } from "../utilityClient";
 import { UnitsPage } from "./UnitsPage";
+import type { UtilityPricesApi } from "./UtilityPrices";
 
 afterEach(() => {
   cleanup();
@@ -258,12 +260,59 @@ function reservationApi(
   return { list } as unknown as ReservationApi;
 }
 
+const RATES: UtilityRate[] = [
+  {
+    id: "rate-el-1",
+    utility_type: "ELECTRICITY",
+    measurement_unit_code: "KWH",
+    rate_usd_per_unit: "0.2500",
+    effective_date: "2025-01-24",
+    notice_at: "2024-12-20T02:00:00Z",
+    notice_evidence: "Notice board",
+    source_memo: null,
+  },
+  {
+    id: "rate-el-2",
+    utility_type: "ELECTRICITY",
+    measurement_unit_code: "KWH",
+    rate_usd_per_unit: "0.3000",
+    effective_date: "2099-01-24",
+    notice_at: "2098-12-20T02:00:00Z",
+    notice_evidence: "Notice board",
+    source_memo: null,
+  },
+  {
+    id: "rate-wa-1",
+    utility_type: "WATER",
+    measurement_unit_code: "M3",
+    rate_usd_per_unit: "0.7500",
+    effective_date: "2025-01-24",
+    notice_at: "2024-12-20T02:00:00Z",
+    notice_evidence: "Notice board",
+    source_memo: null,
+  },
+];
+
+function utilityApi(meters: Partial<UtilityMeter>[] = []): UtilityPricesApi & {
+  loadMeters: ReturnType<typeof vi.fn>;
+  loadRates: ReturnType<typeof vi.fn>;
+} {
+  return {
+    loadMeters: vi.fn().mockResolvedValue({
+      items: meters as UtilityMeter[],
+      nextCursor: null,
+    }),
+    loadRates: vi.fn().mockResolvedValue({ items: RATES, nextCursor: null }),
+  };
+}
+
 function show(
   client: UnitApi,
   options: {
     leases?: LeaseApi;
     reservations?: ReservationApi;
     capabilities?: ReadonlySet<string> | null;
+    utilities?: UtilityPricesApi;
   } = {},
 ) {
   return render(
@@ -275,6 +324,7 @@ function show(
       propertyId="property-1"
       reservationApi={options.reservations ?? reservationApi()}
       unitApi={client}
+      utilityApi={options.utilities ?? utilityApi()}
     />,
   );
 }
@@ -506,7 +556,7 @@ describe("Parking page", () => {
       "Parking details",
       "Current Lease",
       "Lease history",
-      "Meters",
+      "Electricity and water",
       "Invoices for this Parking",
       "History",
     ]) {
@@ -540,6 +590,59 @@ describe("Parking page", () => {
     for (const link of screen.getAllByRole("link", { name: "Open Lease" })) {
       expect(link).toHaveAttribute("href", "#/leases/lease-1");
     }
+  });
+
+  it("TEST-FE-1105 the Parking page shows each Meter with the price in force and the next one, and a kind with no Meter is not billed (V1-061)", async () => {
+    window.location.hash = "#/units/unit-U101";
+    const utilities = utilityApi([
+      {
+        id: "meter-1",
+        unit_id: "unit-U101",
+        utility_type: "ELECTRICITY",
+        serial_number: "EL-101",
+        current: true,
+        deactivated_date: null,
+        failure_date: null,
+      },
+    ]);
+    show(unitApi(), { utilities });
+
+    const card = (
+      await screen.findByRole("heading", { name: "Electricity and water" })
+    ).closest("section");
+    if (card === null) throw new Error("no Utilities card");
+    await waitFor(() => {
+      expect(card).toHaveTextContent("Meter EL-101");
+    });
+    expect(card).toHaveTextContent("$0.25 per kWh since 24/01/2025");
+    expect(card).toHaveTextContent("From 24/01/2099: $0.30 per kWh");
+    expect(card).toHaveTextContent("Working");
+    expect(card).toHaveTextContent(
+      "WaterNo meter, so this Parking is not billed for it.",
+    );
+    expect(card).not.toHaveTextContent("$0.75");
+    expect(utilities.loadMeters).toHaveBeenCalledWith("unit-U101", undefined);
+    expect(utilities.loadRates).toHaveBeenCalledWith("property-1", undefined);
+  });
+
+  it("TEST-FE-1106 the Parking list shows today's Utility prices, and nothing is read without the right to read Utilities (V1-061)", async () => {
+    const utilities = utilityApi();
+    const view = show(unitApi(), { utilities });
+    expect(await screen.findByTestId("utility-prices")).toHaveTextContent(
+      "Utility prices now: Electricity $0.25 per kWh · Water $0.75 per m³",
+    );
+    view.unmount();
+
+    const hidden = utilityApi();
+    show(unitApi(), {
+      utilities: hidden,
+      capabilities: new Set(["units.read"]),
+    });
+    expect(
+      await screen.findByRole("link", { name: "U101" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("utility-prices")).toBeNull();
+    expect(hidden.loadRates).not.toHaveBeenCalled();
   });
 
   it("TEST-FE-1074 each button opens its own place: New Lease opens the form with the Parking chosen or the draft from its Reservation, and Open Lease, Open draft Lease and Open Reservation open that record", async () => {

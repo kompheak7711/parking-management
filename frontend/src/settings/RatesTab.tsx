@@ -104,7 +104,7 @@ async function rest<Item>(
 }
 
 /** "0.25000000" → "$0.25"; at least two decimals, no trailing zeros after them. */
-function ratePerUnit(value: string): string {
+export function ratePerUnit(value: string): string {
   const [whole = "0", part = ""] = value.split(".");
   const trimmed = part.replace(/0+$/, "").padEnd(2, "0");
   return `$${Number(whole).toLocaleString("en-US")}.${trimmed}`;

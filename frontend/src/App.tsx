@@ -1733,6 +1733,7 @@ export function App({
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
+          utilityApi={utilityApi}
         />
       </div>
       <div

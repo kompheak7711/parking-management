@@ -30,6 +30,7 @@ import {
 import { ChangeStatusDialog, UpdateUnitDialog } from "./UnitDialogs";
 import { UnitChip, floorText } from "./UnitsList";
 import { ut } from "./text";
+import { type UtilityPricesApi, UnitUtilitiesCard } from "./UtilityPrices";
 import { itemName, typeName } from "./unitsData";
 
 type LeaseKind = "current" | "draft" | "ended" | "terminated" | "cancelled";
@@ -194,6 +195,8 @@ export interface UnitDetailProps {
   tenanciesKnown: boolean;
   capabilities: ReadonlySet<string> | null;
   onChanged: (unit: UnitResource) => void;
+  /** V1-061: the Unit's Meters and the Utility prices. */
+  utilityApi: UtilityPricesApi;
 }
 
 export function UnitDetail({
@@ -208,6 +211,7 @@ export function UnitDetail({
   tenanciesKnown,
   capabilities,
   onChanged,
+  utilityApi,
 }: UnitDetailProps) {
   const khmer = language === "km";
   const [unit, setUnit] = useState<UnitResource | null>(null);
@@ -659,10 +663,14 @@ export function UnitDetail({
               </ul>
             )}
           </section>
-          <section aria-labelledby="unit-meters" className="ui-card">
-            <h2 id="unit-meters">{ut(language, "meters")}</h2>
-            <p className="ui-small ui-muted">{ut(language, "meters_later")}</p>
-          </section>
+          <UnitUtilitiesCard
+            allowed={may("utility.read")}
+            api={utilityApi}
+            language={language}
+            propertyId={propertyId}
+            today={today}
+            unitId={unit.unit_id}
+          />
           <section aria-labelledby="unit-invoices" className="ui-card">
             <h2 id="unit-invoices">{ut(language, "invoices")}</h2>
             <p className="ui-small ui-muted">

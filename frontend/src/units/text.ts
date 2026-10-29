@@ -136,12 +136,6 @@ const TEXT = {
   no_past: ["No earlier Leases.", "គ្មានកិច្ចសន្យាពីមុន។"],
   start: ["Start Date", "ថ្ងៃចាប់ផ្តើម"],
   end: ["End Date", "ថ្ងៃបញ្ចប់"],
-  meters: ["Meters", "នាឡិកាស្ទង់"],
-  // new
-  meters_later: [
-    "Each meter with its last reading shows here when Utilities are rebuilt (step R4).",
-    "នាឡិកាស្ទង់នីមួយៗ និងអំណានចុងក្រោយនឹងបង្ហាញនៅទីនេះ ពេលរៀបចំទឹកភ្លើងឡើងវិញ (ជំហាន R4)។",
-  ],
   invoices: ["Invoices for this Parking", "វិក្កយបត្រសម្រាប់ចំណតនេះ"],
   // new
   invoices_later: [
@@ -236,6 +230,34 @@ const TEXT = {
     "មានអ្នកជួល និង បានកក់ ត្រូវបានកំណត់ដោយកម្មវិធី ពេលចុះហត្ថលេខាកិច្ចសន្យា ឬធ្វើការកក់។ ការប្តូរទាំងអស់ត្រូវបានរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   status_saved: ["{0} is now {1}.", "{0} ឥឡូវ {1}។"],
+  // new (V1-061, owner 29/10/2026): the Utility prices on the Units and Unit pages
+  utilities: ["Electricity and water", "អគ្គិសនី និងទឹក"],
+  prices_now: ["Utility prices now", "តម្លៃទឹកភ្លើងបច្ចុប្បន្ន"],
+  u_el: ["Electricity", "អគ្គិសនី"],
+  u_wa: ["Water", "ទឹក"],
+  u_price: ["{0} per {1}", "{0} ក្នុង១{1}"],
+  u_since: ["since {0}", "ចាប់ពី {0}"],
+  u_next: ["From {0}: {1}", "ចាប់ពី {0}៖ {1}"],
+  u_no_rate: ["No price set yet", "មិនទាន់កំណត់តម្លៃ"],
+  u_meter: ["Meter {0}", "នាឡិកាស្ទង់ {0}"],
+  u_working: ["Working", "ដំណើរការ"],
+  u_broken: ["Broken since {0}", "ខូចតាំងពី {0}"],
+  u_no_meter: [
+    "No meter, so this Unit is not billed for it.",
+    "គ្មាននាឡិកាស្ទង់ ដូច្នេះបន្ទប់នេះមិនត្រូវគិតថ្លៃនេះទេ។",
+  ],
+  u_cannot: [
+    "Your account cannot read Utilities.",
+    "គណនីរបស់អ្នកមិនអាចអានទឹកភ្លើងបានទេ។",
+  ],
+  u_failed: [
+    "The Utility prices could not be read. Open this page again later.",
+    "មិនអាចអានតម្លៃទឹកភ្លើងបានទេ។ សូមបើកទំព័រនេះម្តងទៀតពេលក្រោយ។",
+  ],
+  u_settings: [
+    "Prices are set in Settings › Rates and services.",
+    "តម្លៃត្រូវបានកំណត់នៅ ការកំណត់ › តម្លៃ និងសេវា។",
+  ],
 } as const;
 
 export type UnitTextKey = keyof typeof TEXT;
