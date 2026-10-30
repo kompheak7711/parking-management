@@ -1,3 +1,4 @@
+import { PET_DEPOSIT } from "./leases/parking";
 import { FormEvent, useRef, useState } from "react";
 
 import {
@@ -628,7 +629,10 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
         attempts.current.delete(name);
         setFollowUp(value);
         setNotice(
-          "Follow-up recorded. The Pet Deposit and the completed Reservation were not touched.",
+          // Parking Step 5: no Pet Deposit on Parking (PET_DEPOSIT); words only.
+          PET_DEPOSIT
+            ? "Follow-up recorded. The Pet Deposit and the completed Reservation were not touched."
+            : "Follow-up recorded. The completed Reservation was not touched.",
         );
       })
       .catch((error: unknown) => {
@@ -991,47 +995,50 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
               Add approved Service term
             </button>
           </fieldset>
-          <fieldset>
-            <legend>Approved pet terms</legend>
-            <label>
-              <input
-                checked={petApproved}
-                name="pet-approved"
-                onChange={(event) => {
-                  setPetApproved(event.currentTarget.checked);
-                }}
-                type="checkbox"
-                value="yes"
-              />
-              Approved pet terms apply
-            </label>
-            <label>
-              Pet approval date
-              <input
-                disabled={!petApproved}
-                name="pet-approved-date"
-                required={petApproved}
-                type="date"
-              />
-            </label>
-            <label>
-              Pet description
-              <input
-                disabled={!petApproved}
-                maxLength={500}
-                name="pet-description"
-              />
-            </label>
-            <label>
-              <input
-                name="pet-deposit-required"
-                disabled={!petApproved}
-                type="checkbox"
-                value="yes"
-              />
-              Signed terms require a distinct Pet Deposit
-            </label>
-          </fieldset>
+          {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. */}
+          {PET_DEPOSIT && (
+            <fieldset>
+              <legend>Approved pet terms</legend>
+              <label>
+                <input
+                  checked={petApproved}
+                  name="pet-approved"
+                  onChange={(event) => {
+                    setPetApproved(event.currentTarget.checked);
+                  }}
+                  type="checkbox"
+                  value="yes"
+                />
+                Approved pet terms apply
+              </label>
+              <label>
+                Pet approval date
+                <input
+                  disabled={!petApproved}
+                  name="pet-approved-date"
+                  required={petApproved}
+                  type="date"
+                />
+              </label>
+              <label>
+                Pet description
+                <input
+                  disabled={!petApproved}
+                  maxLength={500}
+                  name="pet-description"
+                />
+              </label>
+              <label>
+                <input
+                  name="pet-deposit-required"
+                  disabled={!petApproved}
+                  type="checkbox"
+                  value="yes"
+                />
+                Signed terms require a distinct Pet Deposit
+              </label>
+            </fieldset>
+          )}
           <label>
             Approved Security Deposit source identifier
             <input name="security-deposit-id" />
@@ -1093,22 +1100,29 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
           <h4>Approved Deposit terms</h4>
           <p>
             Security Deposit source:{" "}
-            {selected.security_deposit_id ?? "No approved source recorded"}. Pet
-            Deposit remains a distinct conditional obligation.
+            {selected.security_deposit_id ?? "No approved source recorded"}.
+            {/* Parking Step 5: words only; shown when a pet is on record (PET_DEPOSIT). */}
+            {(PET_DEPOSIT || selected.pet_deposit_required) &&
+              " Pet Deposit remains a distinct conditional obligation."}
           </p>
-          <h4>Conditional Pet Deposit</h4>
-          {selected.pet_deposit_required ? (
-            <p>
-              Required by approved signed pet terms
-              {selected.pet_description === null
-                ? "."
-                : ` for ${selected.pet_description}.`}
-            </p>
-          ) : (
-            <p>
-              Not required by the recorded signed pet terms. Possible future pet
-              ownership creates no requirement.
-            </p>
+          {/* Parking Step 5: shown only when a pet is on record (PET_DEPOSIT). */}
+          {(PET_DEPOSIT || selected.pet_deposit_required) && (
+            <>
+              <h4>Conditional Pet Deposit</h4>
+              {selected.pet_deposit_required ? (
+                <p>
+                  Required by approved signed pet terms
+                  {selected.pet_description === null
+                    ? "."
+                    : ` for ${selected.pet_description}.`}
+                </p>
+              ) : (
+                <p>
+                  Not required by the recorded signed pet terms. Possible future
+                  pet ownership creates no requirement.
+                </p>
+              )}
+            </>
           )}
 
           {selected.can_edit && (
@@ -1284,8 +1298,10 @@ export function LeaseManagement({ api = leaseApi }: LeaseManagementProps) {
                   server-validated.
                 </li>
                 <li>
-                  Required Security and conditional Pet Deposit balances will be
-                  server-validated.
+                  {/* Parking Step 5: no Pet Deposit on Parking (PET_DEPOSIT); words only. */}
+                  {PET_DEPOSIT
+                    ? "Required Security and conditional Pet Deposit balances will be server-validated."
+                    : "Required Security Deposit balances will be server-validated."}
                 </li>
                 <li>Signer and Occupant identities remain distinct.</li>
               </ul>

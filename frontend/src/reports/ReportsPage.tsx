@@ -5,6 +5,7 @@
 // page is open. Export makes a spreadsheet or a PDF through the V1-057 export, which writes its
 // own History row.
 
+import { PET_DEPOSIT } from "../leases/parking";
 import "../shell/screens.css";
 import "./reports.css";
 
@@ -62,7 +63,7 @@ import {
   START_PARAMS,
   wholeMonths,
 } from "./reportsData";
-import { rpt } from "./text";
+import { type ReportsTextKey, rpt } from "./text";
 import { TotalsContent } from "./TotalsView";
 
 export interface ReportApi {
@@ -116,6 +117,13 @@ const PERIODS: readonly (readonly [
   ["last", "p_last"],
   ["pick", "p_pick"],
 ];
+
+// Parking Step 5: no pet on Parking (PET_DEPOSIT), so the Deposits report speaks of Security
+// Deposits only.
+function descriptionKey(key: string): ReportsTextKey {
+  if (key === "deposits" && !PET_DEPOSIT) return "d_deposits_security";
+  return `d_${key}` as ReportsTextKey;
+}
 
 export function ReportsPage({
   language,
@@ -266,7 +274,7 @@ function ReportsList({
                         {rpt(language, `r_${def.key}`)}
                       </span>
                       <span className="rp-card-desc">
-                        {rpt(language, `d_${def.key}`)}
+                        {rpt(language, descriptionKey(def.key))}
                       </span>
                       <span className="rp-card-foot">
                         {def.tagged && (
@@ -467,7 +475,7 @@ function ReportView({
               </Chip>
             )}
           </div>
-          <p>{rpt(language, `d_${def.key}`)}</p>
+          <p>{rpt(language, descriptionKey(def.key))}</p>
         </div>
       </div>
     </>

@@ -3,6 +3,7 @@
 // its footer total; every record in a table links to its own page. The summary, chart and totals
 // come from the server over every row of the filter, not only the rows read so far.
 
+import { PET_DEPOSIT } from "../leases/parking";
 import type {
   AuditActivityRow,
   PaymentRegisterRow,
@@ -865,10 +866,16 @@ function Deposits({
           <MiniTable
             caption={rpt(language, "by_type")}
             heads={[rpt(language, "c_held")]}
-            rows={(["SECURITY", "PET"] as const).map((type) => ({
-              label: rpt(language, `dep_${type}`),
-              values: [usd(num(byType, type))],
-            }))}
+            // Parking Step 5: no pet on Parking (PET_DEPOSIT); PET shows while money is held.
+            rows={(["SECURITY", "PET"] as const)
+              .filter(
+                (type) =>
+                  type !== "PET" || PET_DEPOSIT || num(byType, "PET") !== 0,
+              )
+              .map((type) => ({
+                label: rpt(language, `dep_${type}`),
+                values: [usd(num(byType, type))],
+              }))}
           />
         }
       />

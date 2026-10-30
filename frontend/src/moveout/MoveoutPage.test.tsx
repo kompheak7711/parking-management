@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CLEANING_CHARGE, PET_DEPOSIT } from "../leases/parking";
+
 import type { DepositResource } from "../depositClient";
 import {
   InvoiceClientError,
@@ -1710,9 +1712,12 @@ describe("Move-out", () => {
     fireEvent.change(nth(described, 1), {
       target: { value: "Scratched door" },
     });
-    fireEvent.click(
-      nth(within(dialog).getAllByLabelText(/Caused by the pet/), 1),
-    );
+    // Parking Step 5: no pet tick on Parking (PET_DEPOSIT); the code stays.
+    if (PET_DEPOSIT) {
+      fireEvent.click(
+        nth(within(dialog).getAllByLabelText(/Caused by the pet/), 1),
+      );
+    }
     fireEvent.change(nth(within(dialog).getAllByLabelText(/^Charge/), 0), {
       target: { value: "25" },
     });
@@ -1742,7 +1747,7 @@ describe("Move-out", () => {
       ]),
     ).toEqual([
       ["Broken window in the bedroom", false],
-      ["Scratched door", true],
+      ["Scratched door", PET_DEPOSIT],
     ]);
     expect(invoiceApi.recordOneTimeCharge).toHaveBeenCalledTimes(1);
     const [charge] = invoiceApi.recordOneTimeCharge.mock.calls;
@@ -2084,7 +2089,11 @@ describe("Move-out", () => {
     await screen.findByText("Draft Invoice made for $25.00.");
   });
 
-  it("TEST-FE-978 Add cleaning charge records the Parking's rate with the Lease's id and makes its Draft, also when that id was recorded before; a refusal names why, a server failure offers Try again; no rate, a zero rate or a hidden rate say so", async () => {
+  it("TEST-FE-978 Add cleaning charge records the Parking's rate with the Lease's id and makes its Draft, also when that id was recorded before; a refusal names why, a server failure offers Try again; no rate, a zero rate or a hidden rate say so", async ({
+    skip,
+  }) => {
+    // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE); the code stays.
+    skip(!CLEANING_CHARGE);
     window.location.hash = "#/moveout/lease-U105";
     const current = inspectionOf("inspection-1", []);
     const { settlementApi, invoiceApi } = setup([out], {
@@ -2261,11 +2270,14 @@ describe("Move-out", () => {
       "Broken window",
       "Chewed door",
     ]);
-    const pets = within(dialog).getAllByLabelText(/Caused by the pet/);
-    expect(pets.map((item) => (item as HTMLInputElement).checked)).toEqual([
-      false,
-      true,
-    ]);
+    // Parking Step 5: no pet tick on Parking (PET_DEPOSIT); the finding's pet mark is kept as data.
+    if (PET_DEPOSIT) {
+      const pets = within(dialog).getAllByLabelText(/Caused by the pet/);
+      expect(pets.map((item) => (item as HTMLInputElement).checked)).toEqual([
+        false,
+        true,
+      ]);
+    }
     expect(
       within(dialog).getByLabelText<HTMLTextAreaElement>("Notes").value,
     ).toBe("Checked with the tenant");
@@ -3696,5 +3708,54 @@ describe("Vehicle on the hand-back (Parking Step 4)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record hand-back" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("1AB-1234 · Tenant U101")).toBeTruthy();
+  });
+  it("TEST-FE-1141 Parking Step 5: no pet on Parking: a finding has no Caused by the pet tick, and the Deposits card says nothing about a Pet Deposit", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    window.location.hash = "#/moveout/lease-U105";
+    setup([out], { page: handedBackPage });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record inspection" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add finding" }),
+    );
+    expect(within(dialog).getAllByLabelText(/What is damaged/)).toHaveLength(1);
+    expect(within(dialog).queryByLabelText(/Caused by the pet/)).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    const card = screen
+      .getByRole("heading", { name: "Deposits" })
+      .closest("section");
+    if (card === null) throw new Error("no Deposits card");
+    await waitFor(() => {
+      expect(card.textContent).not.toContain("…");
+    });
+    expect(card).not.toHaveTextContent("Pet Deposit");
+  });
+  it("TEST-FE-1147 Parking Step 5: step 4 has no cleaning charge: no rate read, no Cleaning charge section or button, and the step is done without one", async ({
+    skip,
+  }) => {
+    skip(CLEANING_CHARGE);
+    window.location.hash = "#/moveout/lease-U105";
+    const current = inspectionOf("inspection-1", []);
+    const { settlementApi } = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+    });
+    const heading = await screen.findByRole("heading", {
+      name: "4. Inspection and charges",
+    });
+    const step = heading.closest("li");
+    if (step === null) throw new Error("no step 4");
+    await within(step).findByText("No damage found.");
+    expect(settlementApi.cleaningRate).not.toHaveBeenCalled();
+    expect(within(step).queryByText("Cleaning charge")).toBeNull();
+    expect(
+      within(step).queryByRole("button", { name: "Add cleaning charge" }),
+    ).toBeNull();
+    expect(step).not.toHaveTextContent("cleaning rate");
+    expect(within(step).getByText("Done")).toBeTruthy();
   });
 });

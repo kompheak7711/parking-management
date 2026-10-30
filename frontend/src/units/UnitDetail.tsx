@@ -9,6 +9,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { UnitInventoryPanel } from "../UnitInventoryPanel";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
+import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
 import type { ReservationResource } from "../reservationClient";
 import {
   dayText,
@@ -336,7 +337,7 @@ export function UnitDetail({
   const sub = [
     floorText(language, unit.floor),
     type,
-    unit.size_square_metres === null
+    !HOME_FIELDS || unit.size_square_metres === null
       ? null
       : ut(language, "m2", Number(unit.size_square_metres)),
     "CHETANA Parking",
@@ -351,10 +352,11 @@ export function UnitDetail({
     </div>
   );
   const notRecorded = ut(language, "not_recorded");
-  const features =
-    lists?.lists.ROOM_FEATURE.filter(
-      (item) => !item.removed || unit.room_feature_ids.includes(item.item_id),
-    ) ?? [];
+  const features = ROOM_FEATURES
+    ? (lists?.lists.ROOM_FEATURE.filter(
+        (item) => !item.removed || unit.room_feature_ids.includes(item.item_id),
+      ) ?? [])
+    : [];
 
   let now: ReactNode;
   if (current !== null) {
@@ -604,32 +606,35 @@ export function UnitDetail({
             <div className="ui-facts">
               {fact(ut(language, "floor"), floorText(language, unit.floor))}
               {fact(ut(language, "type"), type)}
-              {fact(
-                ut(language, "size"),
-                unit.size_square_metres === null ? (
-                  notRecorded
-                ) : (
-                  <span className="ui-num">
-                    {ut(language, "m2", Number(unit.size_square_metres))}
-                  </span>
-                ),
-              )}
-              {fact(
-                ut(language, "beds"),
-                unit.bedrooms === null ? (
-                  notRecorded
-                ) : (
-                  <span className="ui-num">{unit.bedrooms}</span>
-                ),
-              )}
-              {fact(
-                ut(language, "baths"),
-                unit.bathrooms === null ? (
-                  notRecorded
-                ) : (
-                  <span className="ui-num">{unit.bathrooms}</span>
-                ),
-              )}
+              {HOME_FIELDS &&
+                fact(
+                  ut(language, "size"),
+                  unit.size_square_metres === null ? (
+                    notRecorded
+                  ) : (
+                    <span className="ui-num">
+                      {ut(language, "m2", Number(unit.size_square_metres))}
+                    </span>
+                  ),
+                )}
+              {HOME_FIELDS &&
+                fact(
+                  ut(language, "beds"),
+                  unit.bedrooms === null ? (
+                    notRecorded
+                  ) : (
+                    <span className="ui-num">{unit.bedrooms}</span>
+                  ),
+                )}
+              {HOME_FIELDS &&
+                fact(
+                  ut(language, "baths"),
+                  unit.bathrooms === null ? (
+                    notRecorded
+                  ) : (
+                    <span className="ui-num">{unit.bathrooms}</span>
+                  ),
+                )}
               {features.map((item) =>
                 fact(
                   khmer && item.name_km !== null ? item.name_km : item.name_en,
@@ -641,23 +646,27 @@ export function UnitDetail({
                   ),
                 ),
               )}
-              {fact(
-                ut(language, "view"),
-                itemName(lists, unit.view_item_id, khmer) ?? notRecorded,
-              )}
-              {fact(
-                ut(language, "kitchen"),
-                itemName(lists, unit.kitchen_item_id, khmer) ?? notRecorded,
-              )}
+              {HOME_FIELDS &&
+                fact(
+                  ut(language, "view"),
+                  itemName(lists, unit.view_item_id, khmer) ?? notRecorded,
+                )}
+              {HOME_FIELDS &&
+                fact(
+                  ut(language, "kitchen"),
+                  itemName(lists, unit.kitchen_item_id, khmer) ?? notRecorded,
+                )}
             </div>
             {unit.notes !== null && <p className="ui-small">{unit.notes}</p>}
-            <UnitInventoryPanel
-              api={unitApi}
-              key={unit.unit_id}
-              onSaved={load}
-              propertyId={propertyId}
-              unitId={unit.unit_id}
-            />
+            {UNIT_INVENTORY && (
+              <UnitInventoryPanel
+                api={unitApi}
+                key={unit.unit_id}
+                onSaved={load}
+                propertyId={propertyId}
+                unitId={unit.unit_id}
+              />
+            )}
           </section>
           <RentTermsCard
             canManage={canManage && unit.can_manage !== false}

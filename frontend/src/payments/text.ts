@@ -300,6 +300,11 @@ const TEXT = {
     "Cleaning, damage and other one-time charges",
     "ការសម្អាត ការខូចខាត និងថ្លៃមួយដងផ្សេងទៀត",
   ],
+  // Parking Step 5: no cleaning charge on Parking
+  c_MOVEOUT_s_parking: [
+    "Damage and other one-time charges",
+    "ការខូចខាត និងថ្លៃមួយដងផ្សេងទៀត",
+  ],
   c_CREDIT: ["Customer Credit", "ឥណទានអតិថិជន"],
   c_CREDIT_s: ["Overpayments kept as Credit", "ប្រាក់បង់លើស រក្សាទុកជាឥណទាន"],
   st_matched: ["Matched", "បានផ្គូផ្គង"],

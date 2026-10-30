@@ -793,7 +793,10 @@ def test_a_moved_out_lease_waits_for_final_utility_cleaning_and_billed_periods(
     assert view["lease"]["moved_in"] is True
     assert view["lease"]["move_out_date"] == dep.move_out_date.isoformat()
     assert utility(view) == ["FINAL_INPUTS_NOT_RECORDED"]
-    assert cleaning(view) == [("NO_RATE", None)]
+    # Parking Step 5 (migration 257, owner 2026-10-30): no cleaning charge at move-out on Parking,
+    # so the cleaning check never blocks; the rate and charge steps below still run (code kept).
+    # Property Rental expects [("NO_RATE", None)] here and [("NOT_ISSUED", 2_500)] below.
+    assert cleaning(view) == []
     pending = record_final(leaver, (missing(dep.electricity),))
     assert utility(preview(prop, human, settlement)) == ["FINAL_INPUT_UNRESOLVED"]
     reading = final_reading(url, leaver, dep.electricity, "150")
@@ -809,7 +812,7 @@ def test_a_moved_out_lease_waits_for_final_utility_cleaning_and_billed_periods(
     rate = invoices().set_unit_cleaning_rate(
         prop, SetUnitCleaningRateCommand(uuid4(), unit, None, 2_500, "Configured rate"), actor=staff
     )
-    assert cleaning(preview(prop, human, settlement)) == [("NOT_ISSUED", 2_500)]
+    assert cleaning(preview(prop, human, settlement)) == []
     zero = invoices().set_unit_cleaning_rate(
         prop,
         SetUnitCleaningRateCommand(uuid4(), unit, UUID(str(rate["id"])), 0, "No cleaning charge"),
@@ -824,7 +827,7 @@ def test_a_moved_out_lease_waits_for_final_utility_cleaning_and_billed_periods(
     charge = RecordUnitCleaningChargeCommand(uuid4(), lease, UUID(str(again["id"])))
     invoices().record_unit_cleaning_charge(prop, charge, actor=staff)
     view = preview(prop, human, settlement)
-    assert cleaning(view) == [("NOT_ISSUED", 2_500)]
+    assert cleaning(view) == []
     assert [
         item["authorized_obligation_id"] for item in issues(view, "ONE_TIME_CHARGE_NOT_INVOICED")
     ] == [str(charge.charge_id)]
@@ -833,7 +836,7 @@ def test_a_moved_out_lease_waits_for_final_utility_cleaning_and_billed_periods(
     )
     view = preview(prop, human, settlement)
     # A recorded charge on an Invoice draft is not yet on an issued Invoice.
-    assert cleaning(view) == [("NOT_ISSUED", 2_500)]
+    assert cleaning(view) == []
     assert issues(view, "ONE_TIME_CHARGE_NOT_INVOICED") == []
     assert [item["invoice_id"] for item in issues(view, "INVOICE_DRAFT_NOT_ISSUED")] == [
         draft["id"]

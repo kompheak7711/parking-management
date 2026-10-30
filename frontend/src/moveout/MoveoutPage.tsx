@@ -4,6 +4,7 @@
 // come next. The list cannot yet tell a closed Final
 // Settlement apart (the server has no read of it), so "To confirm" and "Closed" come later.
 
+import { CLEANING_CHARGE, PET_DEPOSIT } from "../leases/parking";
 import "../shell/screens.css";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -569,7 +570,9 @@ function MoveoutDetail({
     capabilities === null || capabilities.has(capability);
   const mayDeposits = may("deposits.read");
   const mayInvoices = may("invoices.read");
-  const mayRate = may("invoices.create") || may("property.manage");
+  // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE), so the rate is never read.
+  const mayRate =
+    CLEANING_CHARGE && (may("invoices.create") || may("property.manage"));
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
@@ -924,7 +927,9 @@ function MoveoutDetail({
   ];
   const chargedNow = findings.some((finding) => billed.has(finding.id));
   const rate = shownCharges === null ? "unknown" : shownCharges.rate;
+  // Parking Step 5: with no cleaning charge on Parking, step 4 never waits for one.
   const cleaningSettled =
+    !CLEANING_CHARGE ||
     cleaning !== null ||
     (rate !== null && typeof rate === "object" && rate.cents === 0);
   const drafts = [
@@ -1378,33 +1383,39 @@ function MoveoutDetail({
                         )}
                       </>
                     )}
-                    <h4>{mt(language, "st4_clean")}</h4>
-                    {cleaning !== null ? (
-                      <ul className="ui-apps">
-                        <li>
-                          <span>{cleaning.lines[0]?.description}</span>
-                          {chargeMark(
-                            cleaning,
-                            cleaning.lines.map(sourceOf).find(Boolean) ?? "",
-                          )}
-                        </li>
-                      </ul>
-                    ) : (
-                      <p className="ui-small">
-                        {rate === "hidden"
-                          ? mt(language, "st4_clean_hidden")
-                          : rate === "unknown"
-                            ? mt(language, "st4_failed")
-                            : rate === null
-                              ? mt(language, "st4_clean_none")
-                              : rate.cents === 0
-                                ? mt(language, "st4_clean_zero")
-                                : mt(
-                                    language,
-                                    "st4_clean_rate",
-                                    usdFromCents(rate.cents),
-                                  )}
-                      </p>
+                    {/* Parking Step 5: the section shows only for a charge that exists. */}
+                    {(CLEANING_CHARGE || cleaning !== null) && (
+                      <>
+                        <h4>{mt(language, "st4_clean")}</h4>
+                        {cleaning !== null ? (
+                          <ul className="ui-apps">
+                            <li>
+                              <span>{cleaning.lines[0]?.description}</span>
+                              {chargeMark(
+                                cleaning,
+                                cleaning.lines.map(sourceOf).find(Boolean) ??
+                                  "",
+                              )}
+                            </li>
+                          </ul>
+                        ) : (
+                          <p className="ui-small">
+                            {rate === "hidden"
+                              ? mt(language, "st4_clean_hidden")
+                              : rate === "unknown"
+                                ? mt(language, "st4_failed")
+                                : rate === null
+                                  ? mt(language, "st4_clean_none")
+                                  : rate.cents === 0
+                                    ? mt(language, "st4_clean_zero")
+                                    : mt(
+                                        language,
+                                        "st4_clean_rate",
+                                        usdFromCents(rate.cents),
+                                      )}
+                          </p>
+                        )}
+                      </>
                     )}
                     {earlier.length > 0 && (
                       <>
@@ -1491,7 +1502,8 @@ function MoveoutDetail({
                     </span>,
                   ])}
                 />
-                {pets.length === 0 && (
+                {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); a PET row still shows. */}
+                {PET_DEPOSIT && pets.length === 0 && (
                   <p className="ui-small ui-muted">
                     {mt(language, "dep_none")}
                   </p>

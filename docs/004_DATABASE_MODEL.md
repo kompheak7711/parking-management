@@ -2996,6 +2996,8 @@ A Deposit counts as having a reversed forfeiture only through a disposition of i
 10c-2b-5: except when the Deposit holds money and every cent of it is pay-back money, which
 follows `DL_032`).
 
+Amended for Parking (owner, 2026-10-30, Parking Step 5; migration `20270407_257`): the `CLEANING_CHARGE_MISSING` check is switched off on Parking. The migration reads the function with `pg_get_functiondef` and replaces the one `IF v_moved_in AND v_move_out.id IS NOT NULL AND NOT EXISTS(... app.unit_cleaning_charges ...)` with `IF false AND ...` (exactly one match, else it refuses; the pattern of migrations 238 and 247); nothing else in the function, and no table, rate or charge function, changes. Forward-only. A later Property Rental migration that rewrites `app.final_settlement_preview` must be followed by the same edit (see `docs/replica/parking-differences.md`).
+
 As built in V1-056 sub-slice 8c (migration `20261025_90`): `information` also lists each
 one-time charge that a draft correction replaced (`CHARGE_REPLACED_BY_DRAFT_CORRECTION`, with its
 amount, `replacement_authorized_obligation_id` from the latest such correction and that

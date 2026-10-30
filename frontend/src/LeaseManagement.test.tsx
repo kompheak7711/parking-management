@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { PET_DEPOSIT } from "./leases/parking";
+
 import { LeaseManagement } from "./LeaseManagement";
 import { LeaseApi, LeaseResource, leaseApi } from "./leaseClient";
 
@@ -363,16 +365,19 @@ describe("Lease staff workflow", () => {
     fireEvent.change(screen.getByLabelText("Approved terms reference"), {
       target: { value: "owner-approved-parking" },
     });
-    fireEvent.click(screen.getByLabelText("Approved pet terms apply"));
-    fireEvent.change(screen.getByLabelText("Pet approval date"), {
-      target: { value: "2026-09-01" },
-    });
-    fireEvent.change(screen.getByLabelText("Pet description"), {
-      target: { value: "One approved indoor cat" },
-    });
-    fireEvent.click(
-      screen.getByLabelText("Signed terms require a distinct Pet Deposit"),
-    );
+    // Parking Step 5: no pet terms on Parking (PET_DEPOSIT); the code stays.
+    if (PET_DEPOSIT) {
+      fireEvent.click(screen.getByLabelText("Approved pet terms apply"));
+      fireEvent.change(screen.getByLabelText("Pet approval date"), {
+        target: { value: "2026-09-01" },
+      });
+      fireEvent.change(screen.getByLabelText("Pet description"), {
+        target: { value: "One approved indoor cat" },
+      });
+      fireEvent.click(
+        screen.getByLabelText("Signed terms require a distinct Pet Deposit"),
+      );
+    }
     fireEvent.change(
       screen.getByLabelText("Approved Security Deposit source identifier"),
       { target: { value: "deposit-1" } },
@@ -405,10 +410,14 @@ describe("Lease staff workflow", () => {
       property_service_id: "service-1",
       service_approval_period_id: "approval-1",
     });
-    expect(submitted?.pet_term).toMatchObject({
-      deposit_required_by_signed_terms: true,
-      pet_description: "One approved indoor cat",
-    });
+    if (PET_DEPOSIT) {
+      expect(submitted?.pet_term).toMatchObject({
+        deposit_required_by_signed_terms: true,
+        pet_description: "One approved indoor cat",
+      });
+    } else {
+      expect(submitted?.pet_term).toBeNull();
+    }
     expect(submitted?.security_deposit_id).toBe("deposit-1");
   });
 
@@ -946,5 +955,43 @@ describe("Lease staff workflow", () => {
     expect(
       screen.getByText(/Rent nonpayment: 20-day warning recorded/),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1149 Parking Step 5: the old Lease screen's draft form has no pet terms", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    render(<LeaseManagement api={client()} />);
+    fireEvent.change(screen.getByLabelText("Lease Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Leases" }));
+    await screen.findByRole("heading", { name: "Create Lease draft" });
+    expect(screen.queryByLabelText("Approved pet terms apply")).toBeNull();
+    expect(screen.queryByText("Approved pet terms")).toBeNull();
+  });
+
+  it("TEST-FE-1153 Parking Step 5: the old Lease screen's move-in checklist does not mention a Pet Deposit", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const signed = {
+      ...drafted,
+      status: "SIGNED" as const,
+      version: 2,
+      can_edit: false,
+      can_manage_signers: false,
+      can_sign: false,
+      can_move_in: true,
+      can_terminate: true,
+      can_renew: true,
+    };
+    await loadAndOpen(client({ get: vi.fn().mockResolvedValue(signed) }));
+    expect(
+      screen.getByText(
+        "Required Security Deposit balances will be server-validated.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Pet Deposit/)).toBeNull();
   });
 });

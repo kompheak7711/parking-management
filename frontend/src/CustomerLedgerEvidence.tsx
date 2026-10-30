@@ -1,3 +1,4 @@
+import { PET_DEPOSIT } from "./leases/parking";
 import {
   LEDGER_BALANCES,
   LEDGER_BUCKETS,
@@ -28,16 +29,24 @@ export function LedgerPositionSummary({
         </dt>
         <dd>{ledgerMoney(position.total_owed_usd_cents)}</dd>
       </div>
-      {Object.entries(LEDGER_BUCKETS).map(([key, label]) => (
-        <div key={key}>
-          <dt>{label}</dt>
-          <dd>
-            {ledgerMoney(
-              position[`${key as keyof typeof LEDGER_BUCKETS}_usd_cents`],
-            )}
-          </dd>
-        </div>
-      ))}
+      {Object.entries(LEDGER_BUCKETS)
+        // Parking Step 5: no pet on Parking (PET_DEPOSIT); the row shows while money is held.
+        .filter(
+          ([key]) =>
+            key !== "pet_deposit" ||
+            PET_DEPOSIT ||
+            ledgerMoney(position.pet_deposit_usd_cents) !== ledgerMoney("0"),
+        )
+        .map(([key, label]) => (
+          <div key={key}>
+            <dt>{label}</dt>
+            <dd>
+              {ledgerMoney(
+                position[`${key as keyof typeof LEDGER_BUCKETS}_usd_cents`],
+              )}
+            </dd>
+          </div>
+        ))}
     </dl>
   );
 }

@@ -3,6 +3,7 @@
 // add-up line, and the list of payments with their Receipt, Customer, amount, what they paid
 // and whether all the money is used. The server splits each payment, so the cards add up.
 
+import { CLEANING_CHARGE } from "../leases/parking";
 import {
   type FormEvent,
   useCallback,
@@ -378,7 +379,13 @@ export function PaymentsList({
               icon={icon}
               key={kind}
               label={pyt(language, `c_${kind}`)}
-              note={`${pyt(language, `c_${kind}_s` as PaymentsTextKey)}\n${countText(language, payments)}`}
+              note={`${pyt(
+                language,
+                // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE).
+                kind === "MOVEOUT" && !CLEANING_CHARGE
+                  ? "c_MOVEOUT_s_parking"
+                  : (`c_${kind}_s` as PaymentsTextKey),
+              )}\n${countText(language, payments)}`}
               onPress={() => {
                 setCard(card === kind ? "all" : kind);
               }}

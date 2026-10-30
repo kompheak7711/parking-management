@@ -8,12 +8,15 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { PET_DEPOSIT } from "../leases/parking";
+
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import {
   AUDIT,
   barRows,
   bodyRows,
+  DEPOSITS,
   facts,
   footRow,
   headRow,
@@ -925,5 +928,31 @@ describe("Registers", () => {
       ),
     ).toBeTruthy();
     expect(within(summaryCard()).getAllByRole("button")).toHaveLength(31);
+  });
+  it("TEST-FE-1143 Parking Step 5: the Deposits report lists Security only while no Pet Deposit is held, and its words say Security Deposits", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    openReports({
+      hash: "#/reports/deposits",
+      register: () =>
+        Promise.resolve({
+          ...DEPOSITS,
+          summary: {
+            ...DEPOSITS.summary,
+            held_by_type: { PET: 0, SECURITY: 50000 },
+          },
+        }),
+    });
+    await screen.findByRole("table", {
+      name: "Deposit liability and disposition",
+    });
+    expect(
+      bodyRows(within(summaryCard()).getByRole("table", { name: "By kind" })),
+    ).toEqual([["Security Deposit", "$500.00"]]);
+    expect(
+      screen.getByText("Security Deposits held, applied, kept or refunded"),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Security and Pet Deposits/)).toBeNull();
   });
 });

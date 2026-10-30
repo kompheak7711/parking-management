@@ -325,7 +325,7 @@ def test_financial_action_context_database_migration_privileges_and_forward_only
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270406_256"]
+    assert scripts.get_heads() == ["20270407_257"]
     revision = scripts.get_revision("20260908_47")
     assert revision is not None and revision.down_revision == "20260908_46"
     with pytest.raises(RuntimeError, match="forward-only"):

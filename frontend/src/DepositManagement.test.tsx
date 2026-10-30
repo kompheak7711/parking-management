@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { PET_DEPOSIT } from "./leases/parking";
+
 import { DepositManagement } from "./DepositManagement";
 import {
   DepositApi,
@@ -289,7 +291,11 @@ describe("DepositManagement", () => {
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-202 rejects imprecise money without submitting", async () => {
+  it("TEST-FE-202 rejects imprecise money without submitting", async ({
+    skip,
+  }) => {
+    // Parking Step 5: no Pet Deposit form on Parking (PET_DEPOSIT); the code stays.
+    skip(!PET_DEPOSIT);
     const client = api();
     render(<DepositManagement api={client} />);
     fireEvent.change(screen.getByLabelText("Reservation or Lease identifier"), {
@@ -326,7 +332,11 @@ describe("DepositManagement", () => {
     expect(client.createPetDeposit).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-210 reuses one command identity after an ambiguous client failure", async () => {
+  it("TEST-FE-210 reuses one command identity after an ambiguous client failure", async ({
+    skip,
+  }) => {
+    // Parking Step 5: no Pet Deposit form on Parking (PET_DEPOSIT); the code stays.
+    skip(!PET_DEPOSIT);
     const client = api();
     vi.mocked(client.leaseDeposits).mockResolvedValue({
       items: [],
@@ -610,5 +620,56 @@ describe("DepositManagement", () => {
       replacement_disposition_id: null,
       expected_reservation_version: null,
     });
+  });
+  it("TEST-FE-1150 Parking Step 5: the old Deposit screen offers no Create Pet Deposit form", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const client = api();
+    render(<DepositManagement api={client} />);
+    fireEvent.change(screen.getByLabelText("Reservation or Lease identifier"), {
+      target: { value: "lease-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Source type"), {
+      target: { value: "lease" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Deposits" }));
+    expect(await screen.findByText("PET")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", {
+        name: "Approved conditional Pet Deposit liability",
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Create Pet Deposit liability" }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1154 Parking Step 5: the old Deposit screen's help and loading words do not mention a Pet Deposit", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const client = {
+      ...api(),
+      leaseDeposits: vi
+        .fn()
+        .mockReturnValue(new Promise<never>(() => undefined)),
+    };
+    render(<DepositManagement api={client} />);
+    expect(
+      screen.getByText(/Receipt creation waits for authoritative Payment/)
+        .textContent,
+    ).not.toMatch(/Pet/);
+    fireEvent.change(screen.getByLabelText("Reservation or Lease identifier"), {
+      target: { value: "lease-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Source type"), {
+      target: { value: "lease" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Deposits" }));
+    expect(
+      await screen.findByText("Loading Security Deposit liabilities…"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Pet Deposit/)).toBeNull();
   });
 });

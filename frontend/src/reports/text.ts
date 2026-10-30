@@ -82,6 +82,11 @@ const TEXT = {
     "Security and Pet Deposits held, applied, kept or refunded",
     "ប្រាក់កក់សុវត្ថិភាព និងសត្វចិញ្ចឹម កាន់កាប់ បានប្រើ រក្សា ឬសងវិញ",
   ],
+  // Parking Step 5: no pet on Parking
+  d_deposits_security: [
+    "Security Deposits held, applied, kept or refunded",
+    "ប្រាក់កក់សុវត្ថិភាព កាន់កាប់ បានប្រើ រក្សា ឬសងវិញ",
+  ],
   r_final_settlements: ["Final Settlement register", "បញ្ជីការទូទាត់ចុងក្រោយ"],
   d_final_settlements: [
     "Charges, deposits applied or kept, refunds and open balances",

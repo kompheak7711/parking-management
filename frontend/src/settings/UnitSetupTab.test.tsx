@@ -14,6 +14,7 @@ import {
   type UnitSetupListKind,
   type UnitSetupLists,
 } from "../unitClient";
+import { CLEANING_CHARGE, HOME_FIELDS, ROOM_FEATURES } from "../leases/parking";
 import { UnitSetupTab } from "./UnitSetupTab";
 
 afterEach(() => {
@@ -155,17 +156,16 @@ describe("Settings: Parking setup", () => {
     const api = show();
     const floors = await screen.findByRole("region", { name: "Floors" });
     expect(api.setupLists).toHaveBeenCalledWith("property-1");
-    expect(
-      ["Floors", "Parking Types", "Views", "Kitchens", "Room features"].map(
-        (name) => list(name).querySelector("h2")?.textContent,
-      ),
-    ).toEqual([
+    // Parking Step 5: Views, Kitchens and Room features are hidden on Parking; the code stays.
+    const shown = [
       "Floors",
       "Parking Types",
-      "Views",
-      "Kitchens",
-      "Room features",
-    ]);
+      ...(HOME_FIELDS ? ["Views", "Kitchens"] : []),
+      ...(ROOM_FEATURES ? ["Room features"] : []),
+    ];
+    expect(
+      shown.map((name) => list(name).querySelector("h2")?.textContent),
+    ).toEqual(shown);
     const [first, second] = within(floors).getAllByRole("listitem");
     if (first === undefined || second === undefined) throw new Error("rows");
     const rows = [first, second];
@@ -177,7 +177,9 @@ describe("Settings: Parking setup", () => {
       }),
     ).toBeTruthy();
     expect(rows[1]?.textContent).toContain("No Parking yet");
-    expect(list("Room features").textContent).toContain("Balcony1 Parking");
+    if (ROOM_FEATURES) {
+      expect(list("Room features").textContent).toContain("Balcony1 Parking");
+    }
     expect(
       within(list("Parking Types")).getByRole("button", {
         name: "Edit: Studio",
@@ -189,18 +191,28 @@ describe("Settings: Parking setup", () => {
   });
 
   it("TEST-FE-941 Add asks a name (and checks it is not in the list yet), a Floor asks its number; Edit renames; Remove asks first; the lists are read again", async () => {
+    // Parking Step 5: Views and Kitchens are hidden on Parking, so Add is tried on the
+    // Parking Types and Remove on a Parking Type; the code stays.
+    const add = HOME_FIELDS
+      ? { list: "Views", one: "View", taken: "street", kind: "VIEW" }
+      : {
+          list: "Parking Types",
+          one: "Parking Type",
+          taken: "studio",
+          kind: "UNIT_TYPE",
+        };
     const api = show();
-    await screen.findByRole("region", { name: "Views" });
-    fireEvent.click(screen.getByRole("button", { name: "Add: View" }));
-    let dialog = screen.getByRole("dialog", { name: "Add · View" });
+    await screen.findByRole("region", { name: add.list });
+    fireEvent.click(screen.getByRole("button", { name: `Add: ${add.one}` }));
+    let dialog = screen.getByRole("dialog", { name: `Add · ${add.one}` });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Enter a name.")).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
-      target: { value: "street" },
+      target: { value: add.taken },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      within(dialog).getByText('"street" is already in the list.'),
+      within(dialog).getByText(`"${add.taken}" is already in the list.`),
     ).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
       target: { value: " Courtyard " },
@@ -211,7 +223,7 @@ describe("Settings: Parking setup", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Saved.")).toBeTruthy();
     expect(api.createSetupItem).toHaveBeenCalledWith("property-1", {
-      list_kind: "VIEW",
+      list_kind: add.kind,
       name_en: "Courtyard",
       name_km: "ទីធ្លា",
     });
@@ -257,16 +269,19 @@ describe("Settings: Parking setup", () => {
       name_km: null,
     });
 
+    const gone = HOME_FIELDS
+      ? { name: "Kitchenette", item: LISTS.lists.KITCHEN[0] }
+      : { name: "One Bedroom", item: LISTS.lists.UNIT_TYPE[1] };
     fireEvent.click(
-      screen.getByRole("button", { name: "Remove: Kitchenette" }),
+      screen.getByRole("button", { name: `Remove: ${gone.name}` }),
     );
-    dialog = screen.getByRole("dialog", { name: "Remove · Kitchenette" });
+    dialog = screen.getByRole("dialog", { name: `Remove · ${gone.name}` });
     expect(dialog.textContent).toContain(
-      "Remove Kitchenette? This cannot be undone. Records made before keep it.",
+      `Remove ${gone.name}? This cannot be undone. Records made before keep it.`,
     );
     fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
-    expect(await screen.findByText("Kitchenette removed.")).toBeTruthy();
-    expect(api.removeSetupItem).toHaveBeenCalledWith(LISTS.lists.KITCHEN[0]);
+    expect(await screen.findByText(`${gone.name} removed.`)).toBeTruthy();
+    expect(api.removeSetupItem).toHaveBeenCalledWith(gone.item);
   });
 
   it("TEST-FE-942 a change refused because the list changed says so and reads again; without the right to change, the lists show with no buttons; a failed read offers Retry", async () => {
@@ -347,7 +362,11 @@ describe("Settings: Parking setup", () => {
     expect(floors.textContent).toContain("មិនទាន់មានចំណត");
   });
 
-  it("TEST-FE-1006 a Parking Type with no move-out cleaning rate shows a No cleaning rate chip; when the rates cannot be read no chip shows", async () => {
+  it("TEST-FE-1006 a Parking Type with no move-out cleaning rate shows a No cleaning rate chip; when the rates cannot be read no chip shows", async ({
+    skip,
+  }) => {
+    // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE); the code stays.
+    skip(!CLEANING_CHARGE);
     show(apiOf(), "en", cleaningOf(["ONE_BEDROOM"]));
     const types = await screen.findByRole("region", { name: "Parking Types" });
     const one = within(types).getByText("One Bedroom").closest("li");
@@ -360,5 +379,29 @@ describe("Settings: Parking setup", () => {
     show(apiOf(), "en", failing);
     const again = await screen.findByRole("region", { name: "Parking Types" });
     expect(within(again).queryByText("No cleaning rate")).toBeNull();
+  });
+  it("TEST-FE-1145 Parking Step 5: the tab shows Floors and Parking Types only; Views, Kitchens and Room features are hidden", async ({
+    skip,
+  }) => {
+    skip(HOME_FIELDS || ROOM_FEATURES);
+    show();
+    await screen.findByRole("region", { name: "Floors" });
+    expect(screen.getByRole("region", { name: "Parking Types" })).toBeTruthy();
+    for (const name of ["Views", "Kitchens", "Room features"]) {
+      expect(screen.queryByRole("region", { name })).toBeNull();
+    }
+  });
+
+  it("TEST-FE-1148 Parking Step 5: no cleaning rate chip on a Parking Type, and the cleaning rates are not read", async ({
+    skip,
+  }) => {
+    skip(CLEANING_CHARGE);
+    const cleaning = cleaningOf(["STUDIO", "ONE_BEDROOM"]);
+    show(apiOf(), "en", cleaning);
+    const types = await screen.findByRole("region", { name: "Parking Types" });
+    expect(types.textContent).toContain("Studio");
+    expect(within(types).queryByText("No cleaning rate")).toBeNull();
+    expect(cleaning.read).not.toHaveBeenCalled();
+    expect(types.textContent).not.toContain("cleaning rate");
   });
 });

@@ -1,3 +1,4 @@
+import { PET_DEPOSIT } from "./leases/parking";
 import { FormEvent, useRef, useState } from "react";
 
 import {
@@ -198,7 +199,10 @@ export function DepositManagement({
         ? api.reservationDeposits(sourceId)
         : api.leaseDeposits(sourceId);
     operation(
-      "Loading separate Security and Pet Deposit liabilities…",
+      // Parking Step 5: no Pet Deposit on Parking (PET_DEPOSIT); words only.
+      PET_DEPOSIT
+        ? "Loading separate Security and Pet Deposit liabilities…"
+        : "Loading Security Deposit liabilities…",
       request,
       (page) => {
         setItems(page.items);
@@ -488,9 +492,11 @@ export function DepositManagement({
     >
       <h3 id="deposit-management-heading">Deposit management</h3>
       <p className="panel-help">
-        Security and Pet Deposits remain separate liabilities. Receipt creation
-        waits for authoritative Payment persistence; existing receipts and every
-        linked correction remain visible.
+        {/* Parking Step 5: no Pet Deposit on Parking (PET_DEPOSIT); words only. */}
+        {PET_DEPOSIT &&
+          "Security and Pet Deposits remain separate liabilities. "}
+        Receipt creation waits for authoritative Payment persistence; existing
+        receipts and every linked correction remain visible.
       </p>
       {notice !== null && <p aria-live="polite">{notice}</p>}
 
@@ -755,7 +761,8 @@ export function DepositManagement({
         </div>
       )}
 
-      {canManage && (
+      {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. */}
+      {PET_DEPOSIT && canManage && (
         <form className="form-stack" onSubmit={createPetDeposit}>
           <h4>Approved conditional Pet Deposit liability</h4>
           <label>

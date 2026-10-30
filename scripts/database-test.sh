@@ -212,6 +212,7 @@ database_test_suites='
   tests/test_report_registers_migration.py
   tests/test_report_exports_migration.py
   tests/test_final_settlement_preview_migration.py
+  tests/test_cleaning_off_migration.py
   tests/test_final_settlement_draft_migration.py
   tests/test_billing_run_migration.py
   tests/test_lease_timeline_restricted_migration.py

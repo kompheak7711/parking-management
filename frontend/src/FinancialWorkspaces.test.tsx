@@ -10,6 +10,8 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { PET_DEPOSIT } from "./leases/parking";
 import {
   ActionContextEvidence,
   TargetEvidence,
@@ -600,7 +602,16 @@ describe("Refund forms through accepted read clients", () => {
     },
   );
 
-  it.each(["PAYMENT", "CREDIT", "PET_DEPOSIT"] as const)(
+  // Parking Step 5: the Pet Deposit source is hidden on Parking (PET_DEPOSIT); the code stays.
+  it.each(
+    (PET_DEPOSIT
+      ? ["PAYMENT", "CREDIT", "PET_DEPOSIT"]
+      : ["PAYMENT", "CREDIT"]) as readonly (
+      | "PAYMENT"
+      | "CREDIT"
+      | "PET_DEPOSIT"
+    )[],
+  )(
     "TEST-FE-443 loads only supported %s source and records the confirmed USD amount",
     async (type) => {
       const sample = currentRefund("refund_return"),
@@ -3318,7 +3329,11 @@ describe("retained proposal history and complete amount alignment", () => {
 });
 
 describe("operation-owned unsent financial drafts", () => {
-  it("TEST-FE-529 retains an unsent payout after another Refund operation is acknowledged", async () => {
+  it("TEST-FE-529 retains an unsent payout after another Refund operation is acknowledged", async ({
+    skip,
+  }) => {
+    // Parking Step 5: the Pet Deposit source is hidden on Parking (PET_DEPOSIT); the code stays.
+    skip(!PET_DEPOSIT);
     const sample = currentRefund("refund_correction_reversal"),
       h = refundProps(sample, "refunds.create"),
       changed = vi.fn();
@@ -3356,7 +3371,11 @@ describe("operation-owned unsent financial drafts", () => {
     expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue("123.45");
     expect(h.calls.every((c) => c.method === "GET")).toBe(true);
   });
-  it("TEST-FE-530 cancels Refund source loss before resetting references or invalidating", () => {
+  it("TEST-FE-530 cancels Refund source loss before resetting references or invalidating", ({
+    skip,
+  }) => {
+    // Parking Step 5: the Pet Deposit source is hidden on Parking (PET_DEPOSIT); the code stays.
+    skip(!PET_DEPOSIT);
     const h = refundProps(currentRefund("refund_return"), "refunds.create"),
       discard = vi.spyOn(window, "confirm").mockReturnValue(false);
     try {
@@ -3705,4 +3724,17 @@ describe("immutable command results and separately current positions", () => {
       expect(stringifyFinancialJson(data)).toBe(before);
     },
   );
+  it("TEST-FE-1151 Parking Step 5: the Refund workspace offers no Pet Deposit source", ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const sample = currentRefund("refund_return"),
+      h = refundProps(sample, "refunds.create");
+    render(<FinancialRefundWorkspace {...h.props} />);
+    expect(
+      within(screen.getByLabelText("Refund source"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Unallocated Payment", "Recognized Customer Credit"]);
+  });
 });

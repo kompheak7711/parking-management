@@ -13,6 +13,7 @@
 // below it needs a Manager or the Owner and a reason. The Unit's required Services are ticked
 // and cannot be unticked.
 
+import { PET_DEPOSIT } from "./parking";
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 import type { CustomerApi, CustomerListItem } from "../customerClient";
@@ -1026,16 +1027,20 @@ export function LeaseForm({
               />,
               problems.depositReason,
             )}
-          <label className="ui-chk">
-            <input
-              checked={pet}
-              onChange={(event) => {
-                setPet(event.currentTarget.checked);
-              }}
-              type="checkbox"
-            />
-            <span>{lt(language, "pet_ok")}</span>
-          </label>
+          {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. A renewal of a
+              Lease that has a pet keeps it and shows the tick (data-driven). */}
+          {(PET_DEPOSIT || pet) && (
+            <label className="ui-chk">
+              <input
+                checked={pet}
+                onChange={(event) => {
+                  setPet(event.currentTarget.checked);
+                }}
+                type="checkbox"
+              />
+              <span>{lt(language, "pet_ok")}</span>
+            </label>
+          )}
           {pet &&
             field(
               "lease-form-pet",

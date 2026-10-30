@@ -450,7 +450,7 @@ def test_termination_and_the_move_out_page_end_the_vehicle_row(
 
 def test_vehicles_migration_is_head_and_forward_only() -> None:
     script = ScriptDirectory.from_config(Config(str(Path(__file__).parents[1] / "alembic.ini")))
-    assert script.get_current_head() == "20270406_256"
+    assert script.get_current_head() == "20270407_257"
     revision = script.get_revision("20270406_256")
     assert revision is not None
     assert revision.down_revision == "20270405_255"

@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { CLEANING_CHARGE } from "../leases/parking";
+
 import {
   type ConfiguredService,
   EffectiveConfigurationConflictError,
@@ -936,5 +938,35 @@ describe("Settings: Rates and services", () => {
     const khmer = await screen.findByRole("region", { name: "ប្រភេទសេវា" });
     expect(within(khmer).getByText("សំរាម")).toBeTruthy();
     expect(screen.getByText("ប្រមូលសំរាម")).toBeTruthy();
+  });
+  it("TEST-FE-1152 Parking Step 5: the Rates tab has no Move-out cleaning rates card and never reads the cleaning rates", async ({
+    skip,
+  }) => {
+    skip(CLEANING_CHARGE);
+    const read = vi.fn(() =>
+      Promise.resolve({ cleaning_rates: [], unit_types: [], can_manage: true }),
+    );
+    render(
+      <RatesTab
+        active
+        api={apiOf(() => Promise.resolve(snapshot()))}
+        language="en"
+        propertyId="property-1"
+        cleaning={{
+          read,
+          add: () => Promise.resolve({}),
+          change: () => Promise.resolve({}),
+          remove: () => Promise.resolve({}),
+        }}
+        services={servicesOf()}
+        today={TODAY}
+      />,
+    );
+    await screen.findByRole("region", { name: "Utility Rates" });
+    expect(
+      screen.queryByRole("region", { name: "Move-out cleaning rates" }),
+    ).toBeNull();
+    expect(screen.queryByText("Move-out cleaning rates")).toBeNull();
+    expect(read).not.toHaveBeenCalled();
   });
 });

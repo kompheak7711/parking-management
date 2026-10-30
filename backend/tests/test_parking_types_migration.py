@@ -110,7 +110,7 @@ def test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing(
 
 def test_the_parking_types_migration_is_the_head_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270406_256"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270407_257"
     source = (
         Path(__file__).parents[1] / "migrations" / "versions" / f"{REVISION}_parking_types.py"
     ).read_text(encoding="utf-8")

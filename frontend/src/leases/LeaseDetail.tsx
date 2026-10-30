@@ -3,6 +3,7 @@
 // Signers, Occupants, Rent and services, Deposits, Termination and History. The actions come
 // with the next step; until then they stay in the earlier forms under the page.
 
+import { PET_DEPOSIT } from "./parking";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import type { DepositApi, DepositResource } from "../depositClient";
@@ -1133,9 +1134,10 @@ export function LeaseDetail({
                       )}
                     </p>
                   </>
-                ) : (
+                ) : PET_DEPOSIT ? (
+                  // Parking Step 5: no pet on Parking, so no line about one.
                   <p className="ui-muted">{lt(language, "no_pet")}</p>
-                )}
+                ) : null}
               </>
             )}
             <div className="ui-notice">

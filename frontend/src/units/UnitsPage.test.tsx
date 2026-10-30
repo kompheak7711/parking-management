@@ -9,6 +9,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LeaseApi, LeaseResource } from "../leaseClient";
+import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
 import { detailFromHash, hashForPage, pageFromHash } from "../shell/navigation";
 import {
@@ -599,7 +600,11 @@ describe("Parking page", () => {
       await screen.findByRole("heading", { name: "U101" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Floor 1 · Studio · 36 m² · CHETANA Parking"),
+      screen.getByText(
+        HOME_FIELDS
+          ? "Floor 1 · Studio · 36 m² · CHETANA Parking"
+          : "Floor 1 · Studio · CHETANA Parking",
+      ),
     ).toBeInTheDocument();
     for (const name of [
       "Parking details",
@@ -615,9 +620,12 @@ describe("Parking page", () => {
       .getByRole("heading", { name: "Parking details" })
       .closest("section");
     if (details === null) throw new Error("no details card");
-    expect(details).toHaveTextContent("BalconyYes");
-    expect(details).toHaveTextContent("ViewRiver view");
-    expect(details).toHaveTextContent("KitchenNot recorded");
+    // Parking Step 5: features and home fields are hidden on Parking; the code stays.
+    if (ROOM_FEATURES) expect(details).toHaveTextContent("BalconyYes");
+    if (HOME_FIELDS) {
+      expect(details).toHaveTextContent("ViewRiver view");
+      expect(details).toHaveTextContent("KitchenNot recorded");
+    }
     const leaseCard = screen
       .getByRole("heading", { name: "Current Lease" })
       .closest("section");
@@ -1186,13 +1194,19 @@ describe("Parking page", () => {
     fireEvent.change(within(dialog).getByLabelText("Parking Type"), {
       target: { value: "ONE_BEDROOM" },
     });
-    fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
-      target: { value: "36" },
-    });
-    fireEvent.change(within(dialog).getByLabelText("View"), {
-      target: { value: "VIEW-RIVER" },
-    });
-    fireEvent.click(within(dialog).getByLabelText("Balcony"));
+    // Parking Step 5: the home fields and Room features are hidden on Parking; a hidden field
+    // is left out of what is sent. The code stays.
+    if (HOME_FIELDS) {
+      fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
+        target: { value: "36" },
+      });
+      fireEvent.change(within(dialog).getByLabelText("View"), {
+        target: { value: "VIEW-RIVER" },
+      });
+    }
+    if (ROOM_FEATURES) {
+      fireEvent.click(within(dialog).getByLabelText("Balcony"));
+    }
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => {
       expect(window.location.hash).toBe("#/units/unit-U107");
@@ -1202,13 +1216,17 @@ describe("Parking page", () => {
       floor_item_id: "FLOOR-F002",
       unit_type: "ONE_BEDROOM",
       status: "VACANT",
-      size_square_metres: "36.00",
-      bedrooms: null,
-      bathrooms: null,
-      view_item_id: "VIEW-RIVER",
-      kitchen_item_id: null,
       notes: null,
-      room_feature_ids: ["ROOM_FEATURE-BALCONY"],
+      ...(HOME_FIELDS
+        ? {
+            size_square_metres: "36.00",
+            bedrooms: null,
+            bathrooms: null,
+            view_item_id: "VIEW-RIVER",
+            kitchen_item_id: null,
+          }
+        : {}),
+      ...(ROOM_FEATURES ? { room_feature_ids: ["ROOM_FEATURE-BALCONY"] } : {}),
     });
 
     cleanup();
@@ -1232,8 +1250,100 @@ describe("Parking page", () => {
       floor_item_id: "FLOOR-F002",
       unit_type: "STUDIO",
       notes: "Corner Parking",
-      room_feature_ids: ["ROOM_FEATURE-BALCONY"],
+      ...(ROOM_FEATURES ? { room_feature_ids: ["ROOM_FEATURE-BALCONY"] } : {}),
     });
     expect(sent).not.toHaveProperty("unit_number");
+  });
+  it("TEST-FE-1139 Parking Step 5: Update Parking leaves the hidden fields out of what it sends, so stored values are kept", async ({
+    skip,
+  }) => {
+    skip(HOME_FIELDS || ROOM_FEATURES);
+    const client = unitApi();
+    window.location.hash = "#/units/unit-U201";
+    show(client);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Update Parking" }),
+    );
+    const edit = screen.getByRole("dialog");
+    fireEvent.change(within(edit).getByLabelText("Notes"), {
+      target: { value: "Near the gate" },
+    });
+    fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("Parking U201 updated."),
+    ).toBeInTheDocument();
+    const [, sent] = vi.mocked(client.update).mock.calls[0] ?? [];
+    expect(sent).toEqual({
+      floor_item_id: "FLOOR-F002",
+      unit_type: "STUDIO",
+      notes: "Near the gate",
+    });
+  });
+
+  it("TEST-FE-1144 Parking Step 5: the Parking page shows no inventory and no feature tiles, and New Parking has no Room features", async ({
+    skip,
+  }) => {
+    skip(UNIT_INVENTORY || ROOM_FEATURES);
+    window.location.hash = "#/units/unit-U101";
+    const client = unitApi();
+    show(client);
+    expect(
+      await screen.findByRole("heading", { name: "U101" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Parking inventory" }),
+    ).toBeNull();
+    expect(client.inventory).not.toHaveBeenCalled();
+    const details = screen
+      .getByRole("heading", { name: "Parking details" })
+      .closest("section");
+    if (details === null) throw new Error("no details card");
+    expect(details).not.toHaveTextContent("Balcony");
+    cleanup();
+    window.location.hash = "#/units";
+    show(client);
+    fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByText("Room features")).toBeNull();
+    expect(within(dialog).queryByLabelText("Balcony")).toBeNull();
+    expect(dialog).not.toHaveTextContent("empty inventory");
+  });
+
+  it("TEST-FE-1146 Parking Step 5: Size, Bedrooms, Bathrooms, View and Kitchen are gone from the dialogs and the Parking page; Floor, Parking Type and Notes stay", async ({
+    skip,
+  }) => {
+    skip(HOME_FIELDS);
+    window.location.hash = "#/units/unit-U101";
+    const client = unitApi();
+    show(client);
+    expect(
+      await screen.findByRole("heading", { name: "U101" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Floor 1 · Studio · CHETANA Parking"),
+    ).toBeInTheDocument();
+    const details = screen
+      .getByRole("heading", { name: "Parking details" })
+      .closest("section");
+    if (details === null) throw new Error("no details card");
+    expect(details).toHaveTextContent("FloorFloor 1");
+    expect(details).toHaveTextContent("Parking TypeStudio");
+    for (const gone of ["Size", "Bedrooms", "Bathrooms", "View", "Kitchen"]) {
+      expect(within(details).queryByText(gone)).toBeNull();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Update Parking" }));
+    const edit = screen.getByRole("dialog");
+    expect(within(edit).getByLabelText(/^Floor/)).toBeInTheDocument();
+    expect(within(edit).getByLabelText("Parking Type")).toBeInTheDocument();
+    expect(within(edit).getByLabelText("Notes")).toBeInTheDocument();
+    for (const gone of [
+      "Size (m²)",
+      "Bedrooms",
+      "Bathrooms",
+      "View",
+      "Kitchen",
+    ]) {
+      expect(within(edit).queryByLabelText(gone)).toBeNull();
+    }
   });
 });

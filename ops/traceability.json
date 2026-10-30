@@ -59135,6 +59135,174 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "Parking Step 4 (review fix): Change vehicle opens on the End Date when that day is already past, so the date is never above its limit."
+    },
+    {
+      "test_id": "TEST-FE-1139",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: Update Parking leaves the hidden home fields and Room features out of what it sends, so stored values are kept."
+    },
+    {
+      "test_id": "TEST-FE-1140",
+      "upstream_ids": ["BR-DEP-007", "BR-DEP-008"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: New Lease has no pet tick and sends pet_term null; the Lease page Deposits card says nothing about a pet."
+    },
+    {
+      "test_id": "TEST-FE-1141",
+      "upstream_ids": ["BR-DEP-007"],
+      "test_level": "UI",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: an inspection finding has no Caused by the pet tick; the Deposits card says nothing about a Pet Deposit."
+    },
+    {
+      "test_id": "TEST-FE-1142",
+      "upstream_ids": ["BR-DEP-009"],
+      "test_level": "UI",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: Pet Deposit held is not shown while it is zero and shows again when money is held."
+    },
+    {
+      "test_id": "TEST-FE-1143",
+      "upstream_ids": ["BR-DEP-009"],
+      "test_level": "UI",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the Deposits report lists Security only while no Pet Deposit is held and its words say Security Deposits."
+    },
+    {
+      "test_id": "TEST-FE-1144",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the Parking page shows no inventory panel and no feature tiles; New Parking has no Room features."
+    },
+    {
+      "test_id": "TEST-FE-1145",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the Parking setup tab shows Floors and Parking Types only."
+    },
+    {
+      "test_id": "TEST-FE-1146",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: Size, Bedrooms, Bathrooms, View and Kitchen are gone from the dialogs and the Parking page; Floor, Parking Type and Notes stay."
+    },
+    {
+      "test_id": "TEST-FE-1147",
+      "upstream_ids": ["BR-MOVEOUT-013"],
+      "test_level": "UI",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: move-out step 4 reads no cleaning rate, shows no cleaning section or button, and is done without a cleaning charge."
+    },
+    {
+      "test_id": "TEST-FE-1148",
+      "upstream_ids": ["BR-UNIT-014"],
+      "test_level": "UI",
+      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: no No cleaning rate chip on a Parking Type and the cleaning rates are not read."
+    },
+    {
+      "test_id": "TEST-FE-1149",
+      "upstream_ids": ["BR-DEP-007"],
+      "test_level": "UI",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the old Lease screen's draft form has no pet terms."
+    },
+    {
+      "test_id": "TEST-FE-1150",
+      "upstream_ids": ["BR-DEP-007"],
+      "test_level": "UI",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the old Deposit screen offers no Create Pet Deposit form."
+    },
+    {
+      "test_id": "TEST-FE-1151",
+      "upstream_ids": ["BR-DEP-009"],
+      "test_level": "UI",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the Refund workspace offers no Pet Deposit source."
+    },
+    {
+      "test_id": "TEST-FE-1152",
+      "upstream_ids": ["BR-UNIT-014"],
+      "test_level": "UI",
+      "test_path": "frontend/src/settings/RatesTab.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: the Rates tab has no Move-out cleaning rates card and never reads the cleaning rates. Property Rental tests that skip while a flag is off (TEST-FE-202, 210, 529, 530 for PET_DEPOSIT; 978, 1006 for CLEANING_CHARGE) are listed in docs/replica/parking-differences.md; their entries above are unchanged because the manifest's early entries are hash-checked."
+    },
+    {
+      "test_id": "test_a_moved_out_lease_with_no_cleaning_rate_and_no_charge_is_ready_to_close",
+      "upstream_ids": ["BR-MOVEOUT-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_cleaning_off_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 5: migration 257: a moved-out Lease with no cleaning rate and no cleaning charge reaches a ready settlement preview; CLEANING_CHARGE_MISSING never appears."
+    },
+    {
+      "test_id": "test_a_cleaning_charge_that_exists_still_counts_as_a_normal_debt",
+      "upstream_ids": ["BR-MOVEOUT-013", "BR-UNIT-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_cleaning_off_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 5: the rate settings and app.record_unit_cleaning_charge still work; an issued cleaning charge is an ordinary open line of the Settlement."
+    },
+    {
+      "test_id": "test_a_full_settlement_with_no_pet_deposit_is_exact_to_the_cent",
+      "upstream_ids": ["BR-SETTLE-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_cleaning_off_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 5: a Security Deposit of 10,000 pays a 7,525 debt and refunds 2,475; held 0, owed 0, applications 7,525, Settlement closed."
+    },
+    {
+      "test_id": "test_the_cleaning_off_migration_is_the_head_and_is_forward_only",
+      "upstream_ids": ["BR-MOVEOUT-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_cleaning_off_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 5: 20270407_257 is the head, revises 20270406_256, forward-only."
+    },
+    {
+      "test_id": "test_the_preview_source_has_the_cleaning_check_switched_off",
+      "upstream_ids": ["BR-MOVEOUT-013"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_cleaning_off_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 5: the preview source holds exactly one IF false AND v_moved_in ... and the rest of the function is unchanged."
+    },
+    {
+      "test_id": "TEST-FE-1153",
+      "upstream_ids": ["BR-DEP-007"],
+      "test_level": "UI",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: with PET_DEPOSIT off, the old Lease screen's move-in checklist, follow-up notice and Approved Deposit terms paragraph do not mention a Pet Deposit (words only; the paragraph line still shows for a Lease that has a pet on record). Skips when PET_DEPOSIT is on."
+    },
+    {
+      "test_id": "TEST-FE-1154",
+      "upstream_ids": ["BR-DEP-007"],
+      "test_level": "UI",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 5: with PET_DEPOSIT off, the old Deposit screen's help paragraph and loading notice do not mention a Pet Deposit (words only). Skips when PET_DEPOSIT is on."
     }
   ]
 }

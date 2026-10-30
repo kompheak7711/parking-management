@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { CLEANING_CHARGE, HOME_FIELDS, ROOM_FEATURES } from "../leases/parking";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -30,6 +31,21 @@ import {
   cleaningSettingsApi,
 } from "./serviceSettingsClient";
 import { type SettingsTextKey, sst } from "./text";
+
+// Parking Step 5: no cleaning charge on Parking, so the Parking Type note says nothing about
+// cleaning rates.
+function noteFor(kind: UnitSetupListKind): SettingsTextKey | undefined {
+  if (kind === "UNIT_TYPE" && !CLEANING_CHARGE) return "cf_type_note_parking";
+  return NOTES[kind];
+}
+
+// Parking Step 5: Views and Kitchens go with the home-only fields, Room features with the
+// Parking features. The list kinds stay in `unitSetupListKinds` (the parser checks them).
+function shownOnParking(kind: UnitSetupListKind): boolean {
+  if (kind === "VIEW" || kind === "KITCHEN") return HOME_FIELDS;
+  if (kind === "ROOM_FEATURE") return ROOM_FEATURES;
+  return true;
+}
 
 export type SetupApi = Pick<
   UnitApi,
@@ -151,7 +167,7 @@ function ItemDialog({
     onSave({ name_en: name, name_km: khmer.trim() || null });
   }
 
-  const note = NOTES[kind];
+  const note = noteFor(kind);
   return (
     <Dialog
       busy={busy}
@@ -273,17 +289,20 @@ export function UnitSetupTab({
       allPages(async (cursor) =>
         api.list(propertyId, cursor === undefined ? {} : { cursor }),
       ).catch(() => null),
-      cleaning
-        .read(propertyId)
-        .then(
-          (found) =>
-            new Set(
-              found.unit_types
-                .filter((type) => type.cleaning_rate_id === null)
-                .map((type) => type.code),
-            ),
-        )
-        .catch(() => null),
+      // Parking Step 5: no cleaning charge on Parking, so no missing-rate chip.
+      CLEANING_CHARGE
+        ? cleaning
+            .read(propertyId)
+            .then(
+              (found) =>
+                new Set(
+                  found.unit_types
+                    .filter((type) => type.cleaning_rate_id === null)
+                    .map((type) => type.code),
+                ),
+            )
+            .catch(() => null)
+        : Promise.resolve(null),
     ])
       .then(([loaded, read, missing]) => {
         if (operation !== sequence.current) return;
@@ -370,7 +389,7 @@ export function UnitSetupTab({
 
   const manage = lists.can_manage;
   const card = (kind: UnitSetupListKind) => {
-    const note = NOTES[kind];
+    const note = noteFor(kind);
     return (
       <section aria-labelledby={`setup-${kind}`} className="ui-card" key={kind}>
         <header className="ui-chead">
@@ -478,7 +497,9 @@ export function UnitSetupTab({
           <p>{sst(language, "read_only")}</p>
         </div>
       )}
-      <div className="ui-setup">{unitSetupListKinds.map(card)}</div>
+      <div className="ui-setup">
+        {unitSetupListKinds.filter(shownOnParking).map(card)}
+      </div>
 
       {editing !== null && (
         <ItemDialog

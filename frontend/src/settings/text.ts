@@ -137,6 +137,11 @@ const TEXT = {
     "Rename keeps every Parking of this type. Add the new type to a move-out cleaning rate on the Rates and services tab.",
     "ការប្តូរឈ្មោះរក្សាចំណតទាំងអស់នៃប្រភេទនេះ។ សូមបន្ថែមប្រភេទថ្មីទៅអត្រាសម្អាតពេលចាកចេញ នៅផ្ទាំងអត្រា និងសេវា។",
   ],
+  // Parking Step 5: no cleaning charge on Parking
+  cf_type_note_parking: [
+    "Rename keeps every Parking of this type.",
+    "ការប្តូរឈ្មោះរក្សាចំណតទាំងអស់នៃប្រភេទនេះ។",
+  ],
   cf_feat_note: [
     "Room features show as Yes or No on each Parking page.",
     "លក្ខណៈចំណតបង្ហាញជា មាន ឬ គ្មាន នៅលើទំព័រចំណតនីមួយៗ។",

@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { PET_DEPOSIT } from "./leases/parking";
 import { CustomerAccountLedger } from "./CustomerAccountLedger";
 import {
   createCustomerLedgerClient,
@@ -103,7 +104,8 @@ describe("Customer account ledger", () => {
       "Available Customer Credit",
       "Unallocated Payment",
       "Security Deposit held",
-      "Pet Deposit held",
+      // Parking Step 5: Pet Deposit held shows only while money is held (PET_DEPOSIT).
+      ...(PET_DEPOSIT ? ["Pet Deposit held"] : []),
     ])
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     const table = screen.getByRole("table", {
@@ -541,3 +543,40 @@ it.each([false, true])(
     }
   },
 );
+
+describe("Customer account ledger on Parking", () => {
+  it("TEST-FE-1142 Parking Step 5: Pet Deposit held is not shown while it is zero, and shows again when money is held", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const first = setup();
+    render(
+      <CustomerAccountLedger
+        actorId={ledgerIds.actor}
+        api={first.api}
+        requested={selected}
+      />,
+    );
+    await account();
+    expect(screen.getAllByText("Security Deposit held").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.queryByText("Pet Deposit held")).toBeNull();
+    cleanup();
+    const second = setup({
+      position: ledgerPosition("21000", "2100", {
+        pet_deposit_usd_cents: "5000",
+      }),
+    });
+    render(
+      <CustomerAccountLedger
+        actorId={ledgerIds.actor}
+        api={second.api}
+        requested={selected}
+      />,
+    );
+    await account();
+    const held = screen.getByText("Pet Deposit held").closest("div");
+    expect(held).toHaveTextContent("$50.00");
+  });
+});

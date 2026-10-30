@@ -3,6 +3,7 @@
 // the signed-Lease evidence the server checks (TerminationContextSource) and which Deposit is
 // kept; the dialog says which before saving. The server and the database verify every rule.
 
+import { PET_DEPOSIT } from "./parking";
 import { FormEvent, useEffect, useState } from "react";
 
 import type {
@@ -348,11 +349,14 @@ export function TerminateDialog({
             />
             <span>
               {lt(language, `tg_${item}`)}
-              <small className="ui-sub2">
-                {item === "UNPAID" && today < unpaidFrom
-                  ? lt(language, "tg_UNPAID_wait", dayText(unpaidFrom))
-                  : lt(language, `tg_${item}_s`)}
-              </small>
+              {/* Parking Step 5: no pet rules on Parking (PET_DEPOSIT). */}
+              {(item !== "VIOLATION" || PET_DEPOSIT) && (
+                <small className="ui-sub2">
+                  {item === "UNPAID" && today < unpaidFrom
+                    ? lt(language, "tg_UNPAID_wait", dayText(unpaidFrom))
+                    : lt(language, `tg_${item}_s`)}
+                </small>
+              )}
             </span>
           </label>
         ))}

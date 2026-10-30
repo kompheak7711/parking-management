@@ -37,10 +37,10 @@ Units list with status cards Occupied/Reserved/Vacant/Not available,Units,must,y
 Units filter by floor and by Unit Type,Units,must,yes,yes,"S28; ""Unit Type"" screen concept"
 Units table: Unit; Status; Monthly Rent; Until (lease end or reserved until),Units,must,yes,yes,S28
 Unit status set: VACANT RESERVED OCCUPIED CLEANING UNDER_MAINTENANCE OUT_OF_SERVICE,Units,must,yes,yes,units.status
-New Unit dialog (number floor type view kitchen room features size beds baths notes),Units,must,yes,yes,S30; starts Vacant
+New Unit dialog (number floor type view kitchen room features size beds baths notes),Units,must,yes,yes,S30; starts Vacant; Step 5: switched off on Parking are view kitchen room features size beds baths (HOME_FIELDS ROOM_FEATURES); number floor type notes stay
 Update Unit dialog (number fixed; changes dated in History),Units,must,yes,yes,S31
 Change Unit status with reason (blocked by signed Lease or active Reservation),Units,must,yes,yes,S32
-Unit detail: details card (Unit Type size m² bedrooms bathrooms view kitchen room features notes),Units,must,yes,yes,S29
+Unit detail: details card (Unit Type size m² bedrooms bathrooms view kitchen room features notes),Units,must,yes,yes,S29; Step 5: switched off on Parking are size bedrooms bathrooms view kitchen room features; floor type notes stay
 Unit detail: photo placeholder (file storage later),Units,could,yes,yes,S29 no_photo
 Unit detail: Current Lease card (Primary Tenant period signers occupants move-in),Units,must,yes,yes,S29
 Unit detail: Reservation card (customer reserved on expires agreed rent deposit received),Units,must,yes,yes,S29
@@ -50,14 +50,14 @@ Unit detail: Meters with last reading,Units,should,yes,yes,S29 (placeholder text
 Unit detail: unpaid Invoices for this Unit,Units,should,yes,yes,S29 (placeholder)
 Unit detail: History (created updated status inventory signed move-in move-out terminated reserved),Units,must,yes,yes,S29 + GET /units/{id}/timeline
 Unit actions: Make Reservation; New Lease; New Lease from Reservation; Open Lease/draft/Reservation,Units,must,yes,yes,S29
-Unit inventory record (items by group with quantity; record number),Units,could,yes,yes,S33 UnitInventoryPanel; PUT /units/{id}/inventory
+Unit inventory record (items by group with quantity; record number),Units,could,yes,skip,S33 UnitInventoryPanel; PUT /units/{id}/inventory; Step 5: switched off on Parking (UNIT_INVENTORY); code kept
 "Unit count subtitle ""{n} Units at CHETANA Residence""",Units,could,yes,yes,units/text.ts sub (brand string)
 Unit setup lists in Settings: Floors,Unit Types/Settings,must,yes,yes,S81 cf_FLOOR (floor number 0-99)
 Unit setup lists in Settings: Unit Types (EN + KM name; rename keeps Units),Unit Types/Settings,must,yes,yes,S81 cf_UNIT_TYPE
-Unit setup lists in Settings: Views; Kitchens; Room features,Unit Types/Settings,should,yes,yes,S81
+Unit setup lists in Settings: Views; Kitchens; Room features,Unit Types/Settings,should,yes,skip,S81; Step 5: switched off on Parking (HOME_FIELDS ROOM_FEATURES); code kept
 "Remove a setup item unless a Unit uses it (""Used by a Unit"")",Unit Types/Settings,must,yes,yes,S81
 Read-only setup lists for users without settings access,Unit Types/Settings,should,yes,yes,S81 read_only
-Move-out cleaning rates per Unit Type (name EN/KM; rate; tick Unit Types),Unit Types/Settings,must,yes,yes,S80 cl_*; a Unit Type with Units needs a rate
+Move-out cleaning rates per Unit Type (name EN/KM; rate; tick Unit Types),Unit Types/Settings,must,yes,skip,S80 cl_*; a Unit Type with Units needs a rate; Step 5: switched off on Parking (CLEANING_CHARGE); code kept
 Unit Type column in Unit occupancy report,Unit Types/Settings,should,yes,yes,S76 c_unit_type
 Customers list with search (name phone Unit ID number),Customers,must,yes,yes,S34
 Customer kind cards: Current tenants; Signers and occupants; Reservations; Former,Customers,must,yes,yes,S34
@@ -114,15 +114,15 @@ Deposit ledger and detail reads,Deposits,should,yes,yes,GET /deposits/{id} /ledg
 Undo a deposit receipt (draft),Deposits,could,yes,yes,POST /deposit-receipts/{id}/reverse
 Undo a kept deposit (draft),Deposits,could,yes,yes,POST /deposit-dispositions/{id}/reverse
 Keep Security Deposit at move-out as a draft (Manager; ground; amount),Deposits,must,yes,yes,S71 kd_btn_SECURITY
-Pet approved on a Lease (which pet),Pet deposit,must,yes,yes,S47 pet_ok; lease_pet_approvals; REMOVE in clone
-Pet Deposit required/received/outstanding on Lease detail,Pet deposit,must,yes,yes,S46 dep_pet; REMOVE in clone
-Pet Deposit line on Customer Money card,Pet deposit,should,yes,yes,S35 pet; REMOVE in clone
-Record pet departure,Pet deposit,could,yes,yes,POST /leases/{id}/pet-departures; REMOVE in clone
-Pet-rule violation termination keeps the Pet Deposit too,Pet deposit,should,yes,yes,S54 tg_petrule; REMOVE in clone
-"Inspection finding ""caused by the pet"" (Pet Deposit pays first)",Pet deposit,should,yes,yes,S67 fd_pet; REMOVE in clone
-Final Settlement: Pet Deposit for pet damage line,Pet deposit,should,yes,yes,S70 fs_pet_dmg; REMOVE in clone
-Final Settlement: remaining Pet Deposit for other balance (customer asked / staff reason),Pet deposit,should,yes,yes,S70 fs_pet_other pd_basis_*; REMOVE in clone
-Keep Pet Deposit at move-out as a draft,Pet deposit,should,yes,yes,S71 kd_btn_PET; dk_PET_FORFEIT; REMOVE in clone
+Pet approved on a Lease (which pet),Pet deposit,must,yes,skip,S47 pet_ok; lease_pet_approvals; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Pet Deposit required/received/outstanding on Lease detail,Pet deposit,must,yes,skip,S46 dep_pet; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Pet Deposit line on Customer Money card,Pet deposit,should,yes,skip,S35 pet; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Record pet departure,Pet deposit,could,yes,skip,POST /leases/{id}/pet-departures; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Pet-rule violation termination keeps the Pet Deposit too,Pet deposit,should,yes,skip,S54 tg_petrule; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+"Inspection finding ""caused by the pet"" (Pet Deposit pays first)",Pet deposit,should,yes,skip,S67 fd_pet; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Final Settlement: Pet Deposit for pet damage line,Pet deposit,should,yes,skip,S70 fs_pet_dmg; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Final Settlement: remaining Pet Deposit for other balance (customer asked / staff reason),Pet deposit,should,yes,skip,S70 fs_pet_other pd_basis_*; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
+Keep Pet Deposit at move-out as a draft,Pet deposit,should,yes,skip,S71 kd_btn_PET; dk_PET_FORFEIT; REMOVE in clone; Step 5: switched off on Parking (PET_DEPOSIT); code kept; an existing Pet Deposit still shows and settles
 Pet deposit refund review,Pet deposit,could,yes,yes,GET /pet-deposit-refund-reviews/{id}; REMOVE in clone
 Pet damage reclassification correction,Pet deposit,could,yes,yes,cv_PET_DAMAGE_RECLASSIFICATION; REMOVE in clone
 Deposits report shows Security and Pet Deposits,Pet deposit,should,yes,yes,S76 dep_PET; REMOVE pet in clone
@@ -159,7 +159,7 @@ Save final readings only (Manager issues later),Move-out,should,yes,yes,S66 st3_
 Inspection with damage findings (description; charge; evidence),Move-out,must,yes,yes,S67; move_out_inspections
 Correct an inspection with reason (locked once charged),Move-out,should,yes,yes,S67 st4_fix_btn
 Damage charge → Draft Invoice from a finding,Move-out,must,yes,yes,S68; one-time charge DAMAGE_CHARGES
-Cleaning charge at the Unit Type's rate → Draft Invoice,Move-out,must,yes,yes,S69; unit_cleaning_charges
+Cleaning charge at the Unit Type's rate → Draft Invoice,Move-out,must,yes,skip,S69; unit_cleaning_charges; Step 5: switched off on Parking (CLEANING_CHARGE; migration 257 turns off the settlement check); code kept
 Final Settlement statement (open items; Credit; Security Deposit applied; kept deposits; balance; refund),Move-out,must,yes,yes,S70; GET .../final-settlements/{id}/preview
 Final Settlement blockers list (final utility; periods; cleaning; late decision; forfeiture; drafts),Move-out,must,yes,yes,S70 fi_*
 Start Final Settlement,Move-out,must,yes,yes,S70 st5_start; final_settlement_api

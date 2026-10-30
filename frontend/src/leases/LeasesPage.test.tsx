@@ -44,7 +44,7 @@ import {
   type TerminationNotice,
 } from "../letters/lettersClient";
 import { formModeOf } from "./LeaseForm";
-import { PEOPLE_MOVE_IN } from "./parking";
+import { PEOPLE_MOVE_IN, PET_DEPOSIT } from "./parking";
 import { LeasesPage, type LeasesPageProps } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
@@ -493,9 +493,12 @@ describe("Lease page", () => {
       "$400.00 due by 15/12/2026, with the Initial Rent.",
     );
     expect(money).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Deposits" })).toHaveTextContent(
-      "No pet approved, so no Pet Deposit.",
-    );
+    // Parking Step 5: no pet on Parking (PET_DEPOSIT); the line stays in the code.
+    if (PET_DEPOSIT) {
+      expect(
+        screen.getByRole("region", { name: "Deposits" }),
+      ).toHaveTextContent("No pet approved, so no Pet Deposit.");
+    }
   });
 
   it("TEST-FE-846 works out the Initial Rent: day 21 or later adds the whole next month, rounding half up", () => {
@@ -2011,12 +2014,15 @@ describe("New Lease and Renew", () => {
     expect(preview).toHaveTextContent(
       "Security Deposit: $310.00, paid when the Lease is signed.",
     );
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "A pet is approved" }),
-    );
-    fireEvent.change(screen.getByLabelText("Which pet"), {
-      target: { value: "One small cat" },
-    });
+    // Parking Step 5: no pet tick on Parking (PET_DEPOSIT); the code stays.
+    if (PET_DEPOSIT) {
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: "A pet is approved" }),
+      );
+      fireEvent.change(screen.getByLabelText("Which pet"), {
+        target: { value: "One small cat" },
+      });
+    }
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     const dialog = screen.getByRole("dialog", {
       name: "Save the draft · U402?",
@@ -2042,10 +2048,12 @@ describe("New Lease and Renew", () => {
       planned_occupant_customer_ids: ["customer-a"],
       security_deposit_id: null,
       service_terms: [],
-      pet_term: {
-        deposit_required_by_signed_terms: true,
-        pet_description: "One small cat",
-      },
+      pet_term: PET_DEPOSIT
+        ? {
+            deposit_required_by_signed_terms: true,
+            pet_description: "One small cat",
+          }
+        : null,
     });
     expect(sent?.additional_signers.map((item) => item.customer_id)).toEqual([
       "customer-b",
@@ -3527,6 +3535,62 @@ describe("New Lease and Renew", () => {
     await screen.findByLabelText("Parking");
     expect(screen.getByLabelText("Other Signers")).toBeInTheDocument();
     expect(screen.queryByLabelText("Other occupants")).toBeNull();
+  });
+  it("TEST-FE-1140 Parking Step 5: no pet on Parking: New Lease has no pet tick and sends no pet term; the Lease page and Terminate say nothing about pets", async ({
+    skip,
+  }) => {
+    skip(PET_DEPOSIT);
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    show(
+      api({ create }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      {},
+      undefined,
+      signing(),
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByLabelText("Parking");
+    expect(
+      screen.queryByRole("checkbox", { name: "A pet is approved" }),
+    ).toBeNull();
+    pickIn("Parking", "unit-U402");
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2026-12-22" },
+    });
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "310" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Save the draft · U402?",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create.mock.calls[0]?.[1]).toMatchObject({ pet_term: null });
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U201";
+    show(api());
+    expect(
+      await screen.findByRole("heading", { name: "Lease · U201" }),
+    ).toBeInTheDocument();
+    const depositsCard = screen.getByRole("region", { name: "Deposits" });
+    expect(depositsCard).not.toHaveTextContent("pet");
+    expect(depositsCard).not.toHaveTextContent("Pet");
   });
 });
 

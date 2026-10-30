@@ -182,6 +182,11 @@ const TEXT = {
     "A new Parking starts as Vacant with an empty inventory. After saving, add its items and its electricity and water meters on the Parking page.",
     "ចំណតថ្មីចាប់ផ្តើមជាទំនេរ ជាមួយបញ្ជីសម្ភារៈទទេ។ ក្រោយរក្សាទុក សូមបន្ថែមសម្ភារៈ និងនាឡិកាស្ទង់អគ្គិសនី និងទឹក នៅទំព័រចំណត។",
   ],
+  // Parking Step 5: no inventory on Parking
+  new_note_parking: [
+    "A new Parking starts as Vacant. After saving, add its electricity and water meters on the Parking page.",
+    "ចំណតថ្មីចាប់ផ្តើមជាទំនេរ។ ក្រោយរក្សាទុក សូមបន្ថែមនាឡិកាស្ទង់អគ្គិសនី និងទឹក នៅទំព័រចំណត។",
+  ],
   // new (V1-061): the Unit was saved but its Rent and Services were not
   rt_new_not_saved: [
     "Parking {0} is saved, but its Rent and Services are not. Set them on the Parking page with Change.",

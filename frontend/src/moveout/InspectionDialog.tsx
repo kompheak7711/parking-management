@@ -6,6 +6,7 @@
 // charged. Each request keeps one identity while its values stay the same, so Try again never
 // saves anything twice.
 
+import { PET_DEPOSIT } from "../leases/parking";
 import { FormEvent, useRef, useState } from "react";
 
 import type { InvoiceResource } from "../invoiceClient";
@@ -402,17 +403,20 @@ export function InspectionDialog({
                   value={item.description}
                 />
               </div>
-              <label className="ui-chk">
-                <input
-                  checked={item.pet}
-                  disabled={frozen}
-                  onChange={(event) => {
-                    change(item.row, { pet: event.target.checked });
-                  }}
-                  type="checkbox"
-                />
-                <span>{mt(language, "fd_pet")}</span>
-              </label>
+              {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. */}
+              {PET_DEPOSIT && (
+                <label className="ui-chk">
+                  <input
+                    checked={item.pet}
+                    disabled={frozen}
+                    onChange={(event) => {
+                      change(item.row, { pet: event.target.checked });
+                    }}
+                    type="checkbox"
+                  />
+                  <span>{mt(language, "fd_pet")}</span>
+                </label>
+              )}
               {mayCharge && (
                 <div className="ui-row2">
                   <div className="ui-field">

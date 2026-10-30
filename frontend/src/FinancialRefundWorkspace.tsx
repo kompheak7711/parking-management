@@ -1,3 +1,4 @@
+import { PET_DEPOSIT } from "./leases/parking";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   financialId,
@@ -418,7 +419,10 @@ export function FinancialRefundWorkspace({
                 >
                   <option value="PAYMENT">Unallocated Payment</option>
                   <option value="CREDIT">Recognized Customer Credit</option>
-                  <option value="PET_DEPOSIT">Qualified Pet Deposit</option>
+                  {/* Parking Step 5: no pet on Parking (PET_DEPOSIT). */}
+                  {PET_DEPOSIT && (
+                    <option value="PET_DEPOSIT">Qualified Pet Deposit</option>
+                  )}
                 </select>
               </label>
               <label>

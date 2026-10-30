@@ -4,6 +4,7 @@
 // new Utility Rate, so the form asks too. R7b-6b adds Services (with a first rate), their names
 // and type, and the Service types; R7b-6d the move-out cleaning rates by Unit Type.
 
+import { CLEANING_CHARGE } from "../leases/parking";
 import {
   type FormEvent,
   useCallback,
@@ -727,12 +728,15 @@ export function RatesTab({
             types={ready.service_types}
           />
         )}
-        <CleaningRatesCard
-          active={active}
-          api={cleaning}
-          language={language}
-          propertyId={propertyId}
-        />
+        {/* Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE); the card stays in the code. */}
+        {CLEANING_CHARGE && (
+          <CleaningRatesCard
+            active={active}
+            api={cleaning}
+            language={language}
+            propertyId={propertyId}
+          />
+        )}
       </div>
 
       {open?.kind === "utility" && (

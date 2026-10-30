@@ -142,6 +142,8 @@ Amended by DL-075 (owner, 2026-10-20): Unit Types are a Settings list (the Owner
 
 Amended for Parking (owner, 2026-10-29, Parking Step 3; migration `20270405_255`): a new Property starts with the four Parking Types COVERED (Covered, ចំណតមានដំបូល), UNCOVERED (Uncovered, ចំណតគ្មានដំបូល), MOTORBIKE (Motorbike, ម៉ូតូ) and TUK_TUK_FOOD_CART (Tuk-Tuk/Food Cart, តុកតុក/រទេះលក់ម្ហូប) instead of the four Unit Types above, and no Balcony Room feature. A Property that already exists gets the four added; nothing is removed. The list stays a Settings list (DL-075).
 
+Amended for Parking (owner, 2026-10-30, Parking Step 5): Parking has no Room features ("Parking features"), no Parking inventory and no home-only fields (Size, Bedrooms, Bathrooms, View, Kitchen). The screens that show or set them are hidden behind the flags `ROOM_FEATURES`, `UNIT_INVENTORY` and `HOME_FIELDS` in `frontend/src/leases/parking.ts`; the Settings cards Views, Kitchens and Room features are hidden too. Floor, Parking Type and Notes stay. The tables, routes and rules stay as they are; a hidden field is left out of an Update request, so a value already stored is kept.
+
 ---
 
 ## BR-UNIT-002 — Supported Unit Statuses
@@ -296,11 +298,15 @@ value alone must never authorize a conflicting Reservation, Lease, or move-in.
 
 Each Unit has a configured cleaning rate in USD cents. It is the source of the Unit cleaning charge at move-out (BR-MOVEOUT-013). Changing the rate never changes an issued charge (DL-065, DL-068).
 
+Amended for Parking (owner, 2026-10-30, Parking Step 5): there is no cleaning charge when a customer leaves a Parking. The cleaning rates stay in the database and the API, but the Settings card "Move-out cleaning rates" and the "No cleaning rate" chip are hidden (`CLEANING_CHARGE`), so no rate is set on Parking.
+
 ## BR-UNIT-015 — Default Rent and Required Services
 
 A Unit may have a default monthly Rent in USD cents and a list of required Services (DL-110, owner 2026-10-29). A new Reservation or Lease draft for the Unit starts at the default Rent. Staff may agree a higher Rent; a Rent below the default needs a Manager or the Owner (`rent.below_default`) and the reason of the command. A Lease draft from a Booking may keep the Booking's agreed Rent. Every new Lease draft for the Unit holds each required Service, and staff cannot remove one. Changing either never changes a Reservation or Lease that already exists.
 
 Amended for Parking (owner, 2026-10-29, Parking Step 3): a price change is a money action. Rent and Services asks a reason (1 to 500 characters, required) and the Parking's History shows who changed it, when, the old price, the new price and the reason; a New Parking's first price carries the fixed reason "Set with the new Parking". The permission stays Property Rental's (a Manager or the Owner of the Property).
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): Required Services stay as in Property Rental and are empty by default; with none chosen, nothing is locked on a New Lease and nothing is refused.
 
 ---
 
@@ -1041,6 +1047,8 @@ move-in transition must not complete until all conditions in BR-LEASE-015 are tr
 ---
 
 # 11. Pet Deposit Rules
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): Parking has no pet and no Pet Deposit. The pet approval on the Lease form, the pet tick on an inspection finding, the pet forms of the old screens, the "Qualified Pet Deposit" Refund source and the always-on texts about a Pet Deposit are hidden behind the flag `PET_DEPOSIT`; the form always sends "no pet". The rules below and their tables, routes and settlement steps stay in the code: a Pet Deposit that already exists in a database still shows and settles exactly as before (rows are data-driven). The Deposits report speaks of Security Deposits and lists the PET kind only while money is held.
 
 ## BR-DEP-007 — Pet Deposit Conditional
 
@@ -4451,6 +4459,8 @@ any approved pending broken-Meter estimate.
 
 At every move-out, for any reason of leaving, the Customer is charged the Unit's configured cleaning rate (BR-UNIT-014) as a one-time charge on the move-out Invoice. Its Due Date is the issue date plus the Property's configured days (7 by default), with the existing authorized override (BR-INV-018). An authorized user may reduce it with a linked credit Adjustment and a reason. There is no cleaning charge when the Customer never moved in (DL-065, DL-068, DL-069).
 
+Amended for Parking (owner, 2026-10-30, Parking Step 5): no cleaning charge at move-out on Parking. Migration `20270407_257` turns off the one settlement check `CLEANING_CHARGE_MISSING` in `app.final_settlement_preview` (it became `IF false AND ...`), so a move-out with no cleaning rate and no cleaning charge can close. The move-out step 4 shows no cleaning section or "Add cleaning charge" button (`CLEANING_CHARGE`). `app.record_unit_cleaning_charge`, the rates and the Invoice line stay; a cleaning charge that already exists counts as a normal debt of the Settlement.
+
 ---
 
 # 25. Deposit Disposition Rules
@@ -4658,6 +4668,8 @@ obligations.
 Amended by DL-068 and DL-069 (2026-10-03): the Customer may also choose to use the remaining Pet Deposit for any remaining balance (BR-SETTLE-017).
 
 Amended by the owner answer to Q-2026-10-05-30 (2026-10-05): the remaining Pet Deposit pays only debt still open after the Security Deposit has been used, also when the Customer chooses it.
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): with no Pet Deposit on Parking, steps 3 and 5 of DL-032 are empty and the settlement math needs no special case (`tests/test_cleaning_off_migration.py` proves a full settlement with no Pet Deposit is exact to the cent: a 10,000 Security Deposit pays a 7,525 debt and refunds 2,475, held 0, owed 0, closed).
 
 ---
 
