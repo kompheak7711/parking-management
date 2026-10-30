@@ -269,9 +269,47 @@ const TEXT = {
     "ទម្រង់អតិថិជនពីមុន ជាភាសាអង់គ្លេស។ ប្រើវាដើម្បីពិនិត្យការរក្សាទុកដែលមិនដឹងលទ្ធផល និងសម្រាប់បញ្ជីគណនីពេញលេញ។",
   ],
   records_open: ["Show the earlier form", "បង្ហាញទម្រង់ពីមុន"],
+  // Parking Step 4 (owner 2026-10-30): vehicles under a Customer. Khmer needs the owner's check.
+  vehicles: ["Vehicles", "យានយន្ត"],
+  add_vehicle: ["Add vehicle", "បន្ថែមយានយន្ត"],
+  v_edit: ["Edit", "កែ"],
+  v_none: ["No vehicle yet.", "មិនទាន់មានយានយន្តទេ។"],
+  v_failed: ["The vehicles could not be read.", "មិនអាចអានយានយន្តបានទេ។"],
+  v_type: ["Type", "ប្រភេទ"],
+  v_plate: ["Plate", "ផ្លាកលេខ"],
+  v_add_title: ["Add vehicle · {0}", "បន្ថែមយានយន្ត · {0}"],
+  v_edit_title: ["Edit vehicle · {0}", "កែយានយន្ត · {0}"],
+  v_plate_req: ["Type the plate.", "សូមវាយផ្លាកលេខ។"],
+  v_dup: [
+    "Another vehicle has this plate: {0}.",
+    "យានយន្តមួយទៀតមានផ្លាកលេខនេះ៖ {0}។",
+  ],
+  v_save_anyway: ["Save anyway", "រក្សាទុកទោះយ៉ាងណា"],
+  v_added: ["Vehicle {0} was added.", "យានយន្ត {0} ត្រូវបានបន្ថែម។"],
+  v_saved: ["Vehicle {0} was saved.", "យានយន្ត {0} ត្រូវបានរក្សាទុក។"],
+  v_note: [
+    "Type and plate as typed, Khmer or Latin. Photos and documents come later.",
+    "ប្រភេទ និងផ្លាកលេខដូចដែលបានវាយ ខ្មែរ ឬឡាតាំង។ រូបថត និងឯកសារនឹងមកពេលក្រោយ។",
+  ],
+  v_refused: [
+    "The vehicle was not saved. Check the details and try again.",
+    "យានយន្តមិនត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យព័ត៌មាន រួចព្យាយាមម្តងទៀត។",
+  ],
+  vt_CAR: ["Car", "រថយន្ត"],
+  vt_MOTORBIKE: ["Motorbike", "ម៉ូតូ"],
+  vt_TUK_TUK: ["Tuk-tuk", "តុកតុក"],
+  vt_FOOD_CART: ["Food cart", "រទេះលក់ម្ហូប"],
 } as const;
 
 export type CustomerTextKey = keyof typeof TEXT;
+
+/** Parking Step 4: the vehicle type in the screen's words. */
+export function vehicleTypeText(
+  language: Language,
+  vehicleType: "CAR" | "MOTORBIKE" | "TUK_TUK" | "FOOD_CART",
+): string {
+  return ct(language, `vt_${vehicleType}`);
+}
 
 /** The text in the chosen language, with {0}, {1} filled in. */
 export function ct(

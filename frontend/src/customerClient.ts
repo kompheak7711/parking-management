@@ -117,6 +117,23 @@ export interface CustomerSource {
   confirmed_distinct?: boolean;
 }
 
+// Parking Step 4 (owner 2026-10-30): a vehicle under a Customer, type and plate as typed.
+export type VehicleType = "CAR" | "MOTORBIKE" | "TUK_TUK" | "FOOD_CART";
+
+export interface VehicleResource {
+  vehicle_id: string;
+  customer_id: string;
+  customer_name: string;
+  vehicle_type: VehicleType;
+  plate_text: string;
+  version: number;
+}
+
+export interface VehicleSource {
+  vehicle_type: VehicleType;
+  plate_text: string;
+}
+
 export interface CustomerApi {
   list: (
     propertyId: string,
@@ -149,6 +166,21 @@ export interface CustomerApi {
     customerId: string,
     depositCursor?: string,
   ) => Promise<CustomerFinancialSummary>;
+  // Parking Step 4: vehicles.
+  listVehicles: (customerId: string) => Promise<VehicleResource[]>;
+  createVehicle: (
+    customerId: string,
+    source: VehicleSource & { vehicle_id: string },
+  ) => Promise<VehicleResource>;
+  updateVehicle: (
+    current: VehicleResource,
+    source: VehicleSource,
+  ) => Promise<VehicleResource>;
+  /** Every vehicle whose plate matches without spaces, dashes, dots and case. */
+  findVehiclesByPlate: (
+    propertyId: string,
+    plate: string,
+  ) => Promise<VehicleResource[]>;
 }
 
 export class CustomerUnavailableError extends Error {
@@ -785,6 +817,73 @@ async function financialSummary(
   };
 }
 
+function vehicleOf(value: unknown): VehicleResource {
+  if (!isObject(value)) throw new CustomerRequestError();
+  return value as unknown as VehicleResource;
+}
+
+function vehicleList(envelope: Record<string, unknown>): VehicleResource[] {
+  if (!Array.isArray(envelope.data)) throw new CustomerRequestError();
+  return envelope.data.map(vehicleOf);
+}
+
+async function listVehicles(customerId: string): Promise<VehicleResource[]> {
+  return vehicleList(
+    await request(
+      `/api/v1/customers/${encodeURIComponent(customerId)}/vehicles`,
+      { method: "GET" },
+    ),
+  );
+}
+
+async function createVehicle(
+  customerId: string,
+  source: VehicleSource & { vehicle_id: string },
+): Promise<VehicleResource> {
+  return vehicleOf(
+    resourceData(
+      await request(
+        `/api/v1/customers/${encodeURIComponent(customerId)}/vehicles`,
+        {
+          method: "POST",
+          headers: mutationHeaders(source.vehicle_id),
+          body: JSON.stringify(source),
+        },
+      ),
+    ),
+  );
+}
+
+async function updateVehicle(
+  current: VehicleResource,
+  source: VehicleSource,
+): Promise<VehicleResource> {
+  return vehicleOf(
+    resourceData(
+      await request(
+        `/api/v1/vehicles/${encodeURIComponent(current.vehicle_id)}`,
+        {
+          method: "PATCH",
+          headers: mutationHeaders(current.vehicle_id, current.version),
+          body: JSON.stringify(source),
+        },
+      ),
+    ),
+  );
+}
+
+async function findVehiclesByPlate(
+  propertyId: string,
+  plate: string,
+): Promise<VehicleResource[]> {
+  return vehicleList(
+    await request(
+      `/api/v1/properties/${encodeURIComponent(propertyId)}/vehicles?plate=${encodeURIComponent(plate)}`,
+      { method: "GET" },
+    ),
+  );
+}
+
 export const customerApi: CustomerApi = {
   list,
   get,
@@ -793,4 +892,8 @@ export const customerApi: CustomerApi = {
   update,
   deactivate,
   financialSummary,
+  listVehicles,
+  createVehicle,
+  updateVehicle,
+  findVehiclesByPlate,
 };

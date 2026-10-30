@@ -41,7 +41,7 @@ export interface LeasesPageProps {
   api: LeaseApi;
   depositApi: DepositApi;
   reservationApi: Pick<ReservationApi, "list" | "get">;
-  customerApi: Pick<CustomerApi, "get" | "list">;
+  customerApi: Pick<CustomerApi, "get" | "list" | "listVehicles">;
   unitApi: Pick<UnitApi, "list" | "get">;
   lettersApi: Pick<LettersApi, "warnings" | "notices" | "recordNotice">;
   capabilities: ReadonlySet<string> | null;

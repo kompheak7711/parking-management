@@ -290,6 +290,10 @@ function customerApiDouble(overrides: Partial<CustomerApi> = {}): CustomerApi {
     update: vi.fn().mockRejectedValue(new Error("not used")),
     deactivate: vi.fn().mockRejectedValue(new Error("not used")),
     financialSummary: vi.fn().mockRejectedValue(new Error("not used")),
+    listVehicles: vi.fn().mockResolvedValue([]),
+    createVehicle: vi.fn(),
+    updateVehicle: vi.fn(),
+    findVehiclesByPlate: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

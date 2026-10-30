@@ -323,3 +323,13 @@ Plain Sign Lease route removed (Sign Lease with payment only),Leases,must,yes,ye
 Start test app in one window (Start test app.command),Local run,could,yes,yes,owner ask 29/10/2026
 Settings seed list is the four Parking Types (Covered Uncovered Motorbike Tuk-Tuk/Food Cart),Unit Types/Settings,must,no,yes,Parking Step 3; migration 255
 Rent and Services asks a reason; History shows who/when/old price/new price/reason,Units,must,no,yes,Parking Step 3 on top of V1-061
+Vehicle record under a Customer: type (car/motorbike/tuk-tuk/food cart) and plate as typed (Khmer or Latin),Customers,must,no,yes,Parking Step 4; migration 256; TEST-FE-1127
+Duplicate plate warns with the other owner's name and still saves; never merged,Customers,must,no,yes,Parking Step 4; TEST-FE-1128
+Edit a vehicle (corrected never deleted) with its version,Customers,must,no,yes,Parking Step 4; TEST-FE-1129
+Lease page Vehicle card: vehicle moved in with its day; earlier vehicles with move-out day; Change vehicle,Leases,must,no,yes,Parking Step 4; TEST-FE-1130
+Record move-in picks one vehicle of the Signers (one vehicle at a time); points to the Customer page when none,Leases,must,no,yes,Parking Step 4; TEST-FE-1131
+Change vehicle: old out and new in the same day with a reason; history kept; Lease goes on,Leases,must,no,yes,Parking Step 4; TEST-FE-1132
+Vehicle type must match the Parking Type (by code); clear message in English and Khmer,Leases,must,no,yes,Parking Step 4 Q2; VEHICLE_TYPE
+The only vehicle never moves out alone (per-person Move out refused; leaves with the Lease),Leases,must,no,yes,Parking Step 4; VEHICLE_ONLY_ONE
+People lists hidden on Parking screens (Other occupants; Add occupant; Who moves in); code kept behind PEOPLE_MOVE_IN,Leases,must,no,yes,Parking Step 4; TEST-FE-1133
+Move-out page hand-back names the vehicle by its plate,Move-out,must,no,yes,Parking Step 4; TEST-FE-1134

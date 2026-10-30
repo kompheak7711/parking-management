@@ -15,6 +15,7 @@ import {
   type CustomerApi,
   type CustomerDetail,
   type CustomerListItem,
+  type VehicleResource,
 } from "../customerClient";
 import type { CustomerLedgerApi } from "../customerLedgerClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
@@ -213,6 +214,7 @@ function customerApi(overrides: Partial<CustomerApi> = {}): CustomerApi {
         }) as ReturnType<CustomerApi["list"]>,
     ),
     get: vi.fn().mockResolvedValue(detail()),
+    listVehicles: vi.fn().mockResolvedValue([]),
     ...overrides,
   } as unknown as CustomerApi;
 }
@@ -833,5 +835,224 @@ describe("Customer dialogs", () => {
     expect(
       screen.queryByRole("button", { name: "Deactivate" }),
     ).not.toBeInTheDocument();
+  });
+});
+
+// Parking Step 4 (owner 2026-10-30): vehicles under a Customer.
+describe("Vehicles (Parking Step 4)", () => {
+  function vehicle(
+    id: string,
+    plate: string,
+    type: VehicleResource["vehicle_type"] = "CAR",
+    owner = "customer-1",
+    ownerName = "Sok Dara",
+  ): VehicleResource {
+    return {
+      vehicle_id: id,
+      customer_id: owner,
+      customer_name: ownerName,
+      vehicle_type: type,
+      plate_text: plate,
+      version: 1,
+    };
+  }
+
+  it("TEST-FE-1127 the Vehicles card lists the Customer's vehicles and Add vehicle saves the type and the plate as typed", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const listVehicles = vi
+      .fn<CustomerApi["listVehicles"]>()
+      .mockResolvedValueOnce([vehicle("vehicle-1", "1AB-1234", "MOTORBIKE")])
+      .mockResolvedValue([
+        vehicle("vehicle-1", "1AB-1234", "MOTORBIKE"),
+        vehicle("vehicle-2", "ភ្នំពេញ 2CD 5678", "TUK_TUK"),
+      ]);
+    const createVehicle = vi
+      .fn<CustomerApi["createVehicle"]>()
+      .mockResolvedValue(vehicle("vehicle-2", "ភ្នំពេញ 2CD 5678", "TUK_TUK"));
+    const findVehiclesByPlate = vi
+      .fn<CustomerApi["findVehiclesByPlate"]>()
+      .mockResolvedValue([]);
+    show({
+      customers: customerApi({
+        listVehicles,
+        createVehicle,
+        findVehiclesByPlate,
+      }),
+    });
+    const card = await screen.findByRole("region", { name: "Vehicles" });
+    expect(await within(card).findByText("1AB-1234")).toBeInTheDocument();
+    expect(within(card).getByText("Motorbike")).toBeInTheDocument();
+    expect(listVehicles).toHaveBeenCalledWith("customer-1");
+
+    fireEvent.click(within(card).getByRole("button", { name: "Add vehicle" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Add vehicle · Sok Dara",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(dialog).getByText("Type the plate.")).toBeInTheDocument();
+    expect(createVehicle).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Type"), {
+      target: { value: "TUK_TUK" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Plate"), {
+      target: { value: " ភ្នំពេញ 2CD 5678 " },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("Vehicle ភ្នំពេញ 2CD 5678 was added."),
+    ).toBeInTheDocument();
+    expect(findVehiclesByPlate).toHaveBeenCalledWith(
+      "property-1",
+      "ភ្នំពេញ 2CD 5678",
+    );
+    expect(createVehicle).toHaveBeenCalledTimes(1);
+    expect(createVehicle.mock.calls[0]?.[0]).toBe("customer-1");
+    expect(createVehicle.mock.calls[0]?.[1]).toMatchObject({
+      vehicle_type: "TUK_TUK",
+      plate_text: "ភ្នំពេញ 2CD 5678",
+    });
+    expect(typeof createVehicle.mock.calls[0]?.[1].vehicle_id).toBe("string");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      await within(card).findByText("ភ្នំពេញ 2CD 5678"),
+    ).toBeInTheDocument();
+    expect(within(card).getByText("Tuk-tuk")).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1128 a plate another vehicle already has warns with the owner's name and saves only on Save anyway; nothing is merged", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const createVehicle = vi
+      .fn<CustomerApi["createVehicle"]>()
+      .mockResolvedValue(vehicle("vehicle-9", "1ab 1234"));
+    const findVehiclesByPlate = vi
+      .fn<CustomerApi["findVehiclesByPlate"]>()
+      .mockResolvedValue([
+        vehicle("vehicle-7", "1AB-1234", "CAR", "customer-2", "Chan Vanna"),
+      ]);
+    show({
+      customers: customerApi({
+        listVehicles: vi
+          .fn<CustomerApi["listVehicles"]>()
+          .mockResolvedValue([]),
+        createVehicle,
+        findVehiclesByPlate,
+      }),
+    });
+    const card = await screen.findByRole("region", { name: "Vehicles" });
+    expect(within(card).getByText("No vehicle yet.")).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "Add vehicle" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Add vehicle · Sok Dara",
+    });
+    fireEvent.change(within(dialog).getByLabelText("Plate"), {
+      target: { value: "1ab 1234" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "Another vehicle has this plate: Chan Vanna (1AB-1234).",
+      ),
+    ).toBeInTheDocument();
+    expect(createVehicle).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save anyway" }),
+    );
+    expect(
+      await screen.findByText("Vehicle 1ab 1234 was added."),
+    ).toBeInTheDocument();
+    expect(createVehicle).toHaveBeenCalledTimes(1);
+    expect(createVehicle.mock.calls[0]?.[1].plate_text).toBe("1ab 1234");
+  });
+
+  it("TEST-FE-1137 a failed plate lookup does not stop the save, and the plate box stops at 32 characters", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const createVehicle = vi
+      .fn<CustomerApi["createVehicle"]>()
+      .mockResolvedValue(vehicle("vehicle-3", "3EF-9012"));
+    show({
+      customers: customerApi({
+        listVehicles: vi
+          .fn<CustomerApi["listVehicles"]>()
+          .mockResolvedValue([]),
+        createVehicle,
+        findVehiclesByPlate: vi
+          .fn<CustomerApi["findVehiclesByPlate"]>()
+          .mockRejectedValue(new Error("down")),
+      }),
+    });
+    const card = await screen.findByRole("region", { name: "Vehicles" });
+    fireEvent.click(within(card).getByRole("button", { name: "Add vehicle" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Add vehicle · Sok Dara",
+    });
+    expect(within(dialog).getByLabelText("Plate")).toHaveAttribute(
+      "maxlength",
+      "32",
+    );
+    fireEvent.change(within(dialog).getByLabelText("Plate"), {
+      target: { value: "3EF-9012" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("Vehicle 3EF-9012 was added."),
+    ).toBeInTheDocument();
+    expect(createVehicle).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-1129 Edit corrects the type and the plate with the version; a reader and a deactivated Customer get no Add vehicle", async () => {
+    window.location.hash = "#/customers/customer-1";
+    const updateVehicle = vi
+      .fn<CustomerApi["updateVehicle"]>()
+      .mockResolvedValue({
+        ...vehicle("vehicle-1", "1AB-9999", "CAR"),
+        version: 2,
+      });
+    show({
+      customers: customerApi({
+        listVehicles: vi
+          .fn<CustomerApi["listVehicles"]>()
+          .mockResolvedValue([vehicle("vehicle-1", "1AB-1234", "MOTORBIKE")]),
+        updateVehicle,
+        findVehiclesByPlate: vi
+          .fn<CustomerApi["findVehiclesByPlate"]>()
+          .mockResolvedValue([vehicle("vehicle-1", "1AB-1234", "MOTORBIKE")]),
+      }),
+    });
+    const card = await screen.findByRole("region", { name: "Vehicles" });
+    fireEvent.click(await within(card).findByRole("button", { name: "Edit" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Edit vehicle · 1AB-1234",
+    });
+    expect(within(dialog).getByLabelText("Type")).toHaveValue("MOTORBIKE");
+    fireEvent.change(within(dialog).getByLabelText("Type"), {
+      target: { value: "CAR" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Plate"), {
+      target: { value: "1AB-9999" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("Vehicle 1AB-9999 was saved."),
+    ).toBeInTheDocument();
+    // The vehicle's own plate is not a duplicate of itself.
+    expect(updateVehicle).toHaveBeenCalledWith(
+      expect.objectContaining({ vehicle_id: "vehicle-1", version: 1 }),
+      { vehicle_type: "CAR", plate_text: "1AB-9999" },
+    );
+
+    cleanup();
+    window.location.hash = "#/customers/customer-1";
+    show({
+      customers: customerApi({
+        get: vi.fn().mockResolvedValue(detail({ can_manage: false })),
+        listVehicles: vi
+          .fn<CustomerApi["listVehicles"]>()
+          .mockResolvedValue([]),
+      }),
+    });
+    const reading = await screen.findByRole("region", { name: "Vehicles" });
+    expect(
+      within(reading).queryByRole("button", { name: "Add vehicle" }),
+    ).toBeNull();
   });
 });

@@ -131,6 +131,10 @@ function client(overrides: Partial<CustomerApi> = {}): CustomerApi {
       },
       customer_credit_is_separate_from_deposit: true,
     }),
+    listVehicles: vi.fn().mockResolvedValue([]),
+    createVehicle: vi.fn(),
+    updateVehicle: vi.fn(),
+    findVehiclesByPlate: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

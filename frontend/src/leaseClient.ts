@@ -21,6 +21,10 @@ export interface OccupancyResource {
   move_in_date: string;
   move_out_date: string | null;
   version: number;
+  // Parking Step 4: the vehicle parked under the Lease (null for a person).
+  vehicle_id?: string | null;
+  vehicle_type?: "CAR" | "MOTORBIKE" | "TUK_TUK" | "FOOD_CART" | null;
+  plate_text?: string | null;
 }
 
 export interface LeaseTimelineEvent {
@@ -246,6 +250,23 @@ export interface LeaseMoveInSource {
   reason: string;
 }
 
+// Parking Step 4 (owner 2026-10-30): one vehicle of a Signer moves in; Change vehicle.
+export interface LeaseVehicleMoveInSource {
+  event_id: string;
+  actual_move_in_date: string;
+  occupancy_id: string;
+  vehicle_id: string;
+  reason: string;
+}
+
+export interface LeaseVehicleChangeSource {
+  event_id: string;
+  change_date: string;
+  occupancy_id: string;
+  vehicle_id: string;
+  reason: string;
+}
+
 /**
  * Add occupant (DL-102): before the move-in the person is planned (no Occupancy and no date);
  * after it they get their own Occupancy from their own move-in date.
@@ -337,6 +358,17 @@ export interface LeaseApi {
     source: OccupantMoveOutSource,
     idempotencyKey: string,
   ) => Promise<LeaseResource>;
+  // Parking Step 4: the vehicle move-in and Change vehicle.
+  recordVehicleMoveIn: (
+    lease: LeaseResource,
+    source: LeaseVehicleMoveInSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
+  changeVehicle: (
+    lease: LeaseResource,
+    source: LeaseVehicleChangeSource,
+    idempotencyKey: string,
+  ) => Promise<LeaseResource>;
   completeMoveIn: (
     reservationId: string,
     expectedReservationVersion: number,
@@ -377,6 +409,17 @@ export class LeaseRequestError extends Error {
   constructor() {
     super("The Lease request was not completed.");
     this.name = "LeaseRequestError";
+  }
+}
+
+/** Parking Step 4: a refusal with a code and the server's words (shown in Khmer by the code). */
+export class LeaseRefusedError extends Error {
+  readonly code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = "LeaseRefusedError";
+    this.code = code;
   }
 }
 
@@ -478,6 +521,58 @@ function commandHeaders(idempotencyKey: string, version?: number): HeadersInit {
     "X-CSRF-Token": csrfToken(),
     ...(version === undefined ? {} : { "If-Match": `"${String(version)}"` }),
   };
+}
+
+/** Parking Step 4: a vehicle command keeps the server's refusal code and words. */
+async function vehicleCommand(
+  path: string,
+  source: object,
+  idempotencyKey: string,
+  version: number,
+): Promise<LeaseResource> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      credentials: "include",
+      method: "POST",
+      headers: commandHeaders(idempotencyKey, version),
+      body: JSON.stringify(source),
+    });
+  } catch {
+    throw new LeaseUnavailableError();
+  }
+  if (response.status === 409 || response.status === 422) {
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    const error =
+      typeof body === "object" && body !== null && "error" in body
+        ? (body as { error: unknown }).error
+        : null;
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      typeof (error as { code?: unknown }).code === "string" &&
+      (error as { code: string }).code.startsWith("VEHICLE_")
+    ) {
+      const refusal = error as { code: string; message?: unknown };
+      throw new LeaseRefusedError(
+        refusal.code,
+        typeof refusal.message === "string" ? refusal.message : "",
+      );
+    }
+  }
+  if (response.status === 409 || response.status === 412)
+    throw new LeaseConflictError();
+  if (response.status === 503) throw new LeaseUnavailableError();
+  if (!response.ok) throw new LeaseRequestError();
+  const value: unknown = await response.json();
+  if (typeof value !== "object" || value === null)
+    throw new LeaseRequestError();
+  return lease(data(value as Record<string, unknown>));
 }
 
 async function leaseCommand(
@@ -603,6 +698,20 @@ export const leaseApi: LeaseApi = {
     leaseCommand(
       `/api/v1/leases/${encodeURIComponent(value.lease_id)}/occupants`,
       "POST",
+      source,
+      key,
+      value.version,
+    ),
+  recordVehicleMoveIn: (value, source, key) =>
+    vehicleCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/vehicle-move-in`,
+      source,
+      key,
+      value.version,
+    ),
+  changeVehicle: (value, source, key) =>
+    vehicleCommand(
+      `/api/v1/leases/${encodeURIComponent(value.lease_id)}/vehicle-change`,
       source,
       key,
       value.version,

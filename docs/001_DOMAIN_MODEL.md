@@ -331,6 +331,8 @@ Occupancy records represent who resides in the Unit and when.
 
 Occupancy does not determine financial responsibility.
 
+Amended for Parking (owner, 2026-10-30, Parking Step 4): on Parking the vehicle takes the Occupancy slot. A Vehicle is a record under a Customer (type: car, motorbike, tuk-tuk, food cart; plate as typed, Khmer or Latin). One Lease = one Parking = one vehicle at a time; the vehicle of the Primary Tenant or a Signer moves in; Change vehicle ends the old vehicle's row and starts the new one the same day; the only vehicle never moves out alone (it leaves with the Lease at Move-out). Each vehicle type parks only in its own kind of place (BR-VEH-001). Hidden names stay `occupancy`, `occupant`.
+
 ---
 
 ## Utility Meter

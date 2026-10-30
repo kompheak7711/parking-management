@@ -26,6 +26,12 @@ from property_rental.lease_api import (
     LeaseTimelineEvent,
     LeaseTimelinePage,
     LeaseTimelineVisibility,
+    OccupancyResource,
+)
+from property_rental.lease_vehicle import (
+    ChangeLeaseVehicleCommand,
+    RecordLeaseVehicleMoveInCommand,
+    VehicleRefusedError,
 )
 from property_rental.move_in import (
     AddLeaseOccupantCommand,
@@ -83,6 +89,8 @@ class InMemoryLeaseFlow:
     record_move_in_command: RecordLeaseMoveInCommand | None = None
     occupant_command: AddLeaseOccupantCommand | None = None
     move_out_command: OccupantMoveOutCommand | None = None
+    vehicle_move_in_command: RecordLeaseVehicleMoveInCommand | None = None
+    vehicle_change_command: ChangeLeaseVehicleCommand | None = None
     visibilities: list[LeaseTimelineVisibility] = field(default_factory=list)
     # V1-061 (DL-110): the default Rent of each Unit, when a test sets one.
     unit_rents: dict[UUID, int] = field(default_factory=dict)
@@ -310,6 +318,34 @@ class InMemoryLeaseFlow:
     ) -> LeaseResource:
         del property_id, actor
         self.move_out_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
+
+    def record_vehicle_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseVehicleMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, actor
+        self.vehicle_move_in_command = command
+        current = self.get(command.lease_id)
+        value = replace(current, version=current.version + 1)
+        self.resources[value.lease_id] = value
+        return value
+
+    def change_vehicle(
+        self,
+        property_id: UUID,
+        command: ChangeLeaseVehicleCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, actor
+        self.vehicle_change_command = command
         current = self.get(command.lease_id)
         value = replace(current, version=current.version + 1)
         self.resources[value.lease_id] = value
@@ -951,3 +987,166 @@ def test_move_out_one_occupant_needs_the_move_in_capability_and_answers_each_ref
         assert refused.status_code == status_code, refused.text
         assert refused.json()["error"]["code"] == code
         assert refused.json()["error"]["rule_ids"] == ["DL-111"]
+
+
+VEHICLE_REFUSALS = (
+    ("VEHICLE_SECOND", 409),
+    ("VEHICLE_NOT_OF_LEASE", 409),
+    ("VEHICLE_TYPE", 409),
+    ("VEHICLE_PARKED", 409),
+    ("VEHICLE_NONE_IN", 409),
+    ("VEHICLE_SAME", 422),
+    ("VEHICLE_DATE", 422),
+)
+
+
+def test_vehicle_move_in_needs_the_move_in_capability_and_answers_each_refusal() -> None:
+    """Parking Step 4 (owner 2026-10-30): one vehicle of a Signer moves in; each database
+    refusal reaches the screen by its own code."""
+    property_id = uuid4()
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=4)
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    path = f"/api/v1/leases/{signed.lease_id}/vehicle-move-in"
+    vehicle_id, occupancy_id = uuid4(), uuid4()
+    body = {
+        "event_id": str(uuid4()),
+        "actual_move_in_date": "2026-10-28",
+        "occupancy_id": str(occupancy_id),
+        "vehicle_id": str(vehicle_id),
+        "reason": "Vehicle moved in",
+    }
+    reader = client(flow, actor(property_id, "leases.read", "leases.draft"))
+    assert reader.post(path, headers=headers(version=4), json=body).status_code == 404
+    api = client(flow, actor(property_id, "leases.read", "reservations.complete"))
+    assert api.post(path, headers=headers(), json=body).status_code == 428
+    assert api.post(path, headers=headers(version=4), json={**body, "x": 1}).status_code == 422
+    assert (
+        api.post(path, headers=headers(version=4), json={**body, "reason": ""}).status_code == 422
+    )
+    assert [flow.vehicle_move_in_command] == [None]
+
+    moved = api.post(path, headers=headers(version=4), json=body)
+    assert moved.status_code == 200, moved.text
+    assert moved.headers["etag"] == '"5"'
+    command = flow.vehicle_move_in_command
+    assert command is not None
+    assert (command.lease_id, command.occupancy_id, command.vehicle_id) == (
+        signed.lease_id,
+        occupancy_id,
+        vehicle_id,
+    )
+    assert command.actual_move_in_date == date(2026, 10, 28)
+    assert command.expected_lease_version == 4
+    assert command.authorization_reference == "reservations.complete"
+
+    for reason, status_code in VEHICLE_REFUSALS:
+
+        class RefusingFlow(InMemoryLeaseFlow):
+            def record_vehicle_move_in(
+                self,
+                property_id: UUID,
+                command: RecordLeaseVehicleMoveInCommand,
+                *,
+                actor: AuthenticatedActor,
+                refusal: str = reason,
+            ) -> LeaseResource:
+                raise VehicleRefusedError(refusal)
+
+        refused = client(
+            RefusingFlow({signed.lease_id: signed}),
+            actor(property_id, "leases.read", "reservations.complete"),
+        ).post(path, headers=headers(version=4), json=body)
+        assert refused.status_code == status_code, refused.text
+        assert refused.json()["error"]["code"] == reason
+        assert refused.json()["error"]["rule_ids"] == ["BR-VEH-001"]
+
+
+def test_change_vehicle_sends_the_new_vehicle_and_the_day() -> None:
+    property_id = uuid4()
+    signed = replace(resource(property_id, lease_status=LeaseStatus.SIGNED), version=4)
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    path = f"/api/v1/leases/{signed.lease_id}/vehicle-change"
+    vehicle_id, occupancy_id = uuid4(), uuid4()
+    body = {
+        "event_id": str(uuid4()),
+        "change_date": "2026-10-28",
+        "occupancy_id": str(occupancy_id),
+        "vehicle_id": str(vehicle_id),
+        "reason": "Sold the old car",
+    }
+    reader = client(flow, actor(property_id, "leases.read", "leases.draft"))
+    assert reader.post(path, headers=headers(version=4), json=body).status_code == 404
+    api = client(flow, actor(property_id, "leases.read", "reservations.complete"))
+    assert api.post(path, headers=headers(), json=body).status_code == 428
+    assert api.post(path, headers=headers(version=4), json={**body, "x": 1}).status_code == 422
+    assert (
+        api.post(path, headers=headers(version=4), json={**body, "reason": ""}).status_code == 422
+    )
+    assert [flow.vehicle_change_command] == [None]
+
+    changed = api.post(path, headers=headers(version=4), json=body)
+    assert changed.status_code == 200, changed.text
+    assert changed.headers["etag"] == '"5"'
+    command = flow.vehicle_change_command
+    assert command is not None
+    assert (command.lease_id, command.occupancy_id, command.vehicle_id) == (
+        signed.lease_id,
+        occupancy_id,
+        vehicle_id,
+    )
+    assert (command.change_date, command.reason) == (date(2026, 10, 28), "Sold the old car")
+
+    class RefusingFlow(InMemoryLeaseFlow):
+        def change_vehicle(
+            self,
+            property_id: UUID,
+            command: ChangeLeaseVehicleCommand,
+            *,
+            actor: AuthenticatedActor,
+        ) -> LeaseResource:
+            raise VehicleRefusedError("VEHICLE_NONE_IN")
+
+    refused = client(
+        RefusingFlow({signed.lease_id: signed}),
+        actor(property_id, "leases.read", "reservations.complete"),
+    ).post(path, headers=headers(version=4), json=body)
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "VEHICLE_NONE_IN"
+
+
+def test_the_only_vehicle_never_moves_out_alone() -> None:
+    """Parking Step 4: the per-person move-out route refuses a vehicle's row before the
+    database is asked; the vehicle leaves with Change vehicle or when the Lease ends."""
+    property_id = uuid4()
+    vehicle_row = OccupancyResource(
+        occupancy_id=uuid4(),
+        customer_id=uuid4(),
+        customer_name="Sok Dara",
+        move_in_date=date(2026, 10, 1),
+        move_out_date=None,
+        version=1,
+        vehicle_id=uuid4(),
+        vehicle_type="CAR",
+        plate_text="1AB-1234",
+    )
+    signed = replace(
+        resource(property_id, lease_status=LeaseStatus.SIGNED),
+        version=4,
+        occupancies=(vehicle_row,),
+    )
+    flow = InMemoryLeaseFlow({signed.lease_id: signed})
+    api = client(flow, actor(property_id, "leases.read", "reservations.complete"))
+    listed = api.get(f"/api/v1/leases/{signed.lease_id}/occupancies").json()["data"][0]
+    assert (listed["vehicle_id"], listed["vehicle_type"], listed["plate_text"]) == (
+        str(vehicle_row.vehicle_id),
+        "CAR",
+        "1AB-1234",
+    )
+    refused = api.post(
+        f"/api/v1/leases/{signed.lease_id}/occupancies/{vehicle_row.occupancy_id}/move-out",
+        headers=headers(version=4),
+        json={"event_id": str(uuid4()), "move_out_date": "2026-10-28", "reason": "Gone"},
+    )
+    assert refused.status_code == 409, refused.text
+    assert refused.json()["error"]["code"] == "VEHICLE_ONLY_ONE"
+    assert flow.move_out_command is None

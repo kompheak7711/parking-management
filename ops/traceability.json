@@ -58927,6 +58927,214 @@
       "test_path": "frontend/src/unitClient.test.ts",
       "status": "implemented",
       "notes": "Parking Step 3 (review fix): the Unit timeline client keeps actor_name when the server sends a name and gives null otherwise, so the History line can say who."
+    },
+    {
+      "test_id": "test_a_vehicle_is_made_under_a_customer_with_its_type_and_plate_as_typed",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: a vehicle is a record under a Customer with its type and plate as typed (Khmer or Latin); the plate match ignores spaces, dashes, dots and case; two vehicles may share a plate and the match names each owner."
+    },
+    {
+      "test_id": "test_a_wrong_type_or_plate_is_refused_and_a_correction_keeps_the_history",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: a type outside the four, a blank, untrimmed or over-long plate is refused; a correction needs the version and is audited as vehicle.updated with the Customer."
+    },
+    {
+      "test_id": "test_a_vehicle_is_never_deleted_and_only_the_functions_write_it",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: the runtime role cannot update or delete a vehicle, the admin cannot delete one, and only prm_runtime may run the four vehicle functions."
+    },
+    {
+      "test_id": "test_each_vehicle_type_parks_only_in_its_own_kind_of_place",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4 Q2 (owner 2026-10-30): Car in COVERED or UNCOVERED, Motorbike in MOTORBIKE, Tuk-tuk and food cart in TUK_TUK_FOOD_CART, matched by code; an unknown code allows nothing."
+    },
+    {
+      "test_id": "test_the_vehicle_of_a_signer_moves_in_and_a_second_vehicle_is_refused",
+      "upstream_ids": ["BR-VEH-001", "BR-LEASE-015"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: a vehicle of nobody on the Lease (VEHICLE_NOT_OF_LEASE) or of the wrong type (VEHICLE_TYPE) is refused; the Signer's vehicle moves in through Property Rental's move-in with one Occupancy carrying the vehicle; a replay answers again; a second vehicle is refused (VEHICLE_SECOND); a stale version is a conflict, not a refusal; the per-person move-out function cannot end the vehicle row (VEHICLE_ONLY_ONE at the database); the vehicle of a row never changes."
+    },
+    {
+      "test_id": "test_change_vehicle_keeps_both_rows_and_the_lease",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: Change vehicle refuses none moved in, the same vehicle, a stranger's vehicle, a wrong type and a wrong day; it ends the old row and starts the new one the same day, moves the Lease version on, shows in the History as old plate → new plate: reason, replays for the same key, and lets the same owner's two vehicles hand over on one day."
+    },
+    {
+      "test_id": "test_a_vehicle_parks_under_one_lease_at_a_time",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: a vehicle moved in under one Lease is refused on another (VEHICLE_PARKED) at move-in and at Change vehicle."
+    },
+    {
+      "test_id": "test_termination_and_the_move_out_page_end_the_vehicle_row",
+      "upstream_ids": ["BR-VEH-001", "BR-OCC-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: the only vehicle leaves with the Lease: Termination and the Move-out page end its Occupancy row as they end a person's."
+    },
+    {
+      "test_id": "test_vehicles_migration_is_head_and_forward_only",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_vehicles_migration.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: migration 20270406_256 is the head, follows 20270405_255 and is forward-only."
+    },
+    {
+      "test_id": "test_vehicle_routes_need_the_customer_rights_and_check_the_body",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_vehicle_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: reading vehicles needs customers.read; adding and correcting need customers.manage; the body is strict (type, plate 1 to 32, no extra keys); a deactivated Customer is refused; PATCH needs If-Match and answers 412 when stale."
+    },
+    {
+      "test_id": "test_the_plate_lookup_names_every_owner_with_that_plate",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_vehicle_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: GET /properties/{id}/vehicles?plate= needs customers.read and a plate of 1 to 32 characters; it names every owner whose plate matches without spaces, dashes, dots and case."
+    },
+    {
+      "test_id": "test_vehicle_move_in_needs_the_move_in_capability_and_answers_each_refusal",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: POST /leases/{id}/vehicle-move-in needs reservations.complete and If-Match, takes a strict body, hands the vehicle and Occupancy ids to the flow, and answers each refusal by its code with rule BR-VEH-001."
+    },
+    {
+      "test_id": "test_change_vehicle_sends_the_new_vehicle_and_the_day",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: POST /leases/{id}/vehicle-change needs reservations.complete and If-Match, sends the new vehicle, the day and the reason, and answers a refusal by its code."
+    },
+    {
+      "test_id": "test_the_only_vehicle_never_moves_out_alone",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Parking Step 4: Occupancy rows carry the vehicle; the per-person move-out of a vehicle's row answers 409 VEHICLE_ONLY_ONE before the flow is asked."
+    },
+    {
+      "test_id": "TEST-FE-1127",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the Vehicles card lists the Customer's vehicles; Add vehicle needs a plate and saves the type and the plate as typed; the page says the vehicle was added."
+    },
+    {
+      "test_id": "TEST-FE-1128",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: a plate another vehicle has warns with the owner's name and plate; Save anyway saves; nothing is merged."
+    },
+    {
+      "test_id": "TEST-FE-1129",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: Edit corrects the type and the plate with the version; a reader gets no Add vehicle."
+    },
+    {
+      "test_id": "TEST-FE-1130",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the Lease page's Vehicle card shows the vehicle moved in with its day, earlier vehicles with their move-out day, Change vehicle for the move-in right, no Move out and no Add occupant; the History says Vehicle moved in and Vehicle changed."
+    },
+    {
+      "test_id": "TEST-FE-1131",
+      "upstream_ids": ["BR-VEH-001", "BR-LEASE-015"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: Record move-in offers the Signers' vehicles as one choice, checks the date, keeps the Occupancy id and key on Try again, and points to the Customer page when there is no vehicle."
+    },
+    {
+      "test_id": "TEST-FE-1132",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: Change vehicle offers the other vehicles, needs a reason, sends the vehicle and the day with the Lease version, and shows the server's words when refused (VEHICLE_TYPE)."
+    },
+    {
+      "test_id": "TEST-FE-1133",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the New Lease form has no Other occupants list on Parking; the code stays behind PEOPLE_MOVE_IN."
+    },
+    {
+      "test_id": "TEST-FE-1134",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the hand-back's Who moved out names the vehicle by its plate, then its owner."
+    },
+    {
+      "test_id": "TEST-FE-1135",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the vehicle move-in and Change vehicle post to their own routes with CSRF, the key and the Lease version; a coded refusal keeps the server's code and words."
+    },
+    {
+      "test_id": "TEST-FE-1136",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4: the vehicle calls read a Customer's vehicles, add one with CSRF, correct one with If-Match, and look a plate up."
+    },
+    {
+      "test_id": "TEST-FE-1137",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4 (review fix): a failed plate lookup does not stop the save (the duplicate warning is advice), and the plate box takes at most 32 characters."
+    },
+    {
+      "test_id": "TEST-FE-1138",
+      "upstream_ids": ["BR-VEH-001"],
+      "test_level": "UI",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Parking Step 4 (review fix): Change vehicle opens on the End Date when that day is already past, so the date is never above its limit."
     }
   ]
 }

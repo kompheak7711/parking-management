@@ -12,10 +12,15 @@ import {
 } from "../settings/serviceSettingsClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CustomerApi, CustomerDetail } from "../customerClient";
+import type {
+  CustomerApi,
+  CustomerDetail,
+  VehicleResource,
+} from "../customerClient";
 import type { DepositApi, DepositResource } from "../depositClient";
 import {
   LeaseConflictError,
+  LeaseRefusedError,
   LeaseRequestError,
   LeaseUnavailableError,
   type LeaseApi,
@@ -39,6 +44,7 @@ import {
   type TerminationNotice,
 } from "../letters/lettersClient";
 import { formModeOf } from "./LeaseForm";
+import { PEOPLE_MOVE_IN } from "./parking";
 import { LeasesPage, type LeasesPageProps } from "./LeasesPage";
 import { addDays, endingLimit, initialRent } from "./leasesData";
 
@@ -475,8 +481,9 @@ describe("Lease page", () => {
     ).toBeInTheDocument();
     const signers = screen.getByRole("region", { name: "Signers" });
     expect(signers).toHaveTextContent("Tenant U201Primary TenantTo sign");
-    expect(screen.getByRole("region", { name: "Occupants" })).toHaveTextContent(
-      "1 planned to live there; moves in with the Lease.",
+    // Parking Step 4: the Occupants card is the Vehicle card (people lists hidden, code kept).
+    expect(screen.getByRole("region", { name: "Vehicle" })).toHaveTextContent(
+      "No vehicle moved in yet.",
     );
     // Start on the 10th of a 31-day month: $500.00 × 22 ÷ 31 = $354.84, due 5 days later.
     const rent = screen.getByRole("region", { name: "Rent and services" });
@@ -1699,7 +1706,11 @@ describe("Lease actions", () => {
     expect(cancel.mock.calls[1]?.[2]).toBe(cancel.mock.calls[0]?.[2]);
   });
 
-  it("TEST-FE-855 Record move-in offers the Signers and planned occupants, checks the date and keeps the Occupancy ids on Try again", async () => {
+  it("TEST-FE-855 Record move-in offers the Signers and planned occupants, checks the date and keeps the Occupancy ids on Try again", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-move";
     const start = addDays(today, -3);
     const ready = lease("U302", {
@@ -1815,7 +1826,11 @@ describe("Lease actions", () => {
 });
 
 describe("Move-in with someone else", () => {
-  it("TEST-FE-861 Record move-in can add an active Customer who is not named in the Lease", async () => {
+  it("TEST-FE-861 Record move-in can add an active Customer who is not named in the Lease", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-move";
     const ready = lease("U302", {
       lease_id: "lease-move",
@@ -1974,7 +1989,7 @@ describe("New Lease and Renew", () => {
     pickIn("Parking", "unit-U402");
     pickIn("Primary Tenant", "customer-a");
     pickIn("Other Signers", "customer-b");
-    pickIn("Other occupants", "customer-c");
+    // Parking Step 4: no "Other occupants" list on Parking (PEOPLE_MOVE_IN).
     fireEvent.change(screen.getByLabelText("Start Date"), {
       target: { value: "2026-12-22" },
     });
@@ -2024,7 +2039,7 @@ describe("New Lease and Renew", () => {
       end_date: "2027-12-31",
       monthly_rent_usd_cents: 31000,
       predecessor_lease_id: null,
-      planned_occupant_customer_ids: ["customer-a", "customer-c"],
+      planned_occupant_customer_ids: ["customer-a"],
       security_deposit_id: null,
       service_terms: [],
       pet_term: {
@@ -3486,6 +3501,33 @@ describe("New Lease and Renew", () => {
       expect(window.location.hash).toBe("#/leases/lease-U101");
     });
   });
+
+  // Parking Step 4: the people list is hidden (PEOPLE_MOVE_IN), the code kept.
+  it("TEST-FE-1133 the New Lease form has no Other occupants list on Parking (people lists hidden, code kept)", async () => {
+    show(
+      api({}),
+      deposits(),
+      null,
+      undefined,
+      {
+        get: vi.fn<CustomerApi["get"]>().mockRejectedValue(new Error("no")),
+        list: vi.fn<CustomerApi["list"]>().mockResolvedValue({
+          items: [],
+          next_cursor: null,
+          can_manage: false,
+        }),
+      },
+      units,
+      {},
+      {},
+      undefined,
+      signing(),
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByLabelText("Parking");
+    expect(screen.getByLabelText("Other Signers")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Other occupants")).toBeNull();
+  });
 });
 
 describe("Add occupant (DL-102)", () => {
@@ -3507,7 +3549,11 @@ describe("Add occupant (DL-102)", () => {
     };
   }
 
-  it("TEST-FE-1118 a Lease with 20 people living there shows no Add occupant button and says why; 19 still shows it (V1-061 Fix 4)", async () => {
+  it("TEST-FE-1118 a Lease with 20 people living there shows no Add occupant button and says why; 19 still shows it (V1-061 Fix 4)", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     const crowd = (count: number) =>
       lease("U101", {
         occupancies: [
@@ -3551,7 +3597,11 @@ describe("Add occupant (DL-102)", () => {
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-1025 after the move-in a friend gets their own move-in date: the date is checked, Try again sends the same Occupancy and key, and the page says who was added", async () => {
+  it("TEST-FE-1025 after the move-in a friend gets their own move-in date: the date is checked, Try again sends the same Occupancy and key, and the page says who was added", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-U101";
     const first = addDays(today, -199);
     const added = vi
@@ -3630,7 +3680,11 @@ describe("Add occupant (DL-102)", () => {
     expect(added.mock.calls[1]?.[0].version).toBe(3);
   });
 
-  it("TEST-FE-1026 before the move-in the person is planned with no date, and the Occupants box lists who moves in with the Lease", async () => {
+  it("TEST-FE-1026 before the move-in the person is planned with no date, and the Occupants box lists who moves in with the Lease", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-U302";
     const planned = lease("U302", {
       start_date: addDays(today, 10),
@@ -3710,7 +3764,11 @@ describe("Add occupant (DL-102)", () => {
     );
   });
 
-  it("TEST-FE-1027 Add occupant shows on a draft and a running Lease to someone who records move-ins, and not on a renewal before its move-in, an ended or terminated Lease, after everyone moved out, or without the permissions", async () => {
+  it("TEST-FE-1027 Add occupant shows on a draft and a running Lease to someone who records move-ins, and not on a renewal before its move-in, an ended or terminated Lease, after everyone moved out, or without the permissions", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     const cases: [
       Partial<LeaseResource>,
       ReadonlySet<string> | null,
@@ -3757,7 +3815,11 @@ describe("Add occupant (DL-102)", () => {
     }
   });
 
-  it("TEST-FE-1112 Move out one occupant: a person who signs nothing moves out with only the day, and the History says Occupant moved out (V1-061, DL-111)", async () => {
+  it("TEST-FE-1112 Move out one occupant: a person who signs nothing moves out with only the day, and the History says Occupant moved out (V1-061, DL-111)", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-U101";
     const people = lease("U101", {
       occupancies: [
@@ -3822,7 +3884,11 @@ describe("Add occupant (DL-102)", () => {
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-1113 Move out a Joint Signer: every other Signer must be ticked as agreeing; the only Signer living there and a reader without the move-in right get no button (V1-061, DL-111)", async () => {
+  it("TEST-FE-1113 Move out a Joint Signer: every other Signer must be ticked as agreeing; the only Signer living there and a reader without the move-in right get no button (V1-061, DL-111)", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-U101";
     const guarantor = {
       occupancy_id: "occupancy-guarantor",
@@ -3900,7 +3966,11 @@ describe("Add occupant (DL-102)", () => {
     expect(screen.queryByRole("button", { name: "Move out" })).toBeNull();
   });
 
-  it("TEST-FE-1028 Record move-in names the planned people from the Lease without reading each Customer", async () => {
+  it("TEST-FE-1028 Record move-in names the planned people from the Lease without reading each Customer", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-move";
     const ready = lease("U302", {
       lease_id: "lease-move",
@@ -3936,7 +4006,11 @@ describe("Add occupant (DL-102)", () => {
     expect(get).not.toHaveBeenCalledWith("customer-kid");
   });
 
-  it("TEST-FE-1029 New Customer opens the Add Customer form in place of the dialog and Cancel comes back; a failed Customer read and a refused save say so; the History says Occupant added", async () => {
+  it("TEST-FE-1029 New Customer opens the Add Customer form in place of the dialog and Cancel comes back; a failed Customer read and a refused save say so; the History says Occupant added", async ({
+    skip,
+  }) => {
+    // Parking Step 4: people lists are hidden on Parking (PEOPLE_MOVE_IN); the code stays.
+    skip(!PEOPLE_MOVE_IN);
     window.location.hash = "#/leases/lease-U101";
     const added = vi
       .fn<LeaseApi["addOccupant"]>()
@@ -4026,5 +4100,410 @@ describe("Add occupant (DL-102)", () => {
         "The Customers could not be read just now. Close and try again.",
       ),
     ).toBeInTheDocument();
+  });
+});
+
+// Parking Step 4 (owner 2026-10-30): the vehicle takes the Occupancy slot of a Lease.
+describe("Vehicle (Parking Step 4)", () => {
+  function vehicle(
+    id: string,
+    plate: string,
+    type: VehicleResource["vehicle_type"],
+    owner: string,
+    ownerName: string,
+  ): VehicleResource {
+    return {
+      vehicle_id: id,
+      customer_id: owner,
+      customer_name: ownerName,
+      vehicle_type: type,
+      plate_text: plate,
+      version: 1,
+    };
+  }
+  const garage = (id: string) =>
+    id === "customer-U101" || id === "customer-U302"
+      ? [
+          vehicle(
+            "vehicle-car",
+            "1AB-1234",
+            "CAR",
+            id,
+            `Tenant ${id.slice(9)}`,
+          ),
+          vehicle(
+            "vehicle-second",
+            "1AB-0001",
+            "CAR",
+            id,
+            `Tenant ${id.slice(9)}`,
+          ),
+        ]
+      : id === "customer-guarantor"
+        ? [vehicle("vehicle-moto", "2CD-5678", "MOTORBIKE", id, "Guarantor")]
+        : [];
+  const people = () => ({
+    get: vi.fn<CustomerApi["get"]>((id) =>
+      Promise.resolve({
+        customer_id: id,
+        legal_name: "Someone",
+      } as CustomerDetail),
+    ),
+    listVehicles: vi.fn<CustomerApi["listVehicles"]>((id) =>
+      Promise.resolve(garage(id)),
+    ),
+  });
+  const parked = (overrides: Partial<LeaseResource> = {}) =>
+    lease("U101", {
+      occupancies: [
+        {
+          occupancy_id: "occupancy-old",
+          customer_id: "customer-U101",
+          customer_name: "Tenant U101",
+          move_in_date: addDays(today, -199),
+          move_out_date: addDays(today, -10),
+          version: 2,
+          vehicle_id: "vehicle-car",
+          vehicle_type: "CAR",
+          plate_text: "1AB-1234",
+        },
+        {
+          occupancy_id: "occupancy-now",
+          customer_id: "customer-guarantor",
+          customer_name: "Guarantor",
+          move_in_date: addDays(today, -10),
+          move_out_date: null,
+          version: 1,
+          vehicle_id: "vehicle-moto",
+          vehicle_type: "MOTORBIKE",
+          plate_text: "2CD-5678",
+        },
+      ],
+      timeline: [
+        {
+          event_id: "event-in",
+          event_kind: "lease.move_in",
+          occurred_at: "2026-04-01T03:00:00Z",
+          reason: "Vehicle moved in",
+          actor_id: "actor-1",
+          source_reference: null,
+          source_href: null,
+        },
+        {
+          event_id: "event-change",
+          event_kind: "lease.vehicle_changed",
+          occurred_at: "2026-10-20T03:00:00Z",
+          reason: "1AB-1234 → 2CD-5678: Sold the old car",
+          actor_id: "actor-1",
+          source_reference: null,
+          source_href: null,
+        },
+      ],
+      ...overrides,
+    });
+
+  it("TEST-FE-1130 the Lease page shows the vehicle moved in, the earlier vehicles with their move-out day, Change vehicle, and no people buttons", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    show(api({ get: vi.fn().mockResolvedValue(parked()) }));
+    const card = await screen.findByRole("region", { name: "Vehicle" });
+    expect(within(card).getByText("2CD-5678")).toBeInTheDocument();
+    expect(within(card).getByText("Motorbike")).toBeInTheDocument();
+    expect(
+      within(card).getByRole("link", { name: "Guarantor" }),
+    ).toBeInTheDocument();
+    expect(card).toHaveTextContent(`Moved in ${dayText(addDays(today, -10))}`);
+    expect(within(card).getByText("1AB-1234")).toBeInTheDocument();
+    expect(card).toHaveTextContent(`moved out ${dayText(addDays(today, -10))}`);
+    expect(
+      within(card).getByRole("button", { name: "Change vehicle" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Move out" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add occupant" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Occupants" })).toBeNull();
+    // The History names the event and shows the reason it was recorded with.
+    expect(screen.getAllByText("Vehicle moved in").length).toBeGreaterThan(0);
+    expect(screen.getByText("Vehicle changed")).toBeInTheDocument();
+    expect(
+      screen.getByText("1AB-1234 → 2CD-5678: Sold the old car"),
+    ).toBeInTheDocument();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({ get: vi.fn().mockResolvedValue(parked()) }),
+      deposits(),
+      new Set(["leases.read", "customers.read"]),
+    );
+    const reading = await screen.findByRole("region", { name: "Vehicle" });
+    expect(
+      within(reading).queryByRole("button", { name: "Change vehicle" }),
+    ).toBeNull();
+
+    cleanup();
+    window.location.hash = "#/leases/lease-U101";
+    show(
+      api({
+        get: vi
+          .fn()
+          .mockResolvedValue(parked({ occupancies: [], timeline: [] })),
+      }),
+    );
+    const empty = await screen.findByRole("region", { name: "Vehicle" });
+    expect(
+      within(empty).getByText("No vehicle moved in yet."),
+    ).toBeInTheDocument();
+    expect(
+      within(empty).queryByRole("button", { name: "Change vehicle" }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1131 Record move-in picks one vehicle of the Signers, checks the date, keeps the ids on Try again, and points to the Customer page when there is none", async () => {
+    window.location.hash = "#/leases/lease-move";
+    const start = addDays(today, -3);
+    const ready = lease("U302", {
+      lease_id: "lease-move",
+      start_date: start,
+      end_date: addDays(today, 360),
+      signed_at: `${addDays(today, -5)}T03:00:00Z`,
+      occupancies: [],
+      can_move_in: true,
+      signers: [
+        ...lease("U302").signers,
+        {
+          signer_id: "signer-g",
+          customer_id: "customer-guarantor",
+          customer_name: "Guarantor",
+          is_primary_tenant: false,
+          signed_at: "2026-03-01T03:00:00Z",
+          added_at: "2026-02-20T03:00:00Z",
+        },
+      ],
+    });
+    const recordVehicleMoveIn = vi
+      .fn<LeaseApi["recordVehicleMoveIn"]>()
+      .mockRejectedValueOnce(new LeaseUnavailableError())
+      .mockImplementationOnce((value) => Promise.resolve(value));
+    const customers = people();
+    show(
+      api({ get: vi.fn().mockResolvedValue(ready), recordVehicleMoveIn }),
+      deposits(),
+      null,
+      undefined,
+      customers,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record move-in" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Record move-in · U302",
+    });
+    expect(
+      await within(dialog).findByRole("radio", {
+        name: "1AB-1234 · Car · Tenant U302",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("radio", {
+        name: "2CD-5678 · Motorbike · Guarantor",
+      }),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByRole("checkbox")).toBeNull();
+    expect(customers.listVehicles).toHaveBeenCalledWith("customer-guarantor");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    expect(within(dialog).getByText("Choose the vehicle.")).toBeInTheDocument();
+    expect(recordVehicleMoveIn).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(dialog).getByRole("radio", {
+        name: "1AB-1234 · Car · Tenant U302",
+      }),
+    );
+    fireEvent.change(within(dialog).getByLabelText("Move-in date"), {
+      target: { value: addDays(start, -1) },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    expect(dialog).toHaveTextContent(
+      `Choose a date from ${dayText(start)} to ${dayText(today)}.`,
+    );
+    fireEvent.change(within(dialog).getByLabelText("Move-in date"), {
+      target: { value: start },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record move-in" }),
+    );
+    fireEvent.click(
+      await within(dialog).findByRole("button", { name: "Try again" }),
+    );
+    expect(await screen.findByText("Vehicle moved in.")).toBeInTheDocument();
+    const first = recordVehicleMoveIn.mock.calls[0]?.[1];
+    expect(first).toMatchObject({
+      actual_move_in_date: start,
+      vehicle_id: "vehicle-car",
+      reason: "Vehicle moved in",
+    });
+    expect(first?.occupancy_id).toEqual(expect.any(String));
+    expect(recordVehicleMoveIn.mock.calls[1]?.[1]).toEqual(first);
+    expect(recordVehicleMoveIn.mock.calls[1]?.[2]).toBe(
+      recordVehicleMoveIn.mock.calls[0]?.[2],
+    );
+
+    cleanup();
+    window.location.hash = "#/leases/lease-move";
+    show(
+      api({ get: vi.fn().mockResolvedValue(ready), recordVehicleMoveIn }),
+      deposits(),
+      null,
+      undefined,
+      {
+        ...people(),
+        listVehicles: vi
+          .fn<CustomerApi["listVehicles"]>()
+          .mockResolvedValue([]),
+      },
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Record move-in" }),
+    );
+    const none = screen.getByRole("dialog", { name: "Record move-in · U302" });
+    expect(
+      await within(none).findByText(
+        "No vehicle yet. Add one on the Customer page first.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(none).getByRole("link", { name: "Tenant U302" }),
+    ).toHaveAttribute("href", "#/customers/customer-U302");
+    expect(within(none).queryByRole("radio")).toBeNull();
+  });
+
+  it("TEST-FE-1132 Change vehicle offers the Signers' other vehicles, needs a reason, sends the vehicle and the day, and shows the server's words when refused", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const current = parked({
+      signers: [
+        ...lease("U101").signers,
+        {
+          signer_id: "signer-g",
+          customer_id: "customer-guarantor",
+          customer_name: "Guarantor",
+          is_primary_tenant: false,
+          signed_at: "2026-03-01T03:00:00Z",
+          added_at: "2026-02-20T03:00:00Z",
+        },
+      ],
+    });
+    const changeVehicle = vi
+      .fn<LeaseApi["changeVehicle"]>()
+      .mockRejectedValueOnce(
+        new LeaseRefusedError(
+          "VEHICLE_TYPE",
+          "This vehicle type cannot park in this Parking Type. Car: Covered or Uncovered. Motorbike: Motorbike. Tuk-tuk and food cart: Tuk-Tuk/Food Cart.",
+        ),
+      )
+      .mockImplementationOnce((value) =>
+        Promise.resolve({ ...value, version: value.version + 1 }),
+      );
+    show(
+      api({ get: vi.fn().mockResolvedValue(current), changeVehicle }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Change vehicle" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Change vehicle · U101",
+    });
+    expect(
+      await within(dialog).findByRole("radio", {
+        name: "1AB-1234 · Car · Tenant U101",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("radio", {
+        name: "1AB-0001 · Car · Tenant U101",
+      }),
+    ).toBeInTheDocument();
+    // The vehicle moved in now is not offered.
+    expect(
+      within(dialog).queryByRole("radio", { name: /2CD-5678/ }),
+    ).toBeNull();
+    expect(within(dialog).getByLabelText("Change date")).toHaveValue(
+      dayText(today),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change vehicle" }),
+    );
+    expect(within(dialog).getByText("Choose the vehicle.")).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("radio", {
+        name: "1AB-1234 · Car · Tenant U101",
+      }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change vehicle" }),
+    );
+    expect(
+      within(dialog).getByText("Give the reason for the change."),
+    ).toBeInTheDocument();
+    expect(changeVehicle).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: " Sold the motorbike " },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change vehicle" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        /This vehicle type cannot park in this Parking Type/,
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Change vehicle" }),
+    );
+    expect(await screen.findByText("Vehicle changed.")).toBeInTheDocument();
+    expect(changeVehicle).toHaveBeenCalledTimes(2);
+    expect(changeVehicle.mock.calls[1]?.[1]).toMatchObject({
+      change_date: today,
+      vehicle_id: "vehicle-car",
+      reason: "Sold the motorbike",
+    });
+    expect(changeVehicle.mock.calls[1]?.[1].occupancy_id).toEqual(
+      expect.any(String),
+    );
+    expect(changeVehicle.mock.calls[1]?.[0].version).toBe(3);
+  });
+
+  it("TEST-FE-1138 Change vehicle opens on the End Date when that day is already past", async () => {
+    window.location.hash = "#/leases/lease-U101";
+    const overdue = parked({
+      end_date: addDays(today, -2),
+      occupancies: parked().occupancies.map((row) =>
+        row.move_out_date === null
+          ? { ...row, move_in_date: addDays(today, -30) }
+          : row,
+      ),
+    });
+    show(
+      api({ get: vi.fn().mockResolvedValue(overdue) }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Change vehicle" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Change vehicle · U101",
+    });
+    expect(within(dialog).getByLabelText("Change date")).toHaveValue(
+      dayText(addDays(today, -2)),
+    );
   });
 });

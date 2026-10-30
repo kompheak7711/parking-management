@@ -139,6 +139,8 @@ function client(overrides: Partial<LeaseApi> = {}): LeaseApi {
       actual_move_in_date: "2026-09-01",
       occupancy_ids: ["occupancy-1"],
     }),
+    recordVehicleMoveIn: vi.fn().mockResolvedValue(drafted),
+    changeVehicle: vi.fn().mockResolvedValue(drafted),
     ...overrides,
   };
 }

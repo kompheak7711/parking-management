@@ -1585,3 +1585,64 @@ CORRECTION_NEW_REFUND_METHOD_OFF = Refusal(
     ("BR-SETTLE-013", "BR-REFUND-014"),
     ("new_refund_method_id",),
 )
+# Parking Step 4 (owner 2026-10-30, BR-VEH-001): one vehicle at a time on a Lease; each vehicle
+# type parks only in its own kind of place; the only vehicle never moves out alone.
+VEHICLE_SECOND = Refusal(
+    409,
+    "VEHICLE_SECOND",
+    "A vehicle is already moved in on this Parking. Use Change vehicle.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_NOT_OF_LEASE = Refusal(
+    409,
+    "VEHICLE_NOT_OF_LEASE",
+    "The vehicle must belong to the Primary Tenant or a Signer of this Lease.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_TYPE = Refusal(
+    409,
+    "VEHICLE_TYPE",
+    "This vehicle type cannot park in this Parking Type. Car: Covered or Uncovered. "
+    "Motorbike: Motorbike. Tuk-tuk and food cart: Tuk-Tuk/Food Cart.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_PARKED = Refusal(
+    409,
+    "VEHICLE_PARKED",
+    "This vehicle is parked under another Lease. Change or end that Lease first.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_NONE_IN = Refusal(
+    409,
+    "VEHICLE_NONE_IN",
+    "No vehicle is moved in on this Lease, or the Lease is not running.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_SAME = Refusal(
+    422,
+    "VEHICLE_SAME",
+    "This vehicle is the one already moved in. Choose another vehicle.",
+    ("BR-VEH-001",),
+    ("vehicle_id",),
+)
+VEHICLE_DATE = Refusal(
+    422,
+    "VEHICLE_DATE",
+    "The change day must be on or after the vehicle's move-in day, not after today and not "
+    "after the End Date.",
+    ("BR-VEH-001",),
+    ("change_date",),
+)
+VEHICLE_ONLY_ONE = Refusal(
+    409,
+    "VEHICLE_ONLY_ONE",
+    "The only vehicle never moves out alone. Use Change vehicle, or end the Lease through "
+    "Termination and Move-out.",
+    ("BR-VEH-001",),
+    ("occupancy_id",),
+)

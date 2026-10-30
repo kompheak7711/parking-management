@@ -104,6 +104,13 @@ export function HandBackDialog({
   onSaved: (record: MoveOutRecord) => void;
   onConflict: () => void;
 }) {
+  // Parking Step 4: the vehicle is named by its plate, then its owner.
+  const plateOf = (occupancyId: string): string => {
+    const plate = lease.occupancies.find(
+      (occupancy) => occupancy.occupancy_id === occupancyId,
+    )?.plate_text;
+    return plate === null || plate === undefined ? "" : `${plate} · `;
+  };
   const first = firstHandBackDay(lease, open);
   const [day, setDay] = useState(today);
   const [keys, setKeys] = useState(true);
@@ -258,6 +265,7 @@ export function HandBackDialog({
           <label className="ui-chk" key={occupancy.occupancy_id}>
             <input checked disabled type="checkbox" />
             <span>
+              {plateOf(occupancy.occupancy_id)}
               {names.get(occupancy.customer_id) ??
                 occupancy.customer_id.slice(0, 8)}
             </span>

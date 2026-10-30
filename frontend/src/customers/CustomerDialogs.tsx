@@ -10,7 +10,10 @@ import {
   type CustomerDetail,
   type CustomerGender,
   type CustomerListItem,
+  CustomerRequestError,
   type CustomerSource,
+  type VehicleResource,
+  type VehicleType,
 } from "../customerClient";
 import { DateInput, isDay } from "../shell/DateInput";
 import { todayInPhnomPenh } from "../shell/format";
@@ -27,7 +30,7 @@ import {
   deactivateCustomer,
   updateCustomer,
 } from "./commands";
-import { ct } from "./text";
+import { ct, vehicleTypeText } from "./text";
 
 type Field =
   | "legal_name"
@@ -734,6 +737,169 @@ export function NewCustomerDialog({
         onSaved={onSaved}
         propertyId={propertyId}
       />
+    </Dialog>
+  );
+}
+
+// Parking Step 4 (owner 2026-10-30): a vehicle under a Customer: type and plate as typed.
+// Before saving, the plate is looked up; another vehicle with the same plate is a warning
+// with its owner's name, and Save anyway still saves. Nothing is merged.
+export function VehicleDialog({
+  language,
+  api,
+  propertyId,
+  customer,
+  vehicle,
+  onClose,
+  onSaved,
+}: {
+  language: Language;
+  api: Pick<
+    CustomerApi,
+    "createVehicle" | "updateVehicle" | "findVehiclesByPlate"
+  >;
+  propertyId: string;
+  customer: CustomerDetail;
+  /** The vehicle to correct; null adds a new one. */
+  vehicle: VehicleResource | null;
+  onClose: () => void;
+  onSaved: (vehicle: VehicleResource, added: boolean) => void;
+}) {
+  const [vehicleType, setVehicleType] = useState<VehicleType>(
+    vehicle?.vehicle_type ?? "CAR",
+  );
+  const [plate, setPlate] = useState(vehicle?.plate_text ?? "");
+  const [problem, setProblem] = useState<string | null>(null);
+  const [same, setSame] = useState<VehicleResource[] | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // One id for the life of the dialog, so a retry sends the same vehicle.
+  const vehicleId = useRef(vehicle?.vehicle_id ?? crypto.randomUUID());
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const plateText = plate.trim();
+    if (plateText === "") {
+      setProblem(ct(language, "v_plate_req"));
+      return;
+    }
+    setProblem(null);
+    setFailure(null);
+    setBusy(true);
+    const source = { vehicle_type: vehicleType, plate_text: plateText };
+    const save = () =>
+      vehicle === null
+        ? api.createVehicle(customer.customer_id, {
+            vehicle_id: vehicleId.current,
+            ...source,
+          })
+        : api.updateVehicle(vehicle, source);
+    const check =
+      same !== null
+        ? Promise.resolve(same)
+        : api
+            .findVehiclesByPlate(propertyId, plateText)
+            .then((found) =>
+              found.filter((item) => item.vehicle_id !== vehicleId.current),
+            )
+            // The warning is advice; a lookup that fails must not stop the save.
+            .catch((): VehicleResource[] => []);
+    void check
+      .then((found) => {
+        if (found.length > 0 && same === null) {
+          setSame(found);
+          return null;
+        }
+        return save();
+      })
+      .then((saved) => {
+        if (saved !== null) onSaved(saved, vehicle === null);
+      })
+      .catch((error: unknown) => {
+        setFailure(
+          error instanceof CustomerRequestError && error.message !== ""
+            ? error.message
+            : ct(language, "v_refused"),
+        );
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={ct(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={
+        busy
+          ? ct(language, "saving")
+          : same !== null
+            ? ct(language, "v_save_anyway")
+            : ct(language, "save")
+      }
+      title={
+        vehicle === null
+          ? ct(language, "v_add_title", customer.legal_name)
+          : ct(language, "v_edit_title", vehicle.plate_text)
+      }
+    >
+      <p className="ui-small ui-muted">{ct(language, "v_note")}</p>
+      <div className="ui-field">
+        <label htmlFor="vehicle-type">{ct(language, "v_type")}</label>
+        <select
+          disabled={busy}
+          id="vehicle-type"
+          onChange={(event) => {
+            setVehicleType(event.currentTarget.value as VehicleType);
+          }}
+          value={vehicleType}
+        >
+          {(["CAR", "MOTORBIKE", "TUK_TUK", "FOOD_CART"] as const).map(
+            (kind) => (
+              <option key={kind} value={kind}>
+                {vehicleTypeText(language, kind)}
+              </option>
+            ),
+          )}
+        </select>
+      </div>
+      <div className="ui-field">
+        <label htmlFor="vehicle-plate">{ct(language, "v_plate")}</label>
+        <input
+          aria-invalid={problem !== null}
+          disabled={busy}
+          id="vehicle-plate"
+          maxLength={32}
+          onChange={(event) => {
+            setPlate(event.currentTarget.value);
+            setSame(null);
+          }}
+          value={plate}
+        />
+        <Problem message={problem} />
+      </div>
+      {same !== null && same.length > 0 && (
+        <Notice tone="warn">
+          <p>
+            {ct(
+              language,
+              "v_dup",
+              same
+                .map((item) => `${item.customer_name} (${item.plate_text})`)
+                .join(", "),
+            )}
+          </p>
+        </Notice>
+      )}
+      {failure !== null && (
+        <Notice tone="err">
+          <p>{failure}</p>
+        </Notice>
+      )}
     </Dialog>
   );
 }

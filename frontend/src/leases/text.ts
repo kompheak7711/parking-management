@@ -146,6 +146,34 @@ const TEXT = {
     "កិច្ចសន្យាជួលនេះមានមនុស្ស 20 នាក់ហើយ ដែលជាចំនួនច្រើនបំផុត។ សូមឱ្យនរណាម្នាក់ចាកចេញជាមុនសិន។",
   ],
   occ_tag: ["Occupant", "អ្នករស់នៅ"],
+  // Parking Step 4 (owner 2026-10-30): the vehicle takes the Occupancy slot. Khmer needs the
+  // owner's check.
+  vehicle: ["Vehicle", "យានយន្ត"],
+  v_none: ["No vehicle moved in yet.", "មិនទាន់មានយានយន្តចូលចតទេ។"],
+  v_note: [
+    "One vehicle at a time. To change it, use Change vehicle; the vehicle leaves with the Lease at Move-out.",
+    "យានយន្តមួយក្នុងពេលតែមួយ។ ដើម្បីប្តូរ សូមប្រើ ប្តូរយានយន្ត។ យានយន្តចេញជាមួយកិច្ចសន្យានៅពេលចាកចេញ។",
+  ],
+  change_vehicle: ["Change vehicle", "ប្តូរយានយន្ត"],
+  cv_title: ["Change vehicle · {0}", "ប្តូរយានយន្ត · {0}"],
+  cv_day: ["Change date", "ថ្ងៃប្តូរ"],
+  cv_reason: ["Reason", "មូលហេតុ"],
+  cv_reason_req: [
+    "Give the reason for the change.",
+    "សូមផ្តល់មូលហេតុនៃការប្តូរ។",
+  ],
+  cv_toast: ["Vehicle changed.", "យានយន្តត្រូវបានប្តូរ។"],
+  cv_note: [
+    "The old vehicle moves out and the new one moves in on the change date; both stay in the history.",
+    "យានយន្តចាស់ចេញ ហើយយានយន្តថ្មីចូលចតនៅថ្ងៃប្តូរ។ ទាំងពីរនៅក្នុងប្រវត្តិ។",
+  ],
+  v_which: ["Vehicle", "យានយន្ត"],
+  v_choose: ["Choose the vehicle.", "សូមជ្រើសយានយន្ត។"],
+  v_none_yet: [
+    "No vehicle yet. Add one on the Customer page first.",
+    "មិនទាន់មានយានយន្តទេ។ សូមបន្ថែមនៅទំព័រអតិថិជនជាមុនសិន។",
+  ],
+  v_failed: ["The vehicles could not be read.", "មិនអាចអានយានយន្តបានទេ។"],
   in_pending: [
     "Moves in with the Lease; the real date is recorded at move-in.",
     "ចូលស្នាក់នៅជាមួយកិច្ចសន្យា; កាលបរិច្ឆេទពិតត្រូវកត់ត្រាពេលចូលស្នាក់នៅ។",
@@ -280,7 +308,8 @@ const TEXT = {
   "e_lease.sign": ["Lease signed", "កិច្ចសន្យាបានចុះហត្ថលេខា"],
   "e_lease.cancel": ["Draft cancelled", "សេចក្តីព្រាងបានលុបចោល"],
   "e_lease.terminate": ["Lease terminated", "កិច្ចសន្យាបានបញ្ចប់មុនកំណត់"],
-  "e_lease.move_in": ["Move-in recorded", "បានកត់ត្រាការចូលស្នាក់នៅ"],
+  "e_lease.move_in": ["Vehicle moved in", "យានយន្តបានចូលចត"],
+  "e_lease.vehicle_changed": ["Vehicle changed", "យានយន្តត្រូវបានប្តូរ"],
   "e_lease.occupant_added": ["Occupant added", "បានបន្ថែមអ្នករស់នៅ"],
   "e_lease.termination_notice": [
     "Termination notice recorded",
@@ -451,7 +480,7 @@ const TEXT = {
   // new
   movein_ok: ["Record move-in", "កត់ត្រាការចូលស្នាក់នៅ"],
   // new
-  moved_in_toast: ["Move-in recorded.", "ការចូលស្នាក់នៅត្រូវបានកត់ត្រា។"],
+  moved_in_toast: ["Vehicle moved in.", "យានយន្តបានចូលចត។"],
   // new
   err_movein_day: [
     "Choose a date from {0} to {1}.",

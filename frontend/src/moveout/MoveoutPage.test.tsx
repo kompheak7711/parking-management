@@ -3678,3 +3678,23 @@ describe("Move-out step 6: after closure", () => {
     ).toBeTruthy();
   });
 });
+
+// Parking Step 4: the hand-back names the vehicle by its plate.
+describe("Vehicle on the hand-back (Parking Step 4)", () => {
+  it("TEST-FE-1134 Who moved out lists the vehicle's plate with its owner", async () => {
+    window.location.hash = "#/moveout/lease-U101";
+    const withVehicle = lease("U101", {
+      occupancies: lease("U101").occupancies.map((occupancy) => ({
+        ...occupancy,
+        vehicle_id: "vehicle-car",
+        vehicle_type: "CAR",
+        plate_text: "1AB-1234",
+      })),
+    });
+    setup([withVehicle]);
+    await screen.findByRole("heading", { name: "Move-out · U101" });
+    fireEvent.click(screen.getByRole("button", { name: "Record hand-back" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("1AB-1234 · Tenant U101")).toBeTruthy();
+  });
+});

@@ -23,6 +23,14 @@ from property_rental.api_refusals import (
     OCCUPANT_PRIMARY_TENANT,
     OCCUPANT_SIGNERS_MUST_AGREE,
     RENT_BELOW_UNIT_DEFAULT,
+    VEHICLE_DATE,
+    VEHICLE_NONE_IN,
+    VEHICLE_NOT_OF_LEASE,
+    VEHICLE_ONLY_ONE,
+    VEHICLE_PARKED,
+    VEHICLE_SAME,
+    VEHICLE_SECOND,
+    VEHICLE_TYPE,
     Refusal,
     RefusedRequest,
 )
@@ -60,6 +68,12 @@ from property_rental.lease import (
 )
 from property_rental.lease_enforcement import NONPAYMENT_READ
 from property_rental.lease_termination import TerminationBasis, TerminationContext
+from property_rental.lease_vehicle import (
+    ChangeLeaseVehicleCommand,
+    PostgresLeaseVehicleService,
+    RecordLeaseVehicleMoveInCommand,
+    VehicleRefusedError,
+)
 from property_rental.move_in import (
     AddLeaseOccupantCommand,
     CompleteMoveInCommand,
@@ -82,6 +96,16 @@ MOVE_IN_CAPABILITY: Final = "reservations.complete"
 DEFAULT_PAGE_SIZE: Final = 50
 MAX_PAGE_SIZE: Final = 100
 # V1-061 (DL-111): each database reason for refusing one occupant's move-out, by its refusal.
+# Parking Step 4 (owner 2026-10-30): the vehicle move-in and Change vehicle, by reason.
+VEHICLE_REFUSALS: Final[dict[str, Refusal]] = {
+    "VEHICLE_SECOND": VEHICLE_SECOND,
+    "VEHICLE_NOT_OF_LEASE": VEHICLE_NOT_OF_LEASE,
+    "VEHICLE_TYPE": VEHICLE_TYPE,
+    "VEHICLE_PARKED": VEHICLE_PARKED,
+    "VEHICLE_NONE_IN": VEHICLE_NONE_IN,
+    "VEHICLE_SAME": VEHICLE_SAME,
+    "VEHICLE_DATE": VEHICLE_DATE,
+}
 OCCUPANT_MOVE_OUT_REFUSALS: Final[dict[str, Refusal]] = {
     "PRIMARY_TENANT": OCCUPANT_PRIMARY_TENANT,
     "LAST_SIGNER": OCCUPANT_LAST_SIGNER,
@@ -122,6 +146,10 @@ class OccupancyResource:
     move_in_date: date
     move_out_date: date | None
     version: int
+    # Parking Step 4: the vehicle parked under the Lease (null for a person).
+    vehicle_id: UUID | None = None
+    vehicle_type: str | None = None
+    plate_text: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -340,6 +368,22 @@ class LeaseResourceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> LeaseResource: ...
 
+    def record_vehicle_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseVehicleMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource: ...
+
+    def change_vehicle(
+        self,
+        property_id: UUID,
+        command: ChangeLeaseVehicleCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource: ...
+
 
 class UnavailableLeaseResourceFlow:
     def _raise(self) -> None:
@@ -488,6 +532,28 @@ class UnavailableLeaseResourceFlow:
         self._raise()
         raise AssertionError
 
+    def record_vehicle_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseVehicleMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
+    def change_vehicle(
+        self,
+        property_id: UUID,
+        command: ChangeLeaseVehicleCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        del property_id, command, actor
+        self._raise()
+        raise AssertionError
+
 
 def _encode_cursor(created_at: datetime, lease_id: UUID) -> str:
     raw = json.dumps([created_at.isoformat(), str(lease_id)]).encode()
@@ -560,6 +626,16 @@ class PostgresLeaseResourceFlow:
             SELECT id,'lease.occupant_moved_out',occurred_at,reason,actor_id,id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
             FROM app.lease_occupant_move_outs WHERE lease_id=%s
+            UNION ALL
+            -- Parking Step 4: Change vehicle, shown as "{old plate} → {new plate}: {reason}".
+            SELECT change.id,'lease.vehicle_changed',change.occurred_at,
+                   old_vehicle.plate_text||' → '||new_vehicle.plate_text||': '||change.reason,
+                   change.actor_id,change.id::text,
+                   '/api/v1/leases/'||change.lease_id::text||'#timeline-'||change.id::text
+            FROM app.lease_vehicle_changes AS change
+            JOIN app.vehicles AS old_vehicle ON old_vehicle.id=change.old_vehicle_id
+            JOIN app.vehicles AS new_vehicle ON new_vehicle.id=change.new_vehicle_id
+            WHERE change.lease_id=%s
             UNION ALL
             SELECT id,'lease.termination_notice',occurred_at,notice_text,actor_id,id::text,
                    '/api/v1/leases/'||lease_id::text||'#timeline-'||id::text
@@ -717,7 +793,7 @@ class PostgresLeaseResourceFlow:
         rows = connection.execute(
             self._timeline_select,
             (
-                *(lease_id,) * 9,
+                *(lease_id,) * 10,
                 cursor_time,
                 cursor_time,
                 cursor_id,
@@ -828,13 +904,19 @@ class PostgresLeaseResourceFlow:
                         move_in_date=cast(date, row[3]),
                         move_out_date=cast(date | None, row[4]),
                         version=int(str(row[5])),
+                        vehicle_id=None if row[6] is None else UUID(str(row[6])),
+                        vehicle_type=None if row[7] is None else str(row[7]),
+                        plate_text=None if row[8] is None else str(row[8]),
                     )
                     for row in connection.execute(
                         "SELECT occupancy.id,occupancy.customer_id,customer.legal_name,"
-                        "occupancy.move_in_date,occupancy.move_out_date,occupancy.version "
+                        "occupancy.move_in_date,occupancy.move_out_date,occupancy.version,"
+                        "vehicle.id,vehicle.vehicle_type,vehicle.plate_text "
                         "FROM app.occupancies AS occupancy JOIN app.customers AS customer "
-                        "ON customer.id=occupancy.customer_id WHERE occupancy.lease_id=%s "
-                        "ORDER BY occupancy.move_in_date,occupancy.id",
+                        "ON customer.id=occupancy.customer_id "
+                        "LEFT JOIN app.vehicles AS vehicle ON vehicle.id=occupancy.vehicle_id "
+                        "WHERE occupancy.lease_id=%s "
+                        "ORDER BY occupancy.move_in_date,occupancy.created_at,occupancy.id",
                         (lease_id,),
                     ).fetchall()
                 )
@@ -1029,6 +1111,32 @@ class PostgresLeaseResourceFlow:
         service.move_out_lease_occupant(command, actor=actor)
         return self.get(command.lease_id)
 
+    def record_vehicle_move_in(
+        self,
+        property_id: UUID,
+        command: RecordLeaseVehicleMoveInCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        service = PostgresLeaseVehicleService(
+            self._database_url, property_id, self._actor_id(actor)
+        )
+        service.record_lease_vehicle_move_in(command, actor=actor)
+        return self.get(command.lease_id)
+
+    def change_vehicle(
+        self,
+        property_id: UUID,
+        command: ChangeLeaseVehicleCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> LeaseResource:
+        service = PostgresLeaseVehicleService(
+            self._database_url, property_id, self._actor_id(actor)
+        )
+        service.change_lease_vehicle(command, actor=actor)
+        return self.get(command.lease_id)
+
 
 class LeaseDraftSignerSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -1217,6 +1325,30 @@ class OccupantMoveOutSource(BaseModel):
     reason: Annotated[str, Field(min_length=1, max_length=500)]
 
 
+class LeaseVehicleMoveInSource(BaseModel):
+    """Parking Step 4: the vehicle of a Signer moves in (the owner is the one occupant)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
+    actual_move_in_date: date
+    occupancy_id: UUID
+    vehicle_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
+class LeaseVehicleChangeSource(BaseModel):
+    """Parking Step 4: Change vehicle ends the old vehicle's row and starts the new one."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: UUID
+    change_date: date
+    occupancy_id: UUID
+    vehicle_id: UUID
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+
+
 class MoveInSource(MoveInCommandSource):
     lease_id: UUID
 
@@ -1321,6 +1453,8 @@ def _translate(exc: Exception) -> HTTPException | RefusedRequest:
         return RefusedRequest(LEASE_REQUIRED_SERVICE_MISSING)
     if isinstance(exc, OccupantMoveOutRefusedError):
         return RefusedRequest(OCCUPANT_MOVE_OUT_REFUSALS[exc.reason])
+    if isinstance(exc, VehicleRefusedError):
+        return RefusedRequest(VEHICLE_REFUSALS[exc.reason])
     if isinstance(exc, (LeaseResourceNotFound, LeaseNotFoundError, MoveInNotFoundError)):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     if isinstance(exc, (LeaseVersionConflictError, MoveInVersionConflictError)):
@@ -1737,6 +1871,12 @@ def create_lease_router(
                 source.agreed_signer_customer_ids
             ):
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+            # Parking Step 4: the only vehicle never moves out alone.
+            if any(
+                item.occupancy_id == occupancy_id and item.vehicle_id is not None
+                for item in current.occupancies
+            ):
+                raise RefusedRequest(VEHICLE_ONLY_ONE)
             resource = flow.move_out_occupant(
                 current.property_id,
                 OccupantMoveOutCommand(
@@ -1898,6 +2038,78 @@ def create_lease_router(
                     customer_id=source.customer_id,
                     occupancy_id=source.occupancy_id,
                     move_in_date=source.move_in_date,
+                    reason=source.reason,
+                    authorization_reference=MOVE_IN_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/leases/{lease_id}/vehicle-move-in")
+    def record_lease_vehicle_move_in(
+        lease_id: UUID,
+        source: LeaseVehicleMoveInSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """Parking Step 4 (owner 2026-10-30): one vehicle of a Signer moves in; it takes the
+        Occupancy slot of Property Rental's move-in."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, MOVE_IN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            resource = flow.record_vehicle_move_in(
+                current.property_id,
+                RecordLeaseVehicleMoveInCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_lease_version=_version(if_match),
+                    actual_move_in_date=source.actual_move_in_date,
+                    occupancy_id=source.occupancy_id,
+                    vehicle_id=source.vehicle_id,
+                    reason=source.reason,
+                    authorization_reference=MOVE_IN_CAPABILITY,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{resource.version}"'
+        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/leases/{lease_id}/vehicle-change")
+    def change_lease_vehicle(
+        lease_id: UUID,
+        source: LeaseVehicleChangeSource,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """Parking Step 4: the old vehicle moves out and the new one moves in the same day;
+        both rows stay, the Lease goes on."""
+        actor = _require_actor(request, resolver)
+        try:
+            current = flow.get(lease_id)
+            _require(actor, current.property_id, MOVE_IN_CAPABILITY)
+            require_browser_mutation(request, settings)
+            resource = flow.change_vehicle(
+                current.property_id,
+                ChangeLeaseVehicleCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    lease_id=lease_id,
+                    expected_lease_version=_version(if_match),
+                    change_date=source.change_date,
+                    occupancy_id=source.occupancy_id,
+                    vehicle_id=source.vehicle_id,
                     reason=source.reason,
                     authorization_reference=MOVE_IN_CAPABILITY,
                 ),

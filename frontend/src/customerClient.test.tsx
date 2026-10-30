@@ -471,4 +471,78 @@ describe("Customer API client", () => {
       CustomerRequestError,
     );
   });
+
+  it("TEST-FE-1136 the vehicle calls read a Customer's vehicles, add and correct one with CSRF and the version, and look a plate up (Parking Step 4)", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=csrf-token",
+    });
+    const vehicle = {
+      vehicle_id: "vehicle-1",
+      customer_id: "customer-1",
+      customer_name: "Dara Sok",
+      vehicle_type: "CAR" as const,
+      plate_text: "1AB-1234",
+      version: 1,
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [vehicle] }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: vehicle }), { status: 201 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { ...vehicle, version: 2 } }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [vehicle] }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await customerApi.listVehicles("customer-1")).toEqual([vehicle]);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/v1/customers/customer-1/vehicles",
+    );
+
+    const made = await customerApi.createVehicle("customer-1", {
+      vehicle_id: "vehicle-1",
+      vehicle_type: "CAR",
+      plate_text: "1AB-1234",
+    });
+    expect(made).toEqual(vehicle);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "/api/v1/customers/customer-1/vehicles",
+    );
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      vehicle_id: "vehicle-1",
+      vehicle_type: "CAR",
+      plate_text: "1AB-1234",
+    });
+    expect(
+      new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get("X-CSRF-Token"),
+    ).toBe("csrf-token");
+
+    const corrected = await customerApi.updateVehicle(vehicle, {
+      vehicle_type: "CAR",
+      plate_text: "1AB-1235",
+    });
+    expect(corrected.version).toBe(2);
+    expect(fetchMock.mock.calls[2]?.[0]).toBe("/api/v1/vehicles/vehicle-1");
+    expect(fetchMock.mock.calls[2]?.[1]?.method).toBe("PATCH");
+    expect(
+      new Headers(fetchMock.mock.calls[2]?.[1]?.headers).get("If-Match"),
+    ).toBe('"1"');
+
+    expect(
+      await customerApi.findVehiclesByPlate("property-1", "1AB 1234"),
+    ).toEqual([vehicle]);
+    expect(fetchMock.mock.calls[3]?.[0]).toBe(
+      "/api/v1/properties/property-1/vehicles?plate=1AB%201234",
+    );
+  });
 });

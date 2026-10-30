@@ -990,6 +990,19 @@ While a signed Lease runs, one person may move out on their own actual day (DL-1
 - The only Signer still living there cannot move out until the Lease's termination is complete.
 - The day is on or after their Move-in Date, never after today and never after the End Date.
 
+Amended for Parking (owner, 2026-10-30, Parking Step 4): on Parking the vehicle, not a person, takes the Occupancy (BR-VEH-001). The people rules above stay in the code behind the screen flag `PEOPLE_MOVE_IN` and are not used on Parking screens.
+
+## BR-VEH-001 — One Vehicle at a Time (Parking)
+
+Parking Step 4 (owner, 2026-10-30). A Lease of a Parking holds one vehicle at a time; the vehicle takes the Occupancy slot (hidden names stay `occupancy`, `occupant`).
+
+- A vehicle is a record under a Customer: a type (car, motorbike, tuk-tuk, food cart) and a plate as typed, Khmer or Latin, 1 to 32 characters, never transliterated. A vehicle is corrected, never deleted. Photos and documents are not part of Step 4.
+- A plate is matched without spaces, dashes, dots and case. Two vehicles may share a plate: the screen warns with the other owner's name ("Another vehicle has this plate"), and staff may still save. Nothing is merged.
+- The vehicle that moves in belongs to the Primary Tenant or a Signer of the Lease (`VEHICLE_NOT_OF_LEASE`). It moves in through the Lease's move-in (same checks as the people move-in) and only when nothing is moved in on that Parking (`VEHICLE_SECOND`). A vehicle is parked under one Lease at a time (`VEHICLE_PARKED`).
+- Each vehicle type parks only in its own kind of place, matched by the Parking Type code (Settings cannot change a code): Car → COVERED or UNCOVERED; Motorbike → MOTORBIKE; Tuk-tuk and food cart → TUK_TUK_FOOD_CART (`VEHICLE_TYPE`, checked at move-in and at Change vehicle). A Parking Type added later has a code the rule does not know: no vehicle type may move into it until the code is added to `app.vehicle_type_allowed`.
+- Change vehicle ends the old vehicle's row and starts the new one on the change day, in one transaction; both rows stay (history); the Lease goes on and its version moves on; the History shows "Vehicle changed: {old plate} → {new plate}: {reason}". The new vehicle must differ from the old (`VEHICLE_SAME`); the day is on or after the old vehicle's move-in day, not after today and not after the End Date (`VEHICLE_DATE`); it needs a vehicle moved in on a running Lease (`VEHICLE_NONE_IN`).
+- The only vehicle never moves out alone (`VEHICLE_ONLY_ONE` on the per-person move-out route): it leaves with a new vehicle (Change vehicle) or with the Lease (Termination and the Move-out page, which lists it by plate).
+
 ---
 
 # 10. Move-in Rules

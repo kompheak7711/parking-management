@@ -290,6 +290,8 @@ from property_rental.utility_lease_api import (
     UtilityLeaseFlow,
     create_utility_lease_router,
 )
+from property_rental.vehicle import PostgresVehicleService
+from property_rental.vehicle_api import UnavailableVehicleFlow, VehicleFlow, create_vehicle_router
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -519,6 +521,7 @@ def create_app(
     unit_resource_flow: UnitResourceFlow | None = None,
     unit_inventory_flow: UnitInventoryFlow | None = None,
     customer_resource_flow: CustomerResourceFlow | None = None,
+    vehicle_flow: VehicleFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
@@ -1186,15 +1189,25 @@ def create_app(
             resolved_settings,
         )
     )
+    resolved_customer_flow = customer_resource_flow or (
+        PostgresCustomerResourceFlow(resolved_settings.database_url.get_secret_value())
+        if resolved_settings.database_url is not None
+        else UnavailableCustomerResourceFlow()
+    )
     include_signed_in(
-        create_customer_router(
+        create_customer_router(actor_resolver, resolved_customer_flow, resolved_settings)
+    )
+    # Parking Step 4: vehicles under a Customer.
+    include_signed_in(
+        create_vehicle_router(
             actor_resolver,
-            customer_resource_flow
+            vehicle_flow
             or (
-                PostgresCustomerResourceFlow(resolved_settings.database_url.get_secret_value())
+                PostgresVehicleService(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
-                else UnavailableCustomerResourceFlow()
+                else UnavailableVehicleFlow()
             ),
+            resolved_customer_flow,
             resolved_settings,
         )
     )

@@ -8,6 +8,7 @@ import type {
   CustomerApi,
   CustomerDetail as CustomerRecord,
   CustomerHistoryEvent,
+  VehicleResource,
 } from "../customerClient";
 import {
   type CustomerLedgerApi,
@@ -21,10 +22,14 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
-import { DeactivateDialog, EditContactDialog } from "./CustomerDialogs";
+import {
+  DeactivateDialog,
+  EditContactDialog,
+  VehicleDialog,
+} from "./CustomerDialogs";
 import { KindChip } from "./CustomersList";
 import type { CustomerCommandGate } from "./commands";
-import { ct } from "./text";
+import { ct, vehicleTypeText } from "./text";
 import {
   CustomersData,
   isCurrentLease,
@@ -109,7 +114,16 @@ export function CustomerDetail({
   const [position, setPosition] = useState<LedgerPosition | null | undefined>(
     undefined,
   );
-  const [dialog, setDialog] = useState<"edit" | "deactivate" | null>(null);
+  const [dialog, setDialog] = useState<
+    "edit" | "deactivate" | "vehicle" | null
+  >(null);
+  // Parking Step 4: the Customer's vehicles; undefined while loading, null when unreadable.
+  const [vehicles, setVehicles] = useState<
+    VehicleResource[] | null | undefined
+  >(undefined);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleResource | null>(
+    null,
+  );
   const [notice, setNotice] = useState<string | null>(firstNotice);
   const [warning, setWarning] = useState<string | null>(null);
   const sequence = useRef(0);
@@ -129,6 +143,15 @@ export function CustomerDetail({
       })
       .catch(() => {
         if (operation === sequence.current) setMissing(true);
+      });
+    // Parking Step 4: the vehicles, read apart so a failure leaves the rest of the page.
+    void Promise.resolve()
+      .then(() => customerApi.listVehicles(customerId))
+      .then((loaded) => {
+        if (operation === sequence.current) setVehicles(loaded);
+      })
+      .catch(() => {
+        if (operation === sequence.current) setVehicles(null);
       });
     // One ledger line is enough: every page carries the Customer's position.
     void ledgerApi
@@ -151,6 +174,7 @@ export function CustomerDetail({
   useEffect(() => {
     setCustomer(null);
     setPosition(undefined);
+    setVehicles(undefined);
     return load();
   }, [load]);
 
@@ -333,6 +357,56 @@ export function CustomerDetail({
               ]}
             />
             <p className="ui-small ui-muted">{ct(language, "contact_note")}</p>
+          </section>
+          <section aria-labelledby="customer-vehicles" className="ui-card">
+            <div className="ui-chead">
+              <h2 id="customer-vehicles">{ct(language, "vehicles")}</h2>
+              {customer.can_manage && customer.active && (
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    setEditingVehicle(null);
+                    setDialog("vehicle");
+                  }}
+                  type="button"
+                >
+                  <Icon name="plus" />
+                  {ct(language, "add_vehicle")}
+                </button>
+              )}
+            </div>
+            {vehicles === undefined ? null : vehicles === null ? (
+              <p className="ui-muted">{ct(language, "v_failed")}</p>
+            ) : vehicles.length === 0 ? (
+              <p className="ui-muted">{ct(language, "v_none")}</p>
+            ) : (
+              <ul className="ui-plain">
+                {vehicles.map((item) => (
+                  <li className="ui-line" key={item.vehicle_id}>
+                    <span>
+                      <b className="ui-num">{item.plate_text}</b>
+                      {" · "}
+                      <span>
+                        {vehicleTypeText(language, item.vehicle_type)}
+                      </span>
+                    </span>
+                    {customer.can_manage && customer.active && (
+                      <button
+                        className="ui-btn"
+                        onClick={() => {
+                          setEditingVehicle(item);
+                          setDialog("vehicle");
+                        }}
+                        type="button"
+                      >
+                        {ct(language, "v_edit")}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="ui-small ui-muted">{ct(language, "v_note")}</p>
           </section>
           <section aria-labelledby="customer-rels" className="ui-card">
             <h2 id="customer-rels">{ct(language, "rels")}</h2>
@@ -527,6 +601,25 @@ export function CustomerDetail({
             load();
           }}
           propertyId={propertyId}
+        />
+      )}
+      {dialog === "vehicle" && (
+        <VehicleDialog
+          api={customerApi}
+          customer={customer}
+          language={language}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onSaved={(saved, added) => {
+            setDialog(null);
+            setNotice(
+              ct(language, added ? "v_added" : "v_saved", saved.plate_text),
+            );
+            load();
+          }}
+          propertyId={propertyId}
+          vehicle={editingVehicle}
         />
       )}
       {dialog === "deactivate" && (

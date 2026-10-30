@@ -485,6 +485,22 @@ Append-preserved once the Lease is SIGNED.
 
 Amended by DL-111 (V1-061, owner 2026-10-29; migration `20270402_252`): one person's Occupancy of a running Lease may end on its own day through `app.move_out_lease_occupant`, recorded in the new append-only table `lease_occupant_move_outs(id, property_id, actor_id, idempotency_key, request_digest, lease_id, occupancy_id UNIQUE, customer_id, move_out_date, was_signer, agreed_signer_customer_ids, reason, authorization_reference, result_snapshot, occurred_at)`.
 
+Amended for Parking (owner, 2026-10-30, Parking Step 4; migration `20270406_256`): `occupancies.vehicle_id uuid NULL` FK `vehicles(id)`; an Occupancy with a vehicle is "this vehicle is parked here under this Lease", its `customer_id` the owner. Partial unique index `occupancies_one_open_vehicle_per_lease (lease_id) WHERE move_out_date IS NULL AND vehicle_id IS NOT NULL`; exclusion `occupancies_vehicle_period_exclusive (vehicle_id, daterange(move_in_date, move_out_date, '[)')) WHERE vehicle_id IS NOT NULL`; the people exclusion `occupancies_customer_lease_period_exclusive` is recreated `WHERE vehicle_id IS NULL` so the same owner's two vehicles hand over on the same day. Trigger `occupancies_guard_vehicle` (BEFORE INSERT OR UPDATE) fills `vehicle_id` on insert from the transaction setting `app.occupancy_vehicle_id` and refuses a change of it. `app.record_lease_vehicle_move_in(property, key, digest, event, lease, expected_version, day, occupancy, vehicle, reason, authorization, actor)` checks the vehicle (owner is a Signer, type allowed by `app.vehicle_type_allowed(vehicle_type, unit_type)`, not parked elsewhere, nothing moved in) and calls `app.record_signed_lease_move_in` as it is. `app.change_lease_vehicle(property, key, digest, event, lease, expected_version, new_occupancy, vehicle, change_date, reason, authorization, actor)` ends the open vehicle row on the day, inserts the new row with the vehicle, moves the Lease version on and writes the append-only `lease_vehicle_changes(id, property_id, actor_id, idempotency_key, request_digest, lease_id, old_occupancy_id UNIQUE, new_occupancy_id UNIQUE, old_vehicle_id, new_vehicle_id, change_date, reason, authorization_reference, result_snapshot, occurred_at)`. Refusal hints `VEHICLE_SECOND`, `VEHICLE_NOT_OF_LEASE`, `VEHICLE_TYPE`, `VEHICLE_PARKED`, `VEHICLE_NONE_IN`, `VEHICLE_SAME`, `VEHICLE_DATE` (ERRCODE 23514). EXECUTE to `prm_runtime` only.
+
+## DB-VEH-001 — `vehicles` (Parking Step 4)
+
+| Column | Type | Null | Rule |
+|---|---|---:|---|
+| `id` | `uuid` | no | PK |
+| `customer_id` | `uuid` | no | FK `customers(id) ON DELETE RESTRICT` |
+| `vehicle_type` | `text` | no | `CAR`, `MOTORBIKE`, `TUK_TUK`, `FOOD_CART` |
+| `plate_text` | `text` | no | as typed, trimmed, 1 to 32 characters |
+| `plate_match_key` | `text` | no | generated: upper case, spaces, dashes and dots removed |
+| `version` | `integer` | no | > 0 |
+| provenance columns | as DB-TYPE-007 | no | |
+
+Never deleted (`vehicles_reject_delete`, `vehicles_reject_truncate`). `prm_runtime` reads only; writes go through `app.create_vehicle(id, customer, type, plate, actor)` (the same vehicle sent again is answered again; an active Customer is required) and `app.update_vehicle(id, expected_version, type, plate, actor)` (stale version 40001), both SECURITY DEFINER, audited in `audit_events` as `vehicle.created` / `vehicle.updated` with the Customer. Migration `20270406_256`, forward-only.
+
 ## DB-LEASE-004 — `termination_notices`
 
 Append-only: `id uuid PK`, `lease_id uuid NOT NULL FK`, `notice_date date NOT NULL`, `intended_termination_date date NULL`, `notice_text text NOT NULL`, `governing_lease_provision text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`. A Notice never updates Lease status automatically.

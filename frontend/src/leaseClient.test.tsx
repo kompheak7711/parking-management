@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { LeaseConflictError, LeaseRequestError, leaseApi } from "./leaseClient";
+import {
+  LeaseConflictError,
+  LeaseRefusedError,
+  LeaseRequestError,
+  leaseApi,
+} from "./leaseClient";
 
 beforeEach(() => {
   Object.defineProperty(document, "cookie", {
@@ -275,5 +280,86 @@ describe("Lease API client", () => {
     expect(bodyOf(call?.[1]).context).toMatchObject({
       basis: "UNPAID_INITIAL_OBLIGATION",
     });
+  });
+
+  it("TEST-FE-1135 the vehicle move-in and Change vehicle post to their own routes with the Lease version, and a coded refusal keeps the server's words (Parking Step 4)", async () => {
+    const lease = { lease_id: "lease-1", version: 4 } as Parameters<
+      typeof leaseApi.recordVehicleMoveIn
+    >[0];
+    const fetcher = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        response({ data: { lease_id: "lease-1", version: 5 } }),
+      )
+      .mockResolvedValueOnce(
+        response(
+          {
+            error: {
+              code: "VEHICLE_TYPE",
+              message: "This vehicle type cannot park in this Parking Type.",
+            },
+          },
+          409,
+        ),
+      );
+    const moved = await leaseApi.recordVehicleMoveIn(
+      lease,
+      {
+        event_id: "event-1",
+        actual_move_in_date: "2026-10-28",
+        occupancy_id: "occupancy-1",
+        vehicle_id: "vehicle-1",
+        reason: "Vehicle moved in",
+      },
+      "command-1",
+    );
+    expect(moved.version).toBe(5);
+    const call = fetcher.mock.calls[0];
+    expect(call?.[0]).toBe("/api/v1/leases/lease-1/vehicle-move-in");
+    expect(call?.[1]?.method).toBe("POST");
+    const headers = new Headers(call?.[1]?.headers);
+    expect(headers.get("Idempotency-Key")).toBe("command-1");
+    expect(headers.get("If-Match")).toBe('"4"');
+    expect(headers.get("X-CSRF-Token")).toBe("csrf-value");
+
+    const refused = await leaseApi
+      .changeVehicle(
+        lease,
+        {
+          event_id: "event-2",
+          change_date: "2026-10-28",
+          occupancy_id: "occupancy-2",
+          vehicle_id: "vehicle-2",
+          reason: "Sold the old car",
+        },
+        "command-2",
+      )
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(LeaseRefusedError);
+    expect(refused).toMatchObject({
+      code: "VEHICLE_TYPE",
+      message: "This vehicle type cannot park in this Parking Type.",
+    });
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      "/api/v1/leases/lease-1/vehicle-change",
+    );
+
+    // A plain conflict (someone changed the Lease first) is still a conflict, not a refusal.
+    fetcher.mockResolvedValueOnce(
+      response({ error: { code: "CONFLICT", message: "Conflict" } }, 409),
+    );
+    await expect(
+      leaseApi.changeVehicle(
+        lease,
+        {
+          event_id: "event-3",
+          change_date: "2026-10-28",
+          occupancy_id: "occupancy-3",
+          vehicle_id: "vehicle-3",
+          reason: "Sold the old car",
+        },
+        "command-3",
+      ),
+    ).rejects.toBeInstanceOf(LeaseConflictError);
   });
 });

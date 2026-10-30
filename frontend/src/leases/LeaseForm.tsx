@@ -60,6 +60,7 @@ import {
   serviceGroups,
   withRequired,
 } from "./leaseServices";
+import { PEOPLE_MOVE_IN } from "./parking";
 import { lt } from "./text";
 
 export type LeaseFormMode =
@@ -910,13 +911,14 @@ export function LeaseForm({
             19,
           )}
           {/* At most 20 occupants with the Primary Tenant, and 19 other Signers. */}
-          {pick(
-            occupants,
-            setOccupants,
-            "other_occupants",
-            [tenantId, ...occupants],
-            19,
-          )}
+          {PEOPLE_MOVE_IN &&
+            pick(
+              occupants,
+              setOccupants,
+              "other_occupants",
+              [tenantId, ...occupants],
+              19,
+            )}
           <div className="ui-row2">
             {field(
               "lease-form-start",
