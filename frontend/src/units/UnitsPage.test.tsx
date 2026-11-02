@@ -1530,4 +1530,46 @@ describe("For rent (V1.1 rework part 1)", () => {
     expect(details).toHaveTextContent("it is left out of every renting screen");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
+
+  it("TEST-FE-1133 New Unit and Update Unit ask For rent: Not for rent is saved right after the Unit, and a Unit in use refuses it before anything is saved", async () => {
+    const created = unit("W01");
+    const marked = { ...created, version: 3, for_rent: false };
+    const setForRent = vi.fn().mockResolvedValue(marked);
+    const client = unitApi({
+      create: vi.fn().mockResolvedValue(created),
+      setForRent,
+    });
+    show(client);
+    fireEvent.click(await screen.findByRole("button", { name: "New Unit" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByLabelText("Yes")).toBeChecked();
+    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+      target: { value: "W01" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
+      target: { value: "FLOOR-F001" },
+    });
+    fireEvent.click(within(dialog).getByLabelText("Not for rent"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/units/unit-W01");
+    });
+    expect(setForRent).toHaveBeenCalledWith(created, false);
+
+    cleanup();
+    window.location.hash = "#/units/unit-U101";
+    const update = vi.fn();
+    const refused = vi.fn().mockRejectedValue(new UnitInUseError());
+    show(unitApi({ setForRent: refused, update }));
+    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    const edit = screen.getByRole("dialog");
+    fireEvent.click(within(edit).getByLabelText("Not for rent"));
+    fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
+    expect(
+      await within(edit).findByText(
+        "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+      ),
+    ).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
 });

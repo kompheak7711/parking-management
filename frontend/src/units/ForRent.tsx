@@ -20,6 +20,41 @@ export function isForRent(unit: Pick<UnitResource, "for_rent">): boolean {
   return unit.for_rent !== false;
 }
 
+/** For rent Yes or Not for rent, shared by New Unit, Update Unit and Change. */
+export function ForRentField({
+  language,
+  value,
+  onChange,
+  name = "unit-for-rent",
+}: {
+  language: Language;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  name?: string;
+}) {
+  return (
+    <>
+      <fieldset className="ui-radios">
+        <legend>{ut(language, "fr_col")}</legend>
+        {([true, false] as const).map((choice) => (
+          <label className="ui-chk" key={String(choice)}>
+            <input
+              checked={value === choice}
+              name={name}
+              onChange={() => {
+                onChange(choice);
+              }}
+              type="radio"
+            />
+            {ut(language, choice ? "fr_yes" : "fr_no")}
+          </label>
+        ))}
+      </fieldset>
+      <p className="ui-small ui-muted">{ut(language, "fr_help")}</p>
+    </>
+  );
+}
+
 export function ForRentDialog({
   api,
   language,
@@ -74,23 +109,7 @@ export function ForRentDialog({
       submitLabel={ut(language, "save")}
       title={`${ut(language, "fr_title")} · ${unit.unit_number}`}
     >
-      <fieldset className="ui-radios">
-        <legend>{ut(language, "fr_col")}</legend>
-        {([true, false] as const).map((value) => (
-          <label className="ui-chk" key={String(value)}>
-            <input
-              checked={forRent === value}
-              name="unit-for-rent"
-              onChange={() => {
-                setForRent(value);
-              }}
-              type="radio"
-            />
-            {ut(language, value ? "fr_yes" : "fr_no")}
-          </label>
-        ))}
-      </fieldset>
-      <p className="ui-small ui-muted">{ut(language, "fr_help")}</p>
+      <ForRentField language={language} onChange={setForRent} value={forRent} />
       {problem !== null && (
         <p className="ui-error" role="alert">
           <Icon name="alert" small />

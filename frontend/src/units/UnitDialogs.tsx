@@ -11,12 +11,14 @@ import {
   UnitApi,
   UnitConflictError,
   UnitDetails,
+  UnitInUseError,
   UnitInvalidError,
   UnitResource,
   UnitSetupItem,
   UnitSetupLists,
   UnitStatus,
 } from "../unitClient";
+import { ForRentField, isForRent } from "./ForRent";
 import {
   RentTermsFields,
   type RentTermsServicesApi,
@@ -212,6 +214,8 @@ export function NewUnitDialog({
   const [rent, setRent] = useState("");
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [rentProblem, setRentProblem] = useState<string | null>(null);
+  // V1.1 rework part 1 (owner 02/11/2026): For rent is chosen on New Unit too.
+  const [forRent, setForRent] = useState(true);
   // The Unit is saved but its Rent and Services were not; the next press only closes.
   const [saved, setSaved] = useState<UnitResource | null>(null);
   const [busy, setBusy] = useState(false);
@@ -261,25 +265,39 @@ export function NewUnitDialog({
         ...detailsFrom(data),
       })
       .then(
-        (unit) => {
-          if (cents === null && chosen.size === 0) {
-            onCreated(unit);
-            return;
-          }
-          api
-            .setRentTerms(unit, {
-              default_monthly_rent_usd_cents: cents,
-              required_service_ids: [...chosen],
-              // Parking Step 3: the first price needs no typed reason; History says it
-              // came with the new Parking.
-              reason: "Set with the new Parking",
-            })
-            .then(onCreated)
-            .catch(() => {
-              setSaved(unit);
-              setProblem(ut(language, "rt_new_not_saved", unit.unit_number));
-              setBusy(false);
-            });
+        (created) => {
+          // A Unit not for rent is set so right after it is saved, before its Rent terms.
+          const marked = forRent
+            ? Promise.resolve(created)
+            : api.setForRent(created, false).catch(() => {
+                setSaved(created);
+                setProblem(
+                  ut(language, "fr_new_not_saved", created.unit_number),
+                );
+                setBusy(false);
+                return null;
+              });
+          void marked.then((unit) => {
+            if (unit === null) return;
+            if (cents === null && chosen.size === 0) {
+              onCreated(unit);
+              return;
+            }
+            api
+              .setRentTerms(unit, {
+                default_monthly_rent_usd_cents: cents,
+                required_service_ids: [...chosen],
+                // Parking Step 3: the first price needs no typed reason; History says it
+                // came with the new Parking.
+                reason: "Set with the new Parking",
+              })
+              .then(onCreated)
+              .catch(() => {
+                setSaved(unit);
+                setProblem(ut(language, "rt_new_not_saved", unit.unit_number));
+                setBusy(false);
+              });
+          });
         },
         (error: unknown) => {
           setProblem(failure(language, error));
@@ -322,6 +340,7 @@ export function NewUnitDialog({
         />
       </div>
       <DetailFields language={language} lists={lists} unit={null} />
+      <ForRentField language={language} onChange={setForRent} value={forRent} />
       <RentTermsFields
         chosen={chosen}
         language={language}
@@ -360,6 +379,8 @@ export function UpdateUnitDialog({
   const [busy, setBusy] = useState(false);
   const [missingFloor, setMissingFloor] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // V1.1 rework part 1 (owner 02/11/2026): For rent can be changed here too.
+  const [forRent, setForRent] = useState(isForRent(unit));
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -373,16 +394,27 @@ export function UpdateUnitDialog({
     }
     setBusy(true);
     setProblem(null);
-    void api
-      .update(unit, {
-        floor_item_id: floor,
-        unit_type: text(data, "type"),
-        ...detailsFrom(data),
-      })
+    // For rent goes first: a Unit in use for renting refuses it and nothing is saved.
+    const marked =
+      forRent === isForRent(unit)
+        ? Promise.resolve(unit)
+        : api.setForRent(unit, forRent);
+    void marked
+      .then((current) =>
+        api.update(current, {
+          floor_item_id: floor,
+          unit_type: text(data, "type"),
+          ...detailsFrom(data),
+        }),
+      )
       .then(onSaved)
       .catch((error: unknown) => {
-        setProblem(failure(language, error));
         setBusy(false);
+        if (error instanceof UnitInUseError) {
+          setProblem(ut(language, "fr_in_use"));
+          return;
+        }
+        setProblem(failure(language, error));
         if (error instanceof UnitConflictError) onConflict();
       });
   }
@@ -403,6 +435,7 @@ export function UpdateUnitDialog({
         missing={missingFloor}
       />
       <DetailFields language={language} lists={lists} unit={unit} />
+      <ForRentField language={language} onChange={setForRent} value={forRent} />
       <p className="ui-small ui-muted">{ut(language, "edit_note")}</p>
       <Problem message={problem} />
     </Dialog>

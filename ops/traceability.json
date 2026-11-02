@@ -59184,6 +59184,16 @@
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1.1 rework part 1 (DL-116): the Unit page shows For rent with Change; a Unit not for rent offers no Reservation or Lease; a Unit in use stays for rent."
+    },
+    {
+      "test_id": "TEST-FE-1133",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 rework part 1 (DL-116; owner retest 02/11): New Unit and Update Unit ask For rent; Not for rent is saved right after a new Unit, and a Unit in use refuses it before anything is saved."
     }
   ]
 }

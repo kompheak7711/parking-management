@@ -387,6 +387,11 @@ const TEXT = {
     "បន្ទប់នេះមានការកក់ ឬកិច្ចសន្យា ដូច្នេះវានៅតែសម្រាប់ជួល រហូតដល់ពួកវាបញ្ចប់។",
   ],
   // new
+  fr_new_not_saved: [
+    "Unit {0} is saved, but For rent is not. Change it on the Unit page.",
+    "បន្ទប់ {0} ត្រូវបានរក្សាទុក ប៉ុន្តែ សម្រាប់ជួល មិនទាន់។ សូមប្តូរវានៅទំព័របន្ទប់។",
+  ],
+  // new
   fr_saved_yes: ["{0} is for rent now.", "{0} ឥឡូវសម្រាប់ជួល។"],
   // new
   fr_saved_no: ["{0} is not for rent now.", "{0} ឥឡូវមិនសម្រាប់ជួល។"],
