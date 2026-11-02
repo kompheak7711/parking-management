@@ -11,6 +11,7 @@ from property_rental.identity import ActorResolver, AuthenticatedActor, Capabili
 from property_rental.unit import Unit, UnitStatus, UnitType
 from property_rental.unit_api import (
     UnitDetails,
+    UnitInUseForRenting,
     UnitPage,
     UnitResourceNotFound,
     UnitSetupItem,
@@ -43,9 +44,14 @@ class InMemoryUnitFlow:
         attention: bool | None,
         limit: int,
         cursor: str | None,
+        for_rent: bool | None = None,
     ) -> UnitPage:
         self.last_filter = (unit_status, attention, limit, cursor)
-        items = tuple(unit for unit in self.units.values() if unit.property_id == property_id)
+        items = tuple(
+            unit
+            for unit in self.units.values()
+            if unit.property_id == property_id and for_rent in (None, unit.for_rent)
+        )
         return UnitPage(items[:limit], "next" if len(items) > limit else None)
 
     def get(self, unit_id: UUID) -> Unit:
@@ -157,6 +163,26 @@ class InMemoryUnitFlow:
         if current.version != expected_version:
             raise UnitVersionConflict(current.version)
         updated = replace(current, version=current.version + 1, features=features)
+        self.units[unit_id] = updated
+        return updated
+
+    def set_for_rent(
+        self,
+        unit_id: UUID,
+        *,
+        for_rent: bool,
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del actor_id
+        current = self.get(unit_id)
+        if current.version != expected_version:
+            raise UnitVersionConflict(current.version)
+        if current.for_rent == for_rent:
+            return current
+        if not for_rent and current.status in (UnitStatus.RESERVED, UnitStatus.OCCUPIED):
+            raise UnitInUseForRenting
+        updated = replace(current, version=current.version + 1, for_rent=for_rent)
         self.units[unit_id] = updated
         return updated
 
@@ -810,6 +836,45 @@ def test_unit_features_are_set_by_a_manager_at_the_unit_version() -> None:
     assert read.json()["data"]["features"] == body["features"]
     cleared = client.put(path, headers={**BROWSER, "If-Match": '"2"'}, json={"features": []})
     assert cleared.status_code == 200 and cleared.json()["data"]["features"] == []
+
+
+def test_for_rent_is_set_by_a_manager_and_filters_the_list() -> None:
+    """V1.1 rework part 1 (owner 2026-11-02): the warehouse W01 is not for rent."""
+    property_id = uuid4()
+    unit = sample_unit(property_id)
+    occupied = replace(sample_unit(property_id), unit_id=uuid4(), unit_number="A-102")
+    occupied = replace(occupied, status=UnitStatus.OCCUPIED)
+    flow = InMemoryUnitFlow(units={unit.unit_id: unit, occupied.unit_id: occupied})
+    path = f"/units/{unit.unit_id}/for-rent"
+    staff = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with(property_id, "units.read"),
+            unit_resource_flow=flow,
+        )
+    )
+    no = {"for_rent": False}
+    assert staff.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=no).status_code == 403
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    assert client.get(f"/units/{unit.unit_id}").json()["data"]["for_rent"] is True
+    for wrong in ({"for_rent": "no"}, {"for_rent": None}, {}, {"for_rent": False, "x": 1}):
+        bad = client.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=wrong)
+        assert bad.status_code == 422, wrong
+    assert client.put(path, headers={**BROWSER, "If-Match": '"0"'}, json=no).status_code == 412
+    saved = client.put(path, headers={**BROWSER, "If-Match": '"1"'}, json=no)
+    assert saved.status_code == 200, saved.text
+    assert saved.headers["etag"] == '"2"' and saved.json()["data"]["for_rent"] is False
+    units = f"/properties/{property_id}/units"
+    renting = client.get(units, params={"for_rent": "true"}).json()["data"]["items"]
+    assert [item["unit_number"] for item in renting] == ["A-102"]
+    kept = client.get(units, params={"for_rent": "false"}).json()["data"]["items"]
+    assert [item["unit_id"] for item in kept] == [str(unit.unit_id)]
+    assert len(client.get(units).json()["data"]["items"]) == 2
+    in_use = client.put(
+        f"/units/{occupied.unit_id}/for-rent", headers={**BROWSER, "If-Match": '"1"'}, json=no
+    )
+    assert in_use.status_code == 409
 
 
 def test_a_unit_feature_names_its_feature_type() -> None:

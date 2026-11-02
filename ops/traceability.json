@@ -54460,12 +54460,13 @@
       "upstream_ids": [
         "DL-074",
         "DL-075",
+        "DL-116",
         "UI-008"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R7b-2: Unit setup shows the five lists with how many Units use each item; an item in use offers no Remove; Floors have no Edit."
+      "notes": "V1-058 R7b-2; V1.1 rework part 1 (DL-116): Unit setup shows the tabs Floors, Unit Types, Unit features and Views with how many Units use each item; Unit features is one table (Order, Name, Khmer, Units, Edit); an item in use offers no Remove; Floors have no Edit."
     },
     {
       "test_id": "TEST-FE-941",
@@ -58846,14 +58847,15 @@
       "notes": "V1.1 (DL-115 (I)): a Unit feature a Unit uses, and the Feature type a feature names, cannot be removed."
     },
     {
-      "test_id": "test_a_unit_feature_needs_a_feature_type_of_its_property",
+      "test_id": "test_a_unit_feature_type_when_given_is_a_feature_type_of_its_property",
       "upstream_ids": [
-        "DL-115"
+        "DL-115",
+        "DL-116"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_unit_features_migration.py",
       "status": "implemented",
-      "notes": "V1.1 (DL-115 (I)): a Unit feature without a Feature type, or with an item that is not a Feature type of its Property, is refused; no other list item takes a Feature type."
+      "notes": "V1.1 rework part 1 (DL-116): a Unit feature needs no Feature type; a type that is given must be a Feature type of its Property, and no other list item takes a Feature type."
     },
     {
       "test_id": "test_runtime_role_cannot_write_unit_features_directly",
@@ -58908,12 +58910,13 @@
     {
       "test_id": "TEST-FE-1124",
       "upstream_ids": [
-        "DL-115"
+        "DL-115",
+        "DL-116"
       ],
       "test_level": "unit",
       "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
       "status": "implemented",
-      "notes": "V1.1 part 1 (DL-115 (I)): Settings Unit setup adds a Unit feature with its Feature type, changes the type on Edit, and asks no Feature type for other lists."
+      "notes": "V1.1 rework part 1 (DL-116): a Unit feature is added and renamed with no Feature type; a type kept from before is not sent."
     },
     {
       "test_id": "TEST-FE-1125",
@@ -59103,436 +59106,84 @@
       "notes": "V1-061 (DL-112): POST /api/v1/leases/{lease_id}/security-deposit/receive needs payments.record and payments.allocate, and deposits.manage for a new Security Deposit; another Deposit or a second Security Deposit is refused; the payer is the Primary Tenant."
     },
     {
-      "test_id": "test_a_new_property_gets_the_four_parking_types_and_nothing_else",
-      "upstream_ids": ["BR-UNIT-001"],
+      "test_id": "test_for_rent_is_set_at_the_unit_version_and_kept_in_history",
+      "upstream_ids": [
+        "DL-116"
+      ],
       "test_level": "DB",
-      "test_path": "backend/tests/test_parking_types_migration.py",
+      "test_path": "backend/tests/test_unit_for_rent_migration.py",
       "status": "implemented",
-      "notes": "Parking Step 3 (owner 2026-10-29; migration 20270405_255): a new Property is seeded with Covered, Uncovered, Motorbike and Tuk-Tuk/Food Cart with their Khmer names, no feature, one audit event each."
+      "notes": "V1.1 rework part 1 (DL-116): For rent is set at the Unit version, a repeat changes nothing, the Units list filters by it, and each change is in History."
     },
     {
-      "test_id": "test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing",
-      "upstream_ids": ["BR-UNIT-001"],
+      "test_id": "test_a_unit_not_for_rent_gets_no_lease_and_is_not_counted",
+      "upstream_ids": [
+        "DL-116"
+      ],
       "test_level": "DB",
-      "test_path": "backend/tests/test_parking_types_migration.py",
+      "test_path": "backend/tests/test_unit_for_rent_migration.py",
       "status": "implemented",
-      "notes": "Parking Step 3: seeding a Property that already has items adds only the missing Parking Types and leaves every item's id and version as it is (what the migration does for an existing Property)."
+      "notes": "V1.1 rework part 1 (DL-116): a Unit not for rent gets no Reservation and no Lease, and Home and the occupancy report leave it out."
     },
     {
-      "test_id": "test_the_parking_types_migration_is_the_head_and_is_forward_only",
-      "upstream_ids": ["BR-UNIT-001"],
-      "test_level": "migration",
-      "test_path": "backend/tests/test_parking_types_migration.py",
+      "test_id": "test_a_unit_with_a_lease_cannot_be_set_not_for_rent",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_for_rent_migration.py",
       "status": "implemented",
-      "notes": "Parking Step 3: migration 20270405_255 follows 20270404_254, is the head and is forward-only."
+      "notes": "V1.1 rework part 1 (DL-116): a Unit with a draft or signed Lease stays for rent."
     },
     {
-      "test_id": "test_rent_terms_need_a_reason_which_is_kept_for_history",
-      "upstream_ids": ["BR-UNIT-015"],
+      "test_id": "test_runtime_role_cannot_change_for_rent_directly",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_for_rent_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 rework part 1 (DL-116): only app.set_unit_for_rent changes For rent."
+    },
+    {
+      "test_id": "test_the_database_review_fixes_are_in_place",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_for_rent_migration.py",
+      "status": "implemented",
+      "notes": "Database review 01/11, fixes 2, 3 and 5 (DL-116 (C)): copied indexes dropped, list indexes added, Lease history and Receipt number checks added."
+    },
+    {
+      "test_id": "test_for_rent_is_set_by_a_manager_and_filters_the_list",
+      "upstream_ids": [
+        "DL-116"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_unit_api.py",
       "status": "implemented",
-      "notes": "Parking Step 3: PUT /units/{unit_id}/rent-terms without a reason, with a blank one or one over 500 characters answers 422 and writes nothing; the reason is trimmed and handed to the flow for the Unit's History."
-    },
-    {
-      "test_id": "TEST-FE-1124",
-      "upstream_ids": ["BR-UNIT-015"],
-      "test_level": "UI",
-      "test_path": "frontend/src/units/UnitsPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 3: Rent and Services needs a reason before it saves (the box is marked invalid), and sends it trimmed."
-    },
-    {
-      "test_id": "TEST-FE-1125",
-      "upstream_ids": ["BR-UNIT-015"],
-      "test_level": "UI",
-      "test_path": "frontend/src/units/UnitsPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 3: the Parking History line for a price change shows the old price (or Not set), the new price, who and the reason; a change that keeps the price says who and why."
-    },
-    {
-      "test_id": "TEST-FE-1126",
-      "upstream_ids": ["BR-UNIT-015"],
-      "test_level": "unit",
-      "test_path": "frontend/src/unitClient.test.ts",
-      "status": "implemented",
-      "notes": "Parking Step 3 (review fix): the Unit timeline client keeps actor_name when the server sends a name and gives null otherwise, so the History line can say who."
-    },
-    {
-      "test_id": "test_a_vehicle_is_made_under_a_customer_with_its_type_and_plate_as_typed",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: a vehicle is a record under a Customer with its type and plate as typed (Khmer or Latin); the plate match ignores spaces, dashes, dots and case; two vehicles may share a plate and the match names each owner."
-    },
-    {
-      "test_id": "test_a_wrong_type_or_plate_is_refused_and_a_correction_keeps_the_history",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: a type outside the four, a blank, untrimmed or over-long plate is refused; a correction needs the version and is audited as vehicle.updated with the Customer."
-    },
-    {
-      "test_id": "test_a_vehicle_is_never_deleted_and_only_the_functions_write_it",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: the runtime role cannot update or delete a vehicle, the admin cannot delete one, and only prm_runtime may run the four vehicle functions."
-    },
-    {
-      "test_id": "test_each_vehicle_type_parks_only_in_its_own_kind_of_place",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4 Q2 (owner 2026-10-30): Car in COVERED or UNCOVERED, Motorbike in MOTORBIKE, Tuk-tuk and food cart in TUK_TUK_FOOD_CART, matched by code; an unknown code allows nothing."
-    },
-    {
-      "test_id": "test_the_vehicle_of_a_signer_moves_in_and_a_second_vehicle_is_refused",
-      "upstream_ids": ["BR-VEH-001", "BR-LEASE-015"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: a vehicle of nobody on the Lease (VEHICLE_NOT_OF_LEASE) or of the wrong type (VEHICLE_TYPE) is refused; the Signer's vehicle moves in through Property Rental's move-in with one Occupancy carrying the vehicle; a replay answers again; a second vehicle is refused (VEHICLE_SECOND); a stale version is a conflict, not a refusal; the per-person move-out function cannot end the vehicle row (VEHICLE_ONLY_ONE at the database); the vehicle of a row never changes."
-    },
-    {
-      "test_id": "test_change_vehicle_keeps_both_rows_and_the_lease",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: Change vehicle refuses none moved in, the same vehicle, a stranger's vehicle, a wrong type and a wrong day; it ends the old row and starts the new one the same day, moves the Lease version on, shows in the History as old plate → new plate: reason, replays for the same key, and lets the same owner's two vehicles hand over on one day."
-    },
-    {
-      "test_id": "test_a_vehicle_parks_under_one_lease_at_a_time",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: a vehicle moved in under one Lease is refused on another (VEHICLE_PARKED) at move-in and at Change vehicle."
-    },
-    {
-      "test_id": "test_termination_and_the_move_out_page_end_the_vehicle_row",
-      "upstream_ids": ["BR-VEH-001", "BR-OCC-010"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: the only vehicle leaves with the Lease: Termination and the Move-out page end its Occupancy row as they end a person's."
-    },
-    {
-      "test_id": "test_vehicles_migration_is_head_and_forward_only",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_vehicles_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: migration 20270406_256 is the head, follows 20270405_255 and is forward-only."
-    },
-    {
-      "test_id": "test_vehicle_routes_need_the_customer_rights_and_check_the_body",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "API",
-      "test_path": "backend/tests/test_vehicle_api.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: reading vehicles needs customers.read; adding and correcting need customers.manage; the body is strict (type, plate 1 to 32, no extra keys); a deactivated Customer is refused; PATCH needs If-Match and answers 412 when stale."
-    },
-    {
-      "test_id": "test_the_plate_lookup_names_every_owner_with_that_plate",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "API",
-      "test_path": "backend/tests/test_vehicle_api.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: GET /properties/{id}/vehicles?plate= needs customers.read and a plate of 1 to 32 characters; it names every owner whose plate matches without spaces, dashes, dots and case."
-    },
-    {
-      "test_id": "test_vehicle_move_in_needs_the_move_in_capability_and_answers_each_refusal",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "API",
-      "test_path": "backend/tests/test_lease_api.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: POST /leases/{id}/vehicle-move-in needs reservations.complete and If-Match, takes a strict body, hands the vehicle and Occupancy ids to the flow, and answers each refusal by its code with rule BR-VEH-001."
-    },
-    {
-      "test_id": "test_change_vehicle_sends_the_new_vehicle_and_the_day",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "API",
-      "test_path": "backend/tests/test_lease_api.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: POST /leases/{id}/vehicle-change needs reservations.complete and If-Match, sends the new vehicle, the day and the reason, and answers a refusal by its code."
-    },
-    {
-      "test_id": "test_the_only_vehicle_never_moves_out_alone",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "API",
-      "test_path": "backend/tests/test_lease_api.py",
-      "status": "implemented",
-      "notes": "Parking Step 4: Occupancy rows carry the vehicle; the per-person move-out of a vehicle's row answers 409 VEHICLE_ONLY_ONE before the flow is asked."
-    },
-    {
-      "test_id": "TEST-FE-1127",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the Vehicles card lists the Customer's vehicles; Add vehicle needs a plate and saves the type and the plate as typed; the page says the vehicle was added."
-    },
-    {
-      "test_id": "TEST-FE-1128",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: a plate another vehicle has warns with the owner's name and plate; Save anyway saves; nothing is merged."
-    },
-    {
-      "test_id": "TEST-FE-1129",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: Edit corrects the type and the plate with the version; a reader gets no Add vehicle."
-    },
-    {
-      "test_id": "TEST-FE-1130",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the Lease page's Vehicle card shows the vehicle moved in with its day, earlier vehicles with their move-out day, Change vehicle for the move-in right, no Move out and no Add occupant; the History says Vehicle moved in and Vehicle changed."
+      "notes": "V1.1 rework part 1 (DL-116): PUT /units/{unit_id}/for-rent needs a Manager, the browser checks and If-Match; a wrong body answers 422, a stale version 412, a Unit in use 409; the list filters by for_rent."
     },
     {
       "test_id": "TEST-FE-1131",
-      "upstream_ids": ["BR-VEH-001", "BR-LEASE-015"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "Parking Step 4: Record move-in offers the Signers' vehicles as one choice, checks the date, keeps the Occupancy id and key on Try again, and points to the Customer page when there is no vehicle."
+      "notes": "V1.1 rework part 1 (DL-116): a Unit not for rent leaves the Units table and its counts and shows in the Units not for rent card with its places."
     },
     {
       "test_id": "TEST-FE-1132",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: Change vehicle offers the other vehicles, needs a reason, sends the vehicle and the day with the Lease version, and shows the server's words when refused (VEHICLE_TYPE)."
-    },
-    {
-      "test_id": "TEST-FE-1133",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the New Lease form has no Other occupants list on Parking; the code stays behind PEOPLE_MOVE_IN."
-    },
-    {
-      "test_id": "TEST-FE-1134",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the hand-back's Who moved out names the vehicle by its plate, then its owner."
-    },
-    {
-      "test_id": "TEST-FE-1135",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leaseClient.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the vehicle move-in and Change vehicle post to their own routes with CSRF, the key and the Lease version; a coded refusal keeps the server's code and words."
-    },
-    {
-      "test_id": "TEST-FE-1136",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/customerClient.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4: the vehicle calls read a Customer's vehicles, add one with CSRF, correct one with If-Match, and look a plate up."
-    },
-    {
-      "test_id": "TEST-FE-1137",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/customers/CustomersPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4 (review fix): a failed plate lookup does not stop the save (the duplicate warning is advice), and the plate box takes at most 32 characters."
-    },
-    {
-      "test_id": "TEST-FE-1138",
-      "upstream_ids": ["BR-VEH-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 4 (review fix): Change vehicle opens on the End Date when that day is already past, so the date is never above its limit."
-    },
-    {
-      "test_id": "TEST-FE-1139",
-      "upstream_ids": ["BR-UNIT-001"],
-      "test_level": "UI",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "UI component",
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
-      "notes": "Parking Step 5: Update Parking leaves the hidden home fields and Room features out of what it sends, so stored values are kept."
-    },
-    {
-      "test_id": "TEST-FE-1140",
-      "upstream_ids": ["BR-DEP-007", "BR-DEP-008"],
-      "test_level": "UI",
-      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: New Lease has no pet tick and sends pet_term null; the Lease page Deposits card says nothing about a pet."
-    },
-    {
-      "test_id": "TEST-FE-1141",
-      "upstream_ids": ["BR-DEP-007"],
-      "test_level": "UI",
-      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: an inspection finding has no Caused by the pet tick; the Deposits card says nothing about a Pet Deposit."
-    },
-    {
-      "test_id": "TEST-FE-1142",
-      "upstream_ids": ["BR-DEP-009"],
-      "test_level": "UI",
-      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: Pet Deposit held is not shown while it is zero and shows again when money is held."
-    },
-    {
-      "test_id": "TEST-FE-1143",
-      "upstream_ids": ["BR-DEP-009"],
-      "test_level": "UI",
-      "test_path": "frontend/src/reports/RegisterView.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the Deposits report lists Security only while no Pet Deposit is held and its words say Security Deposits."
-    },
-    {
-      "test_id": "TEST-FE-1144",
-      "upstream_ids": ["BR-UNIT-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/units/UnitsPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the Parking page shows no inventory panel and no feature tiles; New Parking has no Room features."
-    },
-    {
-      "test_id": "TEST-FE-1145",
-      "upstream_ids": ["BR-UNIT-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the Parking setup tab shows Floors and Parking Types only."
-    },
-    {
-      "test_id": "TEST-FE-1146",
-      "upstream_ids": ["BR-UNIT-001"],
-      "test_level": "UI",
-      "test_path": "frontend/src/units/UnitsPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: Size, Bedrooms, Bathrooms, View and Kitchen are gone from the dialogs and the Parking page; Floor, Parking Type and Notes stay."
-    },
-    {
-      "test_id": "TEST-FE-1147",
-      "upstream_ids": ["BR-MOVEOUT-013"],
-      "test_level": "UI",
-      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: move-out step 4 reads no cleaning rate, shows no cleaning section or button, and is done without a cleaning charge."
-    },
-    {
-      "test_id": "TEST-FE-1148",
-      "upstream_ids": ["BR-UNIT-014"],
-      "test_level": "UI",
-      "test_path": "frontend/src/settings/UnitSetupTab.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: no No cleaning rate chip on a Parking Type and the cleaning rates are not read."
-    },
-    {
-      "test_id": "TEST-FE-1149",
-      "upstream_ids": ["BR-DEP-007"],
-      "test_level": "UI",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the old Lease screen's draft form has no pet terms."
-    },
-    {
-      "test_id": "TEST-FE-1150",
-      "upstream_ids": ["BR-DEP-007"],
-      "test_level": "UI",
-      "test_path": "frontend/src/DepositManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the old Deposit screen offers no Create Pet Deposit form."
-    },
-    {
-      "test_id": "TEST-FE-1151",
-      "upstream_ids": ["BR-DEP-009"],
-      "test_level": "UI",
-      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the Refund workspace offers no Pet Deposit source."
-    },
-    {
-      "test_id": "TEST-FE-1152",
-      "upstream_ids": ["BR-UNIT-014"],
-      "test_level": "UI",
-      "test_path": "frontend/src/settings/RatesTab.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: the Rates tab has no Move-out cleaning rates card and never reads the cleaning rates. Property Rental tests that skip while a flag is off (TEST-FE-202, 210, 529, 530 for PET_DEPOSIT; 978, 1006 for CLEANING_CHARGE) are listed in docs/replica/parking-differences.md; their entries above are unchanged because the manifest's early entries are hash-checked."
-    },
-    {
-      "test_id": "test_a_moved_out_lease_with_no_cleaning_rate_and_no_charge_is_ready_to_close",
-      "upstream_ids": ["BR-MOVEOUT-013"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_cleaning_off_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 5: migration 257: a moved-out Lease with no cleaning rate and no cleaning charge reaches a ready settlement preview; CLEANING_CHARGE_MISSING never appears."
-    },
-    {
-      "test_id": "test_a_cleaning_charge_that_exists_still_counts_as_a_normal_debt",
-      "upstream_ids": ["BR-MOVEOUT-013", "BR-UNIT-014"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_cleaning_off_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 5: the rate settings and app.record_unit_cleaning_charge still work; an issued cleaning charge is an ordinary open line of the Settlement."
-    },
-    {
-      "test_id": "test_a_full_settlement_with_no_pet_deposit_is_exact_to_the_cent",
-      "upstream_ids": ["BR-SETTLE-005"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_cleaning_off_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 5: a Security Deposit of 10,000 pays a 7,525 debt and refunds 2,475; held 0, owed 0, applications 7,525, Settlement closed."
-    },
-    {
-      "test_id": "test_the_cleaning_off_migration_is_the_head_and_is_forward_only",
-      "upstream_ids": ["BR-MOVEOUT-013"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_cleaning_off_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 5: 20270407_257 is the head, revises 20270406_256, forward-only."
-    },
-    {
-      "test_id": "test_the_preview_source_has_the_cleaning_check_switched_off",
-      "upstream_ids": ["BR-MOVEOUT-013"],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_cleaning_off_migration.py",
-      "status": "implemented",
-      "notes": "Parking Step 5: the preview source holds exactly one IF false AND v_moved_in ... and the rest of the function is unchanged."
-    },
-    {
-      "test_id": "TEST-FE-1153",
-      "upstream_ids": ["BR-DEP-007"],
-      "test_level": "UI",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: with PET_DEPOSIT off, the old Lease screen's move-in checklist, follow-up notice and Approved Deposit terms paragraph do not mention a Pet Deposit (words only; the paragraph line still shows for a Lease that has a pet on record). Skips when PET_DEPOSIT is on."
-    },
-    {
-      "test_id": "TEST-FE-1154",
-      "upstream_ids": ["BR-DEP-007"],
-      "test_level": "UI",
-      "test_path": "frontend/src/DepositManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Parking Step 5: with PET_DEPOSIT off, the old Deposit screen's help paragraph and loading notice do not mention a Pet Deposit (words only). Skips when PET_DEPOSIT is on."
+      "notes": "V1.1 rework part 1 (DL-116): the Unit page shows For rent with Change; a Unit not for rent offers no Reservation or Lease; a Unit in use stays for rent."
     }
   ]
 }

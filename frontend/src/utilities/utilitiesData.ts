@@ -72,7 +72,7 @@ export async function loadUtilitiesData(
   },
   propertyId: string,
 ): Promise<UtilitiesData> {
-  const [units, leases] = await Promise.all([
+  const [allUnits, leases] = await Promise.all([
     allPages(async (cursor) => {
       const page = await apis.unitApi.list(
         propertyId,
@@ -94,6 +94,8 @@ export async function loadUtilitiesData(
       return [];
     }),
   ]);
+  // V1.1 rework part 1 (mock-up v53): a Unit not for rent is left out of the meter readings.
+  const units = allUnits.filter((unit) => unit.for_rent !== false);
   units.sort((left, right) =>
     left.unit_number.localeCompare(right.unit_number, undefined, {
       numeric: true,

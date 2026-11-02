@@ -145,12 +145,24 @@ def test_a_unit_feature_in_use_and_its_feature_type_cannot_be_removed(
         flow.remove_setup_item(room, expected_version=room_item.version, actor_id=actor)
 
 
-def test_a_unit_feature_needs_a_feature_type_of_its_property(migrated_database_url: str) -> None:
+def test_a_unit_feature_type_when_given_is_a_feature_type_of_its_property(
+    migrated_database_url: str,
+) -> None:
+    """Migration 258 (V1.1 rework part 1): a Unit feature needs no Feature type any more."""
     case = _setup(migrated_database_url)
     flow = PostgresUnitResourceFlow(runtime_database_url())
     actor = str(case["actor"])
+    cabinet = flow.create_setup_item(
+        case["prop"],
+        list_kind="UNIT_FEATURE",
+        name_en="Cabinet",
+        name_km=None,
+        sort_order=1,
+        actor_id=actor,
+    )
+    assert cabinet.feature_type_item_id is None
     other = next(iter(_items(flow, case["prop"], "UNIT_TYPE").values()))
-    for type_id in (None, other, uuid4()):
+    for type_id in (other, uuid4()):
         with pytest.raises(UnitResourceInvalid):
             flow.create_setup_item(
                 case["prop"],

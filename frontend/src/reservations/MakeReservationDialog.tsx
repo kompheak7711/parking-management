@@ -179,7 +179,8 @@ export function MakeReservationDialog({
     ])
       .then(([foundUnits, foundCustomers]) => {
         const vacant = foundUnits
-          .filter((unit) => unit.status === "VACANT")
+          // V1.1 rework part 1: a Unit not for rent is never offered.
+          .filter((unit) => unit.status === "VACANT" && unit.for_rent !== false)
           .sort((left, right) =>
             left.unit_number.localeCompare(right.unit_number),
           );

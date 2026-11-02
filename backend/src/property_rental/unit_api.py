@@ -80,6 +80,10 @@ class UnitSetupItemInUse(RuntimeError):
     """Raised when a list item that a Unit uses would be removed (DL-075 answer 10)."""
 
 
+class UnitInUseForRenting(RuntimeError):
+    """Raised when a Unit in use for renting would be set not for rent (V1.1 rework part 1)."""
+
+
 class UnitVersionConflict(RuntimeError):
     """Raised when a Unit update does not target the current version."""
 
@@ -181,6 +185,7 @@ class UnitResourceFlow(Protocol):
         attention: bool | None,
         limit: int,
         cursor: str | None,
+        for_rent: bool | None = None,
     ) -> UnitPage: ...
 
     def get(self, unit_id: UUID) -> Unit: ...
@@ -226,6 +231,15 @@ class UnitResourceFlow(Protocol):
         unit_id: UUID,
         *,
         features: tuple[tuple[UUID, int], ...],
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit: ...
+
+    def set_for_rent(
+        self,
+        unit_id: UUID,
+        *,
+        for_rent: bool,
         expected_version: int,
         actor_id: str,
     ) -> Unit: ...
@@ -285,8 +299,9 @@ class UnavailableUnitResourceFlow:
         attention: bool | None,
         limit: int,
         cursor: str | None,
+        for_rent: bool | None = None,
     ) -> UnitPage:
-        del property_id, unit_status, attention, limit, cursor
+        del property_id, unit_status, attention, limit, cursor, for_rent
         self._unavailable()
         raise AssertionError
 
@@ -351,6 +366,18 @@ class UnavailableUnitResourceFlow:
         actor_id: str,
     ) -> Unit:
         del unit_id, features, expected_version, actor_id
+        self._unavailable()
+        raise AssertionError
+
+    def set_for_rent(
+        self,
+        unit_id: UUID,
+        *,
+        for_rent: bool,
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        del unit_id, for_rent, expected_version, actor_id
         self._unavailable()
         raise AssertionError
 
@@ -464,7 +491,10 @@ def _features_json(unit: Unit) -> list[dict[str, object]]:
 # and its Unit features.
 UNIT_COLUMNS: Final = (
     "detail.*, terms.default_monthly_rent_usd_cents, terms.required_service_ids, "
-    "app.unit_feature_counts(detail.id) AS features"
+    "app.unit_feature_counts(detail.id) AS features, "
+    # V1.1 rework part 1 (owner 2026-11-02): For rent.
+    "(SELECT for_unit.for_rent FROM app.units AS for_unit WHERE for_unit.id = detail.id) "
+    "AS for_rent"
 )
 UNIT_SELECT: Final = (
     f"SELECT {UNIT_COLUMNS} FROM app.unit_with_details(%s) AS detail "
@@ -491,6 +521,7 @@ class PostgresUnitResourceFlow:
         attention: bool | None,
         limit: int,
         cursor: str | None,
+        for_rent: bool | None = None,
     ) -> UnitPage:
         decoded = _decode_cursor(cursor)
         clauses = ["unit.property_id = %s"]
@@ -498,6 +529,9 @@ class PostgresUnitResourceFlow:
         if unit_status is not None:
             clauses.append("unit.status = %s")
             parameters.append(unit_status.value)
+        if for_rent is not None:
+            clauses.append("unit.for_rent = %s")
+            parameters.append(for_rent)
         if attention is not None:
             expression = "unit.status IN ('UNDER_MAINTENANCE', 'CLEANING', 'OUT_OF_SERVICE')"
             clauses.append(expression if attention else f"NOT ({expression})")
@@ -557,6 +591,7 @@ class PostgresUnitResourceFlow:
             "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
             "required_service_ids": [str(item) for item in unit.required_service_ids],
             "features": _features_json(unit),
+            "for_rent": unit.for_rent,
         }
 
     @staticmethod
@@ -779,6 +814,58 @@ class PostgresUnitResourceFlow:
             psycopg.errors.ForeignKeyViolation,
         ) as exc:
             raise UnitResourceInvalid("Unit features are invalid") from exc
+        except psycopg.Error as exc:
+            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+
+    def set_for_rent(
+        self,
+        unit_id: UUID,
+        *,
+        for_rent: bool,
+        expected_version: int,
+        actor_id: str,
+    ) -> Unit:
+        """V1.1 rework part 1 (owner 2026-11-02): set For rent, kept in History. A Unit in use
+        for renting cannot be set not for rent."""
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                current_row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if current_row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                current = _unit(current_row)
+                if current.version != expected_version:
+                    raise UnitVersionConflict(current.version)
+                version = connection.execute(
+                    "SELECT app.set_unit_for_rent(%s, %s, %s, %s)",
+                    (unit_id, expected_version, for_rent, UUID(actor_id)),
+                ).fetchone()
+                if version is None or version[0] is None:
+                    latest = connection.execute(
+                        "SELECT version FROM app.units WHERE id = %s", (unit_id,)
+                    ).fetchone()
+                    if latest is None:
+                        raise UnitResourceNotFound("Unit was not found")
+                    raise UnitVersionConflict(int(str(latest[0])))
+                if current.for_rent == for_rent:
+                    return current
+                row = connection.execute(UNIT_SELECT, (unit_id,)).fetchone()
+                if row is None:
+                    raise UnitResourceNotFound("Unit was not found")
+                updated = _unit(row)
+                self._audit(
+                    connection,
+                    unit=updated,
+                    actor_id=actor_id,
+                    action="unit.for_rent_changed",
+                    previous_state=self._state(current),
+                )
+            return updated
+        except (UnitResourceNotFound, UnitVersionConflict):
+            raise
+        except psycopg.errors.ObjectNotInPrerequisiteState as exc:
+            raise UnitInUseForRenting("The Unit is in use for renting") from exc
+        except (ValueError, psycopg.errors.InvalidParameterValue) as exc:
+            raise UnitResourceInvalid("For rent is invalid") from exc
         except psycopg.Error as exc:
             raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
 
@@ -1182,6 +1269,14 @@ class UnitFeaturesSource(BaseModel):
     features: list[UnitFeatureCount] = Field(max_length=UNIT_MAX_FEATURES)
 
 
+class UnitForRentSource(BaseModel):
+    """V1.1 rework part 1: For rent Yes or No."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    for_rent: bool = Field(strict=True)
+
+
 class UnitSetupItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1327,6 +1422,7 @@ def _body(unit: Unit) -> dict[str, object]:
         "default_monthly_rent_usd_cents": unit.default_monthly_rent_usd_cents,
         "required_service_ids": [str(item) for item in unit.required_service_ids],
         "features": _features_json(unit),
+        "for_rent": unit.for_rent,
         "current_reservation": None,
         "current_lease": None,
         "current_occupancy": None,
@@ -1357,6 +1453,7 @@ def create_unit_router(
         attention: bool | None = None,
         limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
         cursor: str | None = None,
+        for_rent: bool | None = None,
     ) -> dict[str, object]:
         actor = _require_actor(request, resolver)
         _require_reader(actor, property_id)
@@ -1367,6 +1464,7 @@ def create_unit_router(
                 attention=attention,
                 limit=limit,
                 cursor=cursor,
+                for_rent=for_rent,
             )
         except UnitResourceInvalid as exc:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
@@ -1551,6 +1649,38 @@ def create_unit_router(
             )
         except UnitResourceNotFound as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except UnitResourceInvalid as exc:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
+        except UnitResourceUnavailable as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+        response.headers["ETag"] = f'"{unit.version}"'
+        return {"data": _body(unit), "meta": {"request_id": request.state.request_id}}
+
+    @router.put("/units/{unit_id}/for-rent")
+    def put_unit_for_rent(
+        unit_id: UUID,
+        source: UnitForRentSource,
+        request: Request,
+        response: Response,
+        if_match: str | None = Header(default=None, alias="If-Match"),
+    ) -> dict[str, object]:
+        """V1.1 rework part 1: a Manager or the Owner sets For rent Yes or No."""
+        actor = _require_actor(request, resolver)
+        current = get_unit_or_http(unit_id)
+        _require_manager(actor, current.property_id)
+        require_browser_mutation(request, settings)
+        expected = _expected_version(if_match, current.version)
+        try:
+            unit = flow.set_for_rent(
+                unit_id,
+                for_rent=source.for_rent,
+                expected_version=expected,
+                actor_id=actor.actor_id,
+            )
+        except UnitResourceNotFound as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except UnitInUseForRenting as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT) from exc
         except UnitResourceInvalid as exc:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
         except UnitResourceUnavailable as exc:

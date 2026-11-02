@@ -147,6 +147,20 @@ const TEXT = {
     "Item types group the things in a Unit's inventory, such as furniture or keys.",
     "ប្រភេទរបស់របរ ដាក់ជាក្រុមនូវរបស់ក្នុងបញ្ជីសារពើភណ្ឌរបស់បន្ទប់ ដូចជាគ្រឿងសង្ហារឹម ឬសោ។",
   ],
+  // V1.1 rework part 1 (owner 2026-11-02, mock-up v53): Unit features are places.
+  us_lists: ["Unit setup lists", "បញ្ជីរៀបចំបន្ទប់"],
+  uf20_sub: [
+    "One list. A Unit feature is always a place: a room, an area or a storage spot. Bedroom × 2 gives the places Bedroom 1 and Bedroom 2. The order here is the order on the Unit page.",
+    "បញ្ជីតែមួយ។ លក្ខណៈបន្ទប់ជាកន្លែងជានិច្ច៖ បន្ទប់ តំបន់ ឬកន្លែងទុកដាក់។ បន្ទប់គេង × 2 ផ្តល់កន្លែង បន្ទប់គេង 1 និង បន្ទប់គេង 2។ លំដាប់នៅទីនេះជាលំដាប់នៅទំព័របន្ទប់។",
+  ],
+  uf20_note: [
+    "Feature types and Item types are gone. Built-in things such as a wall air conditioner or a built-in wardrobe are now Products in the Unit inventory.",
+    "ប្រភេទលក្ខណៈ និងប្រភេទសម្ភារៈ ត្រូវបានដកចេញ។ របស់ភ្ជាប់ជាប់ ដូចជាម៉ាស៊ីនត្រជាក់ ឬទូខោអាវភ្ជាប់ជញ្ជាំង ឥឡូវជាផលិតផលក្នុងបញ្ជីសម្ភារៈបន្ទប់។",
+  ],
+  uf20_order: ["Order", "លំដាប់"],
+  uf20_name: ["Name", "ឈ្មោះ"],
+  uf20_khmer: ["Khmer", "ខ្មែរ"],
+  uf20_used: ["Units", "បន្ទប់"],
   set_n_feature1: ["1 feature", "1 លក្ខណៈ"],
   set_n_features: ["{0} features", "{0} លក្ខណៈ"],
   cf_add: ["Add", "បន្ថែម"],

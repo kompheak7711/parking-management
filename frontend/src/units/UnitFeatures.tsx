@@ -5,7 +5,7 @@
 import { type FormEvent, useState } from "react";
 
 import { Icon } from "../shell/icons";
-import { Chip, Dialog } from "../shell/ui";
+import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
   type UnitApi,
@@ -144,9 +144,6 @@ function EditFeaturesDialog({
   const items = new Map(
     lists.lists.UNIT_FEATURE.map((item) => [item.item_id, item]),
   );
-  const types = new Map(
-    lists.lists.FEATURE_TYPE.map((item) => [item.item_id, item]),
-  );
   const offered = lists.lists.UNIT_FEATURE.filter(
     (item) =>
       !item.removed && !rows.some((row) => row.item_id === item.item_id),
@@ -203,15 +200,10 @@ function EditFeaturesDialog({
           {rows.map((row) => {
             const item = items.get(row.item_id);
             const name = label(item, language) || ut(language, "uf_unknown");
-            const type = types.get(item?.feature_type_item_id ?? "");
             return (
               <li key={row.item_id}>
-                <span className="ui-feature-name">
-                  {name}
-                  {type !== undefined && (
-                    <Chip tone="neutral">{label(type, language)}</Chip>
-                  )}
-                </span>
+                {/* V1.1 rework part 1: a Unit feature is a place, with no Feature type. */}
+                <span className="ui-feature-name">{name}</span>
                 <span className="ui-stepper">
                   <button
                     aria-label={ut(language, "uf_less", name)}

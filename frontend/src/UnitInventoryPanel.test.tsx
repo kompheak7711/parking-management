@@ -119,6 +119,7 @@ function api(overrides: Partial<UnitApi> = {}): UnitApi {
     ]),
     setRentTerms: vi.fn(),
     setFeatures: vi.fn(),
+    setForRent: vi.fn(),
     ...overrides,
   };
 }

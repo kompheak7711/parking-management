@@ -15,7 +15,10 @@ import type {
 export type UnitCard = "occupied" | "reserved" | "vacant" | "na";
 
 export interface UnitsData {
+  /** The Units for rent: every renting list and count uses only these. */
   units: UnitResource[];
+  /** V1.1 rework part 1: the Units not for rent, such as the warehouse W01. */
+  notForRent: UnitResource[];
   canManage: boolean;
   /** Null when the Settings lists could not be read; the forms then stay closed. */
   lists: UnitSetupLists | null;
@@ -75,12 +78,14 @@ export async function loadUnitsData(
       apis.reservationApi.list(propertyId, "ACTIVE", cursor),
     ).catch(() => null),
   ]);
+  const sorted = units.sort((left, right) =>
+    left.unit_number.localeCompare(right.unit_number, undefined, {
+      numeric: true,
+    }),
+  );
   return {
-    units: units.sort((left, right) =>
-      left.unit_number.localeCompare(right.unit_number, undefined, {
-        numeric: true,
-      }),
-    ),
+    units: sorted.filter((unit) => unit.for_rent !== false),
+    notForRent: sorted.filter((unit) => unit.for_rent === false),
     canManage,
     lists,
     leases,

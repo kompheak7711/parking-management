@@ -15,6 +15,7 @@ import { detailFromHash, hashForPage, pageFromHash } from "../shell/navigation";
 import {
   UnitApi,
   UnitConflictError,
+  UnitInUseError,
   UnitInvalidError,
   UnitInventory,
   UnitResource,
@@ -246,6 +247,7 @@ function unitApi(overrides: Partial<UnitApi> = {}): UnitApi {
     inventoryItems: vi.fn().mockResolvedValue([]),
     setRentTerms: vi.fn(),
     setFeatures: vi.fn(),
+    setForRent: vi.fn(),
     ...overrides,
   };
 }
@@ -1136,7 +1138,8 @@ describe("Parking page", () => {
       within(details).getByRole("button", { name: "Edit features" }),
     );
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("BedroomRoom");
+    expect(dialog).toHaveTextContent("Bedroom");
+    expect(dialog).not.toHaveTextContent("BedroomRoom");
     const count = within(dialog).getByLabelText("How many Bedroom");
     fireEvent.click(within(dialog).getByLabelText("One more Bedroom"));
     expect(count).toHaveTextContent("3");
@@ -1146,7 +1149,7 @@ describe("Parking page", () => {
     // A count stays from 1 to 9.
     expect(within(dialog).getByLabelText("One fewer Bedroom")).toBeDisabled();
     fireEvent.click(within(dialog).getByLabelText("Remove Bedroom"));
-    expect(dialog).not.toHaveTextContent("BedroomRoom");
+    expect(within(dialog).queryByLabelText("How many Bedroom")).toBeNull();
     fireEvent.change(within(dialog).getByLabelText("Add a feature"), {
       target: { value: "UNIT_FEATURE-MAIN_ROOM" },
     });
@@ -1443,5 +1446,88 @@ describe("Parking page", () => {
     ]) {
       expect(within(edit).queryByLabelText(gone)).toBeNull();
     }
+  });
+});
+
+describe("For rent (V1.1 rework part 1)", () => {
+  const w01 = unit("W01", {
+    for_rent: false,
+    features: [
+      { item_id: "UNIT_FEATURE-BEDROOM", count: 2 },
+      { item_id: "UNIT_FEATURE-MAIN_ROOM", count: 1 },
+    ],
+  });
+
+  it("TEST-FE-1131 a Unit not for rent leaves the Units table and its counts and shows in the Units not for rent card", async () => {
+    show(
+      unitApi({
+        list: vi.fn().mockResolvedValue({
+          items: [...units, w01],
+          next_cursor: null,
+          can_manage: true,
+        }),
+      }),
+    );
+    const card = (
+      await screen.findByRole("heading", { name: "Units not for rent" })
+    ).closest("section");
+    if (card === null) throw new Error("no card");
+    expect(within(card).getByRole("link", { name: "W01" })).toHaveAttribute(
+      "href",
+      "#/units/unit-W01",
+    );
+    expect(card).toHaveTextContent("Not for rent");
+    expect(card).toHaveTextContent("3 places");
+    const table = screen.getAllByRole("table")[0];
+    if (table === undefined) throw new Error("no table");
+    expect(within(table).queryByRole("link", { name: "W01" })).toBeNull();
+    expect(screen.getByText("4 Units")).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1132 the Unit page shows For rent with Change; a Unit not for rent offers no Reservation or Lease; a Unit in use stays for rent", async () => {
+    window.location.hash = "#/units/unit-U201";
+    const before = unit("U201");
+    const saved = { ...before, version: 3, for_rent: false };
+    const setForRent = vi
+      .fn()
+      .mockRejectedValueOnce(new UnitInUseError())
+      .mockResolvedValueOnce(saved);
+    const get = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(setForRent.mock.calls.length < 2 ? before : saved),
+      );
+    show(unitApi({ get, setForRent }));
+    const details = (
+      await screen.findByRole("heading", { name: "Unit details" })
+    ).closest("section");
+    if (details === null) throw new Error("no details card");
+    expect(details).toHaveTextContent("For rentYes");
+    expect(
+      screen.getByRole("link", { name: "Make Reservation" }),
+    ).toBeInTheDocument();
+    fireEvent.click(within(details).getByRole("button", { name: "Change" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Change For rent · U201",
+    });
+    fireEvent.click(within(dialog).getByLabelText("Not for rent"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText("U201 is not for rent now."),
+    ).toBeInTheDocument();
+    expect(setForRent).toHaveBeenLastCalledWith(before, false);
+    await waitFor(() => {
+      expect(details).toHaveTextContent("For rentNot for rent");
+    });
+    expect(screen.queryByRole("link", { name: "Make Reservation" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "New Lease" })).toBeNull();
+    expect(details).toHaveTextContent("it is left out of every renting screen");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

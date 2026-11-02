@@ -129,6 +129,8 @@ export interface UnitResource extends UnitDetails {
   required_service_ids?: string[];
   /** V1.1 (DL-115 (I)): the Unit's features and how many of each. */
   features?: UnitFeatureCount[];
+  /** V1.1 rework part 1: false for a Unit that is never rented, such as the warehouse W01. */
+  for_rent?: boolean;
 }
 
 export interface UnitRentTermsSource {
@@ -164,10 +166,18 @@ export interface UnitTimelinePage {
   next_cursor: string | null;
 }
 
+export interface UnitListFilters {
+  status?: UnitStatus;
+  attention?: boolean;
+  cursor?: string;
+  /** V1.1 rework part 1: true lists only Units for rent, false only Units not for rent. */
+  forRent?: boolean;
+}
+
 export interface UnitApi {
   list: (
     propertyId: string,
-    filters?: { status?: UnitStatus; attention?: boolean; cursor?: string },
+    filters?: UnitListFilters,
   ) => Promise<UnitListPage>;
   get: (unitId: string) => Promise<UnitResource>;
   create: (
@@ -214,6 +224,11 @@ export interface UnitApi {
     current: UnitResource,
     features: UnitFeatureCount[],
   ) => Promise<UnitResource>;
+  /** V1.1 rework part 1: a Manager or the Owner sets For rent Yes or No. */
+  setForRent: (
+    current: UnitResource,
+    forRent: boolean,
+  ) => Promise<UnitResource>;
 }
 
 export type SetupItemChange = Partial<
@@ -231,9 +246,21 @@ export class UnitUnavailableError extends Error {
 }
 
 export class UnitConflictError extends Error {
-  constructor() {
-    super("The Parking changed. Reload it before retrying.");
+  readonly status: number | undefined;
+  constructor(status?: number) {
+    super("The Unit changed. Reload it before retrying.");
     this.name = "UnitConflictError";
+    this.status = status;
+  }
+}
+
+/** V1.1 rework part 1: a Unit in use for renting cannot be set not for rent. */
+export class UnitInUseError extends Error {
+  constructor() {
+    super(
+      "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+    );
+    this.name = "UnitInUseError";
   }
 }
 
@@ -282,7 +309,7 @@ async function request(
     throw new UnitUnavailableError();
   }
   if (response.status === 409 || response.status === 412) {
-    throw new UnitConflictError();
+    throw new UnitConflictError(response.status);
   }
   if (response.status === 422) throw new UnitInvalidError();
   if (!response.ok) throw new UnitRequestError();
@@ -428,6 +455,7 @@ function unit(value: unknown): UnitResource {
       value.default_monthly_rent_usd_cents ?? null,
     required_service_ids: stringArray(value.required_service_ids ?? []),
     features: featureCounts(value.features),
+    for_rent: value.for_rent !== false,
   };
 }
 
@@ -443,9 +471,11 @@ function mutationHeaders(version?: number): HeadersInit {
 
 async function list(
   propertyId: string,
-  filters: { status?: UnitStatus; attention?: boolean; cursor?: string } = {},
+  filters: UnitListFilters = {},
 ): Promise<UnitListPage> {
   const query = new URLSearchParams();
+  if (filters.forRent !== undefined)
+    query.set("for_rent", String(filters.forRent));
   if (filters.status !== undefined) query.set("status", filters.status);
   if (filters.attention !== undefined)
     query.set("attention", String(filters.attention));
@@ -718,6 +748,26 @@ async function setFeatures(
   );
 }
 
+async function setForRent(
+  current: UnitResource,
+  forRent: boolean,
+): Promise<UnitResource> {
+  try {
+    return unit(
+      await request(`/units/${encodeURIComponent(current.unit_id)}/for-rent`, {
+        method: "PUT",
+        headers: mutationHeaders(current.version),
+        body: JSON.stringify({ for_rent: forRent }),
+      }),
+    );
+  } catch (error) {
+    // A 409 here means the Unit is in use for renting; a moved version answers 412.
+    if (error instanceof UnitConflictError && error.status === 409)
+      throw new UnitInUseError();
+    throw error;
+  }
+}
+
 async function inventoryItems(
   propertyId: string,
 ): Promise<UnitInventoryItemName[]> {
@@ -756,4 +806,5 @@ export const unitApi: UnitApi = {
   inventoryItems,
   setRentTerms,
   setFeatures,
+  setForRent,
 };

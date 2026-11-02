@@ -348,7 +348,8 @@ export function LeaseForm({
         mode.kind === "renew" ? api.get(mode.leaseId) : Promise.resolve(null),
       ]);
       setSources({
-        units,
+        // V1.1 rework part 1: a Unit not for rent is never offered.
+        units: units.filter((unit) => unit.for_rent !== false),
         customers: customers.sort((left, right) =>
           left.legal_name.localeCompare(right.legal_name),
         ),

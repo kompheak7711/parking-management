@@ -358,6 +358,42 @@ const TEXT = {
     "Say why the price changes.",
     "សូមប្រាប់មូលហេតុនៃការប្តូរតម្លៃ។",
   ],
+  // V1.1 rework part 1 (owner 2026-11-02, mock-up v53): For rent.
+  fr_col: ["For rent", "សម្រាប់ជួល"],
+  fr_yes: ["Yes", "បាទ/ចាស"],
+  fr_no: ["Not for rent", "មិនសម្រាប់ជួល"],
+  fr_help: [
+    "A Unit not for rent (for example the warehouse) is hidden from Home, Vacant lists, Reservations, Leases, billing, meter readings and reports.",
+    "បន្ទប់មិនសម្រាប់ជួល (ឧទាហរណ៍ ឃ្លាំង) ត្រូវបានលាក់ពីទំព័រដើម បញ្ជីទំនេរ ការកក់ កិច្ចសន្យា ការចេញវិក្កយបត្រ ការអានម៉ែត្រ និងរបាយការណ៍។",
+  ],
+  fr_unit_help: [
+    "Not for rent: it is left out of every renting screen. It can be switched to For rent later.",
+    "មិនសម្រាប់ជួល៖ វាមិនបង្ហាញក្នុងអេក្រង់ជួលណាមួយទេ។ អាចប្ដូរទៅ សម្រាប់ជួល នៅពេលក្រោយ។",
+  ],
+  fr_card: ["Units not for rent", "បន្ទប់មិនសម្រាប់ជួល"],
+  fr_card_s: [
+    "Kept out of every renting screen. Switch to For rent later if you want to rent it.",
+    "មិនបង្ហាញក្នុងទំព័រជួលណាមួយ។ ប្តូរទៅ សម្រាប់ជួល ពេលក្រោយ បើចង់ជួល។",
+  ],
+  fr_places: ["{0} places", "{0} កន្លែង"],
+  fr_places_col: ["Places", "កន្លែង"],
+  // new
+  fr_change: ["Change", "ប្តូរ"],
+  // new
+  fr_title: ["Change For rent", "ប្តូរ សម្រាប់ជួល"],
+  // new
+  fr_in_use: [
+    "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+    "បន្ទប់នេះមានការកក់ ឬកិច្ចសន្យា ដូច្នេះវានៅតែសម្រាប់ជួល រហូតដល់ពួកវាបញ្ចប់។",
+  ],
+  // new
+  fr_saved_yes: ["{0} is for rent now.", "{0} ឥឡូវសម្រាប់ជួល។"],
+  // new
+  fr_saved_no: ["{0} is not for rent now.", "{0} ឥឡូវមិនសម្រាប់ជួល។"],
+  // new
+  h_for_rent_yes: ["Set to For rent", "បានប្តូរទៅ សម្រាប់ជួល"],
+  // new
+  h_for_rent_no: ["Set to Not for rent", "បានប្តូរទៅ មិនសម្រាប់ជួល"],
 } as const;
 
 export type UnitTextKey = keyof typeof TEXT;

@@ -208,6 +208,8 @@ class Unit:
     required_service_ids: tuple[UUID, ...] = ()
     # V1.1 (DL-115 (I)): how many of each Unit feature the Unit has, as (item id, count 1 to 9).
     features: tuple[tuple[UUID, int], ...] = ()
+    # V1.1 rework part 1 (owner 2026-11-02): No for a Unit that is never rented (the warehouse).
+    for_rent: bool = True
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -367,12 +369,13 @@ def _optional_int(value: object) -> int | None:
 def unit_from_row(row: tuple[object, ...]) -> Unit:
     """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`, then
     the Rent terms of `app.unit_rent_terms` when the query joined them (V1-061), then the Unit
-    features of `app.unit_feature_counts` (V1.1)."""
+    features of `app.unit_feature_counts` (V1.1), then For rent (V1.1 rework part 1)."""
     details = row[7:15] if len(row) >= 15 else (None,) * 7 + ((),)
     features = details[7]
     rent = row[15] if len(row) >= 17 else None
     required = row[16] if len(row) >= 17 else ()
     counts = row[17] if len(row) >= 18 else ()
+    for_rent = row[18] if len(row) >= 19 else True
     return Unit(
         unit_id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -400,6 +403,7 @@ def unit_from_row(row: tuple[object, ...]) -> Unit:
             for entry in (counts if isinstance(counts, list) else ())
             if isinstance(entry, dict)
         ),
+        for_rent=for_rent is not False,
     )
 
 

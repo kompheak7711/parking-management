@@ -1211,7 +1211,7 @@ describe("Invoices page (V1-058 R5)", () => {
     });
     expect(screen.queryByLabelText("Regular service 3")).toBeNull();
     expect(
-      (screen.getByLabelText("How many, Regular service 1"))
+      screen.getByLabelText<HTMLInputElement>("How many, Regular service 1")
         .value,
     ).toBe("3");
     expect(screen.getByText("$28.50")).toBeTruthy();

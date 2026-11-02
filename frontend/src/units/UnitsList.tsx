@@ -283,3 +283,78 @@ export function UnitsList({
     </>
   );
 }
+
+/** V1.1 rework part 1 (mock-up v53): the Units not for rent, such as the warehouse W01, kept
+ * out of the list above and of every renting screen. */
+export function NotForRentCard({
+  language,
+  data,
+}: {
+  language: Language;
+  data: Pick<UnitsData, "notForRent" | "lists">;
+}) {
+  if (data.notForRent.length === 0) return null;
+  const khmer = language === "km";
+  return (
+    <section aria-labelledby="units-not-for-rent" className="ui-card pad0">
+      <div className="ui-chead pad">
+        <div>
+          <h2 id="units-not-for-rent">{ut(language, "fr_card")}</h2>
+          <p className="ui-small ui-muted">{ut(language, "fr_card_s")}</p>
+        </div>
+      </div>
+      <div className="ui-tablewrap">
+        <table className="ui-table">
+          <thead>
+            <tr>
+              <th scope="col">{ut(language, "col_unit")}</th>
+              <th scope="col">{ut(language, "floor")}</th>
+              <th scope="col">{ut(language, "type")}</th>
+              <th scope="col">{ut(language, "fr_col")}</th>
+              <th scope="col">{ut(language, "fr_places_col")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.notForRent.map((unit) => (
+              <tr
+                className="ui-row"
+                key={unit.unit_id}
+                onClick={() => {
+                  openPageInAddress("units", false, unit.unit_id);
+                }}
+              >
+                <td>
+                  <a
+                    className="ui-no ui-num"
+                    href={hashForPage("units", unit.unit_id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    {unit.unit_number}
+                  </a>
+                </td>
+                <td>{floorText(language, unit.floor)}</td>
+                <td>{typeName(data.lists, unit.unit_type, khmer)}</td>
+                <td>
+                  <Chip tone="neutral">{ut(language, "fr_no")}</Chip>
+                </td>
+                <td className="ui-num">
+                  {ut(
+                    language,
+                    "fr_places",
+                    (unit.features ?? []).reduce(
+                      (total, feature) => total + feature.count,
+                      0,
+                    ),
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="ui-small ui-muted pad">{ut(language, "fr_help")}</p>
+    </section>
+  );
+}

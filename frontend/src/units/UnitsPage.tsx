@@ -15,7 +15,7 @@ import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
 import { NewUnitDialog } from "./UnitDialogs";
 import { UnitDetail } from "./UnitDetail";
-import { UnitsList } from "./UnitsList";
+import { NotForRentCard, UnitsList } from "./UnitsList";
 import { ut } from "./text";
 import { type UtilityPricesApi, UtilityPricesStrip } from "./UtilityPrices";
 import type { RentTermsServicesApi } from "./RentTerms";
@@ -167,6 +167,7 @@ export function UnitsPage({
             : null
         }
       />
+      <NotForRentCard data={data} language={language} />
       {adding && lists !== null && (
         <NewUnitDialog
           api={unitApi}
