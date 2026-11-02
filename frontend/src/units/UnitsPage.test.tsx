@@ -1572,4 +1572,32 @@ describe("For rent (V1.1 rework part 1)", () => {
     ).toBeInTheDocument();
     expect(update).not.toHaveBeenCalled();
   });
+
+  it("TEST-FE-1134 an Occupied Unit keeps For rent locked: no Change on the Unit page and the choice is disabled in Update Unit", async () => {
+    window.location.hash = "#/units/unit-U301";
+    const occupied = unit("U301", { status: "OCCUPIED" });
+    const setForRent = vi.fn();
+    show(unitApi({ get: vi.fn().mockResolvedValue(occupied), setForRent }));
+    const details = (
+      await screen.findByRole("heading", { name: "Unit details" })
+    ).closest("section");
+    if (details === null) throw new Error("no details card");
+    expect(details).toHaveTextContent("For rentYes");
+    expect(
+      within(details).queryByRole("button", { name: "Change" }),
+    ).toBeNull();
+    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    const edit = screen.getByRole("dialog");
+    expect(within(edit).getByLabelText("Yes")).toBeChecked();
+    expect(within(edit).getByLabelText("Yes")).toBeDisabled();
+    expect(within(edit).getByLabelText("Not for rent")).toBeDisabled();
+    expect(edit).toHaveTextContent(
+      "This Unit is Reserved or Occupied, so it stays for rent.",
+    );
+    fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    expect(setForRent).not.toHaveBeenCalled();
+  });
 });

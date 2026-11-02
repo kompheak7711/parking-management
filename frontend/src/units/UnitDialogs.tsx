@@ -18,7 +18,7 @@ import {
   UnitSetupLists,
   UnitStatus,
 } from "../unitClient";
-import { ForRentField, isForRent } from "./ForRent";
+import { ForRentField, isForRent, isInUse } from "./ForRent";
 import {
   RentTermsFields,
   type RentTermsServicesApi,
@@ -435,7 +435,12 @@ export function UpdateUnitDialog({
         missing={missingFloor}
       />
       <DetailFields language={language} lists={lists} unit={unit} />
-      <ForRentField language={language} onChange={setForRent} value={forRent} />
+      <ForRentField
+        language={language}
+        locked={isInUse(unit)}
+        onChange={setForRent}
+        value={forRent}
+      />
       <p className="ui-small ui-muted">{ut(language, "edit_note")}</p>
       <Problem message={problem} />
     </Dialog>

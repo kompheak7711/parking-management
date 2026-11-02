@@ -20,21 +20,32 @@ export function isForRent(unit: Pick<UnitResource, "for_rent">): boolean {
   return unit.for_rent !== false;
 }
 
+/**
+ * Owner 02/11/2026: a Reserved or Occupied Unit is in use, so For rent cannot be changed. The
+ * server also refuses it for an active Reservation or a draft or signed Lease.
+ */
+export function isInUse(unit: Pick<UnitResource, "status">): boolean {
+  return unit.status === "RESERVED" || unit.status === "OCCUPIED";
+}
+
 /** For rent Yes or Not for rent, shared by New Unit, Update Unit and Change. */
 export function ForRentField({
   language,
   value,
   onChange,
   name = "unit-for-rent",
+  locked = false,
 }: {
   language: Language;
   value: boolean;
   onChange: (value: boolean) => void;
   name?: string;
+  /** True for a Unit in use: the choice is shown but cannot be changed. */
+  locked?: boolean;
 }) {
   return (
     <>
-      <fieldset className="ui-radios">
+      <fieldset className="ui-radios" disabled={locked}>
         <legend>{ut(language, "fr_col")}</legend>
         {([true, false] as const).map((choice) => (
           <label className="ui-chk" key={String(choice)}>
@@ -50,7 +61,9 @@ export function ForRentField({
           </label>
         ))}
       </fieldset>
-      <p className="ui-small ui-muted">{ut(language, "fr_help")}</p>
+      <p className="ui-small ui-muted">
+        {ut(language, locked ? "fr_locked" : "fr_help")}
+      </p>
     </>
   );
 }
@@ -109,7 +122,12 @@ export function ForRentDialog({
       submitLabel={ut(language, "save")}
       title={`${ut(language, "fr_title")} · ${unit.unit_number}`}
     >
-      <ForRentField language={language} onChange={setForRent} value={forRent} />
+      <ForRentField
+        language={language}
+        locked={isInUse(unit)}
+        onChange={setForRent}
+        value={forRent}
+      />
       {problem !== null && (
         <p className="ui-error" role="alert">
           <Icon name="alert" small />

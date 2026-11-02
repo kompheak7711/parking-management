@@ -59194,6 +59194,16 @@
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1.1 rework part 1 (DL-116; owner retest 02/11): New Unit and Update Unit ask For rent; Not for rent is saved right after a new Unit, and a Unit in use refuses it before anything is saved."
+    },
+    {
+      "test_id": "TEST-FE-1134",
+      "upstream_ids": [
+        "DL-116"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 rework part 1 (DL-116; owner 02/11): a Reserved or Occupied Unit keeps For rent locked; no Change on the Unit page and the choice is disabled in Update Unit."
     }
   ]
 }

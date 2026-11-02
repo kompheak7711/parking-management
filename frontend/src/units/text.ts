@@ -387,6 +387,11 @@ const TEXT = {
     "បន្ទប់នេះមានការកក់ ឬកិច្ចសន្យា ដូច្នេះវានៅតែសម្រាប់ជួល រហូតដល់ពួកវាបញ្ចប់។",
   ],
   // new
+  fr_locked: [
+    "This Unit is Reserved or Occupied, so it stays for rent. You can change it after it is Vacant.",
+    "បន្ទប់នេះត្រូវបានកក់ ឬមានអ្នកស្នាក់នៅ ដូច្នេះវានៅតែសម្រាប់ជួល។ អាចប្តូរបាន ពេលវាទំនេរ។",
+  ],
+  // new
   fr_new_not_saved: [
     "Unit {0} is saved, but For rent is not. Change it on the Unit page.",
     "បន្ទប់ {0} ត្រូវបានរក្សាទុក ប៉ុន្តែ សម្រាប់ជួល មិនទាន់។ សូមប្តូរវានៅទំព័របន្ទប់។",
