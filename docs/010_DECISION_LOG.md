@@ -2483,3 +2483,18 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-081, DL-075, DL-116, DL-118.
 - **Decision date:** 2026-11-03.
 
+## DL-121 — V1.1 part 4: Products and stock
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the V1.1 rework plan part 4 ("Building › Products, with tabs Products, Stock movements and Locations"; the product fields; "cost is the last Purchase cost"; the price rule rounded up to the next $0.10 with no approval; `product_price_history`; append-only `product_transactions`; "A Location is a Unit plus a place"), the owner's answers of 30/10/2026 (rounds 16 to 18: stock never below 0, a product is never deleted but Discontinued, a Service's cost typed by a Manager or the Owner, Staff never type a Sale, items enter a Unit only by Transfer or Purchase, every change a stock movement with its own SM number, Unit features are places), round 19 of 31/10/2026 (each product has its own mark-up, minimum and maximum, copied from the business rules, and the Owner changes each one) and the owner's message of 03/11/2026 16:31 ("Continue your task"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no money rule changes.
+- **(A) Products.** A product has an SKU made by the app (P0001), names in English and Khmer, a description, a category (Furniture, Appliances, Bedding supplies, Keys and locks: Items; Services: Service), a unit (Piece, Set, Pair, Metre, Kilogram, Litre, Box, Pack, Bottle for an Item; Time, Hour, Bag for a Service), a cost, a mark-up with a minimum and an optional maximum, a price, and for an Item a reorder level and quantity. A product is never deleted; Discontinued stops new Purchases, its stock can still move, and it can be switched back. Only a Manager or the Owner adds or changes a product.
+- **(B) Prices.** An Item's cost is its last Purchase cost; a Service's cost is typed by a Manager or the Owner. The first price, a Service cost and a changed mark-up set the price to cost × (1 + mark-up), rounded up to the next $0.10 (business rule `PRICE_ROUND_UP`). After a Purchase the price is set again only when the real mark-up is below the minimum or above the maximum. No approval. A new product copies the mark-up rules in force (`PRODUCT_MARK_UP`, `PRODUCT_MIN_MARK_UP`, `PRODUCT_MAX_MARK_UP`). Every price is kept in the price history. Only the Owner changes mark-ups by default (the permission "Change product mark-ups").
+- **(C) Stock movements.** Append-only, each with its own SM number: Purchase (Staff, Manager, Owner), Transfer out and in as a pair (Staff, Manager, Owner), Adjustment in and out (Manager or Owner, with a reason). Stock at a place never goes below 0. A Sale comes with the Quotation (part 6). A place that holds stock cannot be removed from its Unit.
+- **(D) Locations.** A Location is a Unit plus one of its Unit features and a number ("W01 · Cabinet 1"). The Locations tab shows the Units not for rent with every place and what it holds, and the Units for rent that hold items. Add place gives the next number of a kind (at most 9).
+- **(E) Not yet.** Stock makes no ledger entries yet; how a Purchase is paid and posted to 1300 Stock is for the General Ledger work. Regular services move into Service products with the Quotation in part 6. Settings › "Service types" is now "Monthly service types".
+- **Built:** migration `20270424_274` (DB-PS-001), API-PS-001, Building › Products.
+- **Links:** DL-118, DL-120.
+- **Decision date:** 2026-11-03.
+
+

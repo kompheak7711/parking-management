@@ -88,6 +88,9 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "payments.read": "Read Payments",
     "payments.record": "Record Payments",
     "payments.reverse": "Reverse or return a Payment",
+    "products.manage": "Add and change products, Service costs and places",
+    "products.prices": "Change product mark-ups",
+    "products.read": "See products, stock and Locations",
     "property.manage": "Update the Property and create and update Units",
     "property.read": "Read the Property",
     "receipts.read": "Read Receipts",
@@ -113,6 +116,9 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "reservations.read": "Read Reservations",
     "service_rates.manage": "Change Service rates",
     "settings.manage": "Change the Settings (given per user by the Owner only)",
+    "stock.adjust": "Adjust stock in or out",
+    "stock.purchase": "Record a Purchase",
+    "stock.transfer": "Move stock between places",
     "supplier_bills.manage": "Add Suppliers and record Supplier bills",
     "supplier_bills.pay": "Pay a Supplier bill and reverse a bill payment",
     "units.read": "Read Units and their history",
@@ -214,11 +220,20 @@ OWNER_ONLY_LEDGER_CAPABILITIES: Final = frozenset(
         "ledger.write_off",
     }
 )
+# Products and stock (V1.1 part 4, migration `20270424_274`, DL-121): Staff see products and
+# record Purchases and transfers; the Owner alone changes mark-ups (round 19).
+STAFF_PRODUCT_CAPABILITIES: Final = frozenset({"products.read", "stock.purchase", "stock.transfer"})
+OWNER_ONLY_PRODUCT_CAPABILITIES: Final = frozenset({"products.prices"})
 STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
-    STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES | STAFF_LEDGER_CAPABILITIES
+    STAFF_L1C_BUNDLE_CAPABILITIES
+    | STAFF_RENT_LETTER_CAPABILITIES
+    | STAFF_LEDGER_CAPABILITIES
+    | STAFF_PRODUCT_CAPABILITIES
 )
-# The default Manager bundle: every bundle capability except the Owner-only ledger rights.
-MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = BUNDLE_CAPABILITIES - OWNER_ONLY_LEDGER_CAPABILITIES
+# The default Manager bundle: every bundle capability except the Owner-only rights.
+MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = (
+    BUNDLE_CAPABILITIES - OWNER_ONLY_LEDGER_CAPABILITIES - OWNER_ONLY_PRODUCT_CAPABILITIES
+)
 
 
 class GrantCursor(Protocol):

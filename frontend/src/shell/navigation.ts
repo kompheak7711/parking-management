@@ -10,6 +10,9 @@ export type PageId =
   | "utilities"
   | "approvals"
   | "units"
+  | "products"
+  | "stock"
+  | "locations"
   | "customers"
   | "reservations"
   | "leases"
@@ -27,6 +30,7 @@ export type IconName =
   | "meter"
   | "check"
   | "units"
+  | "box"
   | "customers"
   | "calendar"
   | "lease"
@@ -88,7 +92,15 @@ export const MENU: readonly MenuGroup[] = [
   {
     // new
     label: ["Building", "អគារ"],
-    items: [{ page: "units", icon: "units" }],
+    items: [
+      { page: "units", icon: "units" },
+      // V1.1 part 4 (DL-121): Building › Products with its three tabs.
+      {
+        page: "products",
+        icon: "box",
+        tabs: ["products", "stock", "locations"],
+      },
+    ],
   },
   {
     label: ["Office", "ការិយាល័យ"],
@@ -108,7 +120,13 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   invoices: ["Invoices", "វិក្កយបត្រ"],
   utilities: ["Utilities", "ទឹកភ្លើង"],
   approvals: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
-  units: ["Parking", "ចំណត"],
+  units: ["Units", "បន្ទប់"],
+  // new
+  products: ["Products", "ផលិតផល"],
+  // new
+  stock: ["Stock movements", "ចលនាស្តុក"],
+  // new
+  locations: ["Locations", "ទីតាំង"],
   customers: ["Customers", "អតិថិជន"],
   reservations: ["Reservations", "ការកក់ទុក"],
   leases: ["Leases", "កិច្ចសន្យាជួល"],
@@ -138,6 +156,10 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   utilities: ["utility.read"],
   approvals: ["financial.approve"],
   units: ["units.read"],
+  // V1.1 part 4 (DL-121): every Products tab reads with products.read.
+  products: ["products.read"],
+  stock: ["products.read"],
+  locations: ["products.read"],
   customers: ["customers.read"],
   reservations: ["reservations.read"],
   leases: ["leases.read"],

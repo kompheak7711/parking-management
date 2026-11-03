@@ -34,6 +34,8 @@ DOCUMENTS = {
     "ADJUSTING_ENTRY": "AJyy000n",
     "FIXED_ASSET": "FAyy000n",
     "MONEY_MOVEMENT": "MVyy000n",
+    # V1.1 part 4 (DL-121): stock movements, migration 20270424_274.
+    "STOCK_MOVEMENT": "SMyy000n",
 }
 SET_RULE = "SELECT app.set_business_rule(%s, %s, %s, %s::date, %s, %s, gen_random_uuid())"
 

@@ -241,6 +241,12 @@ from property_rental.payment_reversal_context_api import (
     create_payment_reversal_context_router,
 )
 from property_rental.physical_move_out import PostgresPhysicalMoveOutService
+from property_rental.products_api import (
+    PostgresProductFlow,
+    ProductFlow,
+    UnavailableProductFlow,
+    create_products_router,
+)
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
     PropertyResourceFlow,
@@ -561,6 +567,7 @@ def create_app(
     configuration_flow: ConfigurationFlow | None = None,
     business_rule_flow: BusinessRuleFlow | None = None,
     business_settings_flow: BusinessSettingsFlow | None = None,
+    product_flow: ProductFlow | None = None,
     ledger_posting_flow: LedgerPostingFlow | None = None,
     ledger_money_flow: LedgerMoneyFlow | None = None,
     ledger_close_flow: LedgerCloseFlow | None = None,
@@ -1215,6 +1222,18 @@ def create_app(
                 PostgresBusinessSettingsFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableBusinessSettingsFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_products_router(
+            actor_resolver,
+            product_flow
+            or (
+                PostgresProductFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableProductFlow()
             ),
             resolved_settings,
         )

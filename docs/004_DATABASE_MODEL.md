@@ -5706,3 +5706,15 @@ Added by DL-120 (migration `20270423_273`, forward-only).
 - `app.admin_assign_role_bundle` refuses a turned-off role (55000), a `settings_access` role for a Staff account without a sign-in code, and the Owner role for anyone but the Owner (42501). `app.admin_remove_role_assignment` refuses to take the Owner role from the Owner (42501).
 - On upgrade, the default roles get a version with Khmer names (the Owner role with `settings_access`), and each active per-user `settings.manage` grant becomes the role "Change business rules" assigned to its holder, with the old grant removed with a reason.
 
+## DB-PS-001 — Products and stock (V1.1 part 4)
+
+Added by DL-121 (migration `20270424_274`, forward-only).
+
+- `app.product_categories` (`code`, `name_en`, `name_kh`, `kind` ITEM or SERVICE, `sort_order`): code and kind never change.
+- `app.products` (`sku` P + 4 digits from `app.product_sku_numbers`, `name_en` unique per Property ignoring case, `name_kh`, `description`, `category_id`, `measure_unit`, `cost_usd_cents`, `mark_up_basis_points`, `min_mark_up_basis_points`, `max_mark_up_basis_points`, `price_usd_cents`, `reorder_level`, `reorder_quantity`, `discontinued`, `version`, created and updated at and by): never deleted; every update is the next version.
+- `app.product_price_history` (`price_usd_cents`, `cost_usd_cents`, `mark_up_basis_points`, `cause` PURCHASE, SERVICE_COST or MARK_UP, created at and by) and `app.product_transactions` (`movement_number`, `kind` PURCHASE, ADJUSTMENT_IN, ADJUSTMENT_OUT, TRANSFER_OUT, TRANSFER_IN, `quantity` above 0, `unit_id`, `place_item_id`, `place_number` 1 to 9, `unit_cost_usd_cents` only on a Purchase, `supplier`, `receipt_reference`, `reason` needed on an Adjustment, `business_date`, `recorded_by`, `correlation_id`): append-only, no truncate.
+- Functions (runtime; each checks the actor's right on the Property and writes an audit event): `app.create_product`, `app.change_product` (expected version), `app.set_product_mark_ups` (`products.prices`), `app.set_service_cost`, `app.record_stock_movement` (locks the product, takes an SM number, refuses stock below 0 with 55000), `app.add_unit_place`; helpers `app.stock_at`, `app.product_rule`, `app.product_price_for`, `app.real_mark_up`. A stale version is 40001, a missing right 42501.
+- `app.unit_features` keeps a place that holds stock (55000). `number_rules` gets STOCK_MOVEMENT (SMyy000n).
+- New rights `products.read`, `products.manage`, `products.prices`, `stock.purchase`, `stock.transfer`, `stock.adjust` in the permissions Open Products, stock and Locations; Add and change products, Service costs and places; Change product mark-ups; Record purchases and move stock; Adjust stock in or out (group Property). The default roles get a new version: the Owner all, the Manager all but `products.prices`, Staff `products.read`, `stock.purchase` and `stock.transfer`.
+
+

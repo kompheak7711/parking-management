@@ -812,6 +812,8 @@ class PostgresUnitResourceFlow:
             psycopg.errors.CheckViolation,
             psycopg.errors.InvalidParameterValue,
             psycopg.errors.ForeignKeyViolation,
+            # V1.1 part 4 (DL-121): a place that holds stock cannot be removed.
+            psycopg.errors.ObjectNotInPrerequisiteState,
         ) as exc:
             raise UnitResourceInvalid("Unit features are invalid") from exc
         except psycopg.Error as exc:

@@ -724,7 +724,8 @@ const TEXT = {
     "The Service names and types could not be read just now, so they cannot be changed. The rates still show.",
     "មិនអាចអានឈ្មោះ និងប្រភេទសេវាបានទេឥឡូវនេះ ដូច្នេះមិនអាចប្តូរបានទេ។ អត្រានៅតែបង្ហាញ។",
   ],
-  st_title: ["Service types", "ប្រភេទសេវា"],
+  // V1.1 part 4 (DL-121): renamed, as Regular services become Service products.
+  st_title: ["Monthly service types", "ប្រភេទសេវាប្រចាំខែ"],
   actions: ["Actions", "សកម្មភាព"],
   e_first_now: [
     "Enter the first day of this month or a later month, like 01/12/2026.",
@@ -1013,6 +1014,8 @@ const TEXT = {
   nr_FIXED_ASSET: ["Fixed asset", "ទ្រព្យសកម្មរយៈពេលវែង"],
   // new
   nr_MONEY_MOVEMENT: ["Money move", "ការផ្ទេរប្រាក់"],
+  // new
+  nr_STOCK_MOVEMENT: ["Stock movement", "ចលនាស្តុក"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

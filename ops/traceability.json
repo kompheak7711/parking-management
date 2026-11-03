@@ -60519,7 +60519,7 @@
       "notes": "V1.1 step 2b: Extend allows at most today's extension rule."
     },
     {
-      "test_id": "test_migration_273_is_the_head",
+      "test_id": "test_migration_273_follows_the_reservation_rules",
       "upstream_ids": [
         "DL-120",
         "DB-RP-001"
@@ -60527,7 +60527,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_roles_permissions_migration.py",
       "status": "implemented",
-      "notes": "V1.1 part 3: Migration 20270423_273 follows 272, is the head and is forward-only."
+      "notes": "V1.1 part 3: Migration 20270423_273 follows 272 and is forward-only."
     },
     {
       "test_id": "test_every_capability_a_person_holds_is_in_exactly_one_permission",
@@ -60629,6 +60629,183 @@
       "test_path": "frontend/src/settings/UsersTab.test.tsx",
       "status": "implemented",
       "notes": "V1.1 part 3: the Owner keeps the Owner role locked in their roles; a server refusal stays in the role form in English; Khmer role names show."
+    },
+    {
+      "test_id": "test_migration_274_is_the_head",
+      "upstream_ids": [
+        "DL-121",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: Migration 20270424_274 follows 273 and is forward-only."
+    },
+    {
+      "test_id": "test_the_default_roles_get_the_product_rights",
+      "upstream_ids": [
+        "DL-121",
+        "DB-PS-001",
+        "DL-120"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: the Owner gets every product right, the Manager all but product mark-ups, Staff see products, record Purchases and move stock."
+    },
+    {
+      "test_id": "test_the_price_follows_the_cost_and_the_mark_up",
+      "upstream_ids": [
+        "DL-121",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: the first Purchase sets the price, a Purchase sets it again only outside the minimum and maximum, a changed mark-up sets it at once, rounded up to $0.10; every price is kept."
+    },
+    {
+      "test_id": "test_stock_never_goes_below_zero_and_each_movement_needs_its_right",
+      "upstream_ids": [
+        "DL-121",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: stock at a place never goes below 0; Purchase and Transfer need their rights, an Adjustment needs a Manager or the Owner and a reason; a discontinued product is not bought again."
+    },
+    {
+      "test_id": "test_movements_are_append_only_and_a_place_with_stock_stays",
+      "upstream_ids": [
+        "DL-121",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: stock movements and prices are never changed or removed, a product is never deleted, a place that holds stock stays, and Add place gives the next number."
+    },
+    {
+      "test_id": "test_the_product_flow_reads_and_writes_through_the_functions",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: the Postgres flow of Building > Products reads products, prices, movements and Locations and writes through the database functions with their refusals."
+    },
+    {
+      "test_id": "test_reading_products_stock_and_locations_needs_products_read",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: every read needs products.read for the Property and is private, no-store."
+    },
+    {
+      "test_id": "test_adding_and_changing_a_product_needs_products_manage_and_if_match",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: adding and changing a product needs products.manage and the browser checks; a change needs If-Match (428, 412)."
+    },
+    {
+      "test_id": "test_mark_ups_need_products_prices",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: mark-ups need products.prices, the Owner's by default."
+    },
+    {
+      "test_id": "test_each_kind_of_stock_movement_needs_its_own_right",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: a Purchase needs stock.purchase, a Transfer stock.transfer and an Adjustment stock.adjust; not enough stock is 409."
+    },
+    {
+      "test_id": "test_adding_a_place_needs_products_manage",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 4: Add place needs products.manage and answers the new number."
+    },
+    {
+      "test_id": "TEST-FE-1143",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/ProductsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 4: the Products tab shows the price rules, stock, cost, mark-up, price, Low stock and Discontinued, and only the buttons the person's rights allow."
+    },
+    {
+      "test_id": "TEST-FE-1144",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/ProductsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 4: Add product needs a name and a Service's cost; Edit marks Discontinued at the product's version; the Owner's mark-up shows the new price within the minimum and maximum."
+    },
+    {
+      "test_id": "TEST-FE-1145",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/ProductsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 4: New purchase, Move stock (only what a place holds) and Adjust stock (Manager or Owner, with a reason); a server refusal stays in the form."
+    },
+    {
+      "test_id": "TEST-FE-1146",
+      "upstream_ids": [
+        "DL-121",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/ProductsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 4: Locations shows the warehouse places with what each holds, Units for rent only when they hold items, and Add place gives the next number."
+    },
+    {
+      "test_id": "TEST-FE-1147",
+      "upstream_ids": [
+        "DL-121"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/products/ProductsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 4: the price helper rounds up to the step and quantities follow the unit."
     }
   ]
 }

@@ -145,14 +145,14 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     # `.cash_count`), and the 4 rights of the close routes (step 4: `ledger.adjustments.prepare`,
     # `.adjustments.approve`, `.opening_balances`, `.close`), and the 4 rights of the step 4
     # part 2 routes (`ledger.fixed_assets`, `.reconcile`, `.budgets.prepare`, `.budgets.approve`),
-    # and `ledger.write_off` of part 3.
-    assert len(found - NON_CAPABILITY_LABELS) == 90
+    # and `ledger.write_off` of part 3, and the 6 product and stock rights (V1.1 part 4, DL-121).
+    assert len(found - NON_CAPABILITY_LABELS) == 96
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
-    assert len(CAPABILITY_CATALOG) == 100
+    assert len(CAPABILITY_CATALOG) == 106
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -188,7 +188,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 97
+    assert len(BUNDLE_CAPABILITIES) == 103
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -287,6 +287,10 @@ STAFF_APPROVED = frozenset(
         "refunds.create",
         # General Ledger (owner 2026-11-03, phase 6 plan L1): every role sends Expense requests.
         "expenses.request",
+        # V1.1 part 4 (DL-121): Staff see products, record Purchases and move stock.
+        "products.read",
+        "stock.purchase",
+        "stock.transfer",
     }
 )
 # What Staff never get (DL-081, Q-150 (a) with the owner's note, DL-080 item 2, Q-161 (a)); the
@@ -325,6 +329,11 @@ STAFF_NEVER = frozenset(
         "leases.terminate",
         "billing.generate",
         "property.manage",
+        # V1.1 part 4 (DL-121): only a Manager or the Owner adds products, types a Service's
+        # cost or records an Adjustment; only the Owner changes mark-ups.
+        "products.manage",
+        "products.prices",
+        "stock.adjust",
     }
 )
 # Owner answer (a) to Q-2026-10-21-164: none of these nine is in the Staff bundle.
@@ -374,7 +383,7 @@ RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
 
 def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
     assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
-    assert len(STAFF_APPROVED) == 34
+    assert len(STAFF_APPROVED) == 37
     assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
     groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, STAFF_NOT_LEDGER, RATE_CAPABILITIES)
     # Every bundle capability is in exactly one group, so a new bundle capability must be

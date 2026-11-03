@@ -28,7 +28,7 @@ from test_move_in_migration import runtime_database_url
 from test_role_bundle_migration import add_account, the_property
 from test_settings_access_migration import add_sign_in_code
 
-HEAD = "20270423_273"
+REVISION = "20270423_273"
 GRANTS = "SELECT capability_id FROM app.actor_capability_grants(%s)"
 
 
@@ -76,10 +76,9 @@ def grants(database: RolesDatabase, actor: uuid.UUID) -> set[str]:
         return {str(row[0]) for row in connection.execute(GRANTS, (actor,)).fetchall()}
 
 
-def test_migration_273_is_the_head() -> None:
+def test_migration_273_follows_the_reservation_rules() -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == [HEAD]
-    found = scripts.get_revision(HEAD)
+    found = scripts.get_revision(REVISION)
     assert found is not None and found.down_revision == "20270422_272"
     with pytest.raises(RuntimeError, match="forward-only"):
         found.module.downgrade()

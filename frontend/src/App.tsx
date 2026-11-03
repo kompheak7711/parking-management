@@ -144,6 +144,8 @@ import { CustomersPage } from "./customers/CustomersPage";
 import { ReservationsPage } from "./reservations/ReservationsPage";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
+import { ProductsPage } from "./products/ProductsPage";
+import type { ProductsApi } from "./products/productsClient";
 import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
 import { pageAllowed, type PageId } from "./shell/navigation";
 
@@ -155,6 +157,8 @@ export interface AppProps {
   administrationApi?: AccessAdministrationApi;
   /** V1.1 part 3: the roles and permissions in Settings › Users and sign-in. */
   rolesApi?: RolesApi;
+  /** V1.1 part 4: Building › Products; the real server when not given. */
+  productsApi?: ProductsApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
   businessSettingsApi?: BusinessSettingsApi;
@@ -630,6 +634,7 @@ export function App({
   api,
   administrationApi = accessAdministrationApi,
   rolesApi = accessRolesApi,
+  productsApi,
   propertyApi = propertyConfigurationApi,
   unitApi,
   customerApi,
@@ -1748,6 +1753,44 @@ export function App({
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           utilityApi={utilityApi}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="products"
+        hidden={!shown("products")}
+      >
+        <ProductsPage
+          active={shown("products")}
+          api={productsApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="products"
+        />
+      </div>
+      <div className="shell-page" data-page="stock" hidden={!shown("stock")}>
+        <ProductsPage
+          active={shown("stock")}
+          api={productsApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="stock"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="locations"
+        hidden={!shown("locations")}
+      >
+        <ProductsPage
+          active={shown("locations")}
+          api={productsApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="locations"
         />
       </div>
       <div
