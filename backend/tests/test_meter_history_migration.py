@@ -94,4 +94,5 @@ def test_the_meter_history_migration_is_the_head_and_is_forward_only() -> None:
     revision = script.get_revision("20270404_254")
     assert revision is not None
     assert revision.down_revision == "20270403_253"
-    assert script.get_current_head() == "20270408_258"
+    successor = script.get_revision("20270405_255")
+    assert successor is not None and successor.down_revision == "20270404_254"

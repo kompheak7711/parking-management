@@ -5563,3 +5563,115 @@ This Database Model is ready for Owner review when:
 8. the completed `003_PRODUCT_REQUIREMENTS.md` conformance audit remains conflict-free, or any later change is reported rather than guessed.
 
 ---
+
+## DB-GL-001 — General Ledger (V1.1 part 8)
+
+Added by the owner's approval of the ledger database plan on 2026-11-02 21:08
+(https://claude.ai/artifact/5nttjeU5y5SaNSHU1etyuK), migrations `20270409_259` to
+`20270412_262`. Every relation is new and named `app.gl_*`; no V1 table changes. Money is whole
+cents in `bigint` (Q1).
+
+- Core (`20270409_259`): `gl_accounts` (code, English and Khmer names, type, control source, tax
+  lock, cash kind, balance-sheet section, cash-flow group; never deleted; code and type fixed
+  once used), `gl_method_accounts`, `gl_suppliers`, `gl_fiscal_years`, `gl_periods` (months 1 to
+  12 and a one-day period 13 on 31 December for the year-end close only), `gl_journal_entries`
+  and `gl_journal_lines` (append-only; a deferred constraint trigger checks at commit that every
+  entry has two or more one-sided lines and debits equal credits, and that a reversal mirrors its
+  entry; no entry in a closed period; control accounts take only app-record entries; no line on a
+  tax-locked, turned-off or heading account). Internal definer functions without grants:
+  `gl_post_entry` (idempotent by `posting_key`), `gl_reverse_entry`, `gl_close_period` (every
+  check true; months close in order and never reopen), `gl_close_year` (moves income, cost and
+  expense balances to 3900 in period 13), `gl_open_fiscal_year`.
+- Records (`20270410_260`): Expense requests and their events, expenses, supplier bills and
+  payments, money moves, Owner money, petty cash top-ups, write-offs (a confirmed V1 charge
+  reduction marked as a write-off, Q5), fixed assets, adjusting entries, opening balances,
+  budgets, bank reconciliations, cash counts, riel revaluations and close runs. Status changes
+  follow fixed steps; other fields change only with a step; nothing is deleted.
+- Reports (`20270411_261`): `gl_entry_lines_v`, `gl_account_balances`, `gl_trial_balance`,
+  `gl_ledger_detail`, `gl_profit_and_loss` (without the closing entry), `gl_balance_sheet` (with
+  the profit not closed yet, so assets = liabilities + equity) and `gl_cash_flow` (direct).
+- Seed (`20270412_262`): `gl_chart_template` (the 59-account starter chart) and
+  `gl_start_ledger(property, year, actor)`; the migration starts fiscal year 2027 for the
+  existing Property (Q4).
+
+The runtime and financial roles only read. The `ledger.*` rights, the checked wrappers and the
+posting job come in the coding phase. Each downgrade removes only its own objects and refuses
+once the ledger holds any entry or record (Q2).
+
+## DB-BR-001 — Business rules (V1.1, General Ledger phase 6 step 1)
+
+Owner 31/10/2026 (shape agreed with the V1.1 rework thread) and 03/11/2026 (phase 6 plan L2). Migration `20270413_263`.
+
+- `app.business_rule_names`: `id`, `code` (stable upper snake case; the program reads a rule by it), `name_en`, `name_kh`, `value_unit` (`USD_CENTS`, `PERCENT` in hundredths of a percent, `DAYS`, `DAY_OF_MONTH`, `COUNT`, `MINUTES`, `HOURS`, `METRES`, `YES_NO` (1 Yes, 0 No), `TIME_OF_DAY` (minutes after midnight)), `area` (Billing, Reservations, Prices, Quotations, Riel rate, Ledger, Staff, Attendance, Other) and `used_by_app` (false = "Not used yet"). A rule is never removed and keeps its code, unit and area.
+- `app.business_rules`: `id`, `rule_name_id`, `value` (whole number, 0 or more), `effective_from`, `reason`, `created_at`, `created_by`. Append-only; one row per rule and date; the rule in force on a date is the latest row on or before it; every row after a rule's first has a reason.
+- `app.business_rule_value(code, on)` (runtime and money logins) reads the value in force. `app.set_business_rule` (a change from today or later, with a reason) and `app.add_business_rule_name` are the only writers; each writes one audit event (`settings.business_rule.changed` or `.added`, entity `business_rule`).
+- Seeded ledger rules, in force from 01/01/2026: `EXPENSE_LIMIT` $100, `ASSET_LIMIT` $500, `PETTY_CASH` $200, `EXP_REPORT_DAYS` 3, `BUDGET_PCT` 10% (1000), `BUDGET_MIN` $50, `SUPPLIER_BILL_DAYS` 30.
+
+Ledger rights (migration `20270414_264`, forward-only): 21 bundle rights. The Owner bundle holds all of them. The Manager bundle holds all but the Owner-only ones (`expenses.approve_over_limit`, `ledger.accounts.manage`, `ledger.adjustments.*`, `ledger.budgets.*`, `ledger.close`, `ledger.fixed_assets`, `ledger.opening_balances`, `ledger.owner_money`, `ledger.reconcile`, `ledger.write_off`): a Manager approves Expenses up to the Expense limit and tops up petty cash (owner 03/11/2026 07:03). Staff get `expenses.request` only. This is the first difference between the default Owner and Manager bundles.
+
+## DB-GL-002 — Automatic posting from the app's money records (General Ledger phase 6 step 2)
+
+Owner plan of 03/11/2026 (L3, L4) and the automatic posting table of PRD v2 (PR-GL-020 to PR-GL-031). Migration `20270415_265`. No V1 table changes.
+
+- `app.gl_app_record_events(property, from, until)` builds one candidate entry per money record, each with a posting key so it posts once: Invoice issued (`invoice:<id>:issue`: DR 1100; CR 4010 Rent, or 2050 Rent billed in advance when the Rent month starts after the billing month, 4020 Services, 4030 Electricity, 4040 Water, 4060 cleaning, 4070 damage, 4080 other), the first day of an advance Rent month (`invoice_line:<id>:rent_to_income`, DR 2050, CR 4010), Invoice voided, Invoice adjustment and its reversal, late-payment charge (DR 1110, CR 4050) and its corrections, Payment and its reversal (DR the method's cash or bank account, riel cash to 1011; CR 2210 Money not used yet), allocation, Deposit receipt, Deposit applied, Deposit kept (CR 4090), Customer Credit recognized and applied, each with its reversal, and Refund (DR 2100, 2110, 2200 or 2210; CR the Refund method's account). A Refund correction always waits for an adjusting entry from the Owner.
+- `app.gl_rent_account(rent_month, on)` gives 2050 or 4010.
+- `app.gl_post_app_records(property, actor, until, limit)` (money login only) posts what is not posted yet, from the ledger's first day (L3). A record dated in a closed month posts on the first day of the first open month with a note (L4). A record that cannot post is kept in `app.gl_posting_problems` ("Needs check", runtime may read) with the reason and is tried again on every pass; it leaves the list when it posts. Records already in the list go last, so they never hold back new ones.
+- `app.gl_set_method_account(property, payment_method, refund_method, account, from, actor, correlation)` (runtime) sets the cash or bank account of one Payment Method or Refund method from a date, with the audit event `ledger.method_account.set`.
+- The billing worker runs the posting after the day's billing and late-payment charges, under its lock (`property_rental.ledger_posting_job`). The downgrade is refused once an automatic entry exists.
+
+## DB-GL-003 — Money records: expenses, supplier bills, petty cash, moves, owner money, cash counts (General Ledger phase 6 step 3)
+
+Owner decisions: the expense flow of 02/11/2026, D4, the round 21 and 22 screens, and the rights table of 03/11/2026 (06:56 plan, 07:03 card). PRD v2 PR-GL-030 to PR-GL-034, PR-GL-039, PR-GL-056 and PR-GL-060 to PR-GL-065. Migration `20270416_266` changes only ledger tables of migration `20270410_260`, which hold no rows before it.
+
+- `app.gl_expense_requests.paid_how`: `ADVANCE`, `CASH` (from `paid_from_account_id`; petty cash for a report), `PAY_LATER` (a supplier bill) or `OWN_MONEY` (an urgent report paid by the staff). A request is paid by advance, cash or bank, or later; a report by own money or petty cash.
+- `app.gl_cash_counts.counted_riel` and `exchange_rate_record_id`: riel cash is counted in riel and turned into USD cents at the record's system rate. One count per cash account each month.
+- `app.gl_staff_paybacks` (append-only): `id`, `property_id`, `expense_request_id`, `paid_on`, `from_account_id`, `amount_cents`, `entry_id`, `created_at`, `created_by`.
+- Writers for the runtime login, each checking the actor's right for the Property through `app.actor_capability_grants`, writing the record, its journal entry and one audit event in one step: `gl_add_supplier`, `gl_submit_expense_request`, `gl_decide_expense_request`, `gl_give_advance`, `gl_record_request_bill`, `gl_pay_back_staff`, `gl_void_expense_request`, `gl_record_expense`, `gl_void_expense`, `gl_pay_supplier_bill`, `gl_reverse_bill_payment`, `gl_move_money`, `gl_record_owner_money`, `gl_top_up_petty_cash`, `gl_count_cash`.
+- Rules in the functions: nobody approves their own request; above `EXPENSE_LIMIT` only `expenses.approve_over_limit` (the Owner) approves; the Owner's own request is approved at once with the note "Owner's own spending"; an approved report posts at once (DR the account, CR 1030 or 2310). An advance posts DR 1400; its bill returns the change to the cash it came from or owes the staff the extra on 2310. Without an advance the bill may not pass the approved amount. A pay-later bill is due `SUPPLIER_BILL_DAYS` after the bill date unless it shows its own. A money move is between two cash or bank accounts (petty cash has its own top-up); a riel change difference goes to 4100. Owner money in is CR 3000, out DR 3100. Petty cash is topped up from 1010 or 1020 to `PETTY_CASH` at most. A cash count difference needs a reason and posts to 6180. Every record is dated today or earlier in an open month. A void or reversal needs a reason and posts the mirrored entry; an expense with a standing bill payment is not voided.
+- The downgrade is refused once any of these records exists.
+
+## DB-GL-004 — Adjusting entries, opening balances, Books check, month and year close (General Ledger phase 6 step 4, part 1)
+
+Owner decisions: the round 22 screens of DESIGN.md (Adjusting entries, Opening balances, Month-end close, Year-end close), gap G2 (the Books check), plan L3 (03/11/2026 06:56) and the asset rules of 03/11/2026 10:26. PRD v2 PR-GL-037, PR-GL-043, PR-GL-050 and PR-GL-051. Migration `20270417_267` changes only ledger tables of migration `20270410_260`, which hold no rows before it.
+
+- `app.gl_adjusting_entries.own_entry_note`: set when the preparer may also approve (the Owner); such an entry posts at once. `gl_aj_not_own` now allows the decider to be the preparer only for a void, or for a posted entry with that note.
+- Business rules `ASSET_LIFE_1510` (Building, 20), `ASSET_LIFE_1520` (Furniture and appliances in Units, 5) and `ASSET_LIFE_1530` (Office equipment, 3), area `LEDGER`, unit `COUNT` (years), from 01/01/2026. The Owner (Settings access) changes them on the Business rules page; Land is never depreciated.
+- `app.gl_check_line` lets an `OPENING` entry carry control accounts (the app works them out; nobody types them).
+- Writers for the runtime login, each checking the actor's right for the Property: `gl_prepare_adjusting_entry`, `gl_decide_adjusting_entry`, `gl_void_adjusting_entry` (adjusting entries: a reason, 2 to 500 balanced lines, never a control or tax-locked account, nobody approves their own, a refusal needs a note, only a waiting entry is voided), `gl_begin_ledger` (the ledger starts on 1 January of a year; refused once started or when an earlier year is open), `gl_set_opening_lines` (the typed lines, replaced whole while DRAFT), `gl_post_opening_balances` (refused while Needs check has a row; must balance, else the difference is shown so the Owner puts it on an equity account such as 3000; posts an `OPENING` entry on the start date), `gl_close_month` and `gl_close_fiscal_year`.
+- Readers: `gl_opening_preview` (typed lines plus each control account as the app's list holds it today less what the app's records moved since the start), `gl_books_check` (eight lines: Customer debt 1100 + 1110, Rent billed in advance 2050, Security Deposits 2100, Pet Deposits 2110, Customer Credit 2200, money not used yet 2210, every record posted, every entry balanced) and `gl_month_close_checks` (Books check with the opening balances posted, nothing waiting, no late advance, bank matched, cash counted, depreciation done, riel valued, payroll approved; each with a count of open items).
+- Month-end close: only `ledger.close`; a month closes after its last day and in order; every try is kept in `gl_close_runs`; a try with a red check answers `closed = false` and changes nothing else. Year-end close opens the next year and moves the year's profit to 3900 in period 13.
+- `gl_keep_years_open` (money login only): the billing worker's posting job opens the year that holds today before each pass, once the ledger has started.
+- The downgrade is refused once any adjusting entry, opening balance or close run exists, or once an asset life rule was changed.
+
+## DB-GL-005 — Fixed assets and depreciation, riel at month end, bank matching, budgets (General Ledger phase 6 step 4, part 2)
+
+Owner decisions: the round 22 screens of DESIGN.md (Fixed assets, Bank matching, Budgets, Month-end close), gap G7 (riel at month end), PRD v2 PR-GL-036, PR-GL-048, PR-GL-054 and PR-GL-055, and the owner's answers of 03/11/2026 10:26 (equipment years as Business rules; Land never depreciated; the value ends at $0 with the last month taking the cents left; riel at the app's system rate; the Owner or an allowed user may change one item's years, the value left spread over the months left). Migration `20270418_268` changes only ledger tables of migration `20270410_260`, which hold no rows before it.
+
+- `app.gl_fixed_assets`: `useful_life_years` may be empty (Land); `expense_id` (unique) links the item to the Expense that bought it; status `VOID` for an item whose Expense was voided before any depreciation.
+- `app.gl_fixed_asset_life_changes` (append-only): one item's new years, the month it starts, the value left then, the months left and the reason, with who and when.
+- `app.gl_budgets`: `decision_note` (why it was sent back) and `own_budget_note` (the Owner's own budget, approved at once); one budget waits and one is approved for a year at a time.
+- Spending: `gl_spend_account` now takes 1200 Paid in advance and the equipment accounts (non-current, not 1590). A purchase on an equipment account under the Asset limit is refused (recorded or requested). A posted equipment Expense adds its item with an `FA` number, its years from `ASSET_LIFE_<code>` (none for 1500 Land), depreciation from the first day of the next month. `gl_rule_on` reads a Business rule on a day and uses the rule's first value for a day before it was first set; a missing rule refuses with words.
+- Depreciation: `gl_depreciation_due` (straight-line: the same amount each month, the last month takes what is left, never below $0; after a years change the value left is spread over the months left), `gl_post_depreciation` (one entry a month, posting key `depreciation:<month>`, DR 6140 and CR 1590 with the item on each line; an item late into the register catches up in the next entry), `gl_asset_values` (cost, years, monthly amount, depreciation so far, value now), `gl_change_asset_life` (`ledger.fixed_assets`; 1 to 100 years and a reason; refused for Land and when the item has already been used for more months than the new life).
+- Riel: `gl_value_riel` values each riel cash account at month end from the month's riel count plus the riel moved after it, at the system rate in force at the month's last moment (Property time); the difference posts to 4100 (`fx_revaluation:<account>:<month>`), and a row in `gl_fx_revaluations` is kept even when there is no difference.
+- Month-end work: `gl_month_end_work` (money login only) runs each open month that has ended, oldest first, from the billing worker's posting job after its batches; a month without its riel count is left for the next pass. `gl_run_month_end` (`ledger.close`) does one month from Month-end close and refuses with words what is missing.
+- Bank: `gl_bank_lines` (a bank account's lines up to a month's end not yet on a statement) and `gl_match_bank` (`ledger.reconcile`; earlier months first; the statement balance must equal every marked line up to the month, else the difference is named; a line is on one statement only).
+- Budgets: `gl_prepare_budget` (`ledger.budgets.prepare`; 1 to 5000 lines of an income, cost or expense account, a month 1 to 12 and an amount of 0 or more; the next version; one waits at a time; an approver's own budget needs a note and is approved at once) and `gl_decide_budget` (`ledger.budgets.approve`; nobody approves their own; sending back needs a reason; the approved budget before it becomes replaced and keeps its approver).
+- `gl_month_close_checks`: "Depreciation done" is red only when an item has depreciation due for the month and the month's entry is missing.
+- The downgrade is refused once any fixed asset, budget, bank match or riel valuation exists.
+
+## DB-GL-006 — Write-off of Customer debt and Refund correction posting (General Ledger phase 6 step 4, part 3)
+
+Owner decisions: DESIGN.md gap G6 (round 25) and the approved database plan (phase 5, Q5). Migration `20270419_269` adds one function and changes the automatic posting of migration `20270415_265`; it adds no table (`app.gl_write_offs` is from migration `20270410_260`).
+
+- `gl_write_off` (`ledger.write_off`, Owner only): a reason of 1 to 500 characters, the closed Final Settlement and one target, an Invoice line (`invoice_id`, `invoice_line_id`, `amount_usd_cents`) or a Late-payment charge (`late_payment_charge_id`, `amount_usd_cents`). It records the V1 charge reduction draft and confirms it in one step (the V1 checks stay: a closed Settlement, its issued obligation, at most the unpaid rest), then writes the `gl_write_offs` row and a "Ledger actions" audit line, in one transaction.
+- Automatic posting: an Invoice adjustment or a Late-payment charge correction linked to a written-off correction posts against 6160 instead of income (1100 or 1110 credit), described "written off". A Rent line billed in advance still moves in full from 2050 to income in its month.
+- Refund corrections post by themselves (owner's cards of 03/11/2026 13:05 and 13:10) instead of waiting in "Needs check" for an adjusting entry: money given back (`VALUE_CORRECTION`) debits the Refund method's ledger account and credits the Refund's source (2100 or 2110 Deposit, 2200 Customer Credit, 2210 money not used yet); its reversal (`CORRECTION_REVERSAL`) does the opposite; a Refund recovered by a charge (`RECOVERED_BY_CHARGE`) credits the source against 4080, because the Miscellaneous recovery Invoice itself posts 1100 against 4080. Money given back waits in "Needs check" only while the Refund method has no ledger account.
+- The downgrade is refused once any write-off exists; it puts back the "Needs check" rule for Refund corrections.
+
+## DB-GL-007 — Ledger report reads (General Ledger phase 6 step 5)
+
+Owner decisions: DESIGN.md round 22 (Financial statements: Customer debt aging, Budget vs actual) and gap G1 (round 25). Migration `20270420_270` adds two read-only functions; it adds no table and writes nothing.
+
+- `gl_customer_aging(property, actor)` (`ledger.read`, SECURITY DEFINER): every unpaid Invoice line and Late-payment charge from the Customer balances the Books check uses, with the Customer's name, the Unit, the Invoice number and the day it fell due (an Invoice's Due Date; a Late-payment charge's payable day in Property time). The runtime login cannot read those balances by itself.
+- `gl_budget_warning(property, actor, day)` (`ledger.read`): the two Budget warning Business rules on a day, percent off in hundredths (`BUDGET_PCT`) and smallest amount off in cents (`BUDGET_MIN`).
+- The other reports read the phase 5 report functions of migration `20270411_261` and the ledger tables with the runtime login, after the route has checked `ledger.read`.

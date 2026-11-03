@@ -58721,7 +58721,7 @@
       "test_level": "migration",
       "test_path": "backend/tests/test_meter_history_migration.py",
       "status": "implemented",
-      "notes": "V1-061 Fix 4 (DL-114): migration 20270404_254 follows 20270403_253, is the head and is forward-only."
+      "notes": "V1-061 Fix 4 (DL-114): migration 20270404_254 follows 20270403_253, was the head before V1.1, and is forward-only."
     },
     {
       "test_id": "TEST-FE-1117",
@@ -59204,6 +59204,1042 @@
       "test_path": "frontend/src/units/UnitsPage.test.tsx",
       "status": "implemented",
       "notes": "V1.1 rework part 1 (DL-116; owner 02/11): a Reserved or Occupied Unit keeps For rent locked; no Change on the Unit page and the choice is disabled in Update Unit."
+    },
+    {
+      "test_id": "test_the_starter_chart_and_fiscal_year_2027_are_seeded_once",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-001",
+        "PR-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): The starter chart (59 accounts, owner names, 2400 and 6040 tax-locked, eight control accounts, one retained-earnings account) and fiscal year 2027 with 12 months and period 13 are seeded once; a second start adds nothing."
+    },
+    {
+      "test_id": "test_every_entry_balances_with_two_or_more_one_sided_lines",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-010",
+        "PR-GL-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): The posting function and the commit-time constraint trigger refuse an unbalanced entry, a one-line entry and a line with both sides; entry numbers follow JEyy0001."
+    },
+    {
+      "test_id": "test_posted_entries_never_change_and_a_key_posts_once",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-012",
+        "PR-GL-013"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): A posting key posts once; entries, lines, accounts and periods are never updated, deleted or truncated; an account code is fixed once used; a name can change."
+    },
+    {
+      "test_id": "test_a_reversal_mirrors_its_entry_once",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): A reversal mirrors every line of its entry, is shown as reversed, happens once, cannot itself be reversed, and a reversal that does not mirror is refused at commit."
+    },
+    {
+      "test_id": "test_control_tax_and_turned_off_accounts_are_guarded",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-003",
+        "PR-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): Control accounts take only app-record entries; tax-locked and turned-off accounts take no line; an adjusting entry needs an approver; the year-end closing entry names its year and waits for every month to close."
+    },
+    {
+      "test_id": "test_months_close_in_order_with_green_checks_and_never_reopen",
+      "upstream_ids": [
+        "DB-GL-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): A month closes only with every check true and after the month before; nothing posts into a closed month; a closed month never reopens; the close is in History."
+    },
+    {
+      "test_id": "test_statements_balance_and_the_year_end_close_moves_profit_to_3900",
+      "upstream_ids": [
+        "DB-GL-001",
+        "PR-GL-051"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): Trial balance debits equal credits; assets equal liabilities plus equity before and after the year-end close; profit and loss, direct cash flow and ledger detail give the expected figures; the year-end close moves the profit to 3900 and closes the year."
+    },
+    {
+      "test_id": "test_records_follow_their_steps_and_rules",
+      "upstream_ids": [
+        "DB-GL-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): Expense requests follow their steps and are never decided by the requester, edited or deleted; they pay out only from cash and take a Unit only on a Unit account; bills are never overpaid; money moves need two accounts; adjusting lines refuse control accounts; an approved budget is locked."
+    },
+    {
+      "test_id": "test_the_runtime_role_only_reads_the_ledger",
+      "upstream_ids": [
+        "DB-GL-001",
+        "SEC-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): The runtime role reads the ledger tables and the chart template but cannot write them or call the internal ledger functions."
+    },
+    {
+      "test_id": "test_the_migrations_chain_and_roll_back_only_while_the_ledger_is_empty",
+      "upstream_ids": [
+        "DB-GL-001"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_general_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 8 General Ledger (owner approved 2026-11-02): Migrations 20270409_259 to 20270412_262 follow 20270408_258 (V1.1 rework part 1), with 20270413_263 after them; they roll back while the ledger is empty and refuse once an entry is posted (owner Q2)."
+    },
+    {
+      "test_id": "test_the_ledger_rules_are_seeded_and_read_by_date",
+      "upstream_ids": [
+        "DB-BR-001",
+        "PR-GL-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): The seven ledger rules (Expense limit $100, asset limit $500, petty cash $200, report due 3 days, budget warning 10% and $50, supplier bill due 30 days) are seeded from 01/01/2026 and read by date."
+    },
+    {
+      "test_id": "test_a_change_is_a_new_dated_row_with_a_reason_and_an_audit_event",
+      "upstream_ids": [
+        "DB-BR-001",
+        "PR-GL-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): A change is a new row from today or later with a reason and one audit event; a second change for the same date, a past date, no reason, an unknown code, a negative value and a value out of its unit are refused."
+    },
+    {
+      "test_id": "test_the_owner_adds_a_rule_the_program_does_not_use_yet",
+      "upstream_ids": [
+        "DB-BR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): The Owner adds a rule (upper snake case code, known unit and area); it is marked not used yet; a repeated code and a bad unit or value are refused."
+    },
+    {
+      "test_id": "test_rule_values_are_append_only_and_names_keep_their_code",
+      "upstream_ids": [
+        "DB-BR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): Rule values are never updated, deleted or truncated; a rule keeps its code, unit and area; only its names and used flag change; a later row needs a reason."
+    },
+    {
+      "test_id": "test_the_runtime_only_reads_and_writes_through_the_functions",
+      "upstream_ids": [
+        "DB-BR-001",
+        "SEC-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): The runtime login only reads the two tables and writes through the SECURITY DEFINER functions; the money login can read a rule value."
+    },
+    {
+      "test_id": "test_the_default_bundles_hold_the_ledger_rights_by_role",
+      "upstream_ids": [
+        "DB-BR-001",
+        "SEC-001",
+        "PR-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_rules_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): Twenty-one ledger rights are bundle rights; the Owner bundle holds all, the Manager bundle all but the Owner-only ones (it approves up to the Expense limit and tops up petty cash), Staff only Expense requests."
+    },
+    {
+      "test_id": "test_reading_the_rules_needs_configuration_read",
+      "upstream_ids": [
+        "API-BR-001",
+        "SEC-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_rules_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): Reading the business rules needs configuration.read for the Property and is not cached."
+    },
+    {
+      "test_id": "test_a_change_needs_settings_manage_and_waits_until_its_date",
+      "upstream_ids": [
+        "API-BR-001",
+        "SEC-001",
+        "SEC-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_rules_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): A change needs settings.manage and the browser checks; a future change shows as waiting; repeats answer 409, bad input 422 and an unknown code 404."
+    },
+    {
+      "test_id": "test_the_owner_adds_a_rule_that_is_not_used_yet",
+      "upstream_ids": [
+        "API-BR-001",
+        "SEC-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_rules_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 1 (owner 2026-11-03 06:56 and 07:03): A new rule answers 201 and is not used yet; a repeated code answers 409 and a bad code, unit or area 422."
+    },
+    {
+      "test_id": "test_an_invoice_payment_and_allocation_post_once_with_the_right_accounts",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-020",
+        "PR-GL-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): An issued Invoice posts DR 1100 and CR 4010 Rent and 4020 Services; a Payment posts DR its method's cash account and CR 2210; an allocation and its reversal move 2210 and 1100; a second run posts nothing again."
+    },
+    {
+      "test_id": "test_a_method_without_an_account_waits_in_needs_check_until_it_is_set",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-021"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): A Payment whose method has no ledger account waits in Needs check with the reason, and posts by itself after the Owner sets the account (audited)."
+    },
+    {
+      "test_id": "test_a_record_in_a_closed_month_posts_in_the_first_open_month_with_a_note",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): L4: records dated in a closed month post on the first day of the first open month, with a note."
+    },
+    {
+      "test_id": "test_credit_refund_and_deposit_receipts_move_money_not_used_yet",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-022",
+        "PR-GL-023"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): Customer Credit (DR 2210, CR 2200), a Refund from a Payment (DR 2210, CR the Refund method's account, Needs check until set), Pet Deposit receipts (DR 2210, CR 2110) and a receipt reversal post with the right accounts."
+    },
+    {
+      "test_id": "test_rent_billed_for_a_later_month_waits_in_rent_billed_in_advance",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-020"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): Rent of a month that starts after the billing month goes to 2050 Rent billed in advance; otherwise to 4010."
+    },
+    {
+      "test_id": "test_only_the_financial_role_posts_and_methods_go_to_cash_accounts",
+      "upstream_ids": [
+        "DB-GL-002",
+        "SEC-001",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_auto_posting_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): Only the money login runs the posting; the runtime reads Needs check; a method goes to one active cash or bank account; the job posts nothing before the ledger starts."
+    },
+    {
+      "test_id": "test_needs_check_and_method_accounts_need_ledger_read",
+      "upstream_ids": [
+        "API-GL-001",
+        "SEC-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_ledger_posting_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): Needs check and the method accounts need ledger.read for the Property and are not cached."
+    },
+    {
+      "test_id": "test_only_ledger_accounts_manage_sets_a_method_account",
+      "upstream_ids": [
+        "API-GL-001",
+        "SEC-001",
+        "SEC-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_ledger_posting_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): Only ledger.accounts.manage (Owner) with the browser checks sets a method's account; refusals map to 404 and 422."
+    },
+    {
+      "test_id": "test_batches_run_until_one_posts_nothing_new_and_each_batch_commits",
+      "upstream_ids": [
+        "DB-GL-002",
+        "PR-GL-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_posting_job.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): The job posts in committed batches until a batch posts nothing new or is short; the year of today is kept open first, in its own commit (step 4)."
+    },
+    {
+      "test_id": "test_the_pass_stops_after_its_bound_and_a_database_error_is_one_code",
+      "upstream_ids": [
+        "DB-GL-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_posting_job.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): The job stops after its bound of batches; a database error becomes one SQLSTATE code; bad bounds are refused."
+    },
+    {
+      "test_id": "test_the_worker_loop_reports_the_ledger_pass_and_fails_only_when_it_cannot_run",
+      "upstream_ids": [
+        "DB-GL-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_posting_job.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 2 (owner plan 2026-11-03 06:56, L3 and L4): The billing worker loop prints posted and Needs check counts; Needs check is not a failure, a failed pass is."
+    },
+    {
+      "test_id": "test_an_advance_returns_its_change_or_owes_the_staff_the_extra",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-060",
+        "PR-GL-062",
+        "PR-GL-063",
+        "PR-GL-065"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): A request makes no entry; nobody approves their own; an advance posts DR 1400; the bill returns the change to cash or owes the staff the extra on 2310, paid back once."
+    },
+    {
+      "test_id": "test_the_expense_limit_and_the_owners_own_spending",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-031",
+        "PR-GL-065"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Above the Expense limit only the Owner approves; a refusal needs a reason; the bill may not pass the approved amount; the Owner's own request and report go in at once with the note Owner's own spending."
+    },
+    {
+      "test_id": "test_an_urgent_report_from_petty_cash_posts_when_approved",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-061",
+        "PR-GL-063",
+        "PR-GL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): An Expense report is paid with own money or petty cash, dated today or earlier, and posts DR the account CR 1030 when approved; a waiting request is taken back by its sender or voided by an approver with a reason."
+    },
+    {
+      "test_id": "test_a_supplier_bill_is_paid_in_part_or_full_and_voided_only_without_payments",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-033",
+        "PR-GL-039",
+        "PR-GL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): A pay-later bill is due 30 days after the bill date; it is paid in part or in full, a payment is reversed with a reason, and the expense is voided only when no payment stands."
+    },
+    {
+      "test_id": "test_a_straight_expense_in_riel_and_a_pay_later_expense",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-030",
+        "PR-GL-032"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): An expense recorded straight from riel cash keeps the riel amount and rate; pay later needs a supplier and makes a supplier bill; a void posts the mirrored entry."
+    },
+    {
+      "test_id": "test_money_moves_owner_money_and_the_petty_cash_amount",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-033",
+        "PR-GL-034",
+        "PR-GL-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Money moves post between cash and bank, a riel change difference goes to 4100; owner money in is 3000 and out is 3100 (Owner only); petty cash is topped up from Cash on hand (USD) or the bank up to the Petty cash amount."
+    },
+    {
+      "test_id": "test_a_cash_count_difference_needs_a_reason_and_goes_to_6180",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-056"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): One count per cash account each month; a difference needs a reason and posts to 6180; riel cash is counted in riel at the rate; a bank account is not counted."
+    },
+    {
+      "test_id": "test_a_record_in_a_closed_month_or_the_future_is_refused",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): A money record dated in a closed month or after today is refused."
+    },
+    {
+      "test_id": "test_the_runtime_login_writes_only_through_the_checked_functions",
+      "upstream_ids": [
+        "DB-GL-003",
+        "PR-GL-052",
+        "SEC-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): The runtime login writes only through the checked functions; each needs the right for the Property; internal helpers and the tables are closed to it."
+    },
+    {
+      "test_id": "test_the_migration_follows_auto_posting",
+      "upstream_ids": [
+        "DB-GL-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Migration 20270416_266 follows 20270415_265."
+    },
+    {
+      "test_id": "test_the_api_flow_calls_each_function_and_reads_the_records",
+      "upstream_ids": [
+        "API-GL-002",
+        "DB-GL-003",
+        "PR-GL-061"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_money_records_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): The API flow calls each checked function with its arguments in order, keeps database refusals as refused, invalid, conflict or not found, and reads requests (late reports marked), expenses, supplier bills with what is still to pay, and suppliers."
+    },
+    {
+      "test_id": "test_each_change_needs_its_right_and_the_browser_checks",
+      "upstream_ids": [
+        "API-GL-002",
+        "SEC-001",
+        "SEC-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_money_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Each change needs its main right for the Property and the browser mutation checks; a decision and an advance answer with the request they act on."
+    },
+    {
+      "test_id": "test_bodies_are_strict_and_database_refusals_keep_their_meaning",
+      "upstream_ids": [
+        "API-GL-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_money_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Bodies are strict (no extra field, whole cents above zero, 4-digit codes, ISO dates); a refusal answers 403, 422, 409 or 404 with a LEDGER_MONEY code and the plain sentence."
+    },
+    {
+      "test_id": "test_staff_see_their_own_requests_and_approvers_see_all",
+      "upstream_ids": [
+        "API-GL-002",
+        "PR-GL-060"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_money_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 3 (owner plan 2026-11-03 06:56; Manager approves to the limit 07:03): Staff see their own Expense requests, an approver or recorder sees all; expenses and supplier bills need ledger.read."
+    },
+    {
+      "test_id": "test_an_adjusting_entry_needs_another_approver_and_never_a_control_account",
+      "upstream_ids": [
+        "DB-GL-004",
+        "PR-GL-037",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): An adjusting entry has a reason and 2 to 500 balanced lines, never a control account; nobody approves their own; a refusal needs a note; a waiting entry is voided with a reason; the Owner's own entry posts at once with a note."
+    },
+    {
+      "test_id": "test_opening_balances_balance_and_are_fixed_once_posted",
+      "upstream_ids": [
+        "DB-GL-004",
+        "PR-GL-043"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The Owner starts the ledger on 1 January of a year, types the accounts that are not control accounts, posts only a balanced opening entry, and the opening balances are fixed once posted."
+    },
+    {
+      "test_id": "test_the_app_works_out_the_control_accounts_from_its_lists",
+      "upstream_ids": [
+        "DB-GL-004",
+        "PR-GL-043",
+        "PR-GL-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The opening entry carries each control account as the app's own list holds it (a Customer's $510 debt goes to 1100), so the Books check agrees from the first day."
+    },
+    {
+      "test_id": "test_the_books_check_has_eight_lines",
+      "upstream_ids": [
+        "DB-GL-004",
+        "PR-GL-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The Books check has its eight lines: six control accounts against their app lists, every record posted and every entry balanced."
+    },
+    {
+      "test_id": "test_a_month_closes_in_order_after_its_last_day_when_every_check_is_green",
+      "upstream_ids": [
+        "DB-GL-004",
+        "PR-GL-050",
+        "PR-GL-051",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): Only the Owner closes; months close in order after their last day and only when every check is green (a red try is kept and answers closed false); a waiting adjusting entry or an uncounted cash account holds a month open; the year closes profit into 3900 and opens the next year."
+    },
+    {
+      "test_id": "test_the_year_of_today_is_kept_open",
+      "upstream_ids": [
+        "DB-GL-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The year that holds today is opened once when the ledger has started, so new records always have a month."
+    },
+    {
+      "test_id": "test_asset_life_rules_are_seeded_for_the_owner_to_change",
+      "upstream_ids": [
+        "DB-GL-004",
+        "DB-BR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The asset life Business rules are seeded: Building 20 years, Furniture and appliances in Units 5 years, Office equipment 3 years (owner 2026-11-03 10:26)."
+    },
+    {
+      "test_id": "test_the_runtime_login_closes_only_through_the_checked_functions",
+      "upstream_ids": [
+        "DB-GL-004",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The runtime login closes and starts the ledger only through the checked functions; the internal posting helper, the keep-years-open job function and the period table are refused to it."
+    },
+    {
+      "test_id": "test_the_migration_follows_money_records",
+      "upstream_ids": [
+        "DB-GL-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): Migration 20270417_267 follows 20270416_266."
+    },
+    {
+      "test_id": "test_the_close_api_flow_calls_each_function_and_reads_the_records",
+      "upstream_ids": [
+        "API-GL-003",
+        "DB-GL-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_close_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): The API flow calls each close function with the Property check and reads adjusting entries, the Books check, the months and a month's close checks."
+    },
+    {
+      "test_id": "test_each_close_change_needs_its_right_and_the_browser_checks",
+      "upstream_ids": [
+        "API-GL-003",
+        "SEC-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): Each close change needs its main right for the Property and the browser mutation checks; lines reach the database by account code; an approver may void an adjusting entry too."
+    },
+    {
+      "test_id": "test_bodies_are_strict_and_a_red_close_answers_with_its_checks",
+      "upstream_ids": [
+        "API-GL-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): Bodies are strict (two lines or more, one side each, 4-digit codes, ISO dates, no extra field); a red close answers 200 with closed false and its checks; refusals keep their meaning."
+    },
+    {
+      "test_id": "test_reads_need_the_ledger_right_and_are_not_cached",
+      "upstream_ids": [
+        "API-GL-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 1 (owner plan 2026-11-03 06:56; asset rules 10:26): Every close read needs ledger.read and is private, no-store."
+    },
+    {
+      "test_id": "test_a_purchase_from_the_asset_limit_is_equipment_and_below_it_an_expense",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): A purchase under the Asset limit is refused as equipment (recorded or requested); cash, control and contra accounts never take spending, 1200 does; each equipment expense adds its item with years from the Business rules (Land none) and depreciation from the next month."
+    },
+    {
+      "test_id": "test_depreciation_is_the_same_each_month_and_the_last_month_takes_the_cents_left",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Straight-line depreciation is the same each month, the last month takes the cents left and the value ends at $0; one DR 6140 / CR 1590 entry a month; Land is never depreciated; the close check turns green; the posting job does every ended month once."
+    },
+    {
+      "test_id": "test_an_item_years_change_spreads_the_value_left_over_the_months_left",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): One item's years change needs the fixed assets right and a reason; from the month after the last depreciation the value left is spread over the months left; the change is kept; an item with depreciation posted cannot be voided."
+    },
+    {
+      "test_id": "test_voiding_an_equipment_expense_before_depreciation_voids_the_item",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Voiding an equipment expense before any depreciation voids its item; Land has no years to change."
+    },
+    {
+      "test_id": "test_riel_cash_is_valued_at_the_month_end_rate",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Riel cash is valued at the system rate in force at month end from the month's riel count and the riel moved after it; the difference goes to 4100; a month without its riel count is left by the job and refused with words at Month-end close."
+    },
+    {
+      "test_id": "test_the_bank_is_matched_month_by_month_to_the_statement",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Bank matching needs the reconcile right, a bank account and earlier months matched first; the marked lines must equal the statement; a line is on one statement only; matched lines leave the list and the close check turns green."
+    },
+    {
+      "test_id": "test_a_budget_is_prepared_and_the_owner_approves_it",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): A budget has 1 to 5000 income, cost or expense lines by month; the Owner's own is approved at once with a note; another's waits, one at a time, and is approved or sent back with a reason; an approved budget is replaced by the next and keeps its approver."
+    },
+    {
+      "test_id": "test_the_runtime_login_runs_month_end_only_through_the_checked_functions",
+      "upstream_ids": [
+        "DB-GL-005",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): The runtime login reaches month-end work, years changes, bank matching and budgets only through the checked functions; the job's month-end work, the depreciation and riel helpers and the life change table are refused to it."
+    },
+    {
+      "test_id": "test_the_migration_follows_the_close",
+      "upstream_ids": [
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Migration 20270418_268 follows 20270417_267."
+    },
+    {
+      "test_id": "test_the_api_flow_runs_month_end_matches_the_bank_and_sends_budgets",
+      "upstream_ids": [
+        "API-GL-004",
+        "DB-GL-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_assets_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): The API flow runs a month's month-end work, lists and changes fixed assets, lists and matches bank lines, and sends and approves a budget through the checked functions."
+    },
+    {
+      "test_id": "test_part_two_changes_need_their_right_and_reach_the_database_in_its_shape",
+      "upstream_ids": [
+        "API-GL-004",
+        "SEC-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Each part 2 change needs its main right and the browser mutation checks; bodies are strict (years 1 to 100 with a reason, budget months 1 to 12, amounts 0 or more, 4-digit codes, line ids) and reach the database in its shape."
+    },
+    {
+      "test_id": "test_part_two_reads_need_the_ledger_right",
+      "upstream_ids": [
+        "API-GL-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 2 (owner 2026-11-03 10:26): Fixed assets, bank lines, bank matches and budgets need ledger.read and are private, no-store; a bank line read names a 4-digit account."
+    },
+    {
+      "test_id": "test_an_unpaid_charge_is_written_off_to_6160_by_the_owner_with_a_reason",
+      "upstream_ids": [
+        "DB-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): Only a ledger.write_off holder writes off an unpaid Invoice line after the Final Settlement is closed, with a reason of up to 500 characters; the V1 charge reduction correction is recorded, confirmed and marked in one step; automatic posting takes it off 1100 against 6160; more than the unpaid rest is refused."
+    },
+    {
+      "test_id": "test_a_late_payment_charge_is_written_off_against_1110",
+      "upstream_ids": [
+        "DB-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): A written-off Late-payment charge posts 6160 debit and 1110 credit."
+    },
+    {
+      "test_id": "test_the_runtime_login_writes_off_only_through_the_checked_function",
+      "upstream_ids": [
+        "DB-GL-006",
+        "SEC-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): The runtime login writes off only through the checked function; the write-off table cannot be written straight."
+    },
+    {
+      "test_id": "test_the_migration_follows_fixed_assets",
+      "upstream_ids": [
+        "DB-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): Migration 20270419_269 follows 20270418_268."
+    },
+    {
+      "test_id": "test_the_api_flow_writes_off_and_lists_the_write_offs",
+      "upstream_ids": [
+        "API-GL-005",
+        "DB-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): The API flow writes off through the checked function (a Manager is refused) and lists the write-offs; an unknown Final Settlement is not found."
+    },
+    {
+      "test_id": "test_a_write_off_is_owner_only_and_names_one_line_or_one_late_charge",
+      "upstream_ids": [
+        "API-GL-005",
+        "SEC-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_close_api.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (DESIGN.md G6, database plan Q5): A write-off needs ledger.write_off and the browser mutation checks; the body names one Invoice line or one Late-payment charge, an amount of 1 cent or more and a reason; the list needs ledger.read and is private, no-store."
+    },
+    {
+      "test_id": "test_a_refund_correction_posts_by_itself",
+      "upstream_ids": [
+        "DB-GL-006",
+        "DB-GL-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_write_off_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 4 part 3 (owner's cards of 2026-11-03 13:05 and 13:10): a Refund correction posts by itself: money given back debits the Refund method's account and credits the source, its reversal does the opposite, a Refund recovered by a charge credits the source against 4080; without a ledger account for the method, money given back waits in Needs check."
+    },
+    {
+      "test_id": "test_the_trial_balance_totals_both_sides_and_says_when_they_differ",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): The Trial balance totals debits and credits and its check line says by how much they differ."
+    },
+    {
+      "test_id": "test_profit_and_loss_has_the_five_columns_gross_profit_and_the_margins",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Profit and loss has This month, Last month, Same month last year, Year to date and Difference, Gross profit, Profit (or loss) and the three margins; its check compares the year's profit with the Balance sheet, or says the closed year's profit is in 3900."
+    },
+    {
+      "test_id": "test_the_balance_sheet_groups_and_adds_profit_this_year_so_it_balances",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): The Balance sheet groups within and after 12 months, shows the depreciation account as a minus and adds Profit this year not closed yet, so assets equal what is owed plus equity."
+    },
+    {
+      "test_id": "test_cash_flow_runs_from_cash_at_start_to_cash_at_end",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Cash flow runs from cash at start through Daily business, Equipment and Owner money and loans to cash at end, with a red check when they differ."
+    },
+    {
+      "test_id": "test_account_detail_ends_on_the_account_balance",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Account detail starts with the opening balance, shows each line with its running balance and checks the closing balance against the account."
+    },
+    {
+      "test_id": "test_aging_puts_each_debt_in_its_group_as_at_today",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Customer debt aging puts each unpaid amount in Not yet due, 1-30, 31-60, 61-90 or Over 90 days by Customer and Unit, as at today, and checks the total against 1100 + 1110."
+    },
+    {
+      "test_id": "test_supplier_bill_aging_adds_staff_advances_and_money_owed_to_staff",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Supplier bill aging groups the bills still to pay by supplier, checks them against 2010 and adds staff advances (1400) and money owed to staff (2310)."
+    },
+    {
+      "test_id": "test_budget_marks_a_line_more_than_ten_percent_and_fifty_dollars_off",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Budget vs actual marks a line only when it is more than the Budget warning percent and the smallest amount off, for the month and the year to date; no approved budget is a red check."
+    },
+    {
+      "test_id": "test_month_helpers",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): The month helpers find a month's last day and the first day of an earlier month."
+    },
+    {
+      "test_id": "test_a_report_needs_the_ledger_right_and_is_not_cached",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): A report needs ledger.read for the Property, is private, no-store, and answers its period, state, columns and check line."
+    },
+    {
+      "test_id": "test_each_report_takes_only_its_own_values",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Each report takes only its own values (as_of, month, from and to, a four-digit account); anything else, a backwards range or an unknown format answers 422."
+    },
+    {
+      "test_id": "test_a_report_downloads_as_excel_and_as_a_pdf_with_the_period_and_check",
+      "upstream_ids": [
+        "API-GL-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_reports.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): A report downloads as Excel and as a PDF with the title, period, state, check line and the made-on day above the table, and its SHA-256 and row count headers."
+    },
+    {
+      "test_id": "test_every_statement_is_green_on_books_made_by_the_money_functions",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): On books made by the checked money functions, the Trial balance, Balance sheet, Profit and loss, Cash flow, Account detail and Supplier bill aging check lines are green."
+    },
+    {
+      "test_id": "test_customer_debt_aging_reads_the_unpaid_list_with_the_ledger_right",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Customer debt aging lists what the checked read gives and checks it against 1100 + 1110; a person without ledger.read is refused."
+    },
+    {
+      "test_id": "test_budget_vs_actual_uses_the_approved_budget_and_the_warning_rules",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Budget vs actual reads the approved budget and the Budget warning Business rules (10% and $50); without an approved budget the check is red."
+    },
+    {
+      "test_id": "test_an_unknown_account_or_property_is_not_found",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): An account code or Property that is not there is not found."
+    },
+    {
+      "test_id": "test_each_report_answers_and_makes_both_files",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Each of the eight reports answers with a check line and makes an Excel and a PDF file."
+    },
+    {
+      "test_id": "test_the_runtime_login_reads_customer_balances_only_through_the_checked_function",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): The runtime login reads Customer balances and the Budget warning only through the checked reads, which need ledger.read."
+    },
+    {
+      "test_id": "test_the_migration_follows_write_offs",
+      "upstream_ids": [
+        "DB-GL-007",
+        "API-GL-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_reports_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Migration 20270420_270 follows 20270419_269."
     }
   ]
 }

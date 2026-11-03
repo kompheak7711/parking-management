@@ -14,6 +14,7 @@ from alembic.script import ScriptDirectory
 from property_rental.access_control import (
     STAFF_DEFAULT_BUNDLE_CAPABILITIES,
     STAFF_L1C_BUNDLE_CAPABILITIES,
+    STAFF_LEDGER_CAPABILITIES,
     STAFF_RENT_LETTER_CAPABILITIES,
 )
 from test_default_role_bundles_migration import (
@@ -27,6 +28,9 @@ from test_role_bundle_migration import add_account, assign, grants, next_version
 
 REVISION = "20270310_229"
 PREVIOUS = "20270309_228"
+# The default Staff bundle as this migration left it; the ledger migration 20270414_264 adds
+# Expense requests later.
+STAFF_BUNDLE_AT_229 = STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES
 
 
 def version(connection: psycopg.Connection[Any], bundle: uuid.UUID) -> int:
@@ -42,9 +46,7 @@ def test_the_staff_letter_rights_are_the_two_rent_case_rights() -> None:
         "rent_nonpayment.case_manage",
         "rent_nonpayment.event_post",
     }
-    assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == (
-        STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES
-    )
+    assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_BUNDLE_AT_229 | STAFF_LEDGER_CAPABILITIES
     # The Termination notice and Terminate stay with the Owner and Managers.
     assert "leases.terminate" not in STAFF_DEFAULT_BUNDLE_CAPABILITIES
     assert "leases.warn" not in STAFF_DEFAULT_BUNDLE_CAPABILITIES
@@ -102,9 +104,7 @@ def test_the_upgrade_adds_the_rights_only_to_an_untouched_default_staff_bundle(
                 assert events == []
             else:
                 assert version(check, staff_bundle) == 2
-                assert bundle_capabilities(check, staff_bundle) == set(
-                    STAFF_DEFAULT_BUNDLE_CAPABILITIES
-                )
+                assert bundle_capabilities(check, staff_bundle) == set(STAFF_BUNDLE_AT_229)
                 # Version 1 is kept in the history.
                 assert check.execute(
                     "SELECT count(*) FROM app.role_bundle_capabilities "
@@ -112,7 +112,7 @@ def test_the_upgrade_adds_the_rights_only_to_an_untouched_default_staff_bundle(
                     (staff_bundle,),
                 ).fetchone() == (len(STAFF_L1C_BUNDLE_CAPABILITIES),)
                 assert {capability for capability, _ in grants(check, staff)} == set(
-                    STAFF_DEFAULT_BUNDLE_CAPABILITIES
+                    STAFF_BUNDLE_AT_229
                 )
                 ((actor, action, entity, reason, source, resulting),) = events
                 assert (actor, action, entity, source) == (

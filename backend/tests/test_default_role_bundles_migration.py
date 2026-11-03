@@ -25,6 +25,8 @@ from alembic.script import ScriptDirectory
 
 from property_rental.access_control import (
     BUNDLE_CAPABILITIES,
+    MANAGER_DEFAULT_BUNDLE_CAPABILITIES,
+    OWNER_ONLY_LEDGER_CAPABILITIES,
     STAFF_DEFAULT_BUNDLE_CAPABILITIES,
     STAFF_L1C_BUNDLE_CAPABILITIES,
     GrantConnection,
@@ -139,10 +141,17 @@ def test_the_default_bundles_hold_the_approved_capabilities(migrated_database_ur
         ).fetchone() == (owner_bundle, manager_bundle, staff_bundle, PROVENANCE)
         every_bundle_capability = catalog_bundle_capabilities(connection)
         assert every_bundle_capability == set(BUNDLE_CAPABILITIES)
-        # The Owner and Manager bundles are the same (Q-162 (b)); the Owner's extra rights come
-        # from the account class. Staff hold exactly the approved list (Q-150 (a), Q-164 (a)).
+        # The Owner and Manager bundles were the same (Q-162 (b)) until the General Ledger: the
+        # accountant's rights stay in the Owner bundle (owner 2026-11-03, migration 264). The
+        # Owner's other extra rights come from the account class. Staff hold exactly the approved
+        # list (Q-150 (a), Q-164 (a), plus Expense requests).
         assert bundle_capabilities(connection, owner_bundle) == every_bundle_capability
-        assert bundle_capabilities(connection, manager_bundle) == every_bundle_capability
+        assert bundle_capabilities(connection, manager_bundle) == set(
+            MANAGER_DEFAULT_BUNDLE_CAPABILITIES
+        )
+        assert every_bundle_capability - set(MANAGER_DEFAULT_BUNDLE_CAPABILITIES) == set(
+            OWNER_ONLY_LEDGER_CAPABILITIES
+        )
         assert bundle_capabilities(connection, staff_bundle) == set(
             STAFF_DEFAULT_BUNDLE_CAPABILITIES
         )
@@ -167,7 +176,7 @@ def test_the_default_bundles_hold_the_approved_capabilities(migrated_database_ur
             for found in every_property
         }
         assert grants(connection, manager) == {
-            (capability, property_id) for capability in every_bundle_capability
+            (capability, property_id) for capability in MANAGER_DEFAULT_BUNDLE_CAPABILITIES
         }
         assert grants(connection, staff) == {
             (capability, property_id) for capability in STAFF_DEFAULT_BUNDLE_CAPABILITIES

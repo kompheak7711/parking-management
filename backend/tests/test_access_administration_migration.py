@@ -25,7 +25,10 @@ import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from property_rental.access_control import BUNDLE_CAPABILITIES, STAFF_DEFAULT_BUNDLE_CAPABILITIES
+from property_rental.access_control import (
+    MANAGER_DEFAULT_BUNDLE_CAPABILITIES,
+    STAFF_DEFAULT_BUNDLE_CAPABILITIES,
+)
 from test_default_role_bundles_migration import SEED_QUERY
 from test_migrations import _run_alembic, _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
@@ -354,7 +357,7 @@ def test_the_owner_creates_manager_and_staff_accounts(migrated_database_url: str
             STAFF_DEFAULT_BUNDLE_CAPABILITIES
         )
         assert {capability for capability, _ in grants(connection, made["manager"])} == set(
-            BUNDLE_CAPABILITIES
+            MANAGER_DEFAULT_BUNDLE_CAPABILITIES
         )
         refused(
             connection,

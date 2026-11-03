@@ -355,9 +355,21 @@ database_test_suites='
   tests/test_unit_inventory_items_migration.py
   tests/test_regular_services_migration.py
   tests/test_unit_for_rent_migration.py
+  tests/test_general_ledger_migration.py
+  tests/test_business_rules_migration.py
+'
+# The General Ledger suites run first, in a pytest run of their own on the new database: the other
+# suites leave balances on the one Property (up to the largest bigint) that no books can hold.
+ledger_database_test_suites='
+  tests/test_gl_auto_posting_migration.py
+  tests/test_gl_money_records_migration.py
+  tests/test_gl_close_migration.py
+  tests/test_gl_assets_migration.py
+  tests/test_gl_write_off_migration.py
+  tests/test_gl_reports_migration.py
 '
 
-for database_test_file in $database_test_suites; do
+for database_test_file in $database_test_suites $ledger_database_test_suites; do
   if [ ! -f "$database_test_file" ]; then
     printf 'Required PostgreSQL suite is missing: %s\n' "$database_test_file" >&2
     exit 1
@@ -365,7 +377,7 @@ for database_test_file in $database_test_suites; do
 done
 for database_test_file in tests/test_*_migration.py; do
   database_test_listed=0
-  for required_database_test_file in $database_test_suites; do
+  for required_database_test_file in $database_test_suites $ledger_database_test_suites; do
     if [ "$required_database_test_file" = "$database_test_file" ]; then
       database_test_listed=1
       break
@@ -377,5 +389,10 @@ for database_test_file in tests/test_*_migration.py; do
   fi
 done
 
+ledger_database_test_status=0
+set -- $ledger_database_test_suites
+REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@" ||
+  ledger_database_test_status=$?
 set -- $database_test_suites
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@"
+exit "$ledger_database_test_status"

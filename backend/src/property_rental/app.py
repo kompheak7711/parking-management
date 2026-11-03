@@ -57,6 +57,12 @@ from property_rental.billing_run_api import (
     create_billing_run_router,
 )
 from property_rental.browser_security import signed_in_browser_request
+from property_rental.business_rules_api import (
+    BusinessRuleFlow,
+    PostgresBusinessRuleFlow,
+    UnavailableBusinessRuleFlow,
+    create_business_rules_router,
+)
 from property_rental.configuration_api import (
     ConfigurationFlow,
     ExchangeRateProvider,
@@ -181,6 +187,30 @@ from property_rental.lease_signing_api import (
     UnavailableLeaseSigningFlow,
     create_lease_signing_router,
 )
+from property_rental.ledger_close_api import (
+    LedgerCloseFlow,
+    PostgresLedgerCloseFlow,
+    UnavailableLedgerCloseFlow,
+    create_ledger_close_router,
+)
+from property_rental.ledger_money_api import (
+    LedgerMoneyFlow,
+    PostgresLedgerMoneyFlow,
+    UnavailableLedgerMoneyFlow,
+    create_ledger_money_router,
+)
+from property_rental.ledger_posting_api import (
+    LedgerPostingFlow,
+    PostgresLedgerPostingFlow,
+    UnavailableLedgerPostingFlow,
+    create_ledger_posting_router,
+)
+from property_rental.ledger_reports import (
+    LedgerReportFlow,
+    PostgresLedgerReports,
+    UnavailableLedgerReports,
+)
+from property_rental.ledger_reports_api import create_ledger_reports_router
 from property_rental.logging import create_application_logger
 from property_rental.move_out_api import (
     MoveOutFlow,
@@ -523,6 +553,11 @@ def create_app(
     customer_resource_flow: CustomerResourceFlow | None = None,
     vehicle_flow: VehicleFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
+    business_rule_flow: BusinessRuleFlow | None = None,
+    ledger_posting_flow: LedgerPostingFlow | None = None,
+    ledger_money_flow: LedgerMoneyFlow | None = None,
+    ledger_close_flow: LedgerCloseFlow | None = None,
+    ledger_report_flow: LedgerReportFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
     lease_resource_flow: LeaseResourceFlow | None = None,
@@ -1151,6 +1186,65 @@ def create_app(
             ),
             resolved_settings,
             exchange_rate_provider,
+        )
+    )
+    include_signed_in(
+        create_business_rules_router(
+            actor_resolver,
+            business_rule_flow
+            or (
+                PostgresBusinessRuleFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableBusinessRuleFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_ledger_posting_router(
+            actor_resolver,
+            ledger_posting_flow
+            or (
+                PostgresLedgerPostingFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerPostingFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_ledger_money_router(
+            actor_resolver,
+            ledger_money_flow
+            or (
+                PostgresLedgerMoneyFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerMoneyFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_ledger_close_router(
+            actor_resolver,
+            ledger_close_flow
+            or (
+                PostgresLedgerCloseFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerCloseFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_ledger_reports_router(
+            actor_resolver,
+            ledger_report_flow
+            or (
+                PostgresLedgerReports(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerReports()
+            ),
         )
     )
     include_signed_in(

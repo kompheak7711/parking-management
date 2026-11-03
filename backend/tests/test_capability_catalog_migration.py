@@ -18,7 +18,12 @@ import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from property_rental.access_control import CAPABILITY_CATALOG, capability_grant_path
+from property_rental.access_control import (
+    CAPABILITY_CATALOG,
+    OWNER_ONLY_LEDGER_CAPABILITIES,
+    STAFF_LEDGER_CAPABILITIES,
+    capability_grant_path,
+)
 from test_migrations import _run_alembic, _temporary_migration_database
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_in_migration import runtime_database_url
@@ -26,6 +31,20 @@ from test_move_in_migration import runtime_database_url
 REVISION = "20270119_176"
 PREVIOUS = "20270118_175"
 GUARD = "app.reject_capability_catalog_change()"
+LEDGER_RIGHTS = (
+    OWNER_ONLY_LEDGER_CAPABILITIES
+    | STAFF_LEDGER_CAPABILITIES
+    | {
+        "expenses.approve",
+        "expenses.record",
+        "ledger.cash_count",
+        "ledger.money_move",
+        "ledger.petty_cash",
+        "ledger.read",
+        "supplier_bills.manage",
+        "supplier_bills.pay",
+    }
+)
 ADD = (
     "INSERT INTO app.capabilities(capability_id,family,description,grant_path,"
     "provenance) VALUES (%s,%s,'A test capability',%s,'login-slice-l1b-test')"
@@ -59,12 +78,15 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
         assert description == CAPABILITY_CATALOG[capability]
         assert grant_path == capability_grant_path(capability)
         # The V1-057 report and export rights came with migration `20270301_220`, and the
-        # V1-061 lower-Rent right with migration `20270401_251`.
+        # V1-061 lower-Rent right with migration `20270401_251`, and the General Ledger rights
+        # with migration `20270414_264`.
         expected = (
             "v1-057-reports"
             if capability in {"audit.export", "data.export", "reports.read"}
             else "v1-061-unit-rent"
             if capability == "rent.below_default"
+            else "v1-1-ledger"
+            if capability in LEDGER_RIGHTS
             else "login-slice-capability-catalog"
         )
         assert provenance == expected and finite is True

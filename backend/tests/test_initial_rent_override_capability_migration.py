@@ -110,15 +110,18 @@ def test_upgrade_keeps_every_earlier_record(migrated_database_url: str) -> None:
             )
         # V1-058 migration 227 adds the Unit setup columns (NULL, or the Floor item linked from
         # the Floor text) and audits the Unit setup items it creates; V1-061 migration 251 adds the
-        # default Rent (NULL); V1.1 migration 258 adds For rent (default Yes); nothing earlier
-        # changes.
+        # default Rent (NULL); V1.1 rework migration 258 adds For rent; General Ledger migration 262
+        # starts the ledger for the Property and audits that start; nothing earlier changes.
         units_row = (
             "to_jsonb(t)-ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
             "'view_item_id','kitchen_item_id','notes',"
             "'default_monthly_rent_usd_cents','for_rent']"
         )
         tables = {
-            "audit_events": ("to_jsonb(t)", "WHERE t.entity_type <> 'unit_setup_item'"),
+            "audit_events": (
+                "to_jsonb(t)",
+                "WHERE t.entity_type NOT IN ('unit_setup_item', 'gl_fiscal_year')",
+            ),
             "reservations": ("to_jsonb(t)", ""),
             "deposits": ("to_jsonb(t)", ""),
             "leases": ("to_jsonb(t)", ""),

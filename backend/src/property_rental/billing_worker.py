@@ -4,7 +4,10 @@ Since V1-056 slice 12b (DL-071 answer 18) each pass also bills, by a late Utilit
 period finalized after a run for its dates (`app.scheduled_late_utility_candidates`).
 
 Since V1-056 slice 11g-1 (DL-076) each pass also runs the automatic late-payment charge pass
-(`property_rental.late_payment_job`) after the billing runs, while it holds the same lock."""
+(`property_rental.late_payment_job`) after the billing runs, while it holds the same lock.
+
+Since General Ledger phase 6 step 2 (owner plan of 03/11/2026) each pass then posts the money
+records to the ledger (`property_rental.ledger_posting_job`), still under the same lock."""
 
 from __future__ import annotations
 
@@ -38,6 +41,12 @@ from property_rental.late_payment_job import (
     LateChargePassError,
     LateChargePassResult,
 )
+from property_rental.ledger_posting_job import (
+    LedgerPass,
+    LedgerPostingError,
+    LedgerPostingJob,
+    LedgerPostingResult,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +58,9 @@ class BillingWorkerResult:
     late_charges_error: str | None = None
     # A late Utility run failed; later late runs wait for the next pass, the charge pass still runs.
     late_utility_error: str | None = None
+    # The ledger posting pass (phase 6 step 2); it runs even when the charge pass failed.
+    ledger_posting: LedgerPostingResult | None = None
+    ledger_posting_error: str | None = None
 
 
 class BillingWorker(Protocol):
@@ -82,6 +94,7 @@ class ScheduledBillingWorker:
         max_catchup_runs: int = 12,
         service: PostgresBillingRunService | None = None,
         late_charges: LateChargePass | None = None,
+        ledger_posting: LedgerPass | None = None,
     ) -> None:
         if not 1 <= max_catchup_runs <= 100:
             raise ValueError("max_catchup_runs must be between 1 and 100")
@@ -91,6 +104,9 @@ class ScheduledBillingWorker:
         self._max_catchup_runs = max_catchup_runs
         self._service = service or PostgresBillingRunService(financial_database_url)
         self._late_charges = late_charges or AutomaticLatePaymentChargeJob(
+            financial_database_url, property_id=property_id, actor_id=actor_id
+        )
+        self._ledger_posting = ledger_posting or LedgerPostingJob(
             financial_database_url, property_id=property_id, actor_id=actor_id
         )
 
@@ -205,15 +221,27 @@ class ScheduledBillingWorker:
             # DL-076: after the day's Invoices exist, still under the worker lock. The charge
             # pass always runs at the real time: the database refuses an instant older than an
             # hour, so a billing catch-up instant is not used for it.
+            late_charges: LateChargePassResult | None = None
+            late_charges_error: str | None = None
             try:
                 late_charges = self._late_charges.run(as_of=datetime.now(UTC))
             except (psycopg.Error, LateChargePassError) as exc:
-                code = getattr(exc, "sqlstate", None) or type(exc).__name__
-                return BillingWorkerResult(
-                    current_business_date, tuple(results), None, code, late_utility_error
-                )
+                late_charges_error = getattr(exc, "sqlstate", None) or type(exc).__name__
+            # Phase 6 step 2: post the money records up to today to the ledger.
+            ledger_posting: LedgerPostingResult | None = None
+            ledger_posting_error: str | None = None
+            try:
+                ledger_posting = self._ledger_posting.run(until=current_business_date)
+            except LedgerPostingError as exc:
+                ledger_posting_error = str(exc)
         return BillingWorkerResult(
-            current_business_date, tuple(results), late_charges, None, late_utility_error
+            current_business_date,
+            tuple(results),
+            late_charges,
+            late_charges_error,
+            late_utility_error,
+            ledger_posting,
+            ledger_posting_error,
         )
 
 
@@ -259,6 +287,17 @@ def run_bounded_loop(
             # An Invoice the pass could not record is tried again; the pass still reports it.
             if late.failed:
                 all_succeeded = False
+        if result.ledger_posting_error is not None:
+            all_succeeded = False
+            print(f"ledger:error:{result.ledger_posting_error}", file=sys.stderr, flush=True)
+        if result.ledger_posting is not None:
+            # A record in "Needs check" waits for the Owner; it is not a failed pass.
+            ledger = result.ledger_posting
+            print(
+                f"ledger:posted={ledger.posted},needs_check={ledger.needs_check},"
+                f"month_end={ledger.month_end_done}",
+                flush=True,
+            )
         if iteration + 1 < max_iterations:
             sleep(poll_interval_seconds)
     return all_succeeded

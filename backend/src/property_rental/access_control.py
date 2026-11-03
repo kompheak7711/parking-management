@@ -43,6 +43,10 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "deposits.read": "Read Deposits",
     "deposits.refund.qualify": "Review a Pet Deposit for its Refund",
     "exchange_rates.manage": "Confirm exchange rates",
+    "expenses.approve": "Approve or refuse Expense requests and reports up to the Expense limit",
+    "expenses.approve_over_limit": "Approve an Expense above the Expense limit",
+    "expenses.record": "Record Expenses, give staff advances and pay staff back",
+    "expenses.request": "Send an Expense request or an Expense report",
     "final_settlements.prepare": "Prepare Final Settlement and correction drafts",
     "financial.approve": "Confirm financial drafts",
     "identity.manage_access": "Manage user accounts, role bundles and assignments",
@@ -63,6 +67,21 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "leases.sign": "Sign a Lease",
     "leases.terminate": "Terminate a Lease",
     "leases.warn": "Record a Lease violation warning",
+    "ledger.accounts.manage": "Add a ledger account or turn one off",
+    "ledger.adjustments.approve": "Approve an adjusting entry",
+    "ledger.adjustments.prepare": "Prepare an adjusting entry",
+    "ledger.budgets.approve": "Approve a Budget",
+    "ledger.budgets.prepare": "Prepare a Budget",
+    "ledger.cash_count": "Record a cash count",
+    "ledger.close": "Close a month or the year",
+    "ledger.fixed_assets": "Add, depreciate and dispose of Fixed assets",
+    "ledger.money_move": "Move money between cash and bank accounts",
+    "ledger.opening_balances": "Enter the Opening balances",
+    "ledger.owner_money": "Record Owner money put in or taken out",
+    "ledger.petty_cash": "Top up petty cash",
+    "ledger.read": "See the ledger and its reports",
+    "ledger.reconcile": "Reconcile a bank account",
+    "ledger.write_off": "Write off Customer debt",
     "operations.status.read": "Read the operations health page",
     "payments.allocate": "Allocate Payments to Invoices",
     "payments.allocations.reverse": "Reverse a Payment allocation",
@@ -94,6 +113,8 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "reservations.read": "Read Reservations",
     "service_rates.manage": "Change Service rates",
     "settings.manage": "Change the Settings (given per user by the Owner only)",
+    "supplier_bills.manage": "Add Suppliers and record Supplier bills",
+    "supplier_bills.pay": "Pay a Supplier bill and reverse a bill payment",
     "units.read": "Read Units and their history",
     "utility.calculate": "Run the Utility calculation",
     "utility.estimate": "Record a broken-Meter estimate",
@@ -173,9 +194,31 @@ STAFF_L1C_BUNDLE_CAPABILITIES: Final = frozenset(
 STAFF_RENT_LETTER_CAPABILITIES: Final = frozenset(
     {"rent_nonpayment.case_manage", "rent_nonpayment.event_post"}
 )
-STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
-    STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES
+# General Ledger (owner 2026-11-03, phase 6 plan L1, migration `20270414_264`): every role may send
+# an Expense request or report; the accountant's work stays with the Owner (U1), except that a
+# Manager approves Expenses up to the Expense limit and tops up petty cash (owner 03/11 07:03).
+STAFF_LEDGER_CAPABILITIES: Final = frozenset({"expenses.request"})
+OWNER_ONLY_LEDGER_CAPABILITIES: Final = frozenset(
+    {
+        "expenses.approve_over_limit",
+        "ledger.accounts.manage",
+        "ledger.adjustments.approve",
+        "ledger.adjustments.prepare",
+        "ledger.budgets.approve",
+        "ledger.budgets.prepare",
+        "ledger.close",
+        "ledger.fixed_assets",
+        "ledger.opening_balances",
+        "ledger.owner_money",
+        "ledger.reconcile",
+        "ledger.write_off",
+    }
 )
+STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
+    STAFF_L1C_BUNDLE_CAPABILITIES | STAFF_RENT_LETTER_CAPABILITIES | STAFF_LEDGER_CAPABILITIES
+)
+# The default Manager bundle: every bundle capability except the Owner-only ledger rights.
+MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = BUNDLE_CAPABILITIES - OWNER_ONLY_LEDGER_CAPABILITIES
 
 
 class GrantCursor(Protocol):

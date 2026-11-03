@@ -28,6 +28,7 @@ from property_rental.billing_worker import (
     run_bounded_loop,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.ledger_posting_job import LedgerPostingResult
 
 
 def run_detail(command: BillingRunCommand, *, source: str = "API") -> BillingRunDetail:
@@ -315,6 +316,14 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             self.passes += 1
             return None
 
+    class NoLedger:
+        def __init__(self) -> None:
+            self.until: list[date] = []
+
+        def run(self, *, until: date) -> LedgerPostingResult:
+            self.until.append(until)
+            return LedgerPostingResult(0, 0)
+
     class FailingLateService(Service):
         def execute(
             self, command: BillingRunCommand, *, actor: AuthenticatedActor, invocation_source: str
@@ -337,6 +346,7 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             max_catchup_runs=bound,
             service=cast(Any, service),
             late_charges=cast(Any, NoLateCharges()),
+            ledger_posting=NoLedger(),
         )
         result = worker.run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
         assert len(result.runs) == expected
@@ -358,7 +368,7 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
         ) == ("UTILITIES", late_key, today, date(2026, 9, 3), date(2026, 9, 30))
         assert command.idempotency_key != service.commands[0].idempotency_key
     # A failed late run stops the later late runs of the pass, never the charge pass.
-    failing, charges = FailingLateService(), NoLateCharges()
+    failing, charges, ledger = FailingLateService(), NoLateCharges(), NoLedger()
     failed = ScheduledBillingWorker(
         "postgresql://unused",
         property_id=property_id,
@@ -366,8 +376,11 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
         max_catchup_runs=3,
         service=cast(Any, failing),
         late_charges=cast(Any, charges),
+        ledger_posting=ledger,
     ).run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
     assert (len(failed.runs), len(failing.commands), charges.passes) == (1, 2, 1)
+    # The ledger posting pass still runs, for the Property's business date.
+    assert ledger.until == [today] and failed.ledger_posting == LedgerPostingResult(0, 0)
     assert failed.late_utility_error == "BillingRunUnavailable"
 
 
