@@ -575,6 +575,7 @@ def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
         "default_monthly_rent_usd_cents": None,
         "required_service_ids": [],
         "features": [],
+        "for_rent": True,
     }
 
 
