@@ -26,11 +26,10 @@ The plan of 01/11/2026 (owner agreed every part) and the owner's database decisi
    it comes from the business location (Cambodia), with no "same as this device" choice.
 4. Business rules (tables from migration 263) for Billing, Reservations, Prices, Quotations and
    the Riel rate, with the values the app used before, in force from 01/01/2026. The program now
-   reads two of them: the late-payment charge percent and the days after issue for other
-   Invoices. The others show "Not used yet" until a later step wires them. Each rule the program
-   reads keeps a safe range (a late charge of 0 to 100%, 1 to 90 days). The older "days after
-   issue" setting (``app.set_one_time_charge_due_days``) now also writes the rule from today, so
-   the two never disagree.
+   reads one of them: the late-payment charge percent (kept from 0 to 100%). The others show
+   "Not used yet" until a later step wires them. The days after issue for other Invoices stay
+   the V1 Property setting (``app.set_one_time_charge_due_days``, several changes a day allowed);
+   the screen shows it with the Billing rules.
 """
 
 from collections.abc import Sequence
@@ -99,15 +98,6 @@ RULES = (
         False,
         "Rent and Utilities due on",
         "ថ្ងៃផុតកំណត់ឈ្នួល និងទឹកភ្លើង",
-    ),
-    (
-        "OTHER_INVOICE_DUE_DAYS",
-        "BILLING",
-        "DAYS",
-        None,
-        True,
-        "Other Invoices due after issue",
-        "វិក្កយបត្រផ្សេងផុតកំណត់ក្រោយចេញ",
     ),
     ("LATE_PAYMENT_PERCENT", "BILLING", "PERCENT", 1000, True, "Late-payment charge", "ថ្លៃបង់យឺត"),
     (
@@ -242,17 +232,6 @@ REVIEW_INITIAL_AFTER = """            IF NOT app.invoice_type_late_payment(v_inv
                 v_blockers:=v_blockers||jsonb_build_array(CASE
                     WHEN v_invoice.rent_billing_kind='INITIAL' THEN 'INITIAL_RENT_NO_LATE_PAYMENT'
                     ELSE 'LATE_PAYMENT_OFF' END);"""
-# The older "days after issue" setting now also writes the business rule, from today, so the
-# two can never disagree.
-SET_DUE_DAYS = "app.set_one_time_charge_due_days(uuid,uuid,integer,integer,text,uuid)"
-SET_DUE_DAYS_BEFORE = """            RETURN QUERY
-            UPDATE app.properties AS configuration
-            SET one_time_charge_due_days=p_days"""
-SET_DUE_DAYS_AFTER = """            PERFORM app.set_business_rule(p_property,'OTHER_INVOICE_DUE_DAYS',p_days::bigint,
-                timezone(v_timezone,v_now)::date,p_reason,p_actor,p_audit_id);
-            RETURN QUERY
-            UPDATE app.properties AS configuration
-            SET one_time_charge_due_days=p_days"""
 
 
 def _patch(signature: str, replacements: tuple[tuple[str, str], ...]) -> None:
@@ -678,12 +657,12 @@ def upgrade() -> None:
         REVOKE ALL ON FUNCTION {UPDATE_DETAILS} FROM PUBLIC;
         GRANT EXECUTE ON FUNCTION {UPDATE_DETAILS} TO prm_runtime;
 
-        -- 4. The days after issue for other Invoices: the business rule, else the old value.
+        -- 4. The days after issue for other Invoices: the V1 Property setting. One function so
+        -- a later step can move it to a business rule in one place.
         CREATE FUNCTION app.one_time_charge_due_days(p_property uuid, p_on date)
         RETURNS integer LANGUAGE sql STABLE SET search_path = pg_catalog AS $$
-            SELECT coalesce(app.business_rule_value('OTHER_INVOICE_DUE_DAYS', p_on)::integer,
-                (SELECT property.one_time_charge_due_days FROM app.properties AS property
-                 WHERE property.id = p_property))
+            SELECT property.one_time_charge_due_days FROM app.properties AS property
+            WHERE property.id = p_property
         $$;
         REVOKE ALL ON FUNCTION app.one_time_charge_due_days(uuid, date) FROM PUBLIC;
         GRANT EXECUTE ON FUNCTION app.one_time_charge_due_days(uuid, date) TO prm_runtime;
@@ -704,7 +683,6 @@ def upgrade() -> None:
             SELECT name.code INTO STRICT v_code FROM app.business_rule_names AS name
             WHERE name.id = NEW.rule_name_id;
             IF (v_code = 'LATE_PAYMENT_PERCENT' AND NEW.value > 10000)
-                OR (v_code = 'OTHER_INVOICE_DUE_DAYS' AND NEW.value NOT BETWEEN 1 AND 90)
                 OR (v_code IN ('METER_READING_DAY', 'INVOICE_ISSUE_DAY', 'RENT_DUE_DAY')
                     AND NEW.value NOT BETWEEN 1 AND 28) THEN
                 RAISE EXCEPTION 'The business rule value is outside what the app allows'
@@ -718,14 +696,7 @@ def upgrade() -> None:
         """
     )
     for code, area, unit, value, used, en, kh in RULES:
-        if code == "OTHER_INVOICE_DUE_DAYS":
-            # The days the Property used before (7 on a new database).
-            amount = (
-                "coalesce((SELECT property.one_time_charge_due_days "
-                "FROM app.properties AS property LIMIT 1), 7)"
-            )
-        else:
-            amount = "NULL" if value is None else str(value)
+        amount = "NULL" if value is None else str(value)
         op.execute(
             f"""
             WITH named AS (
@@ -748,7 +719,6 @@ def upgrade() -> None:
     _patch(SCHEDULED_UTILITY_ITEM, ((UTILITY_DUE_BEFORE, UTILITY_DUE_AFTER),))
     _patch(RECORD_AUTOMATIC_CHARGE, ((RECORD_INITIAL_BEFORE, RECORD_INITIAL_AFTER),))
     _patch(VALIDATE_AUTOMATIC_CHARGE, ((VALIDATE_INITIAL_BEFORE, VALIDATE_INITIAL_AFTER),))
-    _patch(SET_DUE_DAYS, ((SET_DUE_DAYS_BEFORE, SET_DUE_DAYS_AFTER),))
     _patch(VALIDATE_MANUAL, ((MANUAL_INITIAL_BEFORE, MANUAL_TYPE_GATE),))
     _patch(FINALIZE_MANUAL, ((MANUAL_INITIAL_BEFORE, MANUAL_TYPE_GATE),))
     _patch(REVIEW_SNAPSHOT, ((REVIEW_INITIAL_BEFORE, REVIEW_INITIAL_AFTER),))

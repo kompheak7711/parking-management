@@ -13,6 +13,7 @@ from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
 from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from payment_test_support import seed_payment
 from property_rental.billing import PostgresRentBillingService
 from property_rental.deposit import (
@@ -950,6 +951,7 @@ def mixed_rent_case(url: str) -> dict[str, Any]:
     }
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_a_designation(
     migrated_database_url: str,
 ) -> None:
@@ -1111,6 +1113,7 @@ def test_the_remaining_pet_deposit_pays_only_debt_left_after_the_security_deposi
     assert [step["kind"] for step in payload["steps"]][-2:] == ["DEPOSIT_REFUNDS"] * 2
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_termination_lets_only_the_customer_choose_the_pet_remainder(
     migrated_database_url: str,
 ) -> None:

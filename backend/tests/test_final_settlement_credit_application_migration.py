@@ -11,6 +11,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from property_rental.credit import (
     ApplyCreditCommand,
     CreditConflictError,
@@ -249,6 +250,7 @@ def test_a_settlement_credit_application_pays_an_invoice_without_rent_or_service
     assert len(applications(url, case["settlement"])) == 1
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_settlement_credit_on_a_mixed_rent_invoice_follows_the_proposal_or_the_designation(
     migrated_database_url: str,
 ) -> None:

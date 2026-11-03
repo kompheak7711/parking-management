@@ -20,6 +20,11 @@ import type {
   ExchangeRate,
 } from "../configurationClient";
 import {
+  type DueDaysApi,
+  type DueDaysSetting,
+  InvoiceClientError,
+} from "../invoiceClient";
+import {
   type PaymentMethodConfiguration,
   type PropertyBusinessConfiguration,
   type PropertyConfigurationApi,
@@ -59,6 +64,8 @@ export interface BusinessApi {
   rates: Pick<EffectiveConfigurationApi, "load">;
   /** V1.1 part 2: business rules, document numbering and Invoice types. */
   settings: BusinessSettingsApi;
+  /** The days after issue for other Invoices stay the V1 Property setting (DL-118). */
+  dueDays: DueDaysApi;
 }
 
 interface Loaded {
@@ -69,6 +76,7 @@ interface Loaded {
   rules: BusinessRules;
   numbers: NumberRule[];
   types: InvoiceType[];
+  dueDays: DueDaysSetting;
 }
 
 type Open =
@@ -76,6 +84,7 @@ type Open =
   | { kind: "business" }
   | { kind: "rule"; rule: BusinessRule }
   | { kind: "add-rule" }
+  | { kind: "days" }
   | { kind: "type"; type: InvoiceType }
   | { kind: "letters"; number: NumberRule }
   | { kind: "method"; method: PaymentMethodConfiguration | null };
@@ -248,17 +257,19 @@ export function BusinessTab({
       api.settings.rules(propertyId),
       api.settings.numbers(propertyId),
       api.settings.invoiceTypes(propertyId),
+      api.dueDays.get(propertyId),
     ])
-      .then(([property, units, rate, rules, numbers, types]) => {
+      .then(([property, units, rate, rules, numbers, types, dueDays]) => {
         if (operation !== sequence.current) return;
-        setLoaded({ property, units, rate, rules, numbers, types });
+        setLoaded({ property, units, rate, rules, numbers, types, dueDays });
       })
       .catch((error: unknown) => {
         if (operation !== sequence.current) return;
         setLoaded(null);
         setFailure(
           error instanceof PropertyConfigurationUnavailableError ||
-            (error instanceof BusinessSettingsError && error.status === 403)
+            (error instanceof BusinessSettingsError && error.status === 403) ||
+            (error instanceof InvoiceClientError && error.status === 403)
             ? "not_allowed"
             : "failed",
         );
@@ -304,7 +315,8 @@ export function BusinessTab({
         if (error instanceof PropertySavedReadFailedError) return saved();
         const status =
           error instanceof PropertyConfigurationError ||
-          error instanceof BusinessSettingsError
+          error instanceof BusinessSettingsError ||
+          error instanceof InvoiceClientError
             ? error.status
             : null;
         if (status === 409 && taken !== undefined) {
@@ -362,7 +374,7 @@ export function BusinessTab({
     );
   }
 
-  const { property, units, rate, rules, numbers, types } = loaded;
+  const { property, units, rate, rules, numbers, types, dueDays } = loaded;
   const openWith = (next: Open) => {
     setProblem(null);
     setToast(null);
@@ -466,6 +478,33 @@ export function BusinessTab({
             {areas.map((area) => (
               <RulesTable
                 area={area}
+                first={
+                  area === "BILLING" ? (
+                    <tr>
+                      <td>{sst(language, "se_misc_due")}</td>
+                      <td className="ui-num">
+                        {sst(
+                          language,
+                          "cal_misc_v",
+                          dueDays.one_time_charge_due_days,
+                        )}
+                      </td>
+                      <td className="ui-num">—</td>
+                      <td>
+                        <button
+                          aria-label={`${sst(language, "se_edit")}: ${sst(language, "se_misc_due")}`}
+                          className="ui-btn link"
+                          onClick={() => {
+                            openWith({ kind: "days" });
+                          }}
+                          type="button"
+                        >
+                          {sst(language, "se_edit")}
+                        </button>
+                      </td>
+                    </tr>
+                  ) : undefined
+                }
                 key={area}
                 language={language}
                 onEdit={(rule) => {
@@ -735,6 +774,29 @@ export function BusinessTab({
           today={rules.today}
         />
       )}
+      {open?.kind === "days" && (
+        <DaysDialog
+          busy={busy}
+          current={dueDays.one_time_charge_due_days}
+          language={language}
+          onClose={closeOpen}
+          onSave={(days, reason) => {
+            run(
+              () =>
+                api.dueDays.set(
+                  propertyId,
+                  days,
+                  reason,
+                  // The days share the Property's version.
+                  dueDays.version,
+                  crypto.randomUUID(),
+                ),
+              sst(language, "se_saved"),
+            );
+          }}
+          problem={problem}
+        />
+      )}
       {open?.kind === "type" && (
         <InvoiceTypeDialog
           busy={busy}
@@ -813,11 +875,14 @@ function RulesTable({
   language,
   area,
   rules,
+  first,
   onEdit,
 }: {
   language: Language;
   area: RuleArea;
   rules: BusinessRule[];
+  /** A row shown before the rules (the V1 days after issue in Billing). */
+  first?: ReactNode;
   onEdit: (rule: BusinessRule) => void;
 }) {
   const heading = `br-area-${area}`;
@@ -838,6 +903,7 @@ function RulesTable({
           </tr>
         </thead>
         <tbody>
+          {first}
           {rules.map((rule) => (
             <tr key={rule.code}>
               <td>
@@ -1604,6 +1670,99 @@ function BusinessNameDialog({
           {sst(language, "se20_biz_n")}
         </p>
       </div>
+      <Problem text={problem} />
+    </Dialog>
+  );
+}
+
+function DaysDialog({
+  language,
+  current,
+  busy,
+  problem,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  current: number;
+  busy: boolean;
+  problem: string | null;
+  onClose: () => void;
+  onSave: (days: number, reason: string) => void;
+}) {
+  const [days, setDays] = useState(String(current));
+  const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{ days?: string; reason?: string }>({});
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const value = Number(days.trim());
+    const found: { days?: string; reason?: string } = {};
+    if (!/^\d{1,2}$/.test(days.trim()) || value < 1 || value > 90) {
+      found.days = sst(language, "e_days");
+    }
+    if (reason.trim() === "") found.reason = sst(language, "ua_e_reason");
+    setErrors(found);
+    if (found.days !== undefined || found.reason !== undefined) {
+      document
+        .getElementById(found.days !== undefined ? "bz-days" : "bz-reason")
+        ?.focus();
+      return;
+    }
+    onSave(value, reason.trim());
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={sst(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={sst(language, "save")}
+      title={sst(language, "se_misc_due")}
+    >
+      <div className="ui-field">
+        <label htmlFor="bz-days">{sst(language, "days_n")}</label>
+        <input
+          aria-describedby={
+            errors.days === undefined ? "bz-days-h" : "bz-days-h bz-days-e"
+          }
+          aria-invalid={errors.days !== undefined}
+          autoComplete="off"
+          id="bz-days"
+          inputMode="numeric"
+          maxLength={2}
+          onChange={(event) => {
+            setDays(event.currentTarget.value);
+          }}
+          value={days}
+        />
+        <p className="help" id="bz-days-h">
+          {sst(language, "days_h")}
+        </p>
+        <FieldError id="bz-days-e" text={errors.days ?? null} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="bz-reason">
+          {sst(language, "ur_reason")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={
+            errors.reason === undefined ? undefined : "bz-reason-e"
+          }
+          aria-invalid={errors.reason !== undefined}
+          autoComplete="off"
+          id="bz-reason"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          value={reason}
+        />
+        <FieldError id="bz-reason-e" text={errors.reason ?? null} />
+      </div>
+      <p className="ui-small ui-muted">{sst(language, "misc_note")}</p>
       <Problem text={problem} />
     </Dialog>
   );

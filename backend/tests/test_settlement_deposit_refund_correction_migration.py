@@ -30,6 +30,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.conninfo import make_conninfo
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import forfeit_through_draft
 from property_rental.billing import PostgresRentBillingService
 from property_rental.deposit import PostgresDepositService
@@ -422,6 +423,7 @@ def pet_paid_case(url: str) -> dict[str, Any]:
     return case
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_mixed_line_releases_the_newest_payment_before_the_deposit_application(
     migrated_database_url: str,
 ) -> None:
@@ -610,6 +612,7 @@ def test_a_refund_above_the_paid_part_also_removes_the_unpaid_part(
         assert_reconciled(connection, customer)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_deposit_paid_line_that_still_owes_is_refunded_above_its_paid_part(
     migrated_database_url: str,
 ) -> None:
@@ -769,6 +772,7 @@ def test_an_older_deposit_application_on_the_line_stays_and_unlinked_adjustments
     assert one(url, "SELECT app.credit_available_value(%s)", case["new_credit"]) == (200,)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_deposit_application_on_another_line_of_the_invoice_stays(
     migrated_database_url: str,
 ) -> None:
@@ -905,6 +909,7 @@ def test_a_deposit_application_on_another_line_of_the_invoice_stays(
     assert settlement_row(url, case["settlement"]) == before
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_correction_needs_a_new_customer_choice(migrated_database_url: str) -> None:
     """Owner answer 3 to Q-2026-10-07-44 and BR-DEP-027: at an unpaid-Initial termination the
     remaining Pet Deposit pays other debt in a correction only by a Customer choice given for that

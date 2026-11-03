@@ -29,6 +29,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from property_rental.billing import PostgresRentBillingService
 from property_rental.final_settlement import (
     FinalSettlementConflictError,
@@ -270,6 +271,7 @@ def test_an_invoice_line_the_pet_deposit_partly_paid_is_reduced_within_its_unpai
         assert_reconciled(connection, tenant)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_another_line_of_an_invoice_the_pet_deposit_partly_paid_is_reduced_within_its_rest(
     migrated_database_url: str,
 ) -> None:

@@ -18,6 +18,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import forfeit_through_draft, reverse_through_draft
 from property_rental.customer_ledger import LedgerPosition
 from property_rental.deposit import PostgresDepositService
@@ -994,6 +995,7 @@ def test_a_moved_out_lease_closes_with_its_current_move_out(migrated_database_ur
     assert ledger(url, leaver.customer).invoice == open_total
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_termination_refunds_the_pet_rest_while_debt_stays(
     migrated_database_url: str,
 ) -> None:
@@ -1051,6 +1053,7 @@ def test_a_br_dep_027_termination_refunds_the_pet_rest_while_debt_stays(
     )
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_settlement_waits_for_every_unbilled_rent_month(migrated_database_url: str) -> None:
     """Owner answer 2 to Q-2026-10-06-33 and the answer to Q-2026-10-06-34: while a recurring
     Rent month that a Rent run would bill has no active Rent Invoice, the Settlement shows

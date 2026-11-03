@@ -22,6 +22,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import forfeit_through_draft
 from property_rental.deposit import PostgresDepositService
 from property_rental.final_settlement import FinalSettlementConflictError, SettlementDepositStep
@@ -68,6 +69,7 @@ EARLIER = (
 )
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_refund_confirm_checks_the_customer_choice_again_in_the_step(
     migrated_database_url: str,
 ) -> None:
@@ -141,6 +143,7 @@ def test_a_refund_confirm_checks_the_customer_choice_again_in_the_step(
     assert (held(url, pet), outstanding(url, pet_line), outstanding(url, other_line)) == (0, 0, 0)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_the_step_refuses_the_final_settlement_s_own_choice(migrated_database_url: str) -> None:
     """The step's other branch (review round 1): no recorder accepts the Final Settlement's own
     choice, so only a correction built by hand reaches it. The set-up of the 10c-2a-2 BR-DEP-027

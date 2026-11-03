@@ -13,6 +13,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from payment_test_support import seed_payment
 from property_rental.billing import PostgresRentBillingService
 from property_rental.late_payment import (
@@ -378,6 +379,7 @@ def test_nonpayment_alerts_and_sources_list_only_recurring_rent(
     assert str(recurring_line) in listed and str(initial_line) not in listed
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_initial_rent_review_blocks_late_fee_and_recurring_does_not(
     migrated_database_url: str,
 ) -> None:

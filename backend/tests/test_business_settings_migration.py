@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import date, timedelta
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import psycopg
 import pytest
@@ -104,7 +104,7 @@ def test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes
             "WHERE name.area IN ('BILLING','RESERVATIONS','PRICES','QUOTATIONS','RIEL_RATE')"
         ).fetchall()
         used = {code for code, by_app in codes if by_app}
-        assert used == {"OTHER_INVOICE_DUE_DAYS", "LATE_PAYMENT_PERCENT"}
+        assert used == {"LATE_PAYMENT_PERCENT"}
         assert {"METER_READING_DAY", "INVOICE_ISSUE_DAY", "RENT_DUE_DAY"} <= {
             code for code, _ in codes
         }
@@ -202,7 +202,7 @@ def test_late_payment_off_for_a_type_needs_a_reason_and_keeps_history(
     )
 
 
-def test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules(
+def test_the_program_reads_the_late_percent_from_the_rules(
     owner: tuple[Connection, UUID, UUID],
 ) -> None:
     connection, property_id, actor_id = owner
@@ -213,7 +213,6 @@ def test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules(
         == 1000
     )
     connection.execute(SET_RULE, (property_id, "LATE_PAYMENT_PERCENT", 500, later, "x", actor_id))
-    connection.execute(SET_RULE, (property_id, "OTHER_INVOICE_DUE_DAYS", 14, later, "x", actor_id))
     assert (
         scalar(
             connection, "SELECT app.late_payment_rate_basis_points(%s, %s)", (property_id, later)
@@ -221,12 +220,12 @@ def test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules(
         == 500
     )
     due = "SELECT app.one_time_charge_due_days(%s, %s)"
-    assert scalar(connection, due, (property_id, later)) == 14
-    assert scalar(connection, due, (property_id, now)) != 14
+    column = "SELECT one_time_charge_due_days FROM app.properties WHERE id=%s"
+    assert scalar(connection, due, (property_id, later)) == scalar(
+        connection, column, (property_id,)
+    )
     for code, wrong in (
         ("LATE_PAYMENT_PERCENT", 10001),
-        ("OTHER_INVOICE_DUE_DAYS", 0),
-        ("OTHER_INVOICE_DUE_DAYS", 91),
         ("RENT_DUE_DAY", 29),
     ):
         refused(
@@ -235,25 +234,6 @@ def test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules(
             SET_RULE,
             (property_id, code, wrong, later + timedelta(days=1), "x", actor_id),
         )
-
-
-def test_the_older_due_days_setting_also_writes_the_rule(
-    owner: tuple[Connection, UUID, UUID],
-) -> None:
-    connection, property_id, actor_id = owner
-    version = scalar(connection, "SELECT version FROM app.properties WHERE id=%s", (property_id,))
-    try:
-        with connection.transaction():
-            connection.execute(
-                "SELECT * FROM app.set_one_time_charge_due_days(%s,%s,%s,%s,%s,%s)",
-                (property_id, actor_id, version, 21, "Owner", uuid4()),
-            )
-    except psycopg.errors.Error as exc:  # the test actor may not be a Settings actor
-        pytest.skip(f"the test actor cannot use the older setting: {exc.sqlstate}")
-    now = today(connection, property_id)
-    assert (
-        scalar(connection, "SELECT app.one_time_charge_due_days(%s, %s)", (property_id, now)) == 21
-    )
 
 
 def test_property_details_change_at_the_expected_version_with_history(

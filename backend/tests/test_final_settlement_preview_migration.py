@@ -12,6 +12,7 @@ from alembic.script import ScriptDirectory
 
 from deposit_disposition_test_support import terminate_for_disposition
 from deposit_receipt_reversal_test_support import reverse_receipt_through_draft
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import forfeit_through_draft, reverse_through_draft
 from payment_test_support import seed_payment
 from property_rental.deposit import PostgresDepositService
@@ -1053,6 +1054,7 @@ def test_withdrawn_one_time_charges_do_not_block_and_voided_ones_are_listed(
     assert {draft["id"], after["id"]} <= lines and issued["id"] not in lines
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_unpaid_initial_and_default_terminations_let_only_the_customer_choose(
     migrated_database_url: str,
 ) -> None:

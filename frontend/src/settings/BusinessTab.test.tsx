@@ -185,6 +185,22 @@ function apiOf(
       invoiceTypes: vi.fn(() => Promise.resolve(TYPES)),
       setLatePayment: vi.fn(() => Promise.resolve(TYPES)),
     },
+    dueDays: {
+      get: vi.fn(() =>
+        Promise.resolve({
+          property_id: "property-1",
+          one_time_charge_due_days: 7,
+          version: 4,
+        }),
+      ),
+      set: vi.fn(() =>
+        Promise.resolve({
+          property_id: "property-1",
+          one_time_charge_due_days: 10,
+          version: 5,
+        }),
+      ),
+    },
     units: {
       list: vi.fn(() =>
         Promise.resolve({
@@ -278,6 +294,7 @@ describe("Settings: Business", () => {
     expect(
       rowsOf(within(rules).getByRole("table", { name: "Billing" })),
     ).toEqual([
+      "Other Invoices due | 7 days after issue | — | Edit",
       "Meters read on Not used yet | Day 24 | 01/01/2026 | Edit",
       "Late-payment charge | 10%From 01/12/2026: 5% | 01/01/2026 | Edit",
     ]);
@@ -692,6 +709,36 @@ describe("Settings: Business", () => {
       "property-1",
       "RECEIPT",
       "RC",
+    );
+  });
+
+  it("TEST-FE-1138 the days after issue for other Invoices show with the Billing rules and keep the V1 setting: whole days 1 to 90 with a reason, at the Property's version", async () => {
+    const api = show();
+    const billing = await screen.findByRole("table", { name: "Billing" });
+    expect(api.dueDays.get).toHaveBeenCalledWith("property-1");
+    expect(within(billing).getByText("7 days after issue")).toBeTruthy();
+    fireEvent.click(
+      within(billing).getByRole("button", { name: "Edit: Other Invoices due" }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Other Invoices due" });
+    const days = within(dialog).getByRole("textbox", {
+      name: "Days after issue",
+    });
+    fireEvent.change(days, { target: { value: "91" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(api.dueDays.set).not.toHaveBeenCalled();
+    fireEvent.change(days, { target: { value: "10" } });
+    fireEvent.change(within(dialog).getByRole("textbox", { name: /Reason/ }), {
+      target: { value: "Owner policy" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Saved.")).toBeTruthy();
+    expect(api.dueDays.set).toHaveBeenCalledWith(
+      "property-1",
+      10,
+      "Owner policy",
+      4,
+      expect.any(String),
     );
   });
 

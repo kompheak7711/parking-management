@@ -113,7 +113,12 @@ import {
 } from "./payments/paymentsClient";
 import { pyt } from "./payments/text";
 import { ivt } from "./invoices/text";
-import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
+import {
+  type DueDaysApi,
+  dueDaysApi as dueDaysClient,
+  InvoiceApi,
+  invoiceApi as invoiceClient,
+} from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
 import type { EnforcementServices } from "./leaseEnforcementUi";
 import { FinancialManagement } from "./FinancialManagement";
@@ -147,6 +152,7 @@ export interface AppProps {
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
   businessSettingsApi?: BusinessSettingsApi;
+  dueDaysApi?: DueDaysApi;
   customerApi?: CustomerApi;
   effectiveConfigApi?: EffectiveConfigurationApi;
   reservationApi?: ReservationApi;
@@ -637,6 +643,7 @@ export function App({
   reportApi = reportsApi,
   healthApi = healthClient,
   businessSettingsApi = businessSettingsClient,
+  dueDaysApi = dueDaysClient,
   approvalsApi = approvalsClient,
   draftDecisionApi = settlementApi,
   financialServices,
@@ -656,10 +663,11 @@ export function App({
     () => ({
       property: propertyApi,
       settings: businessSettingsApi,
+      dueDays: dueDaysApi,
       units: unitApi ?? defaultUnitApi,
       rates: effectiveConfigApi,
     }),
-    [propertyApi, businessSettingsApi, unitApi, effectiveConfigApi],
+    [propertyApi, businessSettingsApi, dueDaysApi, unitApi, effectiveConfigApi],
   );
   const client = useMemo<AuthenticationApi>(
     () => api ?? { ...authenticationApi, signIn: authenticate },

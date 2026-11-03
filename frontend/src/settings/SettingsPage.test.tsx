@@ -130,6 +130,16 @@ const businessApi = {
     invoiceTypes: vi.fn(() => Promise.resolve([])),
     setLatePayment: vi.fn(),
   },
+  dueDays: {
+    get: vi.fn(() =>
+      Promise.resolve({
+        property_id: "property-1",
+        one_time_charge_due_days: 7,
+        version: 1,
+      }),
+    ),
+    set: vi.fn(),
+  },
   units: setupApi,
   rates: { load: vi.fn(() => Promise.reject(new Error("no rates"))) },
 };

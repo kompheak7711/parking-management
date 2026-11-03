@@ -2,7 +2,9 @@
 
 DL-071 answers 9 and 10 with the DL-075 amendment (migration `20270207_195`): letters, the
 2-digit Asia/Phnom_Penh year and a running number that restarts each year per type, grows past
-9999, never goes back and is given only when the document is issued.
+9999, never goes back and is given only when the document is issued. Since V1.1 part 2 (DL-118,
+migration `20270421_271`) the numbers live in `app.number_rules`; the Owner's letters change is
+covered in `test_business_settings_migration.py`.
 """
 
 from __future__ import annotations
@@ -42,8 +44,8 @@ def test_numbers_restart_each_phnom_penh_year_and_grow_past_9999(
         assert next_number(connection, "REFUND", datetime(2091, 3, 1, tzinfo=UTC)) == "RFD910001"
         assert next_number(connection, "INVOICE", datetime(2090, 6, 1, tzinfo=UTC)) == "INV900001"
         connection.execute(
-            "UPDATE app.document_number_counters SET last_number=9998 "
-            "WHERE document_type='INVOICE' AND number_year=2091"
+            "UPDATE app.number_rules SET last_number=9998 "
+            "WHERE document_type='INVOICE' AND year=2091"
         )
         assert next_number(connection, "INVOICE", datetime(2091, 5, 1, tzinfo=UTC)) == "INV919999"
         assert next_number(connection, "INVOICE", datetime(2091, 5, 1, tzinfo=UTC)) == "INV9110000"
@@ -56,24 +58,25 @@ def test_a_counter_never_goes_back_and_the_letters_can_change(
     with psycopg.connect(migrated_database_url) as connection:
         assert next_number(connection, "REFUND", datetime(2092, 1, 5, tzinfo=UTC)) == "RFD920001"
         for statement in (
-            "UPDATE app.document_number_counters SET last_number=last_number-1 "
-            "WHERE document_type='REFUND' AND number_year=2092",
-            "DELETE FROM app.document_number_counters "
-            "WHERE document_type='REFUND' AND number_year=2092",
+            "UPDATE app.number_rules SET last_number=last_number-1 "
+            "WHERE document_type='REFUND' AND year=2092",
+            "DELETE FROM app.number_rules WHERE document_type='REFUND' AND year=2092",
         ):
             with pytest.raises(psycopg.Error) as refused, connection.transaction():
                 connection.execute(statement)
             assert refused.value.sqlstate == "55000"
         # DL-075: new letters carry on with the same running number.
         connection.execute(
-            "UPDATE app.document_number_series SET letters='RF' WHERE document_type='REFUND'"
+            "UPDATE app.number_rules SET format='RFyy000n' "
+            "WHERE document_type='REFUND' AND year=2092"
         )
         assert next_number(connection, "REFUND", datetime(2092, 2, 1, tzinfo=UTC)) == "RF920002"
-        for letters in ("R", "REFUNDS", "rfd", "INV"):
+        for letters in ("R", "REFUNDS", "rfd"):
             with pytest.raises(psycopg.Error), connection.transaction():
                 connection.execute(
-                    "UPDATE app.document_number_series SET letters=%s WHERE document_type='REFUND'",
-                    (letters,),
+                    "UPDATE app.number_rules SET format=%s "
+                    "WHERE document_type='REFUND' AND year=2092",
+                    (f"{letters}yy000n",),
                 )
         with pytest.raises(psycopg.Error) as unknown, connection.transaction():
             next_number(connection, "LETTER", datetime(2092, 2, 1, tzinfo=UTC))

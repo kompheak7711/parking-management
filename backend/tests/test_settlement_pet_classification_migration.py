@@ -27,6 +27,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg.types.json import Jsonb
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from property_rental.final_settlement import (
     FinalSettlementAuthorizationError,
     FinalSettlementConflictError,
@@ -363,6 +364,7 @@ def test_the_draft_is_checked_under_the_corrected_classification_and_the_settlem
     assert (held(url, pet), outstanding(url, pet_line), is_pet(case, pet_line)) == (0, 0, True)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_without_a_customer_choice_the_pet_deposit_value_is_refunded_and_the_line_stays_open(
     migrated_database_url: str,
 ) -> None:
@@ -526,6 +528,7 @@ def test_the_step_rechecks_pet_damage_when_the_classification_changed_after_the_
     assert (held(url, pet), held(url, security), outstanding(url, other_line)) == (0, 0, 0)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_reclassification_needs_a_new_customer_choice(
     migrated_database_url: str,
 ) -> None:

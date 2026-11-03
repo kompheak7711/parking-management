@@ -29,6 +29,7 @@ from alembic.script import ScriptDirectory
 from psycopg.conninfo import make_conninfo
 from psycopg.types.json import Jsonb
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import forfeit_through_draft
 from payment_test_support import seed_payment
 from property_rental.deposit import PostgresDepositService
@@ -1819,6 +1820,7 @@ def test_an_inspection_correction_waits_for_the_step_and_its_line_is_then_no_pet
     assert (held(url, pet), outstanding(url, pet_line)) == (0, 0)
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_termination_after_closure(migrated_database_url: str) -> None:
     """BR-DEP-027 and BR-LEASE-005 (review round 2): at an unpaid-Initial termination the
     remaining Pet Deposit pays other debt only by the Customer's choice, so a staff reason is
@@ -1907,6 +1909,7 @@ def test_a_br_dep_027_termination_after_closure(migrated_database_url: str) -> N
         assert_reconciled(connection, case["customer"])
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_credit_after_closure_follows_the_rent_first_proposal_or_the_designation(
     migrated_database_url: str,
 ) -> None:

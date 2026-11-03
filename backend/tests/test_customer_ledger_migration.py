@@ -14,6 +14,7 @@ from alembic.script import ScriptDirectory
 
 from deposit_disposition_test_support import disposition_context, terminate_for_disposition
 from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from lease_deposit_forfeiture_test_support import (
     record_disposition_as_owner,
     reverse_disposition_as_owner,
@@ -236,6 +237,7 @@ def canonical_invoice(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID]:
     return human, prop, customer, issued.invoice_id, UUID(str(lines[0][0])), UUID(str(lines[1][0]))
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_ledger_canonical_rent_service_charge_example_and_original_source_preservation(
     migrated_database_url: str,  # noqa: F811
 ) -> None:

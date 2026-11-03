@@ -9,6 +9,7 @@ import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+from first_rent_test_support import first_rent_late_payment_off as first_rent_late_payment_off
 from property_rental.deposit_receipt_reversal import (
     DepositReceiptReversalConflictError,
     DepositReceiptReversalService,
@@ -558,6 +559,7 @@ def test_a_settlement_refund_is_not_corrected_by_a_one_call_correction(
     assert held(url, case["security"]) == 0 and held(url, case["pet"]) == 20_000
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_pet_refund_waits_only_for_pet_damage_when_the_security_is_kept(
     migrated_database_url: str,
 ) -> None:
@@ -609,6 +611,7 @@ def test_a_br_dep_027_pet_refund_waits_only_for_pet_damage_when_the_security_is_
     assert held(url, case["pet"]) == 0 and outstanding(url, case["other_line"]) == 12_500
 
 
+@pytest.mark.usefixtures("first_rent_late_payment_off")
 def test_a_br_dep_027_pet_refund_waits_for_pet_damage_and_a_usable_security_deposit(
     migrated_database_url: str,
 ) -> None:

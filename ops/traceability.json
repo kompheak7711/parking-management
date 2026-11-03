@@ -60332,7 +60332,7 @@
       "notes": "V1.1 part 2: Late payment for a type needs a reason, adds a version and an audit event; types are never removed."
     },
     {
-      "test_id": "test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules",
+      "test_id": "test_the_program_reads_the_late_percent_from_the_rules",
       "upstream_ids": [
         "DL-118",
         "DB-BS-001"
@@ -60340,18 +60340,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_business_settings_migration.py",
       "status": "implemented",
-      "notes": "V1.1 part 2: The late charge percent and the other-Invoice days follow the business rules by date; values out of range are refused."
-    },
-    {
-      "test_id": "test_the_older_due_days_setting_also_writes_the_rule",
-      "upstream_ids": [
-        "DL-118",
-        "DB-BS-001"
-      ],
-      "test_level": "DB",
-      "test_path": "backend/tests/test_business_settings_migration.py",
-      "status": "implemented",
-      "notes": "V1.1 part 2: The older days-after-issue setting writes the business rule from today."
+      "notes": "V1.1 part 2: The late charge percent follows the business rule by date; the other-Invoice days stay the Property setting; values out of range are refused."
     },
     {
       "test_id": "test_property_details_change_at_the_expected_version_with_history",
@@ -60418,6 +60407,17 @@
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
       "notes": "V1.1 part 2: a Property change keeps the description and business name when they are left out."
+    },
+    {
+      "test_id": "TEST-FE-1138",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 2: the days after issue for other Invoices show as the first Billing row and keep the V1 Property setting (1 to 90 days, a reason, the Property version)."
     }
   ]
 }
