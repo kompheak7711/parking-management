@@ -99,9 +99,12 @@ export function ReservationsPage({
     (capabilities === null ||
       (capabilities.has("reservations.create") &&
         capabilities.has("payments.record")));
+  // V1.1 step 2b (DL-119): today's Reservation rules come with the list; until it arrives the
+  // form uses the earlier values and follows the rules when they come (the server checks too).
   const dialog = make !== null && mayMake && (
     <MakeReservationDialog
       api={api}
+      rules={data?.rules}
       customerApi={customerApi}
       gate={
         capabilities === null || capabilities.has("customers.manage")

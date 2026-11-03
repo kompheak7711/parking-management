@@ -62,12 +62,56 @@ export interface ReservationResource {
     authorization_reference: string;
   }[];
   extension_days_remaining: number | null;
+  /** V1.1 step 2b: the deposit suggested when the Reservation was made, and its rate. */
+  suggested_deposit_usd_cents?: number | null;
+  suggested_deposit_rate_basis_points?: number | null;
+  /** Today's Reservation rules (one Reservation's read only). */
+  rules?: ReservationRules;
 }
+
+/** V1.1 step 2b (DL-119): the Reservation business rules in force today. */
+export interface ReservationRules {
+  reservation_days: number;
+  extension_days: number;
+  /** Hundredths of a percent: 2000 is 20%. */
+  deposit_rate_basis_points: number;
+}
+
+/** The values before V1.1, when the server sends none. */
+export const EARLIER_RESERVATION_RULES: ReservationRules = {
+  reservation_days: 21,
+  extension_days: 14,
+  deposit_rate_basis_points: 2000,
+};
 
 export interface ReservationPage {
   items: ReservationResource[];
   next_cursor: string | null;
   can_create: boolean;
+  /** Absent in older answers: the earlier values apply. */
+  rules?: ReservationRules;
+}
+
+function rulesOf(value: unknown): ReservationRules {
+  if (typeof value !== "object" || value === null)
+    return EARLIER_RESERVATION_RULES;
+  const rules = value as Record<string, unknown>;
+  const whole = (item: unknown, least: number, most: number) =>
+    typeof item === "number" &&
+    Number.isInteger(item) &&
+    item >= least &&
+    item <= most;
+  if (
+    !whole(rules.reservation_days, 1, 90) ||
+    !whole(rules.extension_days, 1, 90) ||
+    !whole(rules.deposit_rate_basis_points, 1, 10000)
+  )
+    return EARLIER_RESERVATION_RULES;
+  return {
+    reservation_days: rules.reservation_days as number,
+    extension_days: rules.extension_days as number,
+    deposit_rate_basis_points: rules.deposit_rate_basis_points as number,
+  };
 }
 
 export interface ReservationApi {
@@ -260,6 +304,7 @@ export const reservationApi: ReservationApi = {
       next_cursor:
         typeof body.next_cursor === "string" ? body.next_cursor : null,
       can_create: body.can_create === true,
+      rules: rulesOf(body.rules),
     };
   },
   get: async (reservationId) =>

@@ -34,11 +34,13 @@ import {
 } from "../payments/depositMoney";
 import type { PaymentsApi } from "../payments/paymentsClient";
 import {
+  EARLIER_RESERVATION_RULES,
   ReservationConflictError,
   ReservationRequestError,
   ReservationUnavailableError,
   type ReservationApi,
   type ReservationResource,
+  type ReservationRules,
   type ReservationWithPaymentSource,
 } from "../reservationClient";
 import { DateInput, parseDay } from "../shell/DateInput";
@@ -49,7 +51,7 @@ import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
 import { allPages } from "../units/unitsData";
-import { addDays } from "./reservationsData";
+import { addDays, percentText, suggestedDeposit } from "./reservationsData";
 import { rt, type ReservationTextKey } from "./text";
 
 type Field =
@@ -63,10 +65,7 @@ type Field =
   | "reason"
   | "rentReason";
 
-/** The normal suggestion: 20% of the agreed Rent, to the nearest cent (as the server checks). */
-export function suggestedDeposit(rentCents: number): number {
-  return Math.floor((rentCents + 2) / 5);
-}
+export { suggestedDeposit };
 
 /** The saved acceptance reason: the person's own words, and the Rent-below reason after them
  * when there is one. Cut at 500 characters by whole characters (never half an emoji) and
@@ -93,6 +92,7 @@ export function MakeReservationDialog({
   mayOverride,
   mayLowerRent = null,
   unitId: chosenUnit,
+  rules = EARLIER_RESERVATION_RULES,
   onClose,
   onSaved,
 }: {
@@ -110,9 +110,13 @@ export function MakeReservationDialog({
   /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null while not known. */
   mayLowerRent?: boolean | null;
   unitId?: string;
+  /** V1.1 step 2b (DL-119): the Reservation rules in force today. */
+  rules?: ReservationRules;
   onClose: () => void;
   onSaved: (saved: ReservationResource) => void;
 }) {
+  const days = rules.reservation_days;
+  const rate = rules.deposit_rate_basis_points;
   const today = todayInPhnomPenh();
   const [units, setUnits] = useState<UnitResource[] | null>(null);
   const [customers, setCustomers] = useState<CustomerListItem[] | null>(null);
@@ -121,7 +125,14 @@ export function MakeReservationDialog({
   const [unitId, setUnitId] = useState(chosenUnit ?? "");
   const [customerId, setCustomerId] = useState("");
   const [date, setDate] = useState(today);
-  const [expires, setExpires] = useState(addDays(today, 21));
+  const [expires, setExpires] = useState(addDays(today, days));
+  // The longest Reservation follows the rule until someone picks their own day.
+  const typedExpiry = useRef(false);
+  useEffect(() => {
+    if (typedExpiry.current) return;
+    const day = parseDay(date);
+    if (day !== "") setExpires(addDays(day, days));
+  }, [date, days]);
   const [rent, setRent] = useState("");
   const [required, setRequired] = useState("");
   const [received, setReceived] = useState("");
@@ -214,7 +225,8 @@ export function MakeReservationDialog({
   }, [defaultRent]);
   const rentBelow =
     rentCents !== null && defaultRent !== null && rentCents < defaultRent;
-  const suggestion = rentCents === null ? null : suggestedDeposit(rentCents);
+  const suggestion =
+    rentCents === null ? null : suggestedDeposit(rentCents, rate);
   const receivedCents = centsOf(received);
   // DL-099 (owner 2026-10-27): only less than the suggestion needs a reason and the Manager.
   const below =
@@ -228,9 +240,9 @@ export function MakeReservationDialog({
   useEffect(() => {
     if (rentCents === null) return;
     if (!typedReceived.current)
-      setReceived((suggestedDeposit(rentCents) / 100).toFixed(2));
+      setReceived((suggestedDeposit(rentCents, rate) / 100).toFixed(2));
     if (!typedRequired.current) setRequired((rentCents / 100).toFixed(2));
-  }, [rentCents]);
+  }, [rentCents, rate]);
 
   function check(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -242,8 +254,8 @@ export function MakeReservationDialog({
     const day = parseDay(date);
     const end = parseDay(expires);
     if (day === "") found.date = say("mk_err_date");
-    if (day !== "" && (end === "" || end <= day || end > addDays(day, 21)))
-      found.expires = say("mk_err_expires");
+    if (day !== "" && (end === "" || end <= day || end > addDays(day, days)))
+      found.expires = rt(language, "mk_err_expires", days);
     if (rentCents === null) found.rent = say("mk_err_rent");
     else if (rentBelow && mayLowerRent !== true)
       found.rent = rt(
@@ -305,7 +317,11 @@ export function MakeReservationDialog({
         acceptance_reason: acceptanceReason(
           below
             ? reason.trim()
-            : rt("en", above ? "mk_reason_more" : "mk_reason_default"),
+            : rt(
+                "en",
+                above ? "mk_reason_more" : "mk_reason_default",
+                percentText(rate),
+              ),
           rentBelow ? rentReason.trim() : null,
         ),
         deposit_id: ids.current.deposit,
@@ -540,7 +556,7 @@ export function MakeReservationDialog({
                 onChange={(value) => {
                   setDate(value);
                   const day = parseDay(value);
-                  if (day !== "") setExpires(addDays(day, 21));
+                  if (day !== "") setExpires(addDays(day, days));
                 }}
                 value={date}
               />
@@ -553,12 +569,15 @@ export function MakeReservationDialog({
                 disabled={fixed}
                 id="mk-expires"
                 invalid={problems.expires !== undefined}
-                max={parseDay(date) === "" ? undefined : addDays(date, 21)}
+                max={parseDay(date) === "" ? undefined : addDays(date, days)}
                 min={parseDay(date) === "" ? undefined : addDays(date, 1)}
-                onChange={setExpires}
+                onChange={(value) => {
+                  typedExpiry.current = true;
+                  setExpires(value);
+                }}
                 value={expires}
               />
-              <p className="help">{rt(language, "mk_expires_help")}</p>
+              <p className="help">{rt(language, "mk_expires_help", days)}</p>
               {error("expires")}
             </div>
           </div>
@@ -634,7 +653,12 @@ export function MakeReservationDialog({
               />
               {suggestion !== null && (
                 <p className="help">
-                  {rt(language, "mk_received_help", usdFromCents(suggestion))}
+                  {rt(
+                    language,
+                    "mk_received_help",
+                    usdFromCents(suggestion),
+                    percentText(rate),
+                  )}
                 </p>
               )}
               {error("received")}

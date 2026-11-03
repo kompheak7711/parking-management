@@ -108,8 +108,8 @@ const TEXT = {
   security: ["Security Deposit", "ប្រាក់កក់សុវត្ថិភាព"],
   suggested: ["Suggested", "ការណែនាំ"],
   suggested_note: [
-    "20% of the agreed Rent, not a minimum",
-    "20% នៃថ្លៃជួលដែលបានព្រមព្រៀង មិនមែនជាអប្បបរមាទេ",
+    "{0} of the agreed Rent, not a minimum",
+    "{0} នៃថ្លៃជួលដែលបានព្រមព្រៀង មិនមែនជាអប្បបរមាទេ",
   ],
   accepted: ["Accepted", "បានទទួលយក"],
   same: ["same as the suggestion", "ដូចការណែនាំ"],
@@ -151,8 +151,8 @@ const TEXT = {
   // Extend and Cancel
   extend_title: ["Extend · {0}", "ពន្យារ · {0}"],
   extend_note: [
-    "A Reservation is extended once only, by at most 14 days after its current expiration.",
-    "ការកក់អាចពន្យារបានតែម្តង មិនលើសពី 14 ថ្ងៃបន្ទាប់ពីថ្ងៃផុតកំណត់បច្ចុប្បន្ន។",
+    "A Reservation is extended once only, by at most {0} days after its current expiration.",
+    "ការកក់អាចពន្យារបានតែម្តង មិនលើសពី {0} ថ្ងៃបន្ទាប់ពីថ្ងៃផុតកំណត់បច្ចុប្បន្ន។",
   ],
   latest: ["Latest possible date: {0}", "កាលបរិច្ឆេទចុងក្រោយបំផុត៖ {0}"],
   new_date: ["New expiration date", "កាលបរិច្ឆេទផុតកំណត់ថ្មី"],
@@ -229,8 +229,8 @@ const TEXT = {
   mk_date: ["Reservation Date", "ថ្ងៃកក់"],
   mk_expires: ["Expires on", "ផុតកំណត់នៅ"],
   mk_expires_help: [
-    "At most 21 days after the Reservation Date.",
-    "យូរបំផុត 21 ថ្ងៃ បន្ទាប់ពីថ្ងៃកក់។",
+    "At most {0} days after the Reservation Date.",
+    "យូរបំផុត {0} ថ្ងៃ បន្ទាប់ពីថ្ងៃកក់។",
   ],
   mk_rent: [
     "Agreed monthly Rent (USD)",
@@ -240,28 +240,28 @@ const TEXT = {
   mk_required_help: ["Usually one month's Rent.", "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។"],
   mk_received: ["Received now (USD)", "ទទួលបានឥឡូវនេះ (USD)"],
   mk_received_help: [
-    "Suggested: 20% of the agreed Rent, {0}.",
-    "ការណែនាំ៖ 20% នៃថ្លៃឈ្នួលដែលបានព្រមព្រៀង {0}។",
+    "Suggested: {1} of the agreed Rent, {0}.",
+    "ការណែនាំ៖ {1} នៃថ្លៃឈ្នួលដែលបានព្រមព្រៀង {0}។",
   ],
   mk_reason: [
     "Why less than the suggestion (needs the Manager's approval)",
     "ហេតុអ្វីតិចជាងចំនួនណែនាំ (ត្រូវការការអនុម័តពីអ្នកគ្រប់គ្រង)",
   ],
   mk_reason_default: [
-    "Suggested 20% of the agreed Rent.",
-    "Suggested 20% of the agreed Rent.",
+    "Suggested {0} of the agreed Rent.",
+    "Suggested {0} of the agreed Rent.",
   ],
   mk_reason_more: [
-    "More than the suggested 20% received.",
-    "More than the suggested 20% received.",
+    "More than the suggested {0} received.",
+    "More than the suggested {0} received.",
   ],
   mk_save: ["Save Reservation", "រក្សាទុកការកក់"],
   mk_err_unit: ["Choose a Parking.", "សូមជ្រើសរើសចំណត។"],
   mk_err_customer: ["Choose a Customer.", "សូមជ្រើសរើសអតិថិជន។"],
   mk_err_date: ["Type a real day.", "សូមវាយថ្ងៃដែលត្រឹមត្រូវ។"],
   mk_err_expires: [
-    "Pick a day after the Reservation Date, at most 21 days later.",
-    "សូមជ្រើសរើសថ្ងៃបន្ទាប់ពីថ្ងៃកក់ យូរបំផុត 21 ថ្ងៃក្រោយ។",
+    "Pick a day after the Reservation Date, at most {0} days later.",
+    "សូមជ្រើសរើសថ្ងៃបន្ទាប់ពីថ្ងៃកក់ យូរបំផុត {0} ថ្ងៃក្រោយ។",
   ],
   mk_err_rent: [
     "Type the Rent, such as 450.00.",

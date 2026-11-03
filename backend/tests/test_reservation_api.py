@@ -19,11 +19,13 @@ from property_rental.reservation import (
     ReservationStatus,
 )
 from property_rental.reservation_api import (
+    EARLIER_RESERVATION_RULES,
     PostgresReservationResourceFlow,
     ReservationExtensionNotice,
     ReservationPage,
     ReservationResource,
     ReservationResourceNotFound,
+    ReservationRules,
 )
 from property_rental.reservation_deposit_draft import (
     RecordReservationDepositCorrectionDraftCommand,
@@ -83,9 +85,16 @@ class InMemoryReservationFlow:
     # V1-061 (DL-110): the default Rent of each Unit, when a test sets one.
     unit_rents: dict[UUID, int] = field(default_factory=dict)
     payments: list[dict[str, object]] = field(default_factory=list)
+    rules: ReservationRules = EARLIER_RESERVATION_RULES
+    rules_asked: list[date | None] = field(default_factory=list)
 
     def unit_default_rent(self, unit_id: UUID) -> int | None:
         return self.unit_rents.get(unit_id)
+
+    def reservation_rules(self, property_id: UUID, on: date | None) -> ReservationRules:
+        del property_id
+        self.rules_asked.append(on)
+        return self.rules
 
     def list(
         self,
@@ -324,6 +333,54 @@ def test_list_is_bounded_status_filtered_private_and_capability_sensitive() -> N
     assert response.headers["cache-control"] == "private, no-store"
     assert response.json()["data"]["can_create"] is True
     assert [item["status"] for item in response.json()["data"]["items"]] == ["ACTIVE"]
+
+
+def test_the_list_gives_today_s_reservation_rules_and_the_suggestion_follows_the_rule() -> None:
+    """V1.1 step 2b (DL-119): the forms read the Reservation rules in force today, and a new
+    Reservation's suggested deposit follows the rule on its Reservation Date."""
+    property_id = uuid4()
+    held = resource(property_id)
+    flow = InMemoryReservationFlow({held.reservation_id: held}, rules=ReservationRules(30, 7, 2500))
+    authenticated = actor(property_id, "reservations.read", "reservations.create")
+    api = client(flow, authenticated)
+    listed = api.get(f"/properties/{property_id}/reservations")
+    today_rules = {
+        "reservation_days": 30,
+        "extension_days": 7,
+        "deposit_rate_basis_points": 2500,
+    }
+    assert listed.json()["data"]["rules"] == today_rules
+    one = api.get(f"/reservations/{held.reservation_id}").json()["data"]
+    assert one["rules"] == today_rules
+    assert one["suggested_deposit_usd_cents"] is None
+    assert flow.rules_asked == [None, None]
+    payload = {
+        "reservation_id": str(uuid4()),
+        "unit_id": str(uuid4()),
+        "customer_id": str(uuid4()),
+        "reservation_date": "2026-08-26",
+        "agreed_monthly_rent_usd_cents": 50001,
+        "expiration_date": "2026-09-05",
+        "acceptance_id": str(uuid4()),
+        "accepted_initial_deposit_usd_cents": 12500,
+        "required_security_deposit_usd_cents": 50000,
+        "acceptance_reason": "Accepted normal suggestion",
+        "deposit_id": str(uuid4()),
+        "receipt_id": str(uuid4()),
+        "payment_id": str(uuid4()),
+    }
+    made = api.post(f"/properties/{property_id}/reservations", json=payload, headers=headers())
+    assert made.status_code == 201
+    assert flow.rules_asked[-1] == date(2026, 8, 26)
+    assert flow.create_command is not None
+    assert flow.create_command.calculation_trace == {
+        "agreed_monthly_rent_usd_cents": 50001,
+        "suggested_rate_basis_points": 2500,
+        "suggested_amount_usd_cents": 12500,
+    }
+    assert flow.create_command.acceptance_kind == "NORMAL_SUGGESTION"
+    assert ReservationRules(21, 14, 2000).suggestion(12345) == (12345 + 2) // 5
+    assert ReservationRules(21, 14, 2000).suggestion(12348) == (12348 + 2) // 5
 
 
 def test_object_scope_is_not_disclosed_to_an_actor_from_another_property() -> None:

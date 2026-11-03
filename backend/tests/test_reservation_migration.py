@@ -124,6 +124,7 @@ def create_reservation(
     accepted_at: datetime | None = None,
     received_at: datetime | None = None,
     existing_payment_id: UUID | None = None,
+    trace_values: dict[str, object] | None = None,
 ) -> tuple[tuple[object, ...], dict[str, UUID]]:
     """Execute the protected Reservation activation bundle."""
     effective_business_date = business_date or reservation_business_date(connection, property_id)
@@ -157,6 +158,7 @@ def create_reservation(
             "suggested_rate_basis_points": 2000,
             "suggested_amount_usd_cents": 10_000,
             "rounding": "HALF_UP_USD_CENTS",
+            **(trace_values or {}),
         }
     )
     row = connection.execute(

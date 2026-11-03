@@ -1,12 +1,19 @@
 // V1-058 R3: what the Reservations screens read and how they group a Reservation.
 
-import type { ReservationApi, ReservationResource } from "../reservationClient";
+import {
+  EARLIER_RESERVATION_RULES,
+  type ReservationApi,
+  type ReservationResource,
+  type ReservationRules,
+} from "../reservationClient";
 
 export type ReservationCard = "active" | "ending" | "completed" | "cancelled";
 
 export interface ReservationsData {
   reservations: ReservationResource[];
   canCreate: boolean;
+  /** V1.1 step 2b (DL-119): today's Reservation rules. */
+  rules: ReservationRules;
 }
 
 // More pages than this means something is wrong; V1 has one building of a few dozen Units.
@@ -18,11 +25,13 @@ export async function loadReservationsData(
 ): Promise<ReservationsData> {
   const reservations: ReservationResource[] = [];
   let canCreate = false;
+  let rules = EARLIER_RESERVATION_RULES;
   let cursor: string | undefined;
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const result = await api.list(propertyId, undefined, cursor);
     reservations.push(...result.items);
     canCreate = result.can_create;
+    rules = result.rules ?? rules;
     if (result.next_cursor === null) break;
     cursor = result.next_cursor;
   }
@@ -33,7 +42,7 @@ export async function loadReservationsData(
       order[left.status] - order[right.status] ||
       right.reservation_date.localeCompare(left.reservation_date),
   );
-  return { reservations, canCreate };
+  return { reservations, canCreate, rules };
 }
 
 /** Whole days from `from` to `to`, both "yyyy-mm-dd". */
@@ -77,7 +86,16 @@ export function resultOf(reservation: ReservationResource): ResultKind {
     : "customer";
 }
 
-/** The suggested Security Deposit: 20% of the agreed Rent, rounded half up to the cent. */
-export function suggestedDeposit(rentCents: number): number {
-  return Math.floor((rentCents + 2) / 5);
+/** The suggested Security Deposit: the rule's share of the agreed Rent (20% before V1.1),
+ * rounded half up to the cent, as the server works it out. */
+export function suggestedDeposit(
+  rentCents: number,
+  rateBasisPoints: number = EARLIER_RESERVATION_RULES.deposit_rate_basis_points,
+): number {
+  return Math.floor((rentCents * rateBasisPoints + 5000) / 10000);
+}
+
+/** A rate in hundredths of a percent as the screen shows it: 2000 is "20%". */
+export function percentText(rateBasisPoints: number): string {
+  return `${String(rateBasisPoints / 100)}%`;
 }

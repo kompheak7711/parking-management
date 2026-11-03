@@ -60277,7 +60277,7 @@
       "notes": "V1.1 part 2: rule values are typed and shown in their unit (dollars, percent, time of day, days); a new rule's code comes from its English name."
     },
     {
-      "test_id": "test_migration_271_is_the_head",
+      "test_id": "test_migration_271_follows_the_ledger_head",
       "upstream_ids": [
         "DL-118",
         "DB-BS-001"
@@ -60418,6 +60418,105 @@
       "test_path": "frontend/src/settings/BusinessTab.test.tsx",
       "status": "implemented",
       "notes": "V1.1 part 2: the days after issue for other Invoices show as the first Billing row and keep the V1 Property setting (1 to 90 days, a reason, the Property version)."
+    },
+    {
+      "test_id": "test_migration_272_is_the_head",
+      "upstream_ids": [
+        "DL-119",
+        "DB-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: Migration 20270422_272 follows 271, is the head and is forward-only."
+    },
+    {
+      "test_id": "test_the_rules_are_read_by_day_with_the_earlier_values_and_a_safe_range",
+      "upstream_ids": [
+        "DL-119",
+        "DB-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: The Reservation rules are read by day with the earlier 21, 14 and 20%; the suggestion equals the earlier rounding; out-of-range values are refused."
+    },
+    {
+      "test_id": "test_a_reservation_lasts_at_most_the_rule_days",
+      "upstream_ids": [
+        "DL-119",
+        "DB-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: A Reservation lasts at most the rule days on its Reservation Date."
+    },
+    {
+      "test_id": "test_one_extension_goes_at_most_the_rule_days",
+      "upstream_ids": [
+        "DL-119",
+        "DB-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: One extension goes at most the extension rule on its approval day."
+    },
+    {
+      "test_id": "test_the_suggested_deposit_follows_the_rule_on_the_reservation_date",
+      "upstream_ids": [
+        "DL-119",
+        "DB-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: The saved suggestion rate and amount follow the rule on the Reservation Date."
+    },
+    {
+      "test_id": "test_the_server_reads_the_rules_and_the_saved_suggestion",
+      "upstream_ids": [
+        "DL-119",
+        "API-RS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_rules_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: The server reads today's rules and each Reservation's saved suggestion."
+    },
+    {
+      "test_id": "test_the_list_gives_today_s_reservation_rules_and_the_suggestion_follows_the_rule",
+      "upstream_ids": [
+        "DL-119",
+        "API-RS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: The list and one Reservation give today's rules; a new Reservation's suggestion and trace follow the rule on its Reservation Date."
+    },
+    {
+      "test_id": "TEST-FE-1139",
+      "upstream_ids": [
+        "DL-119",
+        "API-RS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: Make Reservation follows today's rules for the longest Reservation and the suggested share, also when the rules arrive after the form opened."
+    },
+    {
+      "test_id": "TEST-FE-1140",
+      "upstream_ids": [
+        "DL-119",
+        "API-RS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 step 2b: Extend allows at most today's extension rule."
     }
   ]
 }

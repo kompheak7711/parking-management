@@ -156,6 +156,26 @@ class ReservationResource:
     receipts: tuple[ReservationReceipt, ...] = ()
     lifecycle_events: tuple[ReservationLifecycleEvidence, ...] = ()
     deposit_outcomes: tuple[ReservationDepositOutcomeEvidence, ...] = ()
+    # V1.1 step 2b: the deposit the app suggested when the Reservation was made.
+    suggested_deposit_usd_cents: int | None = None
+    suggested_deposit_rate_basis_points: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ReservationRules:
+    """V1.1 step 2b (DL-119): the Reservation business rules in force on a day."""
+
+    reservation_days: int
+    extension_days: int
+    deposit_rate_basis_points: int
+
+    def suggestion(self, rent_usd_cents: int) -> int:
+        """The suggested deposit, rounded half up to the cent (as the database works it out)."""
+        return (rent_usd_cents * self.deposit_rate_basis_points + 5000) // 10000
+
+
+# The values before V1.1, used when no business rule is in force.
+EARLIER_RESERVATION_RULES = ReservationRules(21, 14, 2000)
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +198,10 @@ class ReservationResourceFlow(Protocol):
 
     def unit_default_rent(self, unit_id: UUID) -> int | None:
         """The Unit's default Rent (V1-061, DL-110), or None when it has none."""
+        ...
+
+    def reservation_rules(self, property_id: UUID, on: date | None) -> ReservationRules:
+        """The Reservation rules on a day; None is today at the Property."""
         ...
 
     def create(
@@ -285,6 +309,11 @@ class UnavailableReservationResourceFlow:
 
     def unit_default_rent(self, unit_id: UUID) -> int | None:
         del unit_id
+        self._raise()
+        raise AssertionError
+
+    def reservation_rules(self, property_id: UUID, on: date | None) -> ReservationRules:
+        del property_id, on
         self._raise()
         raise AssertionError
 
@@ -458,7 +487,13 @@ class PostgresReservationResourceFlow:
                (reservation.effective_expiration_date
                 - timezone(property.timezone_name, clock_timestamp())::date) BETWEEN 0 AND 13,
                reservation.effective_expiration_date
-                - timezone(property.timezone_name, clock_timestamp())::date
+                - timezone(property.timezone_name, clock_timestamp())::date,
+               (SELECT acceptance.suggested_amount_usd_cents
+                FROM app.reservation_deposit_acceptances AS acceptance
+                WHERE acceptance.reservation_id = reservation.id),
+               (SELECT acceptance.suggested_rate_basis_points
+                FROM app.reservation_deposit_acceptances AS acceptance
+                WHERE acceptance.reservation_id = reservation.id)
         FROM app.reservations AS reservation
         JOIN app.units AS unit ON unit.id = reservation.unit_id
         JOIN app.customers AS customer ON customer.id = reservation.customer_id
@@ -515,6 +550,8 @@ class PostgresReservationResourceFlow:
             notice,
             bool(row[24]),
             int(str(row[25])),
+            suggested_deposit_usd_cents=None if row[26] is None else int(str(row[26])),
+            suggested_deposit_rate_basis_points=None if row[27] is None else int(str(row[27])),
         )
 
     def _fetch(self, query: str, parameters: tuple[object, ...]) -> list[tuple[object, ...]]:
@@ -772,6 +809,29 @@ class PostgresReservationResourceFlow:
         except psycopg.Error as exc:
             raise ReservationResourceUnavailable from exc
         return None if row is None or row[0] is None else int(str(row[0]))
+
+    def reservation_rules(self, property_id: UUID, on: date | None) -> ReservationRules:
+        try:
+            with psycopg.connect(self._database_url) as connection:
+                row = connection.execute(
+                    """
+                    WITH day AS (
+                        SELECT coalesce(%s::date,
+                            timezone(property.timezone_name, statement_timestamp())::date) AS on_day
+                        FROM app.properties AS property WHERE property.id = %s
+                    )
+                    SELECT app.reservation_rule('RESERVATION_DAYS', day.on_day),
+                        app.reservation_rule('RESERVATION_EXTENSION_DAYS', day.on_day),
+                        app.reservation_rule('RESERVATION_DEPOSIT_PERCENT', day.on_day)
+                    FROM day
+                    """,
+                    (on, property_id),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise ReservationResourceUnavailable from exc
+        if row is None:
+            return EARLIER_RESERVATION_RULES
+        return ReservationRules(int(str(row[0])), int(str(row[1])), int(str(row[2])))
 
     def create(
         self,
@@ -1073,6 +1133,7 @@ def create_reservation_router(
                 limit=limit,
                 cursor=cursor,
             )
+            rules = flow.reservation_rules(property_id, None)
         except Exception as exc:
             raise _translate(exc) from exc
         response.headers["Cache-Control"] = "private, no-store"
@@ -1080,6 +1141,8 @@ def create_reservation_router(
             "data": {
                 "items": [_body(item, actor) for item in page.items],
                 "next_cursor": page.next_cursor,
+                # V1.1 step 2b (DL-119): today's Reservation rules for the forms.
+                "rules": asdict(rules),
                 "can_create": _can(actor, property_id, RESERVATION_CREATE_CAPABILITY),
             },
             "meta": {"request_id": request.state.request_id},
@@ -1093,7 +1156,12 @@ def create_reservation_router(
         payment_id: UUID,
     ) -> ReservationCreateCommand:
         """The Reservation command and the rights it needs, for both create routes."""
-        suggested = (source.agreed_monthly_rent_usd_cents + 2) // 5
+        # V1.1 step 2b (DL-119): the suggestion follows the rule on the Reservation Date.
+        try:
+            rules = flow.reservation_rules(property_id, source.reservation_date)
+        except Exception as exc:
+            raise _translate(exc) from exc
+        suggested = rules.suggestion(source.agreed_monthly_rent_usd_cents)
         acceptance_kind = (
             "NORMAL_SUGGESTION"
             if source.accepted_initial_deposit_usd_cents == suggested
@@ -1132,7 +1200,7 @@ def create_reservation_router(
                 ),
                 calculation_trace={
                     "agreed_monthly_rent_usd_cents": source.agreed_monthly_rent_usd_cents,
-                    "suggested_rate_basis_points": 2000,
+                    "suggested_rate_basis_points": rules.deposit_rate_basis_points,
                     "suggested_amount_usd_cents": suggested,
                 },
                 deposit_id=source.deposit_id,
@@ -1228,9 +1296,17 @@ def create_reservation_router(
         except Exception as exc:
             raise _translate(exc) from exc
         _require(actor, resource.property_id, RESERVATION_READ_CAPABILITY)
+        try:
+            rules = flow.reservation_rules(resource.property_id, None)
+        except Exception as exc:
+            raise _translate(exc) from exc
         response.headers["ETag"] = f'"{resource.version}"'
         response.headers["Cache-Control"] = "private, no-store"
-        return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+        # V1.1 step 2b (DL-119): today's rules, for the Extend form.
+        return {
+            "data": {**_body(resource, actor), "rules": asdict(rules)},
+            "meta": {"request_id": request.state.request_id},
+        }
 
     @router.post("/reservations/{reservation_id}/extend")
     def extend_reservation(

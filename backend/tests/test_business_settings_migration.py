@@ -71,10 +71,9 @@ def today(connection: Connection, property_id: UUID) -> date:
     return found
 
 
-def test_migration_271_is_the_head() -> None:
+def test_migration_271_follows_the_ledger_head() -> None:
     config = Config("alembic.ini")
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["20270421_271"]
     found = scripts.get_revision("20270421_271")
     assert found is not None and found.down_revision == "20270420_270"
 
@@ -104,7 +103,12 @@ def test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes
             "WHERE name.area IN ('BILLING','RESERVATIONS','PRICES','QUOTATIONS','RIEL_RATE')"
         ).fetchall()
         used = {code for code, by_app in codes if by_app}
-        assert used == {"LATE_PAYMENT_PERCENT"}
+        assert used == {
+            "LATE_PAYMENT_PERCENT",
+            "RESERVATION_DAYS",
+            "RESERVATION_EXTENSION_DAYS",
+            "RESERVATION_DEPOSIT_PERCENT",
+        }
         assert {"METER_READING_DAY", "INVOICE_ISSUE_DAY", "RENT_DUE_DAY"} <= {
             code for code, _ in codes
         }

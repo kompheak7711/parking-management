@@ -5,6 +5,7 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  EARLIER_RESERVATION_RULES,
   ReservationUnavailableError,
   type ReservationApi,
   type ReservationResource,
@@ -21,7 +22,7 @@ import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { CancelDialog, ExtendDialog } from "./ReservationDialogs";
 import { ReservationChip, leftText, resultText } from "./ReservationsList";
-import { daysLeft, suggestedDeposit } from "./reservationsData";
+import { daysLeft, percentText, suggestedDeposit } from "./reservationsData";
 import { rt, type ReservationTextKey } from "./text";
 
 function Kv({ rows }: { rows: [string, ReactNode][] }) {
@@ -212,7 +213,13 @@ export function ReservationDetail({
 
   const active = reservation.status === "ACTIVE";
   const left = daysLeft(reservation, today);
-  const suggested = suggestedDeposit(reservation.agreed_monthly_rent_usd_cents);
+  // V1.1 step 2b: the suggestion saved with the Reservation (older ones were 20%).
+  const suggested =
+    reservation.suggested_deposit_usd_cents ??
+    suggestedDeposit(reservation.agreed_monthly_rent_usd_cents);
+  const suggestedRate =
+    reservation.suggested_deposit_rate_basis_points ??
+    EARLIER_RESERVATION_RULES.deposit_rate_basis_points;
   const accepted = reservation.deposit_required_usd_cents;
   const cancellation = reservation.lifecycle_events.at(-1) ?? null;
   const notice_ = reservation.extension_notice;
@@ -478,7 +485,11 @@ export function ReservationDetail({
                   <span>
                     <span className="ui-num">{usdFromCents(suggested)}</span>
                     <span className="ui-sub2">
-                      {rt(language, "suggested_note")}
+                      {rt(
+                        language,
+                        "suggested_note",
+                        percentText(suggestedRate),
+                      )}
                     </span>
                   </span>,
                 ],

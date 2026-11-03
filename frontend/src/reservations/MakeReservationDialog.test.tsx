@@ -25,6 +25,7 @@ import {
   MakeReservationDialog,
   suggestedDeposit,
 } from "./MakeReservationDialog";
+import { ExtendDialog } from "./ReservationDialogs";
 import { addDays } from "./reservationsData";
 
 afterEach(() => {
@@ -354,6 +355,104 @@ describe("Make Reservation (V1-060 B6)", () => {
       within(dialog).queryByLabelText(/Why less than the suggestion/),
     ).toBeNull();
   });
+  it("TEST-FE-1140 one extension goes at most today's extension rule (V1.1 step 2b, DL-119)", () => {
+    render(
+      <ExtendDialog
+        api={{} as ReservationApi}
+        language="en"
+        onClose={vi.fn()}
+        onConflict={vi.fn()}
+        onSaved={vi.fn()}
+        reservation={
+          {
+            reservation_id: "reservation-1",
+            unit_number: "U102",
+            effective_expiration_date: "2026-11-20",
+            version: 1,
+            rules: {
+              reservation_days: 30,
+              extension_days: 7,
+              deposit_rate_basis_points: 2500,
+            },
+          } as unknown as ReservationResource
+        }
+      />,
+    );
+    expect(
+      screen.getByText(
+        "A Reservation is extended once only, by at most 7 days after its current expiration.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Latest possible date: 27\/11\/2026/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("New expiration date")).toHaveValue(
+      "27/11/2026",
+    );
+  });
+
+  it("TEST-FE-1139 follows today's Reservation rules (V1.1 step 2b, DL-119): the longest Reservation and the suggested share of the Rent", async () => {
+    expect(suggestedDeposit(45_000, 2500)).toBe(11_250);
+    expect(suggestedDeposit(45_003, 2000)).toBe(suggestedDeposit(45_003));
+    const { unitApi, customerApi, paymentsApi, api } = apis();
+    const props = {
+      api,
+      customerApi,
+      language: "en" as const,
+      mayOverride: true,
+      onClose: vi.fn(),
+      onSaved: vi.fn(),
+      paymentsApi,
+      propertyId: "property-1",
+      unitApi,
+      unitId: "unit-2",
+    };
+    const { rerender } = render(<MakeReservationDialog {...props} />);
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    const expires = within(dialog).getByLabelText("Expires on");
+    expect(expires).toHaveValue(dayText(addDays(today, 21)));
+    // The rules arrive with the list after the form opened.
+    rerender(
+      <MakeReservationDialog
+        {...props}
+        rules={{
+          reservation_days: 30,
+          extension_days: 7,
+          deposit_rate_basis_points: 2500,
+        }}
+      />,
+    );
+    await waitFor(() => {
+      expect(expires).toHaveValue(dayText(addDays(today, 30)));
+    });
+    expect(
+      within(dialog).getByText("At most 30 days after the Reservation Date."),
+    ).toBeInTheDocument();
+    fireEvent.change(
+      within(dialog).getByLabelText("Agreed monthly Rent (USD)"),
+      { target: { value: "450" } },
+    );
+    expect(within(dialog).getByLabelText("Received now (USD)")).toHaveValue(
+      "112.50",
+    );
+    expect(
+      within(dialog).getByText("Suggested: 25% of the agreed Rent, $112.50."),
+    ).toBeInTheDocument();
+    fireEvent.change(expires, {
+      target: { value: dayText(addDays(today, 31)) },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save Reservation" }),
+    );
+    expect(
+      within(dialog).getByText(
+        "Pick a day after the Reservation Date, at most 30 days later.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-1079 less than the suggestion without the Owner or a Manager stops before sending; a lost answer goes again the very same, with its first received time; a conflict says nothing was saved and opens the boxes", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-28T03:00:00.000Z"));

@@ -2454,3 +2454,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270421_271` (DB-BS-001), API-BS-001, Settings › Business rebuilt (one column of cards, Document numbering on the right). Technical choices by Claude under the owner's 2026-10-23 22:30 rule (no money).
 - **Links:** DL-116, DL-117, DL-076, DL-075.
 - **Decision date:** 2026-11-03.
+
+## DL-119 — V1.1 step 2b: Reservations read their business rules
+
+- **Type:** `TECHNICAL DECISION UNDER THE OWNER'S RULE`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the V1.1 rework plan (business rules read by the app), DL-118 (B) (the rules seeded with the values used before), the owner's message of 03/11/2026 16:31 ("Continue your task"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no money rule changes.
+- **(A) Longest Reservation.** A Reservation may last at most RESERVATION_DAYS (21 before) after its Reservation Date, using the rule in force on that date. A Reservation still never ends before it starts.
+- **(B) One extension.** The one extension adds at most RESERVATION_EXTENSION_DAYS (14 before), using the rule in force on the day it is approved. When an extension may be asked (the last 14 days before the expiration) is not a business rule and stays as it was.
+- **(C) Suggested deposit.** The suggestion is RESERVATION_DEPOSIT_PERCENT (20% before) of the agreed monthly Rent on the Reservation Date, rounded half up to the cent (20% gives exactly the earlier result). It stays a suggestion: less still needs the override (DL-099). Each Reservation keeps the rate and the amount suggested when it was made, and its page shows them.
+- **(D) Range.** 1 to 90 days for the two day rules; 0.01% to 100% for the deposit. Settings › Business no longer shows "Not used yet" for these three rules.
+- **(E) Not in this step.** The billing days 24, 25 and 5 wait for the owner's answer on how the linked rules move (the move-out hand-back rule depends on them). The riel rate mark-up stays fixed at 0.5% for now: every payment and its evidence check that exact rate. The product, price and Quotation rules are wired with parts 4 and 6.
+- **Built:** migration `20270422_272` (DB-RS-001), API-RS-001, Make Reservation, Extend and the Reservation page.
+- **Links:** DL-118, DL-099, DL-115.
+- **Decision date:** 2026-11-03.

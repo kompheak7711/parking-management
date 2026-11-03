@@ -6,6 +6,7 @@
 import { FormEvent, ReactNode, useRef, useState } from "react";
 
 import {
+  EARLIER_RESERVATION_RULES,
   ReservationConflictError,
   ReservationUnavailableError,
   type CancellationResponsibility,
@@ -117,7 +118,11 @@ export function ExtendDialog({
   onConflict: () => void;
 }) {
   const earliest = addDays(reservation.effective_expiration_date, 1);
-  const latest = addDays(reservation.effective_expiration_date, 14);
+  // V1.1 step 2b (DL-119): the extension rule in force today.
+  const extensionDays =
+    reservation.rules?.extension_days ??
+    EARLIER_RESERVATION_RULES.extension_days;
+  const latest = addDays(reservation.effective_expiration_date, extensionDays);
   const [date, setDate] = useState(latest);
   const [memo, setMemo] = useState("");
   const [wrong, setWrong] = useState(false);
@@ -161,7 +166,7 @@ export function ExtendDialog({
       }
       title={rt(language, "extend_title", reservation.unit_number)}
     >
-      <p>{rt(language, "extend_note")}</p>
+      <p>{rt(language, "extend_note", extensionDays)}</p>
       <p className="ui-small ui-muted">
         {rt(
           language,
