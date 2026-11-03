@@ -852,6 +852,165 @@ const TEXT = {
     "A rate already starts on that day, or someone else changed the rates. They were read again; check and try again.",
     "មានអត្រាចាប់ផ្តើមនៅថ្ងៃនោះរួចហើយ ឬនរណាម្នាក់បានប្តូរអត្រា។ បានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
+  // V1.1 part 2 (DL-118, mock-up rounds 20-25): Settings › Business.
+  se20_desc: ["Description", "ការពិពណ៌នា"],
+  se20_units: ["Rentable Units", "បន្ទប់សម្រាប់ជួល"],
+  se20_units_n: [
+    "Counted from the Units list each time. Never typed.",
+    "រាប់ពីបញ្ជីបន្ទប់រាល់ពេល។ មិនវាយទេ។",
+  ],
+  se20_biz: ["Business", "អាជីវកម្ម"],
+  se20_biz_name: ["Business name", "ឈ្មោះអាជីវកម្ម"],
+  se20_biz_n: [
+    "Can differ from the property name.",
+    "អាចខុសពីឈ្មោះអចលនទ្រព្យ។",
+  ],
+  se20_edit_biz: ["Edit business", "កែអាជីវកម្ម"],
+  se20_app: ["App preferences", "ចំណូលចិត្តកម្មវិធី"],
+  se20_tz_v: [
+    "Asia/Phnom_Penh (UTC+7), from the business location (Cambodia)",
+    "Asia/Phnom_Penh (UTC+7) តាមទីតាំងអាជីវកម្ម (កម្ពុជា)",
+  ],
+  se20_lang_v: [
+    "Chosen on each phone or iPad; the browser remembers it",
+    "ជ្រើសនៅលើទូរស័ព្ទ ឬ iPad នីមួយៗ; កម្មវិធីរុករកចងចាំវា",
+  ],
+  br_title: ["Business rules", "ច្បាប់អាជីវកម្ម"],
+  br_sub: [
+    "Your rules. Each change starts on a date you choose and keeps the old values in the history. You can add a rule at any time.",
+    "ច្បាប់របស់អ្នក។ ការផ្លាស់ប្ដូរនីមួយៗចាប់ផ្ដើមនៅថ្ងៃដែលអ្នកជ្រើសរើស ហើយរក្សាតម្លៃចាស់ក្នុងប្រវត្តិ។ អ្នកអាចបន្ថែមច្បាប់បានគ្រប់ពេល។",
+  ],
+  br_add: ["Add rule", "បន្ថែមច្បាប់"],
+  br_rule: ["Rule", "ច្បាប់"],
+  br_value: ["Value", "តម្លៃ"],
+  br_since: ["Since", "ចាប់ពី"],
+  br_notset: ["Not set", "មិនទាន់កំណត់"],
+  br_unused: ["Not used yet", "មិនទាន់ប្រើ"],
+  br_unused_s: [
+    "The app is not built to use this rule yet. It needs a small program change first.",
+    "កម្មវិធីមិនទាន់ប្រើច្បាប់នេះទេ។ ត្រូវការការកែកម្មវិធីតិចតួចជាមុន។",
+  ],
+  // new: a change that starts later.
+  br_waiting: ["From {0}: {1}", "ចាប់ពី {0}៖ {1}"],
+  br_edit_t: ["Change: {0}", "ប្ដូរ៖ {0}"],
+  br_new: ["New value", "តម្លៃថ្មី"],
+  br_from: ["Starts on", "ចាប់ផ្ដើមនៅ"],
+  br_reason: ["Reason", "មូលហេតុ"],
+  br_hist: ["History", "ប្រវត្តិ"],
+  br_e_val: ["Type a value that fits the unit.", "សូមវាយតម្លៃដែលត្រូវនឹងឯកតា។"],
+  br_e_date: [
+    "Type a real date, dd/mm/yyyy, today or later.",
+    "សូមវាយកាលបរិច្ឆេទពិត dd/mm/yyyy ថ្ងៃនេះ ឬក្រោយ។",
+  ],
+  br_e_reason: ["Say why.", "សូមប្រាប់មូលហេតុ។"],
+  // new
+  br_e_taken: [
+    "A change already starts on that day. Choose another day.",
+    "មានការផ្លាស់ប្ដូរចាប់ផ្ដើមនៅថ្ងៃនោះរួចហើយ។ សូមជ្រើសថ្ងៃផ្សេង។",
+  ],
+  // new
+  br_e_code: [
+    "A rule with this name already exists.",
+    "មានច្បាប់ដែលមានឈ្មោះនេះរួចហើយ។",
+  ],
+  br_saved: [
+    "{0} saved. It starts on {1}.",
+    "បានរក្សាទុក {0}។ ចាប់ផ្ដើមនៅ {1}។",
+  ],
+  br_add_t: ["Add a business rule", "បន្ថែមច្បាប់អាជីវកម្ម"],
+  br_name_en: ["Name in English", "ឈ្មោះជាភាសាអង់គ្លេស"],
+  br_name_kh: ["Name in Khmer", "ឈ្មោះជាភាសាខ្មែរ"],
+  br_unit: ["Value unit", "ឯកតាតម្លៃ"],
+  br_area: ["Group", "ក្រុម"],
+  br_e_name: ["Type the rule name.", "សូមវាយឈ្មោះច្បាប់។"],
+  br_add_note: [
+    'A new rule shows "Not used yet" until the app is built to use it.',
+    'ច្បាប់ថ្មីបង្ហាញ "មិនទាន់ប្រើ" រហូតដល់កម្មវិធីត្រូវបានធ្វើឱ្យប្រើវា។',
+  ],
+  br_added: ["Rule added: {0}", "បានបន្ថែមច្បាប់៖ {0}"],
+  br_first: ["Starting value", "តម្លៃចាប់ផ្ដើម"],
+  br_area_BILLING: ["Billing", "ការចេញវិក្កយបត្រ"],
+  br_area_RESERVATIONS: ["Reservations", "ការកក់"],
+  br_area_PRICES: ["Prices", "តម្លៃ"],
+  br_area_QUOTATIONS: ["Quotations", "សម្រង់តម្លៃ"],
+  br_area_RIEL_RATE: ["Riel rate", "អត្រារៀល"],
+  br_area_LEDGER: ["Ledger", "សៀវភៅបញ្ជី"],
+  br_area_STAFF: ["Staff and payroll", "បុគ្គលិក និងប្រាក់ខែ"],
+  br_area_ATTENDANCE: ["Attendance", "វត្តមាន"],
+  br_area_OTHER: ["Other", "ផ្សេងៗ"],
+  bru_USD_CENTS: ["Money (USD)", "ប្រាក់ (ដុល្លារ)"],
+  bru_PERCENT: ["Percent", "ភាគរយ"],
+  bru_DAYS: ["Days", "ថ្ងៃ"],
+  bru_DAY_OF_MONTH: ["Day of month", "ថ្ងៃនៃខែ"],
+  // new
+  bru_COUNT: ["Number", "លេខ"],
+  // new
+  bru_MINUTES: ["Minutes", "នាទី"],
+  // new
+  bru_HOURS: ["Hours", "ម៉ោង"],
+  // new
+  bru_METRES: ["Metres", "ម៉ែត្រ"],
+  // new
+  bru_YES_NO: ["Yes or No", "បាទ/ចាស ឬ ទេ"],
+  // new
+  bru_TIME_OF_DAY: ["Time of day", "ម៉ោងក្នុងថ្ងៃ"],
+  // new: how to type each unit.
+  bruh_USD_CENTS: ["In dollars, for example 12.50", "ជាដុល្លារ ឧទាហរណ៍ 12.50"],
+  bruh_PERCENT: [
+    "In percent, for example 10 or 0.5",
+    "ជាភាគរយ ឧទាហរណ៍ 10 ឬ 0.5",
+  ],
+  bruh_TIME_OF_DAY: ["As hh:mm, for example 22:00", "ជា hh:mm ឧទាហរណ៍ 22:00"],
+  bruh_DAY_OF_MONTH: ["From 1 to 31", "ពី 1 ដល់ 31"],
+  bruh_OTHER: ["A whole number", "លេខគត់"],
+  // new: the kinds of Invoice and late payment Yes/No (owner 01/11/2026).
+  it_title: ["Invoice types", "ប្រភេទវិក្កយបត្រ"],
+  it_sub: [
+    "Late payment Yes: the app adds the late-payment charge to an unpaid Invoice of this type after its Due Date.",
+    "ការបង់យឺត បាទ/ចាស៖ កម្មវិធីបន្ថែមថ្លៃពិន័យបង់យឺត លើវិក្កយបត្រប្រភេទនេះដែលមិនទាន់បង់ ក្រោយថ្ងៃកំណត់បង់។",
+  ],
+  it_type: ["Invoice type", "ប្រភេទវិក្កយបត្រ"],
+  it_late: ["Late payment", "ការបង់យឺត"],
+  it_change: ["Change", "ប្ដូរ"],
+  it_edit_t: ["Late payment: {0}", "ការបង់យឺត៖ {0}"],
+  it_on: [
+    "Add the late-payment charge to this type",
+    "បន្ថែមថ្លៃពិន័យបង់យឺតលើប្រភេទនេះ",
+  ],
+  it_saved: ["{0}: late payment {1}.", "{0}៖ ការបង់យឺត {1}។"],
+  it_same: ["Nothing changed.", "គ្មានអ្វីប្ដូរទេ។"],
+  nr_title: ["Document numbering", "លេខរៀងឯកសារ"],
+  nr21_sub: [
+    "One row for each kind of document and year. Tap a document to change its letters.",
+    "មួយជួរសម្រាប់ឯកសារនីមួយៗ និងឆ្នាំនីមួយៗ។ ចុចលើឯកសារ ដើម្បីប្ដូរអក្សររបស់វា។",
+  ],
+  nr_doc: ["Document", "ឯកសារ"],
+  nr_fmt: ["Format", "ទម្រង់"],
+  nr_next: ["Next number", "លេខបន្ទាប់"],
+  nr_note: [
+    "The app locks the row while it takes a number, so two documents never get the same one. A change of letters is used for new numbers only; printed numbers never change.",
+    "កម្មវិធីចាក់សោជួរ ពេលយកលេខ ដូច្នេះឯកសារពីរមិនបានលេខដូចគ្នាទេ។ ការប្តូរអក្សរប្រើសម្រាប់លេខថ្មីប៉ុណ្ណោះ; លេខដែលបោះពុម្ពរួចមិនប្តូរទេ។",
+  ],
+  nr_edit_t: ["Change the letters for {0}", "ប្តូរអក្សរសម្រាប់ {0}"],
+  nr_letters: ["Letters", "អក្សរ"],
+  nr_e: [
+    "Use 2 to 5 capital letters that no other document uses.",
+    "ប្រើអក្សរធំ 2 ដល់ 5 ដែលឯកសារផ្សេងមិនប្រើ។",
+  ],
+  nr_preview: ["Next number will be {0}", "លេខបន្ទាប់នឹងជា {0}"],
+  nr_saved: ["Numbers saved. Next {0}", "បានរក្សាទុកលេខ។ បន្ទាប់ {0}"],
+  nr_INVOICE: ["Invoice", "វិក្កយបត្រ"],
+  nr_RECEIPT: ["Receipt", "បង្កាន់ដៃ"],
+  nr_REFUND: ["Refund", "ការសងប្រាក់វិញ"],
+  nr_JOURNAL_ENTRY: ["Journal entry", "ធាតុទិនានុប្បវត្តិ"],
+  nr_EXPENSE_REQUEST: ["Expense request", "សំណើចំណាយ"],
+  nr_EXPENSE: ["Expense", "ចំណាយ"],
+  nr_SUPPLIER_BILL: ["Supplier bill", "វិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
+  nr_ADJUSTING_ENTRY: ["Adjusting entry", "ធាតុកែតម្រូវ"],
+  // new
+  nr_FIXED_ASSET: ["Fixed asset", "ទ្រព្យសកម្មរយៈពេលវែង"],
+  // new
+  nr_MONEY_MOVEMENT: ["Money move", "ការផ្ទេរប្រាក់"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

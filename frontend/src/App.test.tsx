@@ -261,6 +261,8 @@ const configuredProperty: PropertyBusinessConfiguration = {
   property_id: "property-1",
   name: "Riverside",
   address_text: "Phnom Penh",
+  description: null,
+  business_name: null,
   timezone_name: "Asia/Phnom_Penh",
   payment_methods: [],
   version: 3,
@@ -1376,6 +1378,8 @@ describe("local sign-in", () => {
       property_id: "property-1",
       name: "Riverside",
       address_text: "Phnom Penh",
+      description: null,
+      business_name: null,
       timezone_name: "Asia/Phnom_Penh",
       payment_methods: [
         { code: "BANK", display_name: "Bank transfer", accepted: true },

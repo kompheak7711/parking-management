@@ -1,8 +1,9 @@
-// V1-058 R7b-4: Settings → Business (mock-up round 9, DL-075): the Property, the billing
-// calendar, Reservations, Payment Methods, the riel exchange rate and the document numbers. The
-// server stores the Property name and address, the Payment Methods and the days after issue for
-// other Invoices; the other values follow the business rules until a later server step stores
-// them (DL-075 "Build in"), so they show with "Set by the business rules".
+// V1-058 R7b-4, reworked in V1.1 part 2 (DL-118, mock-up rounds 20-25): Settings → Business.
+// One column of cards (Property, Business, Business rules, Invoice types, Payment Methods, the
+// riel rate, App preferences) with Document numbering on the right. Every value comes from the
+// server: the business rules keep their history and start on a chosen day, the numbering shows
+// the next number, and an Invoice type says whether it gets the late-payment charge. The time
+// zone is fixed from the business location (Cambodia).
 
 import {
   type FormEvent,
@@ -19,54 +20,64 @@ import type {
   ExchangeRate,
 } from "../configurationClient";
 import {
-  type DueDaysApi,
-  type DueDaysSetting,
-  InvoiceClientError,
-} from "../invoiceClient";
-import {
   type PaymentMethodConfiguration,
   type PropertyBusinessConfiguration,
   type PropertyConfigurationApi,
   PropertyConfigurationError,
   PropertyConfigurationUnavailableError,
   PropertySavedReadFailedError,
+  type PropertySource,
 } from "../propertyClient";
-import { momentText } from "../shell/format";
+import { DateInput, parseDay } from "../shell/DateInput";
+import { dayText, momentText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi } from "../unitClient";
 import { allPages } from "../units/unitsData";
+import {
+  type BusinessRule,
+  type BusinessRules,
+  type BusinessSettingsApi,
+  BusinessSettingsError,
+  type InvoiceType,
+  type NumberRule,
+  RULE_AREAS,
+  RULE_UNITS,
+  type RuleArea,
+  type RuleUnit,
+  ruleValueFromText,
+  ruleValueInput,
+  ruleValueText,
+} from "./businessSettingsClient";
 import { type SettingsTextKey, sst } from "./text";
 
 export interface BusinessApi {
   property: PropertyConfigurationApi;
-  dueDays: DueDaysApi;
   units: Pick<UnitApi, "list">;
   /** The riel rate comes from the confirmed exchange rates. */
   rates: Pick<EffectiveConfigurationApi, "load">;
+  /** V1.1 part 2: business rules, document numbering and Invoice types. */
+  settings: BusinessSettingsApi;
 }
-
-// DL-075 defaults, kept by the business rules until the server stores them.
-const READING_DAY = 24;
-const ISSUE_DAY = 25;
-const DUE_DAY = 5;
-const LATE_PERCENT = 10;
-const RESERVATION_DAYS = 21;
-const EXTENSION_DAYS = 14;
-const SUGGESTED_DEPOSIT_PERCENT = 20;
 
 interface Loaded {
   property: PropertyBusinessConfiguration;
-  dueDays: DueDaysSetting;
   units: number | null;
   /** undefined: could not be read; null: none yet. */
   rate: ExchangeRate | null | undefined;
+  rules: BusinessRules;
+  numbers: NumberRule[];
+  types: InvoiceType[];
 }
 
 type Open =
   | { kind: "property" }
-  | { kind: "days" }
+  | { kind: "business" }
+  | { kind: "rule"; rule: BusinessRule }
+  | { kind: "add-rule" }
+  | { kind: "type"; type: InvoiceType }
+  | { kind: "letters"; number: NumberRule }
   | { kind: "method"; method: PaymentMethodConfiguration | null };
 
 function Rows({ rows }: { rows: [string, ReactNode][] }) {
@@ -141,8 +152,52 @@ export function methodCode(
   return code;
 }
 
+/** A new rule's code from its English name: capitals, digits and _, starting with a letter. */
+export function ruleCode(name: string, rules: readonly BusinessRule[]): string {
+  const cleaned = name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^[_0-9]+|_+$/g, "")
+    .slice(0, 50);
+  const base = cleaned.length >= 2 ? cleaned : "RULE";
+  const taken = new Set(rules.map((rule) => rule.code));
+  let code = base;
+  for (let n = 2; taken.has(code); n++) code = `${base}_${String(n)}`;
+  return code;
+}
+
 function rielText(value: number): string {
   return value.toLocaleString("en-US");
+}
+
+function nameOf(
+  language: Language,
+  item: { name_en: string; name_kh: string },
+): string {
+  return language === "km" ? item.name_kh : item.name_en;
+}
+
+function documentName(language: Language, type: string): string {
+  const key = `nr_${type}`;
+  return key in NUMBER_NAMES ? sst(language, key as SettingsTextKey) : type;
+}
+
+const NUMBER_NAMES: Record<string, true> = {
+  nr_INVOICE: true,
+  nr_RECEIPT: true,
+  nr_REFUND: true,
+  nr_JOURNAL_ENTRY: true,
+  nr_EXPENSE_REQUEST: true,
+  nr_EXPENSE: true,
+  nr_SUPPLIER_BILL: true,
+  nr_ADJUSTING_ENTRY: true,
+  nr_FIXED_ASSET: true,
+  nr_MONEY_MOVEMENT: true,
+};
+
+/** The number the next document gets with these letters. */
+function nextWith(number: NumberRule, letters: string): string {
+  return letters + number.next_number.slice(number.letters.length);
 }
 
 export function BusinessTab({
@@ -173,11 +228,10 @@ export function BusinessTab({
     setFailure(null);
     return Promise.all([
       api.property.load(propertyId),
-      api.dueDays.get(propertyId),
       allPages(async (cursor) =>
         api.units.list(propertyId, cursor === undefined ? {} : { cursor }),
       )
-        .then((units) => units.length)
+        .then((units) => units.filter((unit) => unit.for_rent !== false).length)
         .catch(() => null),
       api.rates
         .load(propertyId)
@@ -191,17 +245,20 @@ export function BusinessTab({
           ),
         )
         .catch(() => undefined),
+      api.settings.rules(propertyId),
+      api.settings.numbers(propertyId),
+      api.settings.invoiceTypes(propertyId),
     ])
-      .then(([property, dueDays, units, rate]) => {
+      .then(([property, units, rate, rules, numbers, types]) => {
         if (operation !== sequence.current) return;
-        setLoaded({ property, dueDays, units, rate });
+        setLoaded({ property, units, rate, rules, numbers, types });
       })
       .catch((error: unknown) => {
         if (operation !== sequence.current) return;
         setLoaded(null);
         setFailure(
           error instanceof PropertyConfigurationUnavailableError ||
-            (error instanceof InvoiceClientError && error.status === 403)
+            (error instanceof BusinessSettingsError && error.status === 403)
             ? "not_allowed"
             : "failed",
         );
@@ -223,7 +280,13 @@ export function BusinessTab({
     if (active) void load();
   }, [active, load]);
 
-  function run(work: () => Promise<unknown>, done: string) {
+  /** `taken`: what a 409 means here (a day or letters already used); without it a 409 means
+   * another change met this one. */
+  function run(
+    work: () => Promise<unknown>,
+    done: string,
+    taken?: SettingsTextKey,
+  ) {
     const asked = propertyId;
     setBusy(true);
     setProblem(null);
@@ -241,9 +304,13 @@ export function BusinessTab({
         if (error instanceof PropertySavedReadFailedError) return saved();
         const status =
           error instanceof PropertyConfigurationError ||
-          error instanceof InvoiceClientError
+          error instanceof BusinessSettingsError
             ? error.status
             : null;
+        if (status === 409 && taken !== undefined) {
+          setProblem(sst(language, taken));
+          return undefined;
+        }
         if (status === 409 || status === 412) {
           // The form held the old version, so it closes; everything is read again.
           setOpen(null);
@@ -295,24 +362,22 @@ export function BusinessTab({
     );
   }
 
-  const { property, dueDays, units, rate } = loaded;
-  const fixed = (
-    <Chip icon="lock" tone="neutral">
-      {sst(language, "se_fixed")}
-    </Chip>
-  );
+  const { property, units, rate, rules, numbers, types } = loaded;
+  const openWith = (next: Open) => {
+    setProblem(null);
+    setToast(null);
+    setOpen(next);
+  };
   const editButton = (label: SettingsTextKey, next: Open, name: string) => (
     <button
       aria-label={`${sst(language, label)}: ${name}`}
       className="ui-btn"
       onClick={() => {
-        setProblem(null);
-        setToast(null);
-        setOpen(next);
+        openWith(next);
       }}
       type="button"
     >
-      {label === "pm_add" && <Icon name="plus" small />}
+      {(label === "pm_add" || label === "br_add") && <Icon name="plus" small />}
       {sst(language, label)}
     </button>
   );
@@ -320,6 +385,12 @@ export function BusinessTab({
     if (!busy) setOpen(null);
   };
   const methods = property.payment_methods;
+  const notGiven = (
+    <span className="ui-muted">{sst(language, "no_address")}</span>
+  );
+  const areas = RULE_AREAS.filter((area) =>
+    rules.rules.some((rule) => rule.area === area),
+  );
 
   return (
     <>
@@ -345,106 +416,111 @@ export function BusinessTab({
             <Rows
               rows={[
                 [sst(language, "se_prop_name"), property.name],
+                [sst(language, "se20_desc"), property.description ?? notGiven],
+                [sst(language, "address"), property.address_text ?? notGiven],
                 [
-                  sst(language, "address"),
-                  property.address_text ?? (
-                    <span className="ui-muted">
-                      {sst(language, "no_address")}
-                    </span>
-                  ),
-                ],
-                [
-                  sst(language, "se_units"),
-                  <span className="ui-num" key="units">
-                    {units ?? "—"}
-                  </span>,
-                ],
-                [
-                  sst(language, "se_tz"),
+                  sst(language, "se20_units"),
                   <>
-                    <span lang="en">Asia/Phnom_Penh (UTC+7)</span>
-                    <span className="ui-sub2">{sst(language, "se_tz_n")}</span>
+                    <span className="ui-num">{units ?? "—"}</span>
+                    <span className="ui-sub2">
+                      {sst(language, "se20_units_n")}
+                    </span>
                   </>,
                 ],
-                [sst(language, "se_lang"), sst(language, "se_lang_v")],
               ]}
             />
           </Card>
           <Card
             action={editButton(
               "se_edit",
-              { kind: "days" },
-              sst(language, "se_misc_due"),
+              { kind: "business" },
+              sst(language, "se20_biz"),
             )}
-            id="biz-billing"
-            title={sst(language, "se_billing")}
+            id="biz-business"
+            title={sst(language, "se20_biz")}
           >
             <Rows
               rows={[
                 [
-                  sst(language, "se_read_day"),
+                  sst(language, "se20_biz_name"),
                   <>
-                    <span className="ui-num">
-                      {sst(language, "day_n", READING_DAY)}
-                    </span>{" "}
-                    {fixed}
-                  </>,
-                ],
-                [
-                  sst(language, "se_issue_day"),
-                  <>
-                    <span className="ui-num">
-                      {sst(language, "day_n", ISSUE_DAY)}
-                    </span>{" "}
-                    {fixed}
-                  </>,
-                ],
-                [
-                  sst(language, "se_due_day"),
-                  <>
-                    <span className="ui-num">
-                      {sst(language, "day_n", DUE_DAY)}
-                    </span>{" "}
-                    {fixed}
-                  </>,
-                ],
-                [
-                  sst(language, "se_misc_due"),
-                  sst(language, "cal_misc_v", dueDays.one_time_charge_due_days),
-                ],
-                [
-                  sst(language, "se_late"),
-                  <>
-                    {sst(language, "late_v", LATE_PERCENT)} {fixed}
+                    {property.business_name ?? notGiven}
+                    <span className="ui-sub2">
+                      {sst(language, "se20_biz_n")}
+                    </span>
                   </>,
                 ],
               ]}
             />
-            <p className="ui-small ui-muted">
-              {sst(language, "misc_note")} {sst(language, "fixed_note")}
-            </p>
           </Card>
-          <Card id="biz-reservations" title={sst(language, "se_res")}>
-            <Rows
-              rows={[
-                [
-                  sst(language, "se_res_days"),
-                  sst(language, "rs_days_v", RESERVATION_DAYS),
-                ],
-                [
-                  sst(language, "se_res_ext"),
-                  sst(language, "rs_ext_v", EXTENSION_DAYS),
-                ],
-                [
-                  sst(language, "se_res_dep"),
-                  sst(language, "rs_dep_v", SUGGESTED_DEPOSIT_PERCENT),
-                ],
-              ]}
-            />
-            <p className="ui-small ui-muted">{fixed}</p>
+          <Card
+            action={editButton(
+              "br_add",
+              { kind: "add-rule" },
+              sst(language, "br_title"),
+            )}
+            id="biz-rules"
+            title={sst(language, "br_title")}
+          >
+            <p className="ui-small ui-muted">{sst(language, "br_sub")}</p>
+            {areas.map((area) => (
+              <RulesTable
+                area={area}
+                key={area}
+                language={language}
+                onEdit={(rule) => {
+                  openWith({ kind: "rule", rule });
+                }}
+                rules={rules.rules.filter((rule) => rule.area === area)}
+              />
+            ))}
           </Card>
-        </div>
-        <div className="ui-stack">
+          <Card id="biz-types" title={sst(language, "it_title")}>
+            <p className="ui-small ui-muted">{sst(language, "it_sub")}</p>
+            <div className="ui-tablewrap">
+              <table className="ui-table fit">
+                <thead>
+                  <tr>
+                    <th scope="col">{sst(language, "it_type")}</th>
+                    <th scope="col">{sst(language, "it_late")}</th>
+                    <th scope="col">
+                      <span className="ui-sr">
+                        {sst(language, "it_change")}
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {types.map((type) => (
+                    <tr key={type.code}>
+                      <td>{nameOf(language, type)}</td>
+                      <td>
+                        {type.late_payment ? (
+                          <Chip icon="check" tone="ok">
+                            {sst(language, "yes")}
+                          </Chip>
+                        ) : (
+                          <Chip tone="neutral">{sst(language, "no")}</Chip>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          aria-label={`${sst(language, "it_change")}: ${nameOf(language, type)}`}
+                          className="ui-btn link"
+                          onClick={() => {
+                            openWith({ kind: "type", type });
+                          }}
+                          type="button"
+                        >
+                          {sst(language, "it_change")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
           <Card
             action={editButton(
               "pm_add",
@@ -475,9 +551,7 @@ export function BusinessTab({
                       aria-label={`${sst(language, "se_edit")}: ${method.display_name}`}
                       className="ui-btn link"
                       onClick={() => {
-                        setProblem(null);
-                        setToast(null);
-                        setOpen({ kind: "method", method });
+                        openWith({ kind: "method", method });
                       }}
                       type="button"
                     >
@@ -518,24 +592,64 @@ export function BusinessTab({
             )}
             <p className="ui-small ui-muted">{sst(language, "fx_note")}</p>
           </Card>
-          <Card id="biz-numbers" title={sst(language, "se_numbers")}>
+          <Card id="biz-app" title={sst(language, "se20_app")}>
             <Rows
               rows={[
                 [
-                  sst(language, "se_inv_no"),
-                  sst(language, "no_v2", "INV", "INV260001"),
+                  sst(language, "se_tz"),
+                  <>
+                    <span>{sst(language, "se20_tz_v")}</span>
+                    <span className="ui-sub2">{sst(language, "se_tz_n")}</span>
+                  </>,
                 ],
-                [
-                  sst(language, "se_rcp_no"),
-                  sst(language, "no_v2", "RCP", "RCP260001"),
-                ],
-                [
-                  sst(language, "se_rfd_no"),
-                  sst(language, "no_v2", "RFD", "RFD260001"),
-                ],
+                [sst(language, "se_lang"), sst(language, "se20_lang_v")],
               ]}
             />
-            <p className="ui-small ui-muted">{fixed}</p>
+          </Card>
+        </div>
+        <div className="ui-stack">
+          <Card id="biz-numbers" title={sst(language, "nr_title")}>
+            <p className="ui-small ui-muted">{sst(language, "nr21_sub")}</p>
+            <div className="ui-tablewrap">
+              <table className="ui-table fit">
+                <thead>
+                  <tr>
+                    <th scope="col">{sst(language, "nr_doc")}</th>
+                    <th scope="col">{sst(language, "nr_fmt")}</th>
+                    <th scope="col">{sst(language, "nr_next")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {numbers.map((number) => (
+                    <tr key={number.document_type}>
+                      <td>
+                        <button
+                          aria-label={sst(
+                            language,
+                            "nr_edit_t",
+                            documentName(language, number.document_type),
+                          )}
+                          className="ui-btn link"
+                          onClick={() => {
+                            openWith({ kind: "letters", number });
+                          }}
+                          type="button"
+                        >
+                          {documentName(language, number.document_type)}
+                        </button>
+                      </td>
+                      <td className="ui-num" lang="en">
+                        {number.format}
+                      </td>
+                      <td className="ui-num" lang="en">
+                        {number.next_number}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="ui-small ui-muted">{sst(language, "nr_note")}</p>
           </Card>
         </div>
       </div>
@@ -555,24 +669,115 @@ export function BusinessTab({
           property={property}
         />
       )}
-      {open?.kind === "days" && (
-        <DaysDialog
+      {open?.kind === "business" && (
+        <BusinessNameDialog
           busy={busy}
-          current={dueDays.one_time_charge_due_days}
           language={language}
           onClose={closeOpen}
-          onSave={(days, reason) => {
+          onSave={(businessName) => {
             run(
               () =>
-                api.dueDays.set(
-                  propertyId,
-                  days,
-                  reason,
-                  // The days share the Property's version.
-                  dueDays.version,
-                  crypto.randomUUID(),
-                ),
+                api.property.updateSource(property, {
+                  name: property.name,
+                  address_text: property.address_text,
+                  business_name: businessName,
+                }),
               sst(language, "se_saved"),
+            );
+          }}
+          problem={problem}
+          property={property}
+        />
+      )}
+      {open?.kind === "rule" && (
+        <RuleDialog
+          busy={busy}
+          language={language}
+          onClose={closeOpen}
+          onSave={(change) => {
+            run(
+              () => api.settings.setRule(propertyId, open.rule.code, change),
+              sst(
+                language,
+                "br_saved",
+                nameOf(language, open.rule),
+                dayText(change.effective_from),
+              ),
+              "br_e_taken",
+            );
+          }}
+          problem={problem}
+          rule={open.rule}
+          today={rules.today}
+        />
+      )}
+      {open?.kind === "add-rule" && (
+        <AddRuleDialog
+          busy={busy}
+          language={language}
+          onClose={closeOpen}
+          onSave={(rule) => {
+            run(
+              () =>
+                api.settings.addRule(propertyId, {
+                  ...rule,
+                  code: ruleCode(rule.name_en, rules.rules),
+                }),
+              sst(
+                language,
+                "br_added",
+                language === "km" ? rule.name_kh : rule.name_en,
+              ),
+              "br_e_code",
+            );
+          }}
+          problem={problem}
+          today={rules.today}
+        />
+      )}
+      {open?.kind === "type" && (
+        <InvoiceTypeDialog
+          busy={busy}
+          language={language}
+          onClose={closeOpen}
+          onSave={(latePayment, reason) => {
+            run(
+              () =>
+                api.settings.setLatePayment(
+                  propertyId,
+                  open.type.code,
+                  latePayment,
+                  reason,
+                ),
+              sst(
+                language,
+                "it_saved",
+                nameOf(language, open.type),
+                sst(language, latePayment ? "yes" : "no"),
+              ),
+            );
+          }}
+          problem={problem}
+          type={open.type}
+        />
+      )}
+      {open?.kind === "letters" && (
+        <LettersDialog
+          busy={busy}
+          language={language}
+          number={open.number}
+          numbers={numbers}
+          onClose={closeOpen}
+          onSave={(letters) => {
+            run(
+              () =>
+                api.settings.setLetters(
+                  propertyId,
+                  open.number.document_type,
+                  letters,
+                ),
+              sst(language, "nr_saved", nextWith(open.number, letters)),
+              "nr_e",
             );
           }}
           problem={problem}
@@ -604,6 +809,663 @@ export function BusinessTab({
   );
 }
 
+function RulesTable({
+  language,
+  area,
+  rules,
+  onEdit,
+}: {
+  language: Language;
+  area: RuleArea;
+  rules: BusinessRule[];
+  onEdit: (rule: BusinessRule) => void;
+}) {
+  const heading = `br-area-${area}`;
+  return (
+    <div className="ui-tablewrap">
+      <table aria-labelledby={heading} className="ui-table fit">
+        <caption id={heading}>
+          {sst(language, `br_area_${area}` as SettingsTextKey)}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{sst(language, "br_rule")}</th>
+            <th scope="col">{sst(language, "br_value")}</th>
+            <th scope="col">{sst(language, "br_since")}</th>
+            <th scope="col">
+              <span className="ui-sr">{sst(language, "se_edit")}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rules.map((rule) => (
+            <tr key={rule.code}>
+              <td>
+                {nameOf(language, rule)}
+                {!rule.used_by_app && (
+                  <>
+                    {" "}
+                    <span title={sst(language, "br_unused_s")}>
+                      <Chip tone="neutral">{sst(language, "br_unused")}</Chip>
+                    </span>
+                  </>
+                )}
+              </td>
+              <td className="ui-num">
+                {rule.in_force === null ? (
+                  <span className="ui-muted">{sst(language, "br_notset")}</span>
+                ) : (
+                  ruleValueText(rule.value_unit, rule.in_force.value, language)
+                )}
+                {rule.waiting !== null && (
+                  <span className="ui-sub2">
+                    {sst(
+                      language,
+                      "br_waiting",
+                      dayText(rule.waiting.effective_from),
+                      ruleValueText(
+                        rule.value_unit,
+                        rule.waiting.value,
+                        language,
+                      ),
+                    )}
+                  </span>
+                )}
+              </td>
+              <td className="ui-num">
+                {rule.in_force === null
+                  ? "—"
+                  : dayText(rule.in_force.effective_from)}
+              </td>
+              <td>
+                <button
+                  aria-label={`${sst(language, "se_edit")}: ${nameOf(language, rule)}`}
+                  className="ui-btn link"
+                  onClick={() => {
+                    onEdit(rule);
+                  }}
+                  type="button"
+                >
+                  {sst(language, "se_edit")}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function unitHelp(unit: RuleUnit): SettingsTextKey {
+  if (
+    unit === "USD_CENTS" ||
+    unit === "PERCENT" ||
+    unit === "TIME_OF_DAY" ||
+    unit === "DAY_OF_MONTH"
+  ) {
+    return `bruh_${unit}`;
+  }
+  return "bruh_OTHER";
+}
+
+/** The value box for a rule's unit: Yes/No is a choice, every other unit is typed. */
+function ValueField({
+  id,
+  label,
+  language,
+  unit,
+  value,
+  error,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  language: Language;
+  unit: RuleUnit;
+  value: string;
+  error: string | null;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="ui-field">
+      <label htmlFor={id}>
+        {label}
+        <span className="req">{sst(language, "required")}</span>
+      </label>
+      {unit === "YES_NO" ? (
+        <select
+          id={id}
+          onChange={(event) => {
+            onChange(event.currentTarget.value);
+          }}
+          value={value}
+        >
+          <option value="1">{sst(language, "yes")}</option>
+          <option value="0">{sst(language, "no")}</option>
+        </select>
+      ) : (
+        <>
+          <input
+            aria-describedby={error === null ? `${id}-h` : `${id}-h ${id}-e`}
+            aria-invalid={error !== null}
+            autoComplete="off"
+            id={id}
+            inputMode={unit === "TIME_OF_DAY" ? "text" : "decimal"}
+            maxLength={14}
+            onChange={(event) => {
+              onChange(event.currentTarget.value);
+            }}
+            value={value}
+          />
+          <p className="help" id={`${id}-h`}>
+            {sst(language, `bru_${unit}`)} · {sst(language, unitHelp(unit))}
+          </p>
+        </>
+      )}
+      <FieldError id={`${id}-e`} text={error} />
+    </div>
+  );
+}
+
+function RuleDialog({
+  language,
+  rule,
+  today,
+  busy,
+  problem,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  rule: BusinessRule;
+  today: string;
+  busy: boolean;
+  problem: string | null;
+  onClose: () => void;
+  onSave: (change: {
+    value: number;
+    effective_from: string;
+    reason: string;
+  }) => void;
+}) {
+  const shown = rule.waiting ?? rule.in_force;
+  const [value, setValue] = useState(
+    shown === null
+      ? rule.value_unit === "YES_NO"
+        ? "1"
+        : ""
+      : ruleValueInput(rule.value_unit, shown.value),
+  );
+  const [from, setFrom] = useState(today);
+  const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{
+    value?: string;
+    from?: string;
+    reason?: string;
+  }>({});
+  const history = [...rule.history].sort((a, b) =>
+    b.effective_from.localeCompare(a.effective_from),
+  );
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const number = ruleValueFromText(rule.value_unit, value);
+    const day = parseDay(from);
+    const found: typeof errors = {};
+    if (number === null) found.value = sst(language, "br_e_val");
+    if (day === "" || (today !== "" && day < today)) {
+      found.from = sst(language, "br_e_date");
+    }
+    if (reason.trim() === "") found.reason = sst(language, "br_e_reason");
+    setErrors(found);
+    const first = (["value", "from", "reason"] as const).find(
+      (key) => found[key] !== undefined,
+    );
+    if (first !== undefined || number === null) {
+      document.getElementById(`br-${first ?? "value"}`)?.focus();
+      return;
+    }
+    onSave({ value: number, effective_from: day, reason: reason.trim() });
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={sst(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={sst(language, "save")}
+      title={sst(language, "br_edit_t", nameOf(language, rule))}
+    >
+      {!rule.used_by_app && (
+        <p className="ui-small ui-muted">{sst(language, "br_unused_s")}</p>
+      )}
+      <ValueField
+        error={errors.value ?? null}
+        id="br-value"
+        label={sst(language, "br_new")}
+        language={language}
+        onChange={setValue}
+        unit={rule.value_unit}
+        value={value}
+      />
+      <div className="ui-field">
+        <label htmlFor="br-from">
+          {sst(language, "br_from")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <DateInput
+          describedBy={errors.from === undefined ? undefined : "br-from-e"}
+          id="br-from"
+          invalid={errors.from !== undefined}
+          language={language}
+          min={today === "" ? undefined : today}
+          onChange={setFrom}
+          value={from}
+        />
+        <FieldError id="br-from-e" text={errors.from ?? null} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="br-reason">
+          {sst(language, "br_reason")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={
+            errors.reason === undefined ? undefined : "br-reason-e"
+          }
+          aria-invalid={errors.reason !== undefined}
+          autoComplete="off"
+          id="br-reason"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          value={reason}
+        />
+        <FieldError id="br-reason-e" text={errors.reason ?? null} />
+      </div>
+      <h3 className="ui-small">{sst(language, "br_hist")}</h3>
+      <ul aria-label={sst(language, "br_hist")} className="ui-apps">
+        {history.map((row) => (
+          <li key={row.effective_from}>
+            <span>
+              <span className="ui-num">{dayText(row.effective_from)}</span>{" "}
+              <b>{ruleValueText(rule.value_unit, row.value, language)}</b>
+            </span>
+            {row.reason !== null && (
+              <span className="ui-small ui-muted">{row.reason}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+      <Problem text={problem} />
+    </Dialog>
+  );
+}
+
+function AddRuleDialog({
+  language,
+  today,
+  busy,
+  problem,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  today: string;
+  busy: boolean;
+  problem: string | null;
+  onClose: () => void;
+  onSave: (rule: {
+    name_en: string;
+    name_kh: string;
+    area: RuleArea;
+    value_unit: RuleUnit;
+    value: number;
+    effective_from: string;
+    reason: string | null;
+  }) => void;
+}) {
+  const [nameEn, setNameEn] = useState("");
+  const [nameKh, setNameKh] = useState("");
+  const [area, setArea] = useState<RuleArea>("OTHER");
+  const [unit, setUnit] = useState<RuleUnit>("COUNT");
+  const [value, setValue] = useState("");
+  const [from, setFrom] = useState(today);
+  const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{
+    en?: string;
+    kh?: string;
+    value?: string;
+    from?: string;
+  }>({});
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const number = ruleValueFromText(unit, value);
+    const day = parseDay(from);
+    const found: typeof errors = {};
+    if (nameEn.trim() === "") found.en = sst(language, "br_e_name");
+    if (nameKh.trim() === "") found.kh = sst(language, "br_e_name");
+    if (number === null) found.value = sst(language, "br_e_val");
+    if (day === "" || (today !== "" && day < today)) {
+      found.from = sst(language, "br_e_date");
+    }
+    setErrors(found);
+    const first = (["en", "kh", "value", "from"] as const).find(
+      (key) => found[key] !== undefined,
+    );
+    if (first !== undefined || number === null) {
+      document.getElementById(`ar-${first ?? "value"}`)?.focus();
+      return;
+    }
+    onSave({
+      name_en: nameEn.trim(),
+      name_kh: nameKh.trim(),
+      area,
+      value_unit: unit,
+      value: number,
+      effective_from: day,
+      reason: reason.trim() === "" ? null : reason.trim(),
+    });
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={sst(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={sst(language, "save")}
+      title={sst(language, "br_add_t")}
+    >
+      <div className="ui-field">
+        <label htmlFor="ar-en">
+          {sst(language, "br_name_en")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={errors.en === undefined ? undefined : "ar-en-e"}
+          aria-invalid={errors.en !== undefined}
+          autoComplete="off"
+          id="ar-en"
+          lang="en"
+          maxLength={200}
+          onChange={(event) => {
+            setNameEn(event.currentTarget.value);
+          }}
+          value={nameEn}
+        />
+        <FieldError id="ar-en-e" text={errors.en ?? null} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="ar-kh">
+          {sst(language, "br_name_kh")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={errors.kh === undefined ? undefined : "ar-kh-e"}
+          aria-invalid={errors.kh !== undefined}
+          autoComplete="off"
+          id="ar-kh"
+          lang="km"
+          maxLength={200}
+          onChange={(event) => {
+            setNameKh(event.currentTarget.value);
+          }}
+          value={nameKh}
+        />
+        <FieldError id="ar-kh-e" text={errors.kh ?? null} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="ar-area">{sst(language, "br_area")}</label>
+        <select
+          id="ar-area"
+          onChange={(event) => {
+            setArea(event.currentTarget.value as RuleArea);
+          }}
+          value={area}
+        >
+          {RULE_AREAS.map((item) => (
+            <option key={item} value={item}>
+              {sst(language, `br_area_${item}` as SettingsTextKey)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="ui-field">
+        <label htmlFor="ar-unit">{sst(language, "br_unit")}</label>
+        <select
+          id="ar-unit"
+          onChange={(event) => {
+            const next = event.currentTarget.value as RuleUnit;
+            setUnit(next);
+            if (next === "YES_NO") setValue("1");
+          }}
+          value={unit}
+        >
+          {RULE_UNITS.map((item) => (
+            <option key={item} value={item}>
+              {sst(language, `bru_${item}` as SettingsTextKey)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <ValueField
+        error={errors.value ?? null}
+        id="ar-value"
+        label={sst(language, "br_first")}
+        language={language}
+        onChange={setValue}
+        unit={unit}
+        value={value}
+      />
+      <div className="ui-field">
+        <label htmlFor="ar-from">
+          {sst(language, "br_from")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <DateInput
+          describedBy={errors.from === undefined ? undefined : "ar-from-e"}
+          id="ar-from"
+          invalid={errors.from !== undefined}
+          language={language}
+          min={today === "" ? undefined : today}
+          onChange={setFrom}
+          value={from}
+        />
+        <FieldError id="ar-from-e" text={errors.from ?? null} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="ar-reason">{sst(language, "br_reason")}</label>
+        <input
+          autoComplete="off"
+          id="ar-reason"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          value={reason}
+        />
+      </div>
+      <p className="ui-small ui-muted">{sst(language, "br_add_note")}</p>
+      <Problem text={problem} />
+    </Dialog>
+  );
+}
+
+function InvoiceTypeDialog({
+  language,
+  type,
+  busy,
+  problem,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  type: InvoiceType;
+  busy: boolean;
+  problem: string | null;
+  onClose: () => void;
+  onSave: (latePayment: boolean, reason: string) => void;
+}) {
+  const [on, setOn] = useState(type.late_payment);
+  const [reason, setReason] = useState("");
+  const [errors, setErrors] = useState<{ on?: string; reason?: string }>({});
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const found: typeof errors = {};
+    if (on === type.late_payment) found.on = sst(language, "it_same");
+    if (reason.trim() === "") found.reason = sst(language, "br_e_reason");
+    setErrors(found);
+    if (found.on !== undefined || found.reason !== undefined) {
+      document
+        .getElementById(found.on !== undefined ? "it-on" : "it-reason")
+        ?.focus();
+      return;
+    }
+    onSave(on, reason.trim());
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={sst(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={sst(language, "save")}
+      title={sst(language, "it_edit_t", nameOf(language, type))}
+    >
+      <label className="ui-chk">
+        <input
+          aria-describedby={errors.on === undefined ? undefined : "it-on-e"}
+          checked={on}
+          id="it-on"
+          onChange={(event) => {
+            setOn(event.currentTarget.checked);
+          }}
+          type="checkbox"
+        />
+        <span>{sst(language, "it_on")}</span>
+      </label>
+      <FieldError id="it-on-e" text={errors.on ?? null} />
+      <div className="ui-field">
+        <label htmlFor="it-reason">
+          {sst(language, "br_reason")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={
+            errors.reason === undefined ? undefined : "it-reason-e"
+          }
+          aria-invalid={errors.reason !== undefined}
+          autoComplete="off"
+          id="it-reason"
+          maxLength={500}
+          onChange={(event) => {
+            setReason(event.currentTarget.value);
+          }}
+          value={reason}
+        />
+        <FieldError id="it-reason-e" text={errors.reason ?? null} />
+      </div>
+      <p className="ui-small ui-muted">{sst(language, "it_sub")}</p>
+      <Problem text={problem} />
+    </Dialog>
+  );
+}
+
+function LettersDialog({
+  language,
+  number,
+  numbers,
+  busy,
+  problem,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  number: NumberRule;
+  numbers: NumberRule[];
+  busy: boolean;
+  problem: string | null;
+  onClose: () => void;
+  onSave: (letters: string) => void;
+}) {
+  const [letters, setLetters] = useState(number.letters);
+  const [error, setError] = useState<string | null>(null);
+  const typed = letters.trim().toUpperCase();
+  const fits = /^[A-Z]{2,5}$/.test(typed);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (
+      !fits ||
+      numbers.some(
+        (other) =>
+          other.document_type !== number.document_type &&
+          other.letters === typed,
+      )
+    ) {
+      setError(sst(language, "nr_e"));
+      document.getElementById("nr-letters")?.focus();
+      return;
+    }
+    onSave(typed);
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={sst(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={sst(language, "save")}
+      title={sst(
+        language,
+        "nr_edit_t",
+        documentName(language, number.document_type),
+      )}
+    >
+      <div className="ui-field">
+        <label htmlFor="nr-letters">
+          {sst(language, "nr_letters")}
+          <span className="req">{sst(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={
+            error === null ? "nr-letters-h" : "nr-letters-h nr-letters-e"
+          }
+          aria-invalid={error !== null}
+          autoCapitalize="characters"
+          autoComplete="off"
+          id="nr-letters"
+          lang="en"
+          maxLength={5}
+          onChange={(event) => {
+            setLetters(event.currentTarget.value);
+            setError(null);
+          }}
+          value={letters}
+        />
+        <p className="help ui-num" id="nr-letters-h">
+          {sst(
+            language,
+            "nr_preview",
+            nextWith(number, fits ? typed : number.letters),
+          )}
+        </p>
+        <FieldError id="nr-letters-e" text={error} />
+      </div>
+      <p className="ui-small ui-muted">{sst(language, "nr_note")}</p>
+      <Problem text={problem} />
+    </Dialog>
+  );
+}
+
 function PropertyDialog({
   language,
   property,
@@ -617,9 +1479,10 @@ function PropertyDialog({
   busy: boolean;
   problem: string | null;
   onClose: () => void;
-  onSave: (source: { name: string; address_text: string | null }) => void;
+  onSave: (source: PropertySource) => void;
 }) {
   const [name, setName] = useState(property.name);
+  const [description, setDescription] = useState(property.description ?? "");
   const [address, setAddress] = useState(property.address_text ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -630,7 +1493,11 @@ function PropertyDialog({
       document.getElementById("bz-name")?.focus();
       return;
     }
-    onSave({ name: name.trim(), address_text: address.trim() || null });
+    onSave({
+      name: name.trim(),
+      description: description.trim() || null,
+      address_text: address.trim() || null,
+    });
   }
 
   return (
@@ -662,6 +1529,18 @@ function PropertyDialog({
         <FieldError id="bz-name-e" text={error} />
       </div>
       <div className="ui-field">
+        <label htmlFor="bz-desc">{sst(language, "se20_desc")}</label>
+        <textarea
+          id="bz-desc"
+          maxLength={500}
+          onChange={(event) => {
+            setDescription(event.currentTarget.value);
+          }}
+          rows={2}
+          value={description}
+        />
+      </div>
+      <div className="ui-field">
         <label htmlFor="bz-address">{sst(language, "address")}</label>
         <textarea
           id="bz-address"
@@ -678,41 +1557,26 @@ function PropertyDialog({
   );
 }
 
-function DaysDialog({
+function BusinessNameDialog({
   language,
-  current,
+  property,
   busy,
   problem,
   onClose,
   onSave,
 }: {
   language: Language;
-  current: number;
+  property: PropertyBusinessConfiguration;
   busy: boolean;
   problem: string | null;
   onClose: () => void;
-  onSave: (days: number, reason: string) => void;
+  onSave: (businessName: string | null) => void;
 }) {
-  const [days, setDays] = useState(String(current));
-  const [reason, setReason] = useState("");
-  const [errors, setErrors] = useState<{ days?: string; reason?: string }>({});
+  const [name, setName] = useState(property.business_name ?? "");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const value = Number(days.trim());
-    const found: { days?: string; reason?: string } = {};
-    if (!/^\d{1,2}$/.test(days.trim()) || value < 1 || value > 90) {
-      found.days = sst(language, "e_days");
-    }
-    if (reason.trim() === "") found.reason = sst(language, "ua_e_reason");
-    setErrors(found);
-    if (found.days !== undefined || found.reason !== undefined) {
-      document
-        .getElementById(found.days !== undefined ? "bz-days" : "bz-reason")
-        ?.focus();
-      return;
-    }
-    onSave(value, reason.trim());
+    onSave(name.trim() || null);
   }
 
   return (
@@ -722,50 +1586,24 @@ function DaysDialog({
       onClose={onClose}
       onSubmit={submit}
       submitLabel={sst(language, "save")}
-      title={sst(language, "se_misc_due")}
+      title={sst(language, "se20_edit_biz")}
     >
       <div className="ui-field">
-        <label htmlFor="bz-days">{sst(language, "days_n")}</label>
+        <label htmlFor="bz-biz">{sst(language, "se20_biz_name")}</label>
         <input
-          aria-describedby={
-            errors.days === undefined ? "bz-days-h" : "bz-days-h bz-days-e"
-          }
-          aria-invalid={errors.days !== undefined}
+          aria-describedby="bz-biz-h"
           autoComplete="off"
-          id="bz-days"
-          inputMode="numeric"
-          maxLength={2}
+          id="bz-biz"
+          maxLength={255}
           onChange={(event) => {
-            setDays(event.currentTarget.value);
+            setName(event.currentTarget.value);
           }}
-          value={days}
+          value={name}
         />
-        <p className="help" id="bz-days-h">
-          {sst(language, "days_h")}
+        <p className="help" id="bz-biz-h">
+          {sst(language, "se20_biz_n")}
         </p>
-        <FieldError id="bz-days-e" text={errors.days ?? null} />
       </div>
-      <div className="ui-field">
-        <label htmlFor="bz-reason">
-          {sst(language, "ur_reason")}
-          <span className="req">{sst(language, "required")}</span>
-        </label>
-        <input
-          aria-describedby={
-            errors.reason === undefined ? undefined : "bz-reason-e"
-          }
-          aria-invalid={errors.reason !== undefined}
-          autoComplete="off"
-          id="bz-reason"
-          maxLength={500}
-          onChange={(event) => {
-            setReason(event.currentTarget.value);
-          }}
-          value={reason}
-        />
-        <FieldError id="bz-reason-e" text={errors.reason ?? null} />
-      </div>
-      <p className="ui-small ui-muted">{sst(language, "misc_note")}</p>
       <Problem text={problem} />
     </Dialog>
   );

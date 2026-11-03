@@ -76,8 +76,14 @@ class PropertyResource:
     timezone_name: str
     payment_methods: tuple[PaymentMethodConfiguration, ...] = ()
     version: int = INITIAL_PROPERTY_VERSION
+    description: str | None = None
+    business_name: str | None = None
 
     def __post_init__(self) -> None:
+        if self.description is not None and len(self.description.strip()) > 500:
+            raise ValueError("description must be at most 500 characters")
+        if self.business_name is not None and len(self.business_name.strip()) > 255:
+            raise ValueError("business name must be at most 255 characters")
         PropertyConfiguration(
             property_id=self.property_id,
             name=self.name,
@@ -103,6 +109,8 @@ class PropertyResourceFlow(Protocol):
         address_text: str | None,
         expected_version: int,
         actor_id: str,
+        description: str | None = None,
+        business_name: str | None = None,
     ) -> PropertyResource:
         """Apply authorized, version-guarded Property source changes."""
         ...
@@ -135,8 +143,11 @@ class UnavailablePropertyResourceFlow:
         address_text: str | None,
         expected_version: int,
         actor_id: str,
+        description: str | None = None,
+        business_name: str | None = None,
     ) -> PropertyResource:
         del property_id, name, address_text, expected_version, actor_id
+        del description, business_name
         raise PropertyResourceUnavailable("Property persistence is unavailable")
 
     def patch_configuration(
@@ -168,6 +179,8 @@ class PostgresPropertyResourceFlow:
             address_text=None if row[2] is None else str(row[2]),
             timezone_name=str(row[3]),
             version=int(str(row[4])),
+            description=None if len(row) < 6 or row[5] is None else str(row[5]),
+            business_name=None if len(row) < 7 or row[6] is None else str(row[6]),
             payment_methods=tuple(
                 PaymentMethodConfiguration(
                     method_id=UUID(str(method[0])),
@@ -200,6 +213,8 @@ class PostgresPropertyResourceFlow:
                         configuration.address_text,
                         configuration.timezone_name,
                         configuration.version,
+                        configuration.description,
+                        configuration.business_name,
                         method.id,
                         method.code,
                         method.display_name,
@@ -216,9 +231,9 @@ class PostgresPropertyResourceFlow:
 
         if not rows:
             raise PropertyResourceNotFound("Property was not found")
-        row = rows[0][:5]
+        row = rows[0][:7]
         methods: list[tuple[object, ...]] = [
-            (item[5], item[6], item[7], item[8]) for item in rows if item[5] is not None
+            (item[7], item[8], item[9], item[10]) for item in rows if item[7] is not None
         ]
         return self._resource(row, methods)
 
@@ -230,6 +245,8 @@ class PostgresPropertyResourceFlow:
         address_text: str | None,
         expected_version: int,
         actor_id: str,
+        description: str | None = None,
+        business_name: str | None = None,
     ) -> PropertyResource:
         try:
             PropertyResource(
@@ -238,6 +255,8 @@ class PostgresPropertyResourceFlow:
                 address_text=address_text,
                 timezone_name="Asia/Phnom_Penh",
                 version=expected_version + 1,
+                description=description,
+                business_name=business_name,
             )
         except ValueError as exc:
             raise PropertyResourceInvalid("Property source fields are invalid") from exc
@@ -250,10 +269,20 @@ class PostgresPropertyResourceFlow:
                         name,
                         address_text,
                         timezone_name,
-                        version
-                    FROM app.update_property_source(%s, %s, %s, %s, %s)
+                        version,
+                        description,
+                        business_name
+                    FROM app.update_property_details(%s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (property_id, name, address_text or "", expected_version, actor_id),
+                    (
+                        property_id,
+                        name,
+                        description or "",
+                        address_text or "",
+                        business_name or "",
+                        expected_version,
+                        actor_id,
+                    ),
                 ).fetchone()
                 if row is None:
                     current = connection.execute(
@@ -306,6 +335,16 @@ class PostgresPropertyResourceFlow:
                     """,
                     (property_id, Jsonb(payload), expected_version, actor_id),
                 ).fetchone()
+                if row is not None:
+                    details = connection.execute(
+                        """
+                        SELECT description, business_name
+                        FROM app.property_configuration
+                        WHERE property_id = %s
+                        """,
+                        (property_id,),
+                    ).fetchone()
+                    row = (*row, *(details or (None, None)))
                 if row is None:
                     current = connection.execute(
                         """
@@ -336,6 +375,8 @@ class PropertyPatch(BaseModel):
 
     name: str = Field(min_length=1, max_length=255)
     address_text: str | None = Field(default=None, max_length=2000)
+    description: str | None = Field(default=None, max_length=500)
+    business_name: str | None = Field(default=None, max_length=255)
 
 
 class PaymentMethodPatch(BaseModel):
@@ -404,6 +445,8 @@ def _resource_body(resource: PropertyResource, request: Request) -> dict[str, ob
             "property_id": str(resource.property_id),
             "name": resource.name,
             "address_text": resource.address_text,
+            "description": resource.description,
+            "business_name": resource.business_name,
             "timezone_name": resource.timezone_name,
             "version": resource.version,
             "configuration": {
@@ -469,6 +512,16 @@ def _patch_resource(
             address_text=patch.address_text,
             expected_version=expected_version,
             actor_id=actor.actor_id,
+            description=(
+                patch.description
+                if "description" in patch.model_fields_set
+                else current.description
+            ),
+            business_name=(
+                patch.business_name
+                if "business_name" in patch.model_fields_set
+                else current.business_name
+            ),
         )
     except PropertyResourceNotFound as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc

@@ -227,7 +227,8 @@ const TEXT = {
     "ខែនីមួយៗ មានរយៈពេលអានដែលបញ្ចប់នៅថ្ងៃទី 24 នៃខែនោះ (តុលា = 25/09 – 24/10) តាមអត្រានៃរយៈពេលនោះ។ ពេលជ្រើសគ្រប់ចំណត ចំណតទាំងអស់ត្រូវបូកបញ្ចូលគ្នា។",
   ],
   // The parts of the stacked month charts.
-  s_rent: ["Rent and Services", "ថ្លៃឈ្នួល និងសេវា"],
+  // V1.1 part 2 (DL-118): the bar is the Monthly Rent and Services.
+  s_rent: ["Monthly Rent and Services", "ថ្លៃឈ្នួលប្រចាំខែ និងសេវា"],
   s_utilities: ["Utilities", "ទឹកភ្លើង"],
   s_move_out_and_damage: ["Move-out and damage", "ចាកចេញ និងខូចខាត"],
   // new

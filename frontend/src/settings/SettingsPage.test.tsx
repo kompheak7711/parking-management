@@ -111,6 +111,8 @@ const businessApi = {
         property_id: "property-1",
         name: "CHETANA Parking",
         address_text: null,
+        description: null,
+        business_name: null,
         timezone_name: "Asia/Phnom_Penh" as const,
         payment_methods: [],
         version: 1,
@@ -119,15 +121,14 @@ const businessApi = {
     updateSource: vi.fn(),
     updatePaymentMethods: vi.fn(),
   },
-  dueDays: {
-    get: vi.fn(() =>
-      Promise.resolve({
-        property_id: "property-1",
-        one_time_charge_due_days: 7,
-        version: 1,
-      }),
-    ),
-    set: vi.fn(),
+  settings: {
+    rules: vi.fn(() => Promise.resolve({ rules: [], today: "2026-11-03" })),
+    setRule: vi.fn(),
+    addRule: vi.fn(),
+    numbers: vi.fn(() => Promise.resolve([])),
+    setLetters: vi.fn(),
+    invoiceTypes: vi.fn(() => Promise.resolve([])),
+    setLatePayment: vi.fn(),
   },
   units: setupApi,
   rates: { load: vi.fn(() => Promise.reject(new Error("no rates"))) },

@@ -8,16 +8,28 @@ export interface PropertyBusinessConfiguration {
   property_id: string;
   name: string;
   address_text: string | null;
+  /** V1.1 part 2 (DL-118): a short description and the business name (can differ). */
+  description: string | null;
+  business_name: string | null;
   timezone_name: "Asia/Phnom_Penh";
   payment_methods: PaymentMethodConfiguration[];
   version: number;
+}
+
+/** The Property card sends name, description and address; the Business card the business
+ * name. A field left out keeps its value. */
+export interface PropertySource {
+  name: string;
+  address_text: string | null;
+  description?: string | null;
+  business_name?: string | null;
 }
 
 export interface PropertyConfigurationApi {
   load: (propertyId: string) => Promise<PropertyBusinessConfiguration>;
   updateSource: (
     property: PropertyBusinessConfiguration,
-    source: { name: string; address_text: string | null },
+    source: PropertySource,
   ) => Promise<PropertyBusinessConfiguration>;
   updatePaymentMethods: (
     property: PropertyBusinessConfiguration,
@@ -117,6 +129,10 @@ function methods(value: unknown): PaymentMethodConfiguration[] {
   });
 }
 
+function optionalText(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
+}
+
 function property(
   resource: Record<string, unknown>,
   configuration: Record<string, unknown>,
@@ -130,7 +146,9 @@ function property(
     typeof resource.version !== "number" ||
     configuration.property_id !== resource.property_id ||
     configuration.timezone_name !== resource.timezone_name ||
-    configuration.version !== resource.version
+    configuration.version !== resource.version ||
+    !optionalText(resource.description) ||
+    !optionalText(resource.business_name)
   ) {
     throw new PropertyConfigurationError();
   }
@@ -138,6 +156,12 @@ function property(
     property_id: resource.property_id,
     name: resource.name,
     address_text: resource.address_text,
+    description:
+      typeof resource.description === "string" ? resource.description : null,
+    business_name:
+      typeof resource.business_name === "string"
+        ? resource.business_name
+        : null,
     timezone_name: resource.timezone_name,
     payment_methods: methods(configuration.payment_methods),
     version: resource.version,
@@ -169,7 +193,7 @@ async function load(
 
 async function updateSource(
   current: PropertyBusinessConfiguration,
-  source: { name: string; address_text: string | null },
+  source: PropertySource,
 ): Promise<PropertyBusinessConfiguration> {
   await request(`/properties/${encodeURIComponent(current.property_id)}`, {
     method: "PATCH",

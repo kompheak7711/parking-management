@@ -173,6 +173,17 @@ def record(case: dict[str, Any], invoice: UUID | None = None) -> dict[str, Any]:
     return cast(dict[str, Any], row[0])
 
 
+def switch_first_rent(url: str, actor: UUID, *, on: bool) -> None:
+    """Turn late payment for the First Rent Invoice type on or off (migration 20270421_271)."""
+    with psycopg.connect(url) as connection:
+        prop = one(url, "SELECT id FROM app.properties")[0]
+        connection.execute(
+            "SELECT app.set_invoice_type_late_payment(%s,'FIRST_RENT',%s,'Test',%s,%s)",
+            (prop, on, actor, uuid4()),
+        )
+        connection.commit()
+
+
 def candidates(case: dict[str, Any]) -> set[UUID]:
     """Every candidate of a pass now (paged by id, as the job does)."""
     found: set[UUID] = set()
@@ -380,8 +391,9 @@ def test_a_missed_day_is_caught_up_with_the_balance_of_its_own_midnight(
 
 def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url: str) -> None:
     """An Invoice issued after its charge moment gets none (reading recorded under DL-076), and
-    so do a DRAFT Invoice, Initial Rent (BR-INV-051) and an Invoice of a Lease whose Final
-    Settlement is closed (BR-SETTLE-012). Skipped Invoices write nothing."""
+    so do a DRAFT Invoice, an Invoice whose type has late payment off (First Rent here, DL-118)
+    and an Invoice of a Lease whose Final Settlement is closed (BR-SETTLE-012). Skipped Invoices
+    write nothing."""
     url = migrated_database_url
     late_issue = overdue(url, months_ago(url, 1), backdated=False)
     seed_last_run(url, late_issue["prop"], late_issue["service"], late_issue["due"])
@@ -403,7 +415,8 @@ def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url:
     assert draft not in candidates(late_issue)
     assert record(late_issue, draft) == {"outcome": "NOT_ISSUED_OR_VOID"}
 
-    # BR-INV-051: Initial Rent never gets a late-payment charge.
+    # BR-INV-051 became an Invoice type switch in V1.1 (DL-118, owner 01/11/2026): First Rent
+    # starts at Yes. With the switch off, the First Rent Invoice gets no charge.
     initial = signed_with_initial(url, 40)
     with psycopg.connect(url) as connection:
         initial_service = register_billing_service_principal(
@@ -414,8 +427,12 @@ def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url:
         date, one(url, "SELECT due_date FROM app.invoices WHERE id=%s", initial["invoice"])[0]
     )
     seed_last_run(url, initial["property"], initial_service, initial_due)
-    assert record(initial_case, initial["invoice"]) == {"outcome": "INITIAL_RENT"}
-    assert decision_of(url, initial["invoice"]) is None
+    switch_first_rent(url, initial["actor"], on=False)
+    try:
+        assert record(initial_case, initial["invoice"]) == {"outcome": "LATE_PAYMENT_OFF"}
+        assert decision_of(url, initial["invoice"]) is None
+    finally:
+        switch_first_rent(url, initial["actor"], on=True)
 
     # The closed Settlement case records a person's decision, so no pass has finished yet
     # (slice 11g-3).

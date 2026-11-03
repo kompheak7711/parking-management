@@ -1099,8 +1099,11 @@ class PostgresInvoiceService:
         try:
             with self._read_connection() as connection:
                 self._bound_query(connection)
+                # V1.1 (DL-118): the business rule decides; the old column is the fallback.
                 row = connection.execute(
-                    "SELECT id,one_time_charge_due_days,version FROM app.properties WHERE id=%s",
+                    "SELECT id,app.one_time_charge_due_days(id,"
+                    "timezone(timezone_name,statement_timestamp())::date),version "
+                    "FROM app.properties WHERE id=%s",
                     (property_id,),
                 ).fetchone()
         except psycopg.Error as exc:

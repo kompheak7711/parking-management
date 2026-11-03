@@ -39,6 +39,8 @@ class InMemoryPropertyResourceFlow:
         address_text: str | None,
         expected_version: int,
         actor_id: str,
+        description: str | None = None,
+        business_name: str | None = None,
     ) -> PropertyResource:
         del actor_id
         if expected_version != self.resource.version:
@@ -51,6 +53,8 @@ class InMemoryPropertyResourceFlow:
             timezone_name=self.resource.timezone_name,
             payment_methods=self.resource.payment_methods,
             version=self.resource.version + 1,
+            description=description,
+            business_name=business_name,
         )
         return self.resource
 
@@ -141,6 +145,8 @@ def test_get_property_returns_identity_timezone_version_and_etag() -> None:
         "property_id": str(property_id),
         "name": "Riverside",
         "address_text": "Phnom Penh",
+        "description": None,
+        "business_name": None,
         "timezone_name": "Asia/Phnom_Penh",
         "version": 3,
         "configuration": {
@@ -173,6 +179,8 @@ def test_postgres_property_read_uses_one_snapshot_statement() -> None:
             "Phnom Penh",
             "Asia/Phnom_Penh",
             3,
+            "Rooms near Camko",
+            None,
             method_id,
             "BANK",
             "Bank transfer",
@@ -190,6 +198,7 @@ def test_postgres_property_read_uses_one_snapshot_statement() -> None:
     statement = connection.execute.call_args.args[0]
     assert "LEFT JOIN app.payment_methods" in statement
     assert resource.version == 3
+    assert (resource.description, resource.business_name) == ("Rooms near Camko", None)
     assert resource.payment_methods == (
         PaymentMethodConfiguration(method_id, "BANK", "Bank transfer", True),
     )
@@ -382,3 +391,34 @@ def test_property_mutations_require_browser_origin_and_csrf() -> None:
     )
     assert response.status_code == 403
     assert flow.patch_calls == 0
+
+
+def test_patch_keeps_the_description_and_business_name_when_they_are_left_out() -> None:
+    """V1.1 part 2 (DL-118): the Property card sends name and address; the Business card sends
+    the business name. A field that is left out keeps its value."""
+    property_id = uuid4()
+    flow = InMemoryPropertyResourceFlow(property_resource(property_id))
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with_settings_access(property_id),
+            property_resource_flow=flow,
+        )
+    )
+    first = client.patch(
+        f"/properties/{property_id}",
+        json={"name": "Riverside", "description": "Rooms", "business_name": "CHETANA"},
+        headers=browser_headers(f'"{flow.resource.version}"'),
+    )
+    assert first.status_code == 200, first.text
+    second = client.patch(
+        f"/properties/{property_id}",
+        json={"name": "Riverside 2", "address_text": "Phnom Penh"},
+        headers=browser_headers(f'"{flow.resource.version}"'),
+    )
+    assert second.status_code == 200, second.text
+    body = second.json()["data"]
+    assert (body["name"], body["description"], body["business_name"]) == (
+        "Riverside 2",
+        "Rooms",
+        "CHETANA",
+    )

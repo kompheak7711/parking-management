@@ -41,6 +41,10 @@ import {
   PropertyConfigurationUnavailableError,
   propertyConfigurationApi,
 } from "./propertyClient";
+import {
+  type BusinessSettingsApi,
+  businessSettingsApi as businessSettingsClient,
+} from "./settings/businessSettingsClient";
 import { UnitApi, unitApi as defaultUnitApi } from "./unitClient";
 import {
   CustomerManagement,
@@ -109,12 +113,7 @@ import {
 } from "./payments/paymentsClient";
 import { pyt } from "./payments/text";
 import { ivt } from "./invoices/text";
-import {
-  type DueDaysApi,
-  dueDaysApi as dueDaysClient,
-  InvoiceApi,
-  invoiceApi as invoiceClient,
-} from "./invoiceClient";
+import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
 import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
 import type { EnforcementServices } from "./leaseEnforcementUi";
 import { FinancialManagement } from "./FinancialManagement";
@@ -147,7 +146,7 @@ export interface AppProps {
   administrationApi?: AccessAdministrationApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
-  dueDaysApi?: DueDaysApi;
+  businessSettingsApi?: BusinessSettingsApi;
   customerApi?: CustomerApi;
   effectiveConfigApi?: EffectiveConfigurationApi;
   reservationApi?: ReservationApi;
@@ -637,7 +636,7 @@ export function App({
   historyExportApi = reportsApi,
   reportApi = reportsApi,
   healthApi = healthClient,
-  dueDaysApi = dueDaysClient,
+  businessSettingsApi = businessSettingsClient,
   approvalsApi = approvalsClient,
   draftDecisionApi = settlementApi,
   financialServices,
@@ -656,11 +655,11 @@ export function App({
   const businessApi = useMemo(
     () => ({
       property: propertyApi,
-      dueDays: dueDaysApi,
+      settings: businessSettingsApi,
       units: unitApi ?? defaultUnitApi,
       rates: effectiveConfigApi,
     }),
-    [propertyApi, dueDaysApi, unitApi, effectiveConfigApi],
+    [propertyApi, businessSettingsApi, unitApi, effectiveConfigApi],
   );
   const client = useMemo<AuthenticationApi>(
     () => api ?? { ...authenticationApi, signIn: authenticate },

@@ -63,6 +63,12 @@ from property_rental.business_rules_api import (
     UnavailableBusinessRuleFlow,
     create_business_rules_router,
 )
+from property_rental.business_settings_api import (
+    BusinessSettingsFlow,
+    PostgresBusinessSettingsFlow,
+    UnavailableBusinessSettingsFlow,
+    create_business_settings_router,
+)
 from property_rental.configuration_api import (
     ConfigurationFlow,
     ExchangeRateProvider,
@@ -554,6 +560,7 @@ def create_app(
     vehicle_flow: VehicleFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
     business_rule_flow: BusinessRuleFlow | None = None,
+    business_settings_flow: BusinessSettingsFlow | None = None,
     ledger_posting_flow: LedgerPostingFlow | None = None,
     ledger_money_flow: LedgerMoneyFlow | None = None,
     ledger_close_flow: LedgerCloseFlow | None = None,
@@ -1196,6 +1203,18 @@ def create_app(
                 PostgresBusinessRuleFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableBusinessRuleFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_business_settings_router(
+            actor_resolver,
+            business_settings_flow
+            or (
+                PostgresBusinessSettingsFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableBusinessSettingsFlow()
             ),
             resolved_settings,
         )

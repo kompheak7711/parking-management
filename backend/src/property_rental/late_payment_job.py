@@ -40,6 +40,7 @@ SKIPPED: Final = frozenset(
         "NO_LEASE",
         "LEASE_NOT_SIGNED_OR_TERMINATED",
         "INITIAL_RENT",
+        "LATE_PAYMENT_OFF",
         "NOT_ISSUED_OR_VOID",
         "NOT_IN_WINDOW",
         "ISSUED_AFTER_CHARGE_TIME",

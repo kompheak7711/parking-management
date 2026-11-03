@@ -103,7 +103,7 @@ describe("Totals by Parking and month", () => {
     });
     expect(headRow(chart)).toEqual([
       "Month",
-      "Rent and Services",
+      "Monthly Rent and Services",
       "Utilities",
       "Move-out and damage",
       "Late charges and kept Deposits",
@@ -118,7 +118,7 @@ describe("Totals by Parking and month", () => {
     ]);
     expect(
       within(summary).getByRole("button", {
-        name: "October 2026, Rent and Services: $800.00, Utilities: $120.00, Late charges and kept Deposits: $60.00, Total: $980.00",
+        name: "October 2026, Monthly Rent and Services: $800.00, Utilities: $120.00, Late charges and kept Deposits: $60.00, Total: $980.00",
       }),
     ).toBeTruthy();
     // Only the highest month carries its amount.

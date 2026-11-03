@@ -54586,7 +54586,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/settings/BusinessTab.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R7b-4: Business shows the Property, the billing calendar with the server's days after issue, Reservations, Payment Methods, the newest riel rate and the document numbers; values the server does not store yet say Set by the business rules."
+      "notes": "V1-058 R7b-4, reworked in V1.1 part 2 (DL-118): Business shows the Property with description and Rentable Units, the business name, the business rules by group (Not used yet, a waiting change), the Invoice types, Payment Methods, the newest riel rate, App preferences and the document numbering with the next numbers."
     },
     {
       "test_id": "TEST-FE-951",
@@ -54598,7 +54598,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/settings/BusinessTab.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R7b-4: Edit changes the Property name and address; the days after issue need 1 to 90 and a reason and send the Property version; a Payment Method is added with a new code, renamed or turned off."
+      "notes": "V1-058 R7b-4, reworked in V1.1 part 2 (DL-118): Edit changes the Property name, description and address; Edit business changes only the business name; a Payment Method is added with a new code, renamed or turned off, but one stays on."
     },
     {
       "test_id": "TEST-FE-952",
@@ -60240,6 +60240,184 @@
       "test_path": "backend/tests/test_gl_reports_migration.py",
       "status": "implemented",
       "notes": "General Ledger phase 6 step 5 (DESIGN.md round 22 Financial statements, G1 files): Migration 20270420_270 follows 20270419_269."
+    },
+    {
+      "test_id": "TEST-FE-1135",
+      "upstream_ids": [
+        "DL-118",
+        "API-BR-001",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 2: a business rule change needs a value that fits its unit, a start day today or later and a reason; the dialog shows the history; a day already used says so. Add rule makes the code from the English name."
+    },
+    {
+      "test_id": "TEST-FE-1136",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001",
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 2: late payment Yes/No for an Invoice type changes with a reason; new letters for a document are 2 to 5 capitals no other document uses, with the next number shown."
+    },
+    {
+      "test_id": "TEST-FE-1137",
+      "upstream_ids": [
+        "DL-118",
+        "API-BR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 2: rule values are typed and shown in their unit (dollars, percent, time of day, days); a new rule's code comes from its English name."
+    },
+    {
+      "test_id": "test_migration_271_is_the_head",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Migration 20270421_271 follows 20270420_270."
+    },
+    {
+      "test_id": "test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Every document has its numbering row; every Invoice type starts at late payment Yes; only the late charge and the other-Invoice days are read by the app."
+    },
+    {
+      "test_id": "test_numbers_continue_never_jump_and_a_new_year_starts_at_one",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Numbers continue by one, grow past 9999, start at 0001 in a new year, never go back and are never removed."
+    },
+    {
+      "test_id": "test_new_letters_are_used_for_the_next_number_with_history_and_must_be_unique",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: New letters are used for the next number with an audit event; letters another document uses and bad letters are refused."
+    },
+    {
+      "test_id": "test_late_payment_off_for_a_type_needs_a_reason_and_keeps_history",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Late payment for a type needs a reason, adds a version and an audit event; types are never removed."
+    },
+    {
+      "test_id": "test_the_program_reads_the_late_percent_and_the_due_days_from_the_rules",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: The late charge percent and the other-Invoice days follow the business rules by date; values out of range are refused."
+    },
+    {
+      "test_id": "test_the_older_due_days_setting_also_writes_the_rule",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: The older days-after-issue setting writes the business rule from today."
+    },
+    {
+      "test_id": "test_property_details_change_at_the_expected_version_with_history",
+      "upstream_ids": [
+        "DL-118",
+        "DB-BS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: The Property name, description, address and business name change at the expected version, trimmed, with History."
+    },
+    {
+      "test_id": "test_reading_the_numbers_needs_configuration_read_and_shows_the_next_number",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_settings_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Reading the numbering needs configuration.read and shows the next number."
+    },
+    {
+      "test_id": "test_new_letters_need_settings_manage_and_must_be_unique",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_settings_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: New letters need settings.manage and the browser checks; bad letters 422, taken letters 409, an unknown document 404."
+    },
+    {
+      "test_id": "test_late_payment_for_a_type_needs_a_reason",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_settings_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Late payment for an Invoice type needs a reason."
+    },
+    {
+      "test_id": "test_without_a_database_the_settings_are_unavailable",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_business_settings_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: Without a database the settings are unavailable."
+    },
+    {
+      "test_id": "test_patch_keeps_the_description_and_business_name_when_they_are_left_out",
+      "upstream_ids": [
+        "DL-118",
+        "API-BS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 2: a Property change keeps the description and business name when they are left out."
     }
   ]
 }
