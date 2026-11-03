@@ -36,6 +36,10 @@ import {
   accessAdministrationApi,
 } from "./adminClient";
 import {
+  type RolesApi,
+  rolesApi as accessRolesApi,
+} from "./access/rolesClient";
+import {
   PropertyBusinessConfiguration,
   PropertyConfigurationApi,
   PropertyConfigurationUnavailableError,
@@ -149,6 +153,8 @@ export interface AppProps {
   authenticate?: LocalSignIn;
   api?: AuthenticationApi;
   administrationApi?: AccessAdministrationApi;
+  /** V1.1 part 3: the roles and permissions in Settings › Users and sign-in. */
+  rolesApi?: RolesApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
   businessSettingsApi?: BusinessSettingsApi;
@@ -623,6 +629,7 @@ export function App({
   authenticate = signIn,
   api,
   administrationApi = accessAdministrationApi,
+  rolesApi = accessRolesApi,
   propertyApi = propertyConfigurationApi,
   unitApi,
   customerApi,
@@ -2785,6 +2792,7 @@ export function App({
           myUserId={session.actor_id}
           reauthenticate={reauthenticateForSettings}
           usersApi={administrationApi}
+          rolesApi={rolesApi}
           businessApi={businessApi}
           ratesApi={effectiveConfigApi}
         />

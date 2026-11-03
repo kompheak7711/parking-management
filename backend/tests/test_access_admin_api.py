@@ -23,8 +23,11 @@ from property_rental.access_admin_api import (
     AuthorizationHistoryView,
     CapabilityView,
     OneTimePasswordView,
+    PermissionView,
     RoleAssignmentView,
     RoleBundleView,
+    RolesAndPermissionsView,
+    RoleView,
     UserAccountView,
 )
 from property_rental.app import create_app
@@ -254,6 +257,86 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             name=name,
             capability_ids=capability_ids,
             version=1,
+        )
+
+    def roles_and_permissions(
+        self,
+        *,
+        property_id: str,
+        actor_id: str,
+        request_id: str,
+    ) -> RolesAndPermissionsView:
+        self.calls.append(("roles_and_permissions", (property_id, actor_id, request_id)))
+        return RolesAndPermissionsView(
+            permissions=(
+                PermissionView(
+                    permission_code="LEASE_SIGN",
+                    group_code="LEASING",
+                    group_name_en="Leasing",
+                    group_name_kh="ការជួល",
+                    name_en="Sign, warn and end Leases",
+                    name_kh="ចុះហត្ថលេខា",
+                    capability_ids=("leases.sign",),
+                ),
+            ),
+            roles=(
+                RoleView(
+                    role_bundle_id=ROLE_BUNDLE_ID,
+                    property_id=property_id,
+                    name="Lease operations",
+                    name_kh=None,
+                    version=VERSION,
+                    turned_off=False,
+                    owner_role=False,
+                    capability_ids=("leases.inspect", "leases.sign"),
+                    holders=1,
+                ),
+            ),
+            assignments=(
+                RoleAssignmentView(
+                    user_id=USER_ID, role_bundle_id=ROLE_BUNDLE_ID, property_id=property_id
+                ),
+            ),
+        )
+
+    def save_role(
+        self,
+        *,
+        property_id: str,
+        role_bundle_id: UUID | None,
+        expected_version: int | None,
+        name: str,
+        name_kh: str | None,
+        capability_ids: tuple[str, ...],
+        turned_off: bool,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleView:
+        self.calls.append(
+            (
+                "save_role",
+                (
+                    property_id,
+                    role_bundle_id,
+                    expected_version,
+                    name,
+                    name_kh,
+                    capability_ids,
+                    turned_off,
+                    audit_context.actor_id,
+                    audit_context.request_id,
+                ),
+            )
+        )
+        return RoleView(
+            role_bundle_id=role_bundle_id or ROLE_BUNDLE_ID,
+            property_id=property_id,
+            name=name,
+            name_kh=name_kh,
+            version=1 if expected_version is None else expected_version + 1,
+            turned_off=turned_off,
+            owner_role=False,
+            capability_ids=capability_ids,
+            holders=0,
         )
 
     def role_bundle_property_id(self, *, role_bundle_id: UUID) -> str | None:
@@ -582,10 +665,10 @@ def request(
                     "Origin": Settings().allowed_browser_origin,
                     "X-CSRF-Token": CSRF_TOKEN,
                 }
-                if browser_protection and method in {"POST", "PATCH"}
+                if browser_protection and method in {"POST", "PATCH", "PUT"}
                 else {}
             )
-            if method == "PATCH" and include_if_match:
+            if method in {"PATCH", "PUT"} and include_if_match:
                 mutation_headers["If-Match"] = f'"{VERSION}"'
             merged_headers = {
                 "X-Request-ID": request_id,
@@ -650,6 +733,9 @@ def test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fie
         ("/api/v1/properties/{property_id}/role-bundles", "get"),
         ("/api/v1/properties/{property_id}/role-bundles", "post"),
         ("/api/v1/role-bundles/{role_bundle_id}", "patch"),
+        ("/api/v1/properties/{property_id}/roles", "get"),
+        ("/api/v1/properties/{property_id}/roles", "post"),
+        ("/api/v1/roles/{role_bundle_id}", "put"),
         ("/api/v1/users/{user_id}/role-assignments", "post"),
         ("/api/v1/users/{user_id}/role-assignments/remove", "post"),
         ("/api/v1/users/{user_id}/settings-access", "post"),
@@ -733,6 +819,13 @@ def test_every_administration_operation_denies_without_an_authenticated_actor() 
             f"/api/v1/users/{USER_ID}/role-assignments",
             {"role_bundle_id": str(ROLE_BUNDLE_ID)},
         ),
+        ("GET", f"/api/v1/properties/{PROPERTY_ID}/roles", None),
+        ("POST", f"/api/v1/properties/{PROPERTY_ID}/roles", {"name": "R", "capability_ids": []}),
+        (
+            "PUT",
+            f"/api/v1/roles/{ROLE_BUNDLE_ID}",
+            {"name": "R", "capability_ids": [], "turned_off": False},
+        ),
     )
 
     for method, path, payload in operations:
@@ -810,6 +903,12 @@ def test_every_browser_mutation_requires_exact_origin_and_csrf_proof() -> None:
             "POST",
             f"/api/v1/users/{USER_ID}/role-assignments",
             {"role_bundle_id": str(ROLE_BUNDLE_ID)},
+        ),
+        ("POST", f"/api/v1/properties/{PROPERTY_ID}/roles", {"name": "R", "capability_ids": []}),
+        (
+            "PUT",
+            f"/api/v1/roles/{ROLE_BUNDLE_ID}",
+            {"name": "R", "capability_ids": [], "turned_off": False},
         ),
     )
     for method, path, payload in operations:
@@ -1136,6 +1235,88 @@ def test_capabilities_and_role_bundles_are_data_not_role_title_authority() -> No
             ("leases.inspect", "leases.sign"),
             ACTOR_ID,
             "bundle-create",
+        ),
+    ) in flow.calls
+
+
+def test_roles_and_permissions_are_read_and_saved_whole_by_the_access_administrator() -> None:
+    """V1.1 part 3: the Roles tab reads the permissions list, the roles and who has which
+    role, and saves a role whole (name, Khmer name, rights, turned off) at its version."""
+    flow = RecordingAccessAdministrationFlow()
+    app = authorized_app(flow)
+
+    found = request(app, "GET", f"/api/v1/properties/{PROPERTY_ID}/roles", request_id="roles")
+    created = request(
+        app,
+        "POST",
+        f"/api/v1/properties/{PROPERTY_ID}/roles",
+        payload={
+            "name": "Accountant",
+            "name_kh": "គណនេយ្យករ",
+            "capability_ids": ["ledger.read", "settings.manage"],
+        },
+        request_id="role-create",
+    )
+    saved = request(
+        app,
+        "PUT",
+        f"/api/v1/roles/{ROLE_BUNDLE_ID}",
+        payload={
+            "name": "Front desk",
+            "capability_ids": ["leases.read"],
+            "turned_off": True,
+        },
+        request_id="role-save",
+    )
+    unknown = request(
+        app,
+        "PUT",
+        f"/api/v1/roles/{ROLE_BUNDLE_ID}",
+        payload={"name": "Front desk", "capability_ids": [], "turned_off": False, "x": 1},
+        request_id="role-unknown",
+    )
+
+    assert found.status_code == 200
+    data = found.json()["data"]
+    assert data["permissions"][0]["permission_code"] == "LEASE_SIGN"
+    assert data["roles"][0]["holders"] == 1
+    assert data["assignments"] == [
+        {"user_id": str(USER_ID), "role_bundle_id": str(ROLE_BUNDLE_ID), "property_id": PROPERTY_ID}
+    ]
+    assert created.status_code == 201
+    assert created.headers["Location"] == f"/api/v1/roles/{ROLE_BUNDLE_ID}"
+    assert created.json()["data"]["name_kh"] == "គណនេយ្យករ"
+    assert saved.status_code == 200
+    assert saved.json()["data"]["turned_off"] is True
+    assert saved.json()["data"]["version"] == VERSION + 1
+    assert unknown.status_code == 422
+    assert ("roles_and_permissions", (PROPERTY_ID, ACTOR_ID, "roles")) in flow.calls
+    assert (
+        "save_role",
+        (
+            PROPERTY_ID,
+            None,
+            None,
+            "Accountant",
+            "គណនេយ្យករ",
+            ("ledger.read", "settings.manage"),
+            False,
+            ACTOR_ID,
+            "role-create",
+        ),
+    ) in flow.calls
+    assert (
+        "save_role",
+        (
+            PROPERTY_ID,
+            ROLE_BUNDLE_ID,
+            VERSION,
+            "Front desk",
+            None,
+            ("leases.read",),
+            True,
+            ACTOR_ID,
+            "role-save",
         ),
     ) in flow.calls
 

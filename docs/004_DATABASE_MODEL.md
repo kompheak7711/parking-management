@@ -5694,3 +5694,15 @@ Added by DL-119 (migration `20270422_272`, forward-only).
 - `app.reservation_extension_notices`: `reservation_extension_forward_and_bounded` is replaced by `reservation_extension_forward` and the trigger `reservation_extension_notices_within_rule` (at most the rule on the approval day in the Property time zone; 23514).
 - `app.reservation_deposit_acceptances`: `suggested_rate_basis_points` is 1 to 10000 (was exactly 2000); `app.validate_reservation_deposit_acceptance` checks the rate, the amount and the trace against the rule on the Reservation Date. `app.create_reservation` saves them from the rule.
 - `app.business_rules_program_range` adds 1 to 90 days for the two day rules and 1 to 10000 for the deposit rate; the three rules are `used_by_app`.
+
+## DB-RP-001 — Roles and permissions (V1.1 part 3)
+
+Added by DL-120 (migration `20270423_273`, forward-only).
+
+- `app.permission_groups` (`group_code`, `name_en`, `name_kh`, `sort_order`), `app.permissions` (`permission_code`, `group_code` (null only for `BASIC`), `name_en`, `name_kh`, `sort_order`) and `app.permission_capabilities` (`permission_code`, `capability_id` unique): append-only (`app.reject_permission_catalog_change`). Every capability that is not for a service principal is in exactly one permission (checked by the migration). `app.permission_catalog()` (runtime) reads them.
+- `app.role_bundles` and `app.role_bundle_versions` get `name_kh` (trimmed, 1 to 128 characters), `turned_off` (default false) and `settings_access` (default false); every version keeps them.
+- `app.actor_capability_grants` leaves out a turned-off role and gives `settings.manage` for a held role with `settings_access` to an Owner or Manager account, or to a Staff account whose sign-in code is set up.
+- `app.admin_roles(owner)`, `app.admin_role_assignments(owner)`, `app.admin_create_role(owner, property, name, name_kh, capabilities, correlation)` and `app.admin_change_role(owner, role, expected_version, name, name_kh, capabilities, turned_off, correlation)` (runtime, the access administrator only). A role always has the `BASIC` rights; `settings.manage` in the list sets `settings_access`. Refusals: the Owner role is renamed or turned off (42501); a role with users is turned off (55000); a stale version (40001); a Staff holder without a sign-in code for a new `settings_access` (55000). A reduction signs the holders out. Audit events `identity.role_bundle.created` and `identity.role_bundle.updated`.
+- `app.admin_assign_role_bundle` refuses a turned-off role (55000), a `settings_access` role for a Staff account without a sign-in code, and the Owner role for anyone but the Owner (42501). `app.admin_remove_role_assignment` refuses to take the Owner role from the Owner (42501).
+- On upgrade, the default roles get a version with Khmer names (the Owner role with `settings_access`), and each active per-user `settings.manage` grant becomes the role "Change business rules" assigned to its holder, with the old grant removed with a reason.
+

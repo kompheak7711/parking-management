@@ -235,6 +235,8 @@ const TEXT = {
   se_users: ["Users", "អ្នកប្រើ"],
   se_user: ["Name", "ឈ្មោះ"],
   se_role: ["Role", "តួនាទី"],
+  // V1.1 part 3: the account type, now that a person has roles.
+  se_class: ["Account type", "ប្រភេទគណនី"],
   se_mfa: ["MFA", "MFA"],
   ua_col: ["Can change settings", "អាចប្តូរការកំណត់"],
   se_state: ["State", "ស្ថានភាព"],

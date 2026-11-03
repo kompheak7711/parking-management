@@ -60420,7 +60420,7 @@
       "notes": "V1.1 part 2: the days after issue for other Invoices show as the first Billing row and keep the V1 Property setting (1 to 90 days, a reason, the Property version)."
     },
     {
-      "test_id": "test_migration_272_is_the_head",
+      "test_id": "test_migration_272_follows_the_business_settings",
       "upstream_ids": [
         "DL-119",
         "DB-RS-001"
@@ -60428,7 +60428,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reservation_rules_migration.py",
       "status": "implemented",
-      "notes": "V1.1 step 2b: Migration 20270422_272 follows 271, is the head and is forward-only."
+      "notes": "V1.1 step 2b: Migration 20270422_272 follows 271 and is forward-only."
     },
     {
       "test_id": "test_the_rules_are_read_by_day_with_the_earlier_values_and_a_safe_range",
@@ -60517,6 +60517,118 @@
       "test_path": "frontend/src/reservations/MakeReservationDialog.test.tsx",
       "status": "implemented",
       "notes": "V1.1 step 2b: Extend allows at most today's extension rule."
+    },
+    {
+      "test_id": "test_migration_273_is_the_head",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: Migration 20270423_273 follows 272, is the head and is forward-only."
+    },
+    {
+      "test_id": "test_every_capability_a_person_holds_is_in_exactly_one_permission",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: every capability a person can hold is in exactly one permission, and the permissions list only grows."
+    },
+    {
+      "test_id": "test_the_default_roles_are_whole_permissions_with_khmer_names",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: the Owner, Manager and Staff roles are whole permissions with Khmer names; the Owner role has Change business rules."
+    },
+    {
+      "test_id": "test_change_business_rules_is_a_role_right_with_the_sign_in_code_rule",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001",
+        "DL-081"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: Change business rules is a role right; a Staff account gets it only with its sign-in code set up, and it works only while the code is set up."
+    },
+    {
+      "test_id": "test_a_turned_off_role_gives_nothing_and_cannot_be_given",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: a role with users cannot be turned off; a turned-off role gives nothing and cannot be given."
+    },
+    {
+      "test_id": "test_the_owner_role_is_locked_and_only_for_the_owner",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001",
+        "API-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: the Owner role is never renamed or turned off, is given only to the Owner, who always keeps it; a Manager cannot save roles."
+    },
+    {
+      "test_id": "test_the_old_settings_access_becomes_the_change_business_rules_role",
+      "upstream_ids": [
+        "DL-120",
+        "DB-RP-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_roles_permissions_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: on upgrade from 272 the old per-user Settings access becomes the role Change business rules with the same rights, and the old grant is removed with a reason."
+    },
+    {
+      "test_id": "test_roles_and_permissions_are_read_and_saved_whole_by_the_access_administrator",
+      "upstream_ids": [
+        "DL-120",
+        "API-RP-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 3: the roles and permissions are read in one answer, a role is made (201 with Location) and saved whole at its version (If-Match)."
+    },
+    {
+      "test_id": "TEST-FE-1141",
+      "upstream_ids": [
+        "DL-120",
+        "API-RP-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 3: Add role checks the name and saves whole permissions; Edit shows part of a permission, keeps the Owner role's name and Users and roles locked, and a role with users cannot be turned off."
+    },
+    {
+      "test_id": "TEST-FE-1142",
+      "upstream_ids": [
+        "DL-120",
+        "API-RP-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 3: the Owner keeps the Owner role locked in their roles; a server refusal stays in the role form in English; Khmer role names show."
     }
   ]
 }

@@ -1,6 +1,7 @@
 // V1-058 R7b-3: Settings → Users and sign-in (mock-up rounds 4–8, DL-081): the users with their
-// role, MFA, Settings access and state; Add user, Settings access, Reset, Disable and End all
-// sessions; what each role can do and the sign-in rules. The Owner alone opens this tab. An
+// account type, roles, MFA and state; Add user, Roles, Reset, Disable and End all sessions; the
+// roles and their permissions (V1.1 part 3, DL-120, which replaced the Settings access ticks
+// with the role right "Change business rules") and the sign-in rules. The Owner alone opens this tab. An
 // action that changes who may use the app asks for the password and sign-in code again when the
 // server says so (login sub-slice L3d-2), then runs once more; nothing was written before.
 
@@ -25,6 +26,18 @@ import {
   type ReauthenticationRequest,
   ServiceUnavailableError,
 } from "../authClient";
+import {
+  RoleEditorDialog,
+  RolesSection,
+  UserRolesDialog,
+  userRoleNames,
+} from "../access/RolesSection";
+import {
+  type Role,
+  type RolesAndPermissions,
+  type RolesApi,
+} from "../access/rolesClient";
+import { at } from "../access/text";
 import { momentText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
@@ -38,20 +51,7 @@ export type UsersApi = Pick<
   | "disableUser"
   | "revokeSessions"
   | "administrativelyRecoverUser"
-  | "giveSettingsAccess"
-  | "removeSettingsAccess"
 >;
-
-/** The mock-up's table: 1 yes, 0 no, 2 if the Owner allows. */
-const CAPABILITIES: readonly [SettingsTextKey, number, number, number][] = [
-  ["cap_daily", 1, 1, 1],
-  ["cap_drafts", 1, 1, 1],
-  ["cap_approve", 1, 1, 0],
-  ["cap_reports", 1, 1, 0],
-  ["cap_ops", 1, 1, 1],
-  ["cap_health", 1, 1, 0],
-  ["cap_settings", 1, 2, 2],
-];
 
 const SIGN_IN_RULES: readonly SettingsTextKey[] = [
   "se_signin_1",
@@ -70,7 +70,8 @@ const REASONS = [
 
 type Open =
   | { kind: "add" }
-  | { kind: "access" }
+  | { kind: "roles"; user: UserAccount }
+  | { kind: "role"; role: Role | null }
   | { kind: "revoke" }
   | { kind: "reset"; user: UserAccount }
   | { kind: "disable"; user: UserAccount };
@@ -85,23 +86,6 @@ function roleText(language: Language, user: UserAccount): string {
   return sst(
     language,
     user.account_class === null ? "role_other" : `role_${user.account_class}`,
-  );
-}
-
-function Tick({ language, value }: { language: Language; value: number }) {
-  if (value === 2) {
-    return <span className="ui-muted">{sst(language, "ua_if")}</span>;
-  }
-  return value === 1 ? (
-    <span className="ui-okv">
-      <Icon name="check" small />
-      <span className="ui-sr">{sst(language, "yes")}</span>
-    </span>
-  ) : (
-    <span className="ui-muted">
-      <span aria-hidden="true">—</span>
-      <span className="ui-sr">{sst(language, "no")}</span>
-    </span>
   );
 }
 
@@ -251,123 +235,6 @@ function AddUserDialog({
         <p className="help">{sst(language, "owner_one")}</p>
       </div>
       <p className="ui-small ui-muted">{sst(language, "se_user_note")}</p>
-      <ProblemNotice problem={problem} />
-    </Dialog>
-  );
-}
-
-function AccessDialog({
-  language,
-  users,
-  busy,
-  problem,
-  onClose,
-  onSave,
-}: {
-  language: Language;
-  users: UserAccount[];
-  busy: boolean;
-  problem: Problem | null;
-  onClose: () => void;
-  onSave: (
-    changes: { user: UserAccount; give: boolean }[],
-    reason: string,
-  ) => void;
-}) {
-  const active = users.filter((user) => user.lifecycle_state === "active");
-  const [ticked, setTicked] = useState(
-    () =>
-      new Set(
-        active
-          .filter((user) => user.settings_access)
-          .map((user) => user.user_id),
-      ),
-  );
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const changes = active
-      .filter((user) => user.account_class !== "owner")
-      .filter((user) => ticked.has(user.user_id) !== user.settings_access)
-      .map((user) => ({ user, give: !user.settings_access }));
-    if (changes.length === 0) {
-      setError(sst(language, "ua_e_none"));
-      return;
-    }
-    if (reason.trim() === "") {
-      setError(sst(language, "ua_e_reason"));
-      document.getElementById("ua-reason")?.focus();
-      return;
-    }
-    onSave(changes, reason.trim());
-  }
-
-  return (
-    <Dialog
-      busy={busy}
-      closeLabel={sst(language, "cancel")}
-      onClose={onClose}
-      onSubmit={submit}
-      submitLabel={sst(language, "save")}
-      title={sst(language, "ua_title")}
-    >
-      <fieldset className="ui-radios">
-        <legend>{sst(language, "ua_col")}</legend>
-        {active.map((user) => {
-          const owner = user.account_class === "owner";
-          return (
-            <label className="ui-chk" key={user.user_id}>
-              <input
-                checked={owner || ticked.has(user.user_id)}
-                disabled={owner}
-                onChange={(event) => {
-                  const on = event.currentTarget.checked;
-                  setError(null);
-                  setTicked((before) => {
-                    const next = new Set(before);
-                    if (on) next.add(user.user_id);
-                    else next.delete(user.user_id);
-                    return next;
-                  });
-                }}
-                type="checkbox"
-              />
-              <span>
-                {user.display_name}
-                <small className="ui-muted">
-                  {" "}
-                  · {roleText(language, user)}
-                </small>
-              </span>
-            </label>
-          );
-        })}
-      </fieldset>
-      <p className="ui-small ui-muted">{sst(language, "ua_note")}</p>
-      <div className="ui-field">
-        <label htmlFor="ua-reason">
-          {sst(language, "ur_reason")}
-          <span className="req">{sst(language, "required")}</span>
-        </label>
-        <input
-          aria-describedby={error === null ? "ua-reason-h" : "ua-reason-h ua-e"}
-          aria-invalid={error === sst(language, "ua_e_reason")}
-          autoComplete="off"
-          id="ua-reason"
-          maxLength={500}
-          onChange={(event) => {
-            setReason(event.currentTarget.value);
-            setError(null);
-          }}
-          value={reason}
-        />
-        <p className="help" id="ua-reason-h">
-          {sst(language, "ua_reason_h")}
-        </p>
-      </div>
-      <FieldError id="ua-e" text={error ?? undefined} />
       <ProblemNotice problem={problem} />
     </Dialog>
   );
@@ -687,6 +554,7 @@ export function UsersTab({
   propertyId,
   active,
   api,
+  rolesApi,
   myUserId,
   reauthenticate,
 }: {
@@ -694,11 +562,13 @@ export function UsersTab({
   propertyId: string;
   active: boolean;
   api: UsersApi;
+  rolesApi: RolesApi;
   /** The signed-in person, whom End all sessions leaves signed in. */
   myUserId: string | null;
   reauthenticate: (request: ReauthenticationRequest) => Promise<void>;
 }) {
   const [users, setUsers] = useState<UserAccount[] | null>(null);
+  const [roles, setRoles] = useState<RolesAndPermissions | null>(null);
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const [reauth, setReauth] = useState<{
@@ -722,21 +592,23 @@ export function UsersTab({
     if (propertyId === "") return;
     const operation = ++sequence.current;
     setFailure(null);
-    api
-      .load(propertyId)
-      .then((loaded) => {
-        if (operation === sequence.current) setUsers(loaded.users);
+    Promise.all([api.load(propertyId), rolesApi.load(propertyId)])
+      .then(([loaded, roleList]) => {
+        if (operation !== sequence.current) return;
+        setUsers(loaded.users);
+        setRoles(roleList);
       })
       .catch((error: unknown) => {
         if (operation !== sequence.current) return;
         setUsers(null);
+        setRoles(null);
         setFailure(
           error instanceof AdministrationUnavailableError
             ? "not_allowed"
             : "failed",
         );
       });
-  }, [api, propertyId]);
+  }, [api, rolesApi, propertyId]);
 
   // Another Property never shows the users of the one before, and a one-time password made for
   // the one before is gone.
@@ -744,6 +616,7 @@ export function UsersTab({
     shownProperty.current = propertyId;
     sequence.current++;
     setUsers(null);
+    setRoles(null);
     setFailure(null);
     setOpen(null);
     setReauth(null);
@@ -841,7 +714,7 @@ export function UsersTab({
       </div>
     );
   }
-  if (users === null) {
+  if (users === null || roles === null) {
     return (
       <p className="ui-muted" role="status">
         {sst(language, "users_loading")}
@@ -871,16 +744,6 @@ export function UsersTab({
           <h2 id="settings-users">{sst(language, "se_users")}</h2>
           <span className="ui-actions">
             <button
-              className="ui-btn"
-              onClick={() => {
-                start({ kind: "access" });
-              }}
-              type="button"
-            >
-              <Icon name="lock" small />
-              {sst(language, "ua_btn")}
-            </button>
-            <button
               className="ui-btn primary"
               onClick={() => {
                 start({ kind: "add" });
@@ -897,9 +760,9 @@ export function UsersTab({
             <thead>
               <tr>
                 <th scope="col">{sst(language, "se_user")}</th>
-                <th scope="col">{sst(language, "se_role")}</th>
+                <th scope="col">{sst(language, "se_class")}</th>
+                <th scope="col">{at(language, "ur_roles_col")}</th>
                 <th scope="col">{sst(language, "se_mfa")}</th>
-                <th scope="col">{sst(language, "ua_col")}</th>
                 <th scope="col">{sst(language, "se_state")}</th>
                 <th scope="col">{sst(language, "ur_col")}</th>
               </tr>
@@ -920,6 +783,24 @@ export function UsersTab({
                       </span>
                     </td>
                     <td>{roleText(language, user)}</td>
+                    <td className="wrap">
+                      <span>{userRoleNames(language, user, roles)}</span>
+                      {user.lifecycle_state === "active" && (
+                        <>
+                          {" "}
+                          <button
+                            aria-label={`${at(language, "ur_roles_col")}: ${user.display_name}`}
+                            className="ui-btn link"
+                            onClick={() => {
+                              start({ kind: "roles", user });
+                            }}
+                            type="button"
+                          >
+                            {at(language, "ur_roles_btn")}
+                          </button>
+                        </>
+                      )}
+                    </td>
                     <td>
                       {user.mfa_policy_class === "required" ? (
                         <Chip icon="lock" tone="info">
@@ -930,12 +811,6 @@ export function UsersTab({
                           {sst(language, "se_mfa_off")}
                         </span>
                       )}
-                    </td>
-                    <td>
-                      <Tick
-                        language={language}
-                        value={owner || user.settings_access ? 1 : 0}
-                      />
                     </td>
                     <td>
                       {user.lifecycle_state === "active" ? (
@@ -999,47 +874,25 @@ export function UsersTab({
           )}
         </div>
       </section>
-      {/* One under the other: the role table needs the width for its four columns. */}
+      {/* One under the other: the role table needs the width for its columns. */}
       <div className="ui-stack">
-        <section aria-labelledby="settings-roles" className="ui-card pad0">
-          <header className="ui-chead pad">
-            <h2 id="settings-roles">{sst(language, "se_bundles")}</h2>
-          </header>
-          <div className="ui-tablewrap">
-            <table className="ui-table">
-              <thead>
-                <tr>
-                  <th scope="col">{sst(language, "se_cap")}</th>
-                  <th scope="col">{sst(language, "role_owner")}</th>
-                  <th scope="col">{sst(language, "role_manager")}</th>
-                  <th scope="col">{sst(language, "role_staff")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CAPABILITIES.map(([key, owner, manager, staff]) => (
-                  <tr key={key}>
-                    <td className="wrap">{sst(language, key)}</td>
-                    <td>
-                      <Tick language={language} value={owner} />
-                    </td>
-                    <td>
-                      <Tick language={language} value={manager} />
-                    </td>
-                    <td>
-                      <Tick language={language} value={staff} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <RolesSection
+          data={roles}
+          language={language}
+          onAdd={() => {
+            start({ kind: "role", role: null });
+          }}
+          onEdit={(role) => {
+            start({ kind: "role", role });
+          }}
+        />
         <section aria-labelledby="settings-signin" className="ui-card">
           <h2 id="settings-signin">{sst(language, "se_signin")}</h2>
           <ul className="ui-steps">
             {SIGN_IN_RULES.map((key) => (
               <li key={key}>{sst(language, key)}</li>
             ))}
+            <li>{at(language, "se_signin_roles")}</li>
           </ul>
         </section>
       </div>
@@ -1097,45 +950,56 @@ export function UsersTab({
             users={users}
           />
         )}
-        {open?.kind === "access" && (
-          <AccessDialog
+        {open?.kind === "roles" && (
+          <UserRolesDialog
             busy={busy}
+            data={roles}
             language={language}
+            notice={<ProblemNotice problem={problem} />}
             onClose={closeOpen}
-            onSave={(changes, reason) => {
+            onSave={({ give, take, reason }) => {
+              const { user } = open;
               // A run asked to confirm the Owner part-way runs again for the rest only.
               const finished = new Set<string>();
               const refused: string[] = [];
+              const named = (id: string) => {
+                const role = roles.roles.find(
+                  (one) => one.role_bundle_id === id,
+                );
+                return role === undefined
+                  ? user.display_name
+                  : `${user.display_name} (${language === "km" && role.name_kh !== null ? role.name_kh : role.name})`;
+              };
               run(
                 async () => {
-                  for (const { user, give } of changes) {
-                    if (finished.has(user.user_id)) continue;
+                  const steps = [
+                    ...give.map((id) => ({ id, giving: true })),
+                    ...take.map((id) => ({ id, giving: false })),
+                  ];
+                  for (const { id, giving } of steps) {
+                    if (finished.has(id)) continue;
                     try {
-                      await (give
-                        ? api.giveSettingsAccess(user.user_id, reason)
-                        : api.removeSettingsAccess(user.user_id, reason));
-                      finished.add(user.user_id);
+                      await (giving
+                        ? rolesApi.giveRole(user.user_id, id)
+                        : rolesApi.takeRole(user.user_id, id, reason));
+                      finished.add(id);
                     } catch (error: unknown) {
-                      // Only a refusal of this one user is reported here; anything else
+                      // Only a refusal of this one role is reported here; anything else
                       // stops the rest.
-                      if (!(error instanceof AdministrationRefusedError)) {
+                      if (
+                        !(error instanceof AdministrationRefusedError) ||
+                        error.status === 412
+                      ) {
                         throw error;
                       }
-                      finished.add(user.user_id);
-                      // Already as asked (another change got there first): nothing to report.
-                      if (
-                        error.code === "SETTINGS_ACCESS_ALREADY_GIVEN" ||
-                        error.code === "NO_SETTINGS_ACCESS"
-                      ) {
-                        continue;
-                      }
+                      finished.add(id);
                       refused.push(
-                        sst(
+                        at(
                           language,
                           error.code === "SIGN_IN_CODE_REQUIRED"
-                            ? "ua_e_code"
-                            : "ua_e_one",
-                          user.display_name,
+                            ? "ur_roles_code"
+                            : "ur_roles_one",
+                          named(id),
                         ),
                       );
                     }
@@ -1151,8 +1015,38 @@ export function UsersTab({
                 },
               );
             }}
-            problem={problem}
-            users={users}
+            user={open.user}
+          />
+        )}
+        {open?.kind === "role" && (
+          <RoleEditorDialog
+            busy={busy}
+            data={roles}
+            language={language}
+            notice={<ProblemNotice problem={problem} />}
+            onClose={closeOpen}
+            onSave={(change) => {
+              const { role } = open;
+              run(
+                () =>
+                  role === null
+                    ? rolesApi.createRole(propertyId, change)
+                    : rolesApi.saveRole(role, change),
+                (saved) => {
+                  setToast({
+                    ok: true,
+                    text: at(
+                      language,
+                      "ro_saved",
+                      language === "km" && saved.name_kh !== null
+                        ? saved.name_kh
+                        : saved.name,
+                    ),
+                  });
+                },
+              );
+            }}
+            role={open.role}
           />
         )}
         {open?.kind === "reset" && (

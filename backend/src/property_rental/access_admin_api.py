@@ -143,12 +143,50 @@ class RoleBundleView:
 
 
 @dataclass(frozen=True, slots=True)
+class PermissionView:
+    """One permission of the Roles editor (V1.1 part 3): a set of capabilities with English and
+    Khmer names. ``BASIC`` has no group: every role has it and it is not shown."""
+
+    permission_code: str
+    group_code: str | None
+    group_name_en: str | None
+    group_name_kh: str | None
+    name_en: str
+    name_kh: str
+    capability_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RoleView:
+    """A role as the Owner sees it on Users and access > Roles (V1.1 part 3)."""
+
+    role_bundle_id: UUID
+    property_id: str
+    name: str
+    name_kh: str | None
+    version: int
+    turned_off: bool
+    owner_role: bool
+    capability_ids: tuple[str, ...]
+    holders: int
+
+
+@dataclass(frozen=True, slots=True)
 class RoleAssignmentView:
     """Committed assignment of a configured bundle to an account."""
 
     user_id: UUID
     role_bundle_id: UUID
     property_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class RolesAndPermissionsView:
+    """The permissions list, the roles and who has which role, in one read."""
+
+    permissions: tuple[PermissionView, ...]
+    roles: tuple[RoleView, ...]
+    assignments: tuple[RoleAssignmentView, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,6 +330,27 @@ class AccessAdministrationFlow(Protocol):
         property_id: str,
         audit_context: AdministrationAuditContext,
     ) -> RoleAssignmentView: ...
+
+    def roles_and_permissions(
+        self,
+        *,
+        property_id: str,
+        actor_id: str,
+        request_id: str,
+    ) -> RolesAndPermissionsView: ...
+
+    def save_role(
+        self,
+        *,
+        property_id: str,
+        role_bundle_id: UUID | None,
+        expected_version: int | None,
+        name: str,
+        name_kh: str | None,
+        capability_ids: tuple[str, ...],
+        turned_off: bool,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleView: ...
 
     def remove_role_assignment(
         self,
@@ -445,6 +504,31 @@ class UnavailableAccessAdministrationFlow:
         actor_id: str,
         request_id: str,
     ) -> tuple[tuple[RoleBundleView, ...], str | None]:
+        self._unavailable()
+        raise AssertionError
+
+    def roles_and_permissions(
+        self,
+        *,
+        property_id: str,
+        actor_id: str,
+        request_id: str,
+    ) -> RolesAndPermissionsView:
+        self._unavailable()
+        raise AssertionError
+
+    def save_role(
+        self,
+        *,
+        property_id: str,
+        role_bundle_id: UUID | None,
+        expected_version: int | None,
+        name: str,
+        name_kh: str | None,
+        capability_ids: tuple[str, ...],
+        turned_off: bool,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleView:
         self._unavailable()
         raise AssertionError
 
@@ -611,6 +695,27 @@ class RoleBundleUpdateRequest(BaseModel):
         return self
 
 
+class RoleCreateRequest(BaseModel):
+    """A new role (V1.1 part 3): English name, optional Khmer name and its rights."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: BoundedName
+    name_kh: BoundedName | None = None
+    capability_ids: tuple[CapabilityIdentifier, ...] = Field(max_length=256)
+
+
+class RoleSaveRequest(BaseModel):
+    """A role saved whole (V1.1 part 3), at the version in If-Match."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: BoundedName
+    name_kh: BoundedName | None = None
+    capability_ids: tuple[CapabilityIdentifier, ...] = Field(max_length=256)
+    turned_off: bool
+
+
 class RoleAssignmentRequest(BaseModel):
     """Assign one configured bundle without accepting role-title authority."""
 
@@ -684,6 +789,32 @@ class RoleBundleData(BaseModel):
     name: str
     capability_ids: tuple[str, ...]
     version: int = Field(ge=1)
+
+
+class PermissionData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    permission_code: str
+    group_code: str | None
+    group_name_en: str | None
+    group_name_kh: str | None
+    name_en: str
+    name_kh: str
+    capability_ids: tuple[str, ...]
+
+
+class RoleData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    role_bundle_id: UUID
+    property_id: str
+    name: str
+    name_kh: str | None
+    version: int = Field(ge=1)
+    turned_off: bool
+    owner_role: bool
+    capability_ids: tuple[str, ...]
+    holders: int = Field(ge=0)
 
 
 class RoleAssignmentData(BaseModel):
@@ -775,6 +906,28 @@ class RoleBundleListResponse(BaseModel):
 
     data: tuple[RoleBundleData, ...]
     page: "PageMeta"
+    meta: ResponseMeta
+
+
+class RolesAndPermissionsData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    permissions: tuple[PermissionData, ...]
+    roles: tuple[RoleData, ...]
+    assignments: tuple[RoleAssignmentData, ...]
+
+
+class RolesAndPermissionsResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    data: RolesAndPermissionsData
+    meta: ResponseMeta
+
+
+class RoleResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    data: RoleData
     meta: ResponseMeta
 
 
@@ -1205,6 +1358,93 @@ def create_access_admin_router(
         _require_matching_identifier(bundle.role_bundle_id, role_bundle_id)
         return RoleBundleResponse(
             data=_role_bundle_data(bundle),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.get(
+        "/properties/{property_id}/roles",
+        response_model=RolesAndPermissionsResponse,
+    )
+    def roles_and_permissions(
+        property_id: PropertyIdentifier,
+        request: Request,
+    ) -> RolesAndPermissionsResponse:
+        actor = _require_access_actor(request, actor_resolver, property_id=property_id)
+        found = flow.roles_and_permissions(
+            property_id=property_id,
+            actor_id=actor.actor_id,
+            request_id=request.state.request_id,
+        )
+        for role in found.roles:
+            _require_matching_property(role.property_id, property_id)
+        for assignment in found.assignments:
+            _require_matching_property(assignment.property_id, property_id)
+        return RolesAndPermissionsResponse(
+            data=RolesAndPermissionsData.model_validate(found, from_attributes=True),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.post(
+        "/properties/{property_id}/roles",
+        response_model=RoleResponse,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_role(
+        property_id: PropertyIdentifier,
+        payload: RoleCreateRequest,
+        request: Request,
+        response: Response,
+    ) -> RoleResponse:
+        actor = _require_access_actor(request, actor_resolver, property_id=property_id)
+        _require_browser_mutation(request, settings)
+        role = flow.save_role(
+            property_id=property_id,
+            role_bundle_id=None,
+            expected_version=None,
+            name=payload.name,
+            name_kh=payload.name_kh,
+            capability_ids=payload.capability_ids,
+            turned_off=False,
+            audit_context=_audit_context(actor.actor_id, request),
+        )
+        _require_matching_property(role.property_id, property_id)
+        response.headers["Location"] = f"/api/v1/roles/{role.role_bundle_id}"
+        return RoleResponse(
+            data=RoleData.model_validate(role, from_attributes=True),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.put("/roles/{role_bundle_id}", response_model=RoleResponse)
+    def save_role(
+        role_bundle_id: UUID,
+        payload: RoleSaveRequest,
+        request: Request,
+    ) -> RoleResponse:
+        actor = _require_access_actor(request, actor_resolver)
+        _require_browser_mutation(request, settings)
+        bundle_scope = ObjectScope(
+            object_type=ROLE_BUNDLE_OBJECT_TYPE,
+            object_id=str(role_bundle_id),
+        )
+        _require_object_access(actor, bundle_scope)
+        property_id = _resource_property_id(
+            flow.role_bundle_property_id(role_bundle_id=role_bundle_id)
+        )
+        _require_property_access(actor, property_id, object_scope=bundle_scope)
+        role = flow.save_role(
+            property_id=property_id,
+            role_bundle_id=role_bundle_id,
+            expected_version=_expected_version(request),
+            name=payload.name,
+            name_kh=payload.name_kh,
+            capability_ids=payload.capability_ids,
+            turned_off=payload.turned_off,
+            audit_context=_audit_context(actor.actor_id, request),
+        )
+        _require_matching_property(role.property_id, property_id)
+        _require_matching_identifier(role.role_bundle_id, role_bundle_id)
+        return RoleResponse(
+            data=RoleData.model_validate(role, from_attributes=True),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 

@@ -101,6 +101,8 @@ def test_every_known_database_message_is_word_for_word_in_the_migrations() -> No
         "role_bundles_name_check",
         # Q-2026-10-22-169 (a): the bundle name check of sub-slice L2c (migration 20270126_183).
         "role_bundles_name_visible_check",
+        # V1.1 part 3: the Khmer role name check (migration 20270423_273).
+        "role_bundles_name_kh_check",
     }
     for message in messages:
         assert f"'{message}'" in sources, message

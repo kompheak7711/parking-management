@@ -15,6 +15,7 @@ import {
   type UserAccount,
 } from "../adminClient";
 import { AuthenticationError, RateLimitedError } from "../authClient";
+import { rolesApiOf } from "../test/rolesFixtures";
 import { UsersTab } from "./UsersTab";
 
 afterEach(() => {
@@ -87,12 +88,6 @@ function apiOf(
         one_time_password: PASSWORD,
       }),
     ),
-    giveSettingsAccess: vi.fn((userId: string) =>
-      Promise.resolve({ ...STAFF, user_id: userId, settings_access: true }),
-    ),
-    removeSettingsAccess: vi.fn((userId: string) =>
-      Promise.resolve({ ...MANAGER, user_id: userId, settings_access: false }),
-    ),
   };
 }
 
@@ -101,6 +96,7 @@ function show(
   {
     language = "en" as "en" | "km",
     reauthenticate = vi.fn(() => Promise.resolve()),
+    roles = rolesApiOf(),
   } = {},
 ) {
   render(
@@ -111,9 +107,10 @@ function show(
       myUserId="owner-1"
       propertyId="property-1"
       reauthenticate={reauthenticate}
+      rolesApi={roles}
     />,
   );
-  return { api, reauthenticate };
+  return { api, reauthenticate, roles };
 }
 
 const row = (name: string) => {
@@ -124,7 +121,7 @@ const row = (name: string) => {
 };
 
 describe("Settings: Users and sign-in", () => {
-  it("TEST-FE-944 lists each user with role, MFA, Settings access and state; only active users who are not the Owner get Reset and Disable; End all sessions leaves the Owner signed in; the role table and sign-in rules show", async () => {
+  it("TEST-FE-944 lists each user with account type, roles, MFA and state; only active users who are not the Owner get Reset and Disable; End all sessions leaves the Owner signed in; the roles and sign-in rules show (V1.1 part 3)", async () => {
     const { api } = show();
     const users = await screen.findByRole("region", { name: "Users" });
     expect(api.load).toHaveBeenCalledWith("property-1");
@@ -132,9 +129,9 @@ describe("Settings: Users and sign-in", () => {
       Array.from(users.querySelectorAll("th")).map((th) => th.textContent),
     ).toEqual([
       "Name",
-      "Role",
+      "Account type",
+      "Roles",
       "MFA",
-      "Can change settings",
       "State",
       "Sign-in help",
     ]);
@@ -143,32 +140,35 @@ describe("Settings: Users and sign-in", () => {
     expect(cells("Sok")).toEqual([
       "Soksok",
       "Owner",
+      "Owner Change",
       "Needed",
-      "Yes",
       "Active",
       "—",
     ]);
     expect(cells("Dara").slice(0, 5)).toEqual([
       "Daradara",
       "Manager",
+      "Manager Change",
       "Needed",
-      "Yes",
       "Active",
     ]);
     expect(cells("Vanna").slice(1, 5)).toEqual([
       "Staff",
+      "Staff Change",
       "Not needed",
-      "—No",
       "Active",
     ]);
     expect(cells("Rith")).toEqual([
       "Rithrith",
       "Staff",
+      "No role",
       "Not needed",
-      "—No",
       "Disabled",
       "—",
     ]);
+    expect(
+      screen.queryByRole("button", { name: "Settings access" }),
+    ).toBeNull();
     expect(
       within(row("Vanna")).getByRole("button", { name: "Reset: Vanna" }),
     ).toBeTruthy();
@@ -179,11 +179,23 @@ describe("Settings: Users and sign-in", () => {
       "Only the Owner sees and changes this tab.",
     );
 
-    const roles = screen.getByRole("region", { name: "What each role can do" });
-    expect(roles.textContent).toContain("Business settings, users and roles");
-    expect(within(roles).getAllByText("If the Owner allows")).toHaveLength(2);
+    const roles = screen.getByRole("region", { name: "Roles" });
+    const roleRows = Array.from(roles.querySelectorAll("tbody tr")).map((tr) =>
+      Array.from(tr.querySelectorAll("td"))
+        .slice(0, 4)
+        .map((td) => td.textContent),
+    );
+    expect(roleRows).toEqual([
+      ["Owner", "1", "5 of 5", "Required"],
+      ["Manager", "1", "2 of 5", "Optional"],
+      ["Staff", "1", "1 of 5", "Optional"],
+      ["Night desk Turned off", "0", "0 of 5", "Optional"],
+    ]);
     const rules = screen.getByRole("region", { name: "Sign-in rules" });
-    expect(within(rules).getAllByRole("listitem")).toHaveLength(5);
+    expect(within(rules).getAllByRole("listitem")).toHaveLength(6);
+    expect(rules.textContent).toContain(
+      "Two-step sign-in is needed for the Owner and for every role that can change business rules.",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "End all sessions" }));
     const dialog = screen.getByRole("dialog", { name: "End all sessions" });
@@ -279,40 +291,41 @@ describe("Settings: Users and sign-in", () => {
 
   it("TEST-FE-946 an action that needs the password and code again asks for them, then runs once more; a refusal names the user; a changed account reads the list again", async () => {
     const api = apiOf();
-    api.removeSettingsAccess.mockRejectedValueOnce(
-      new ReauthenticationRequiredError(),
-    );
-    api.giveSettingsAccess.mockRejectedValueOnce(
-      new AdministrationRefusedError(
-        409,
-        "SIGN_IN_CODE_REQUIRED",
-        "A Staff account gets Settings access only after it has set up its sign-in code.",
-      ),
-    );
+    const roles = rolesApiOf();
+    roles.giveRole
+      .mockRejectedValueOnce(new ReauthenticationRequiredError())
+      .mockRejectedValueOnce(
+        new AdministrationRefusedError(
+          409,
+          "SIGN_IN_CODE_REQUIRED",
+          "A Staff account gets Change business rules only after it has set up its sign-in code.",
+        ),
+      );
     const reauthenticate = vi
       .fn()
       .mockRejectedValueOnce(new AuthenticationError())
       .mockRejectedValueOnce(new RateLimitedError(280))
       .mockResolvedValue(undefined);
-    show(api, { reauthenticate });
+    show(api, { reauthenticate, roles });
     fireEvent.click(
-      await screen.findByRole("button", { name: "Settings access" }),
+      await screen.findByRole("button", { name: "Roles: Vanna" }),
     );
-    let dialog = screen.getByRole("dialog", {
-      name: "Who can change settings",
-    });
+    let dialog = screen.getByRole("dialog", { name: "Roles for Vanna" });
     const boxes = within(dialog).getAllByRole("checkbox");
-    // The Owner always can; the disabled user is not listed.
-    expect(boxes.map((box) => (box as HTMLInputElement).checked)).toEqual([
-      true,
-      true,
-      false,
+    // The Owner role is only for the Owner; a turned-off role is not offered.
+    expect(
+      boxes.map((box) => [
+        box.parentElement?.textContent,
+        (box as HTMLInputElement).checked,
+      ]),
+    ).toEqual([
+      ["Manager", false],
+      ["Staff", true],
     ]);
-    expect((boxes[0] as HTMLInputElement).disabled).toBe(true);
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Nothing was changed.")).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Vanna/ }));
-    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Dara/ }));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Manager/ }));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Staff/ }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Write the reason.")).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
@@ -321,7 +334,7 @@ describe("Settings: Users and sign-in", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
     dialog = await screen.findByRole("dialog", { name: "Confirm it is you" });
-    expect(api.giveSettingsAccess).not.toHaveBeenCalled();
+    expect(roles.takeRole).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
     expect(within(dialog).getByText("Type your password.")).toBeTruthy();
     expect(
@@ -358,17 +371,19 @@ describe("Settings: Users and sign-in", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
     expect(
       await screen.findByText(
-        "Vanna: a Staff account gets Settings access only after it has set up its sign-in code.",
+        "Vanna (Manager): a Staff account gets a role that changes business rules only after it has set up its sign-in code.",
       ),
     ).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(api.removeSettingsAccess).toHaveBeenCalledTimes(2);
-    expect(api.removeSettingsAccess).toHaveBeenLastCalledWith(
-      "user-Dara",
-      "Night shift",
-    );
-    expect(api.giveSettingsAccess).toHaveBeenCalledWith(
+    expect(roles.giveRole).toHaveBeenCalledTimes(2);
+    expect(roles.giveRole).toHaveBeenLastCalledWith(
       "user-Vanna",
+      "role-manager",
+    );
+    expect(roles.takeRole).toHaveBeenCalledTimes(1);
+    expect(roles.takeRole).toHaveBeenCalledWith(
+      "user-Vanna",
+      "role-staff",
       "Night shift",
     );
 
@@ -471,7 +486,7 @@ describe("Settings: Users and sign-in", () => {
           "Another account already has this username.",
         ),
       );
-    show(api);
+    const { roles } = show(api);
     fireEvent.click(await screen.findByRole("button", { name: "Add user" }));
     let dialog = screen.getByRole("dialog", { name: "Add user" });
     fireEvent.change(within(dialog).getByLabelText(/^Name/), {
@@ -501,14 +516,12 @@ describe("Settings: Users and sign-in", () => {
     ).toBe("mony");
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
 
-    // Dara's access is removed; then the server asks again before Vanna's is given.
-    api.giveSettingsAccess.mockRejectedValueOnce(
-      new ReauthenticationRequiredError(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Settings access" }));
-    dialog = screen.getByRole("dialog", { name: "Who can change settings" });
-    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Vanna/ }));
-    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Dara/ }));
+    // Manager is given; then the server asks again before Staff is taken away.
+    roles.takeRole.mockRejectedValueOnce(new ReauthenticationRequiredError());
+    fireEvent.click(screen.getByRole("button", { name: "Roles: Vanna" }));
+    dialog = screen.getByRole("dialog", { name: "Roles for Vanna" });
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Manager/ }));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: /Staff/ }));
     fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
       target: { value: "Night shift" },
     });
@@ -522,8 +535,8 @@ describe("Settings: Users and sign-in", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
     expect(await screen.findByText("Saved.")).toBeTruthy();
-    expect(api.removeSettingsAccess).toHaveBeenCalledTimes(1);
-    expect(api.giveSettingsAccess).toHaveBeenCalledTimes(2);
+    expect(roles.giveRole).toHaveBeenCalledTimes(1);
+    expect(roles.takeRole).toHaveBeenCalledTimes(2);
     cleanup();
 
     // The Property changes while a reset is on its way: its password is still shown.
@@ -544,6 +557,7 @@ describe("Settings: Users and sign-in", () => {
       language: "en" as const,
       myUserId: "owner-1",
       reauthenticate: vi.fn(() => Promise.resolve()),
+      rolesApi: rolesApiOf(),
     };
     const { rerender } = render(
       <UsersTab {...props} propertyId="property-1" />,
@@ -570,5 +584,171 @@ describe("Settings: Users and sign-in", () => {
         name: "One-time password for Vanna",
       }),
     ).toBeTruthy();
+  });
+
+  it("TEST-FE-1141 Roles: Add role checks the name and saves whole permissions; Edit shows part of a permission, keeps the Owner role's name and Users and roles locked, and a role with users cannot be turned off (V1.1 part 3, DL-120)", async () => {
+    const { roles } = show();
+    fireEvent.click(await screen.findByRole("button", { name: "Add role" }));
+    let dialog = screen.getByRole("dialog", { name: "Add role" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(dialog).getByText("Write the name in English.")).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "manager" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      within(dialog).getByText("Another role already has this name."),
+    ).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
+      target: { value: "Cashier" },
+    });
+    expect(
+      within(dialog)
+        .getAllByRole("group")
+        .map((group) => group.querySelector("legend")?.textContent),
+    ).toEqual(["Operations", "Money approval", "Administration"]);
+    const users = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Users and roles/,
+    });
+    expect(users.disabled).toBe(true);
+    expect(users.checked).toBe(false);
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Receive payment/ }),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Change business rules/ }),
+    );
+    expect(dialog.textContent).toContain(
+      "A role with this needs two-step sign-in.",
+    );
+    // A new role cannot be turned off before it has been made.
+    expect(
+      within(dialog).queryByRole("checkbox", { name: /Turn this role off/ }),
+    ).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Role saved: Cashier")).toBeTruthy();
+    expect(roles.createRole).toHaveBeenCalledWith("property-1", {
+      name: "Cashier",
+      name_kh: null,
+      capability_ids: [
+        "payments.allocate",
+        "payments.record",
+        "settings.manage",
+      ],
+      turned_off: false,
+    });
+    expect(roles.load).toHaveBeenCalledTimes(2);
+
+    // The Manager role has part of Approve money changes; ticking it gives the whole one.
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Manager" }));
+    dialog = screen.getByRole("dialog", { name: "Edit role: Manager" });
+    const approve = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Approve money changes/,
+    });
+    expect(approve.indeterminate).toBe(true);
+    expect(approve.parentElement?.textContent).toContain("Part of it");
+    const off = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Turn this role off/,
+    });
+    expect(off.disabled).toBe(true);
+    expect(dialog.textContent).toContain(
+      "A role with users cannot be turned off. Give them another role first.",
+    );
+    fireEvent.click(approve);
+    fireEvent.change(within(dialog).getByLabelText(/^Name in Khmer/), {
+      target: { value: "អ្នកគ្រប់គ្រងថ្មី" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await screen.findByText("Role saved: Manager");
+    const [saved, change] = roles.saveRole.mock.calls[0] ?? [];
+    expect(saved?.role_bundle_id).toBe("role-manager");
+    expect(change).toEqual({
+      name: "Manager",
+      name_kh: "អ្នកគ្រប់គ្រងថ្មី",
+      capability_ids: [
+        "financial.approve",
+        "invoices.read",
+        "invoices.void",
+        "payments.allocate",
+        "payments.record",
+      ],
+      turned_off: false,
+    });
+
+    // The Owner role: its name is kept, Users and roles stays ticked, and it is never turned off.
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Owner" }));
+    dialog = screen.getByRole("dialog", { name: "Edit role: Owner" });
+    expect(
+      within(dialog).getByLabelText<HTMLInputElement>(/^Name in English/)
+        .disabled,
+    ).toBe(true);
+    const ownerUsers = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Users and roles/,
+    });
+    expect([ownerUsers.checked, ownerUsers.disabled]).toEqual([true, true]);
+    expect(
+      within(dialog).queryByRole("checkbox", { name: /Turn this role off/ }),
+    ).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    // A turned-off role with no users can be turned on again.
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Night desk" }));
+    dialog = screen.getByRole("dialog", { name: "Edit role: Night desk" });
+    const turnOff = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Turn this role off/,
+    });
+    expect([turnOff.checked, turnOff.disabled]).toEqual([true, false]);
+    fireEvent.click(turnOff);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(roles.saveRole).toHaveBeenCalledTimes(2);
+    });
+    expect(roles.saveRole.mock.calls[1]?.[1]).toMatchObject({
+      name: "Night desk",
+      turned_off: false,
+    });
+  });
+
+  it("TEST-FE-1142 Roles for the Owner keep the Owner role locked; a refusal from the server stays in the role form with its English words; Khmer role names show (V1.1 part 3, DL-120)", async () => {
+    const roles = rolesApiOf();
+    roles.saveRole.mockRejectedValueOnce(
+      new AdministrationRefusedError(
+        409,
+        "ROLE_TURNED_OFF",
+        "This role is turned off. Turn it on first.",
+      ),
+    );
+    show(apiOf(), { roles });
+    fireEvent.click(await screen.findByRole("button", { name: "Roles: Sok" }));
+    let dialog = screen.getByRole("dialog", { name: "Roles for Sok" });
+    const owner = within(dialog).getByRole<HTMLInputElement>("checkbox", {
+      name: /Owner/,
+    });
+    expect([owner.checked, owner.disabled]).toEqual([true, true]);
+    expect(dialog.textContent).toContain(
+      "The Owner always keeps the Owner role.",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Staff" }));
+    dialog = screen.getByRole("dialog", { name: "Edit role: Staff" });
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: /Open Invoices/ }),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    const said = await within(dialog).findByText(
+      "This role is turned off. Turn it on first.",
+    );
+    expect(said.getAttribute("lang")).toBe("en");
+    expect(
+      screen.getByRole("dialog", { name: "Edit role: Staff" }),
+    ).toBeTruthy();
+    cleanup();
+
+    show(apiOf(), { language: "km" });
+    const region = await screen.findByRole("region", { name: "តួនាទី" });
+    expect(region.textContent).toContain("អ្នកគ្រប់គ្រង");
+    expect(region.textContent).toContain("ត្រូវការ");
+    expect(screen.getByRole("button", { name: "បន្ថែមតួនាទី" })).toBeTruthy();
   });
 });

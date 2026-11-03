@@ -68,9 +68,8 @@ def refused(connection: Connection[tuple[object, ...]], sqlstate: str, work: obj
     assert error.value.sqlstate == sqlstate
 
 
-def test_migration_272_is_the_head() -> None:
+def test_migration_272_follows_the_business_settings() -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270422_272"]
     found = scripts.get_revision("20270422_272")
     assert found is not None and found.down_revision == "20270421_271"
     with pytest.raises(RuntimeError, match="forward-only"):

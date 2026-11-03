@@ -2468,3 +2468,18 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270422_272` (DB-RS-001), API-RS-001, Make Reservation, Extend and the Reservation page.
 - **Links:** DL-118, DL-099, DL-115.
 - **Decision date:** 2026-11-03.
+
+## DL-120 — V1.1 part 3: Roles and permissions
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the V1.1 rework plan part 3 ("roles you can add, rename or turn off; a permissions list (one per screen or action); ticks in Settings › Users"; "The Owner role always keeps Users and roles"), the owner's answers E2 (only the Owner manages users at the start) and E4 (the Settings access ticks become the role right "Change business rules") of 02/11/2026, PR-HR-002 (a person may have several roles), the HR answers of 03/11/2026 (one Owner who is never turned off; a role with users cannot be turned off; two-step sign-in Required for a role that can change business rules or users) and the owner's message of 03/11/2026 16:31 ("Continue your task"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no money rule changes.
+- **(A) Permissions list.** Every right a person can hold belongs to exactly one permission, grouped as Operations, Leasing, Property, Money approval, Ledger and Administration, with English and Khmer names. Sign in and see the Property, its Units and its setup is in every role and is not shown. Users and roles stays the Owner's own and shows locked. The list only grows. New permissions such as Make Quotation and Lower a price come with parts 4 and 6, when those screens exist.
+- **(B) Roles.** The Owner adds a role, renames it (English and Khmer) and ticks its permissions; a permission that a role holds only in part shows as "Part of it". A person may have several roles and gets every permission of each. A role with users cannot be turned off; a turned-off role gives nothing and cannot be given. One Owner: the Owner role keeps its name, is never turned off, is given only to the Owner and the Owner always keeps it. Changes work at once; anyone who loses a right is signed out.
+- **(C) Change business rules.** The old Settings access ticks are gone. "Change business rules" is a permission of a role; a Staff account gets such a role only after setting up its sign-in code, and the right works only while the code is set up (DL-081 kept). The Owner role has it. Each person who had Settings access gets a new role "Change business rules" (ប្ដូរច្បាប់អាជីវកម្ម) in its place, so nobody's rights change, and the old grant is removed with a reason.
+- **(D) Two-step sign-in.** The Owner and every role that can change business rules show two-step sign-in as Required.
+- **(E) Screen.** Settings › Users and sign-in shows each person's account type and roles (Change opens their tick boxes) and the Roles card (role, users, permissions "N of M", two-step, Edit; Add role). A separate Users and access page comes with the HR screens.
+- **Built:** migration `20270423_273` (DB-RP-001), API-RP-001, Settings › Users and sign-in.
+- **Links:** DL-081, DL-075, DL-116, DL-118.
+- **Decision date:** 2026-11-03.
+

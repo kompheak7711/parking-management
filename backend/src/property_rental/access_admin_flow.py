@@ -32,8 +32,11 @@ from property_rental.access_admin_api import (
     CapabilityView,
     CreatableAccountClass,
     OneTimePasswordView,
+    PermissionView,
     RoleAssignmentView,
     RoleBundleView,
+    RolesAndPermissionsView,
+    RoleView,
     UserAccountView,
 )
 from property_rental.auth_flow import (
@@ -58,6 +61,18 @@ CORRELATION_NAMESPACE: Final = UUID("6d3c1f0e-5b7a-4c2e-9f41-0a8e2b7d5c13")
 ACCOUNTS: Final = (
     "SELECT actor_id::text, username, display_name, audit_name, lifecycle_state, "
     "mfa_policy_class, account_class, settings_access, version FROM app.admin_accounts(%s)"
+)
+# V1.1 part 3 (migration 20270423_273).
+PERMISSIONS: Final = (
+    "SELECT permission_code, group_code, group_name_en, group_name_kh, name_en, name_kh, "
+    "capability_ids FROM app.permission_catalog()"
+)
+ROLES: Final = (
+    "SELECT role_bundle_id::text, property_id::text, name, name_kh, version, turned_off, "
+    "owner_role, capability_ids, holders FROM app.admin_roles(%s)"
+)
+ASSIGNMENTS: Final = (
+    "SELECT actor_id::text, role_bundle_id::text FROM app.admin_role_assignments(%s)"
 )
 BUNDLES: Final = (
     "SELECT role_bundle_id::text, property_id::text, name, version, capability_ids "
@@ -181,6 +196,42 @@ KNOWN_REFUSALS: Final[dict[str, tuple[int, str, str]]] = {
         422,
         "CAPABILITY_NOT_ASSIGNABLE",
         "This capability cannot be put in a role bundle.",
+    ),
+    # V1.1 part 3 (migration 20270423_273).
+    "a Staff account gets Change business rules only after it has set up its sign-in code": (
+        409,
+        "SIGN_IN_CODE_REQUIRED",
+        SIGN_IN_CODE_MESSAGE,
+    ),
+    "a turned-off role cannot be given": (
+        409,
+        "ROLE_TURNED_OFF",
+        "This role is turned off. Turn it on first.",
+    ),
+    "a role with users cannot be turned off; give them another role first": (
+        409,
+        "ROLE_HAS_USERS",
+        "A role with users cannot be turned off. Give them another role first.",
+    ),
+    "the Owner role is never renamed or turned off": (
+        403,
+        "OWNER_ROLE_LOCKED",
+        "The Owner role cannot be renamed or turned off.",
+    ),
+    "the Owner role is only for the Owner": (
+        403,
+        "OWNER_ROLE_LOCKED",
+        "The Owner role is only for the Owner.",
+    ),
+    "the Owner always keeps the Owner role": (
+        403,
+        "OWNER_ROLE_LOCKED",
+        "The Owner always keeps the Owner role.",
+    ),
+    "role_bundles_name_kh_check": (
+        422,
+        "VALIDATION_ERROR",
+        "The Khmer name is not valid.",
     ),
     "the Owner account is not changed by account administration": (
         422,
@@ -775,6 +826,135 @@ class PostgresAccessAdministrationFlow:
         return RoleAssignmentView(
             user_id=user_id, role_bundle_id=role_bundle_id, property_id=property_id
         )
+
+    @staticmethod
+    def _roles(connection: Connection, owner: UUID) -> list[RoleView]:
+        return [
+            RoleView(
+                role_bundle_id=UUID(str(row[0])),
+                property_id=str(row[1]),
+                name=str(row[2]),
+                name_kh=None if row[3] is None else str(row[3]),
+                version=int(str(row[4])),
+                turned_off=bool(row[5]),
+                owner_role=bool(row[6]),
+                capability_ids=tuple(str(item) for item in cast(list[object], row[7])),
+                holders=int(str(row[8])),
+            )
+            for row in connection.execute(ROLES, (owner,)).fetchall()
+        ]
+
+    def roles_and_permissions(
+        self,
+        *,
+        property_id: str,
+        actor_id: str,
+        request_id: str,
+    ) -> RolesAndPermissionsView:
+        del request_id
+        owner = _owner(actor_id)
+        with self._transaction() as connection:
+            if self._property_id(connection) != property_id:
+                raise AccessAdministrationNotFound
+            roles = self._roles(connection, owner)
+            permissions = tuple(
+                PermissionView(
+                    permission_code=str(row[0]),
+                    group_code=None if row[1] is None else str(row[1]),
+                    group_name_en=None if row[2] is None else str(row[2]),
+                    group_name_kh=None if row[3] is None else str(row[3]),
+                    name_en=str(row[4]),
+                    name_kh=str(row[5]),
+                    capability_ids=tuple(str(item) for item in cast(list[object], row[6])),
+                )
+                for row in connection.execute(PERMISSIONS).fetchall()
+            )
+            assignments = tuple(
+                RoleAssignmentView(
+                    user_id=UUID(str(row[0])),
+                    role_bundle_id=UUID(str(row[1])),
+                    property_id=property_id,
+                )
+                for row in connection.execute(ASSIGNMENTS, (owner,)).fetchall()
+            )
+        return RolesAndPermissionsView(
+            permissions=permissions,
+            roles=tuple(role for role in roles if role.property_id == property_id),
+            assignments=assignments,
+        )
+
+    def save_role(
+        self,
+        *,
+        property_id: str,
+        role_bundle_id: UUID | None,
+        expected_version: int | None,
+        name: str,
+        name_kh: str | None,
+        capability_ids: tuple[str, ...],
+        turned_off: bool,
+        audit_context: AdministrationAuditContext,
+    ) -> RoleView:
+        owner = _owner(audit_context.actor_id)
+        tidy_name = normalized_name(name)
+        tidy_kh = None if name_kh is None else normalized_name(name_kh)
+        with self._transaction() as connection:
+            self._require_recent_reauthentication(connection, audit_context)
+            if self._property_id(connection) != property_id:
+                raise AccessAdministrationNotFound
+            if role_bundle_id is None:
+                saved = UUID(
+                    str(
+                        self._call(
+                            connection,
+                            "SELECT app.admin_create_role(%s,%s,%s,%s,%s,%s)",
+                            (
+                                owner,
+                                UUID(property_id),
+                                tidy_name,
+                                tidy_kh,
+                                list(capability_ids),
+                                correlation_id(audit_context.request_id),
+                            ),
+                        )
+                    )
+                )
+                version = 1
+            else:
+                saved = role_bundle_id
+                version = int(
+                    str(
+                        self._call(
+                            connection,
+                            "SELECT app.admin_change_role(%s,%s,%s,%s,%s,%s,%s,%s)",
+                            (
+                                owner,
+                                role_bundle_id,
+                                expected_version,
+                                tidy_name,
+                                tidy_kh,
+                                list(capability_ids),
+                                turned_off,
+                                correlation_id(audit_context.request_id),
+                            ),
+                        )
+                    )
+                )
+            for role in self._roles(connection, owner):
+                if role.role_bundle_id == saved:
+                    break
+            else:
+                raise AccessAdministrationUnavailable
+            if (
+                role.property_id != property_id
+                or role.version != version
+                or role.name != tidy_name
+                or role.name_kh != tidy_kh
+                or role.turned_off != turned_off
+                or not set(capability_ids) <= set(role.capability_ids)
+            ):
+                raise AccessAdministrationUnavailable
+        return role
 
     def remove_role_assignment(
         self,

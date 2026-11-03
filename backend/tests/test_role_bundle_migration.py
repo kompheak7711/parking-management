@@ -351,12 +351,13 @@ def test_a_role_bundle_name_is_unique_per_property_and_every_version_is_kept(
             refused(connection, psycopg.errors.IntegrityConstraintViolation, query, (), APPEND_ONLY)
         # The catalog's own refusal, now that a TRUNCATE of the catalog alone meets the foreign
         # key first (test_capability_catalog_migration.py). Sub-slice L1d: every table that
-        # refers to the catalog is named too; the check and its message are unchanged.
+        # refers to the catalog is named too (V1.1 part 3: the permissions list); the check and
+        # its message are unchanged.
         refused(
             connection,
             psycopg.errors.IntegrityConstraintViolation,
             "TRUNCATE app.capabilities, app.role_bundle_capabilities, app.user_capability_grants, "
-            "app.user_capability_grant_removals",
+            "app.user_capability_grant_removals, app.permission_capabilities",
             (),
             "capability catalog is append-only",
         )

@@ -13,6 +13,7 @@ import {
   type HealthStatus,
   HealthUnavailableError,
 } from "./healthClient";
+import { rolesApiOf } from "../test/rolesFixtures";
 import { SettingsPage } from "./SettingsPage";
 
 afterEach(() => {
@@ -100,8 +101,6 @@ const usersApi = {
   disableUser: vi.fn(),
   revokeSessions: vi.fn(),
   administrativelyRecoverUser: vi.fn(),
-  giveSettingsAccess: vi.fn(),
-  removeSettingsAccess: vi.fn(),
 };
 
 const businessApi = {
@@ -177,6 +176,7 @@ function show(
       reauthenticate={vi.fn()}
       unitApi={setupApi}
       usersApi={usersApi}
+      rolesApi={rolesApiOf()}
       businessApi={businessApi}
       ratesApi={ratesApi}
     />,

@@ -144,7 +144,7 @@ function csrfToken(): string | null {
     : decodeURIComponent(entry.slice(prefix.length));
 }
 
-function mutationHeaders(extra: HeadersInit = {}): HeadersInit {
+export function mutationHeaders(extra: HeadersInit = {}): HeadersInit {
   const token = csrfToken();
   if (token === null || token.length === 0) {
     throw new AdministrationError();
@@ -155,7 +155,10 @@ function mutationHeaders(extra: HeadersInit = {}): HeadersInit {
   return headers;
 }
 
-async function request(path: string, init: RequestInit): Promise<unknown> {
+export async function request(
+  path: string,
+  init: RequestInit,
+): Promise<unknown> {
   let response: Response;
   try {
     response = await fetch(path, { credentials: "include", ...init });
@@ -204,7 +207,7 @@ async function refusalOf(
   }
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
+export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
@@ -234,7 +237,7 @@ function collectionPage(value: unknown): {
   return { items: value.data, nextCursor: value.page.next_cursor };
 }
 
-function oneData(value: unknown): Record<string, unknown> {
+export function oneData(value: unknown): Record<string, unknown> {
   if (
     !isObject(value) ||
     !("data" in value) ||

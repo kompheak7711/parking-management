@@ -31,6 +31,7 @@ import { type BusinessApi, BusinessTab } from "./BusinessTab";
 import { type RatesApi, RatesTab } from "./RatesTab";
 import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
 import { type UsersApi, UsersTab } from "./UsersTab";
+import type { RolesApi } from "../access/rolesClient";
 
 export type SettingsTab = "business" | "rates" | "units" | "users" | "health";
 
@@ -80,6 +81,7 @@ export interface SettingsPageProps {
   capabilities: ReadonlySet<string> | null;
   healthApi: HealthApi;
   usersApi: UsersApi;
+  rolesApi: RolesApi;
   businessApi: BusinessApi;
   ratesApi: RatesApi;
   /** The signed-in person. */
@@ -305,6 +307,7 @@ export function SettingsPage({
   capabilities,
   healthApi,
   usersApi,
+  rolesApi,
   businessApi,
   ratesApi,
   myUserId,
@@ -387,6 +390,7 @@ export function SettingsPage({
         <UsersTab
           active={active}
           api={usersApi}
+          rolesApi={rolesApi}
           language={language}
           myUserId={myUserId}
           propertyId={propertyId}
