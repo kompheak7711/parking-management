@@ -2554,3 +2554,41 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-118, DL-120, DL-123.
 - **Decision date:** 2026-11-04.
 
+## DL-130 — Problem reports: repair cost and its Expense report
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT IN A DRAFT PR; WAITS FOR THE OWNER'S TEST`
+- **Source:** the Problem report PRD of 03/11/2026 (Q1 to Q5 "all recommended" at 10:01), the owner's card answer of 03/11/2026 12:53 ("As already spent"), the tech and database plan Q1 of 03/11/2026 13:15 (dollars or riel on each line), mock-up round 32 (A5 Repair cost, A9 Check costs right) and its v75 change. Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) Who types the cost.** From Repair planned on, staff with "Add a Problem report" type what the repair cost: Parts or Outside worker lines, each with what it was and an amount in dollars or riel (1 to 20 lines), or No cost. Own staff time is never a cost (payroll). A new entry replaces the last one until it is checked; every entry is kept.
+- **(B) The check.** A Manager or the Owner (new permission "Check repair costs", `problem_reports.costs`, group Operations) checks the lines with the receipt, says how the money was paid (the staff's own money, or petty cash 1030) and the day it was spent. The check makes one Expense report (money already spent) per currency on 6050 Repairs and maintenance for the Unit, with the report number. Riel turns into dollars at today's riel rate, like every riel Expense request. The Expense report then follows the normal Expense approval (DL-117); the Owner's own check is approved at once, as for any Owner spending.
+- **(C) Locked once checked.** A checked cost cannot be typed again, unless every Expense report it made was refused or voided.
+- **(D) When the tenant pays,** the cost is for comparison only; it never changes the Damage Invoice draft (v75 rule).
+- **(E) Waits for later:** the receipt photo (the Telegram shared media files). The Home card "costs to check" and the Monthly report are DL-131.
+- **Built:** migration `20270510_290` (DB-PR-002), API-PR-002, the Repair cost box on the Problem report page.
+- **Links:** DL-117, DL-124.
+- **Decision date:** 2026-11-04.
+
+## DL-131 — Problem reports: the Home card and the Monthly report
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `BUILT IN A DRAFT PR; WAITS FOR THE OWNER'S TEST`
+- **Source:** mock-up round 29 (Monthly report of Tenant requests) and round 32 (A7 cost in the Monthly report, A10 Home card, "Home lists each cost still to check"), approved with the Problem report design on 03/11/2026. Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Home card.** A person who may read Problem reports sees a Problem reports card: open reports, how many are urgent and how many are late (the same Late rule as the list). A person with "Check repair costs" also sees each repair cost still waiting for a check, with its report number, place and totals.
+- **(B) Monthly report.** Under Problem reports, a person with "Plan repairs" opens the Monthly report for one of the last 12 months, in the Property's time zone. It shows the reports received (a joined report is counted apart, not again), urgent ones contacted on time, normal ones planned on time (the Tenant request rules TR_URGENT_HOURS and TR_PLAN_WORKDAYS), done and the average days to fix, still open, opened again (Not fixed), not accepted, who pays and the Damage charges, the reports by type and by place, the same problem again in one Unit (REPEAT_COUNT within REPEAT_DAYS), and the reports late now.
+- **(C) Repair cost in the month.** The cost of each report done in the month (its latest entry), by Unit and by type, Parts and Outside worker apart. Dollars and riel are shown apart and never converted.
+- **Built:** migration `20270511_291` (DB-PR-003), API-PR-003, the Home card and the Monthly report screen.
+- **Links:** DL-124, DL-130.
+- **Decision date:** 2026-11-04.
+
+## DL-132 — Problem reports: a report from a move-out inspection finding
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `BUILT IN A DRAFT PR; WAITS FOR THE OWNER'S TEST`
+- **Source:** the Problem report PRD idea 6 ("from an inspection finding, one tap", owner "Yes all" on 03/11/2026 09:43) and mock-up round 32 A6, approved with the Problem report design on 03/11/2026. Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) The button.** On the Move-out page, step 4, each finding of the inspection in force shows "Make a Problem report" to a person who may add Problem reports. It opens the New Problem report filled from the finding: a Unit Problem in the inspected Unit (fixed), the finding's text (it may be changed), and the source Inspection.
+- **(B) One report per finding.** Afterwards the finding shows "Problem report UP…" with a link, and the report page shows the inspection day, the finding's text and a link back to the move-out. A finding of a replaced inspection makes no report.
+- **(C) Money stays apart.** The finding alone still charges nothing, and the report does not change the Damage charge of the move-out steps.
+- **(D) Waits for later:** the finding's photos (the Telegram shared media files), and Unit Checks and Joint Inspections, which are not built yet.
+- **Built:** migration `20270512_292` (DB-PR-004), API-PR-004, the Move-out finding links and the New Problem report from a finding.
+- **Links:** DL-124, BR-MOVEOUT-006.
+- **Decision date:** 2026-11-04.

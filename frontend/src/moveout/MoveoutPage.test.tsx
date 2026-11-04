@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CLEANING_CHARGE, PET_DEPOSIT } from "../leases/parking";
 
 import type { DepositResource } from "../depositClient";
+import type { ProblemReport } from "../problems/problemsClient";
+import { hashForPage } from "../shell/navigation";
 import {
   InvoiceClientError,
   type InvoiceApi,
@@ -570,9 +572,13 @@ function setup(
     refundMethods?: SettlementApi["refundMethods"];
     extraCharge?: SettlementApi["extraCharge"];
     forfeitureDraft?: SettlementApi["forfeitureDraft"];
+    problems?: ProblemReport[];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
+  const problemsApi = {
+    list: vi.fn(() => Promise.resolve(options.problems ?? [])),
+  };
   const leaseApi = {
     list: vi.fn<LeaseApi["list"]>(() =>
       Promise.resolve({ items: leases, next_cursor: null, can_create: true }),
@@ -809,6 +815,7 @@ function setup(
       unitApi={unitApi}
       utilityApi={utilityApi}
       utilityLeaseApi={utilityLeaseApi}
+      problemsApi={problemsApi}
     />,
   );
   return {
@@ -820,6 +827,7 @@ function setup(
     utilityLeaseApi,
     invoiceApi,
     settlementApi,
+    problemsApi,
   };
 }
 
@@ -3469,6 +3477,62 @@ describe("Move-out", () => {
         reads,
       );
     });
+  });
+
+  it("TEST-FE-1296 a finding of the inspection in force shows its Problem report, or Make a Problem report to a person who may add one; without the right to read reports nothing is read", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const current = inspectionOf("inspection-1", [
+      ["finding-1", "Broken window", false],
+      ["finding-2", "Door handle loose", false],
+    ]);
+    const reported = {
+      report_id: "r-7",
+      report_number: "UP260007",
+      finding: {
+        finding_id: "finding-1",
+        inspection_id: "inspection-1",
+        lease_id: "lease-U105",
+        inspection_date: "2026-10-13",
+        ordinal: 1,
+        description: "Broken window",
+      },
+    } as ProblemReport;
+    const { problemsApi } = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      problems: [reported],
+      capabilities: new Set([
+        "leases.read",
+        "invoices.read",
+        "problem_reports.read",
+        "problem_reports.add",
+      ]),
+    });
+    const step = await step4();
+    const made = await within(step).findByRole("link", {
+      name: "Problem report UP260007",
+    });
+    expect(made.getAttribute("href")).toBe(hashForPage("problems", "pr:r-7"));
+    expect(
+      within(step)
+        .getByRole("link", { name: "Make a Problem report" })
+        .getAttribute("href"),
+    ).toBe(hashForPage("problems", "finding:finding-2"));
+    expect(problemsApi.list).toHaveBeenCalledWith("property-1");
+    cleanup();
+
+    window.location.hash = "#/moveout/lease-U105";
+    const plain = setup([out], {
+      page: handedBackPage,
+      inspections: [current],
+      problems: [reported],
+      capabilities: new Set(["leases.read", "invoices.read"]),
+    });
+    expect(
+      await within(await step4()).findByText("Door handle loose"),
+    ).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Problem report/ })).toBeNull();
+    expect(plain.problemsApi.list).not.toHaveBeenCalled();
   });
 });
 

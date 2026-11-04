@@ -61188,6 +61188,207 @@
       "notes": "V1.1 part 7: Join to a report offers only open reports of the same kind and place and needs a reason; Undo join needs a reason; a report changed meanwhile is read again; Staff see a lock line."
     },
     {
+      "test_id": "test_only_the_owner_and_manager_check_repair_costs",
+      "upstream_ids": [
+        "DL-130",
+        "DB-PR-002",
+        "DL-120"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_costs_migration.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: the new right problem_reports.costs (permission Check repair costs, group Operations) is held by the Owner and Manager roles, not Staff."
+    },
+    {
+      "test_id": "test_migration_290_follows_the_ledger_and_is_forward_only",
+      "upstream_ids": [
+        "DL-130",
+        "DB-PR-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_costs_migration.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: migration 20270510_290 follows 20270429_279, is the one head and is forward-only."
+    },
+    {
+      "test_id": "test_staff_type_the_cost_and_a_manager_check_makes_the_expense_reports",
+      "upstream_ids": [
+        "DL-130",
+        "DB-PR-002",
+        "DL-117"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_costs_migration.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: staff type dollar and riel lines once the repair is planned (bad lines refused, a stale version 40001); a newer entry replaces the last; a Manager's check needs the receipt and makes one Expense report (already spent) per currency on 6050 for the Unit, riel at today's rate; a checked cost is locked until every Expense report is refused; No cost has nothing to check."
+    },
+    {
+      "test_id": "test_an_approved_repair_cost_is_posted_to_repairs_for_the_unit",
+      "upstream_ids": [
+        "DL-130",
+        "DB-PR-002",
+        "DL-117"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_costs_migration.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: an approved Expense report posts the expense to 6050 with the Unit and the box shows it Done."
+    },
+    {
+      "test_id": "test_cost_history_is_never_changed",
+      "upstream_ids": [
+        "DL-130",
+        "DB-PR-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_costs_migration.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: the cost tables refuse update, delete and truncate; the runtime login cannot write them directly; the list read leaves the cost out."
+    },
+    {
+      "test_id": "test_the_repair_cost_needs_the_add_right_and_its_check_the_costs_right",
+      "upstream_ids": [
+        "DL-130",
+        "API-PR-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "Problem report repair cost: the cost needs problem_reports.add and If-Match with a strict body (422 for a bad line); the check needs problem_reports.costs (Plan repairs alone is 403), the receipt (422) and the read version (412); a report not yet planned is 409."
+    },
+    {
+      "test_id": "TEST-FE-1291",
+      "upstream_ids": [
+        "DL-130",
+        "API-PR-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Problem report repair cost: staff type parts and outside workers in dollars or riel with checks on each line; the box shows the lines, totals and Waiting for a Manager; no check button without Check repair costs."
+    },
+    {
+      "test_id": "TEST-FE-1292",
+      "upstream_ids": [
+        "DL-130",
+        "API-PR-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Problem report repair cost: a Manager with Check repair costs confirms the receipt, how it was paid and the day; the box then links the Expense report with its status; the tenant-pays note says the cost is for comparison only."
+    },
+    {
+      "test_id": "test_migration_291_follows_the_repair_cost_and_is_forward_only",
+      "upstream_ids": [
+        "DL-131",
+        "DB-PR-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_month_migration.py",
+      "status": "implemented",
+      "notes": "Problem report Home card and Monthly report: migration 20270511_291 follows 290, is the one head and is forward-only."
+    },
+    {
+      "test_id": "test_the_home_card_and_the_monthly_report",
+      "upstream_ids": [
+        "DL-131",
+        "DB-PR-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_month_migration.py",
+      "status": "implemented",
+      "notes": "Problem report Home card counts open and urgent reports and lists a cost until it is checked; the Monthly report counts received, joined, urgent, done and who pays, by type, and the repair cost by Unit and type; Staff are refused and a month must be its first day."
+    },
+    {
+      "test_id": "test_the_home_card_needs_read_and_the_monthly_report_the_plan_right",
+      "upstream_ids": [
+        "DL-131",
+        "API-PR-003"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "Problem report summary needs problem_reports.read; the Monthly report needs problem_reports.plan and a yyyy-mm month."
+    },
+    {
+      "test_id": "TEST-FE-1293",
+      "upstream_ids": [
+        "DL-131",
+        "API-PR-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Problem report Monthly report: the button shows only with Plan repairs; the page shows the counts, who pays, repeats, late reports and the repair cost by Unit and by type with dollars and riel apart; another month is read again."
+    },
+    {
+      "test_id": "TEST-FE-1294",
+      "upstream_ids": [
+        "DL-131",
+        "API-PR-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/home/HomeScreen.test.tsx",
+      "status": "implemented",
+      "notes": "Home Problem reports card: open, urgent and late for a person who may read reports; repair costs to check with links for a person with Check repair costs; nothing read without the right."
+    },
+    {
+      "test_id": "test_migration_292_follows_the_monthly_report_and_is_forward_only",
+      "upstream_ids": [
+        "DL-132",
+        "DB-PR-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_from_finding_migration.py",
+      "status": "implemented",
+      "notes": "Problem report from a finding: migration 20270512_292 follows 291, is the one head and is forward-only."
+    },
+    {
+      "test_id": "test_a_finding_makes_one_problem_report_in_the_inspected_unit",
+      "upstream_ids": [
+        "DL-132",
+        "DB-PR-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_report_from_finding_migration.py",
+      "status": "implemented",
+      "notes": "Problem report from a move-out inspection finding: the form source gives the Unit and text; the source Inspection needs the finding and the inspected Unit; one report per finding, never changed; a replaced inspection makes none; reading a finding needs the add right."
+    },
+    {
+      "test_id": "test_a_report_from_an_inspection_finding_needs_the_add_right",
+      "upstream_ids": [
+        "DL-132",
+        "API-PR-004"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "Problem report from a finding: reading the finding needs problem_reports.add; the new report is sent with the source INSPECTION and the finding."
+    },
+    {
+      "test_id": "TEST-FE-1295",
+      "upstream_ids": [
+        "DL-132",
+        "API-PR-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "New Problem report from a finding: the form keeps the Unit, copies the text and saves with the source Inspection and the finding; a finding with a report links to it; the report page links back to the move-out."
+    },
+    {
+      "test_id": "TEST-FE-1296",
+      "upstream_ids": [
+        "DL-132",
+        "API-PR-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "Move-out step 4: a finding shows its Problem report or Make a Problem report to a person who may add one; without the read right no reports are read."
+    },
+    {
       "test_id": "TEST-FE-1225",
       "upstream_ids": [
         "DL-124"

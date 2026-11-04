@@ -22,6 +22,11 @@ import {
   type LeaseTimelineEvent,
 } from "../leaseClient";
 import { loadLeasesData } from "../leases/leasesData";
+import {
+  type ProblemsApi,
+  problemsApi as defaultProblemsApi,
+  type ReportLink,
+} from "../problems/problemsClient";
 import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -141,6 +146,8 @@ export interface MoveoutPageProps {
     | "forfeitureDraft"
   >;
   capabilities: ReadonlySet<string> | null;
+  /** DL-132: the Problem reports made from findings; tests pass their own. */
+  problemsApi?: Pick<ProblemsApi, "list">;
 }
 
 export function MoveoutPage(props: MoveoutPageProps) {
@@ -546,6 +553,7 @@ function MoveoutDetail({
   settlementApi,
   capabilities,
   leaseId,
+  problemsApi = defaultProblemsApi,
 }: MoveoutPageProps & { leaseId: string }) {
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
@@ -573,6 +581,12 @@ function MoveoutDetail({
   // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE), so the rate is never read.
   const mayRate =
     CLEANING_CHARGE && (may("invoices.create") || may("property.manage"));
+  // DL-132: only a person known to see Problem reports reads which findings have one.
+  const seesProblems = capabilities?.has("problem_reports.read") === true;
+  const addsProblems = capabilities?.has("problem_reports.add") === true;
+  const [reported, setReported] = useState<Map<string, ReportLink> | null>(
+    null,
+  );
 
   const load = useCallback(() => {
     const operation = ++sequence.current;
@@ -766,6 +780,31 @@ function MoveoutDetail({
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!seesProblems) return;
+    let current = true;
+    problemsApi
+      .list(propertyId)
+      .then((reports) => {
+        if (!current) return;
+        const found = new Map<string, ReportLink>();
+        for (const report of reports)
+          if (report.finding !== null)
+            found.set(report.finding.finding_id, {
+              report_id: report.report_id,
+              report_number: report.report_number,
+            });
+        setReported(found);
+      })
+      .catch(() => {
+        // The finding then offers no report link; the move-out steps still show.
+        if (current) setReported(null);
+      });
+    return () => {
+      current = false;
+    };
+  }, [problemsApi, propertyId, seesProblems, loads]);
+
   const back = (
     <button
       className="ui-crumb"
@@ -952,6 +991,29 @@ function MoveoutDetail({
         : "now";
   const mayInspect = may("leases.inspect");
   const mayCharge = may("damage_charges.bill") && may("invoices.create");
+  // DL-132: a finding shows its Problem report, or offers to make one.
+  const findingReport = (findingId: string) => {
+    const link = reported?.get(findingId);
+    if (link !== undefined)
+      return (
+        <a
+          className="ui-num ui-small"
+          href={hashForPage("problems", `pr:${link.report_id}`)}
+        >
+          {mt(language, "st4_problem", link.report_number)}
+        </a>
+      );
+    if (reported === null || !addsProblems) return null;
+    return (
+      <a
+        className="ui-btn"
+        href={hashForPage("problems", `finding:${findingId}`)}
+      >
+        <Icon name="wrench" small />
+        {mt(language, "st4_make_problem")}
+      </a>
+    );
+  };
   const mayClean = may("invoices.create");
   const chargeMark = (invoice: InvoiceResource, source: string) => (
     <span className="ui-num">
@@ -1376,6 +1438,7 @@ function MoveoutDetail({
                                       {mt(language, "st4_no_charge")}
                                     </span>
                                   ) : null}
+                                  {findingReport(finding.id)}
                                 </li>
                               );
                             })}

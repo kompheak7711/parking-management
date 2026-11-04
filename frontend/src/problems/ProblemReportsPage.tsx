@@ -1,6 +1,8 @@
 // V1.1 part 7 (DL-124): Building › Problem reports (mock-up round 32). "#/problems" is the one
 // list of Unit Problems (UP) and Building problems (BP) with the tabs Open, Urgent, Late and Done;
-// "#/problems/pr:<id>" one report; "#/problems/new" New Problem report. Buttons show only to a
+// "#/problems/pr:<id>" one report; "#/problems/new" New Problem report; "#/problems/month" the
+// Monthly report (DL-131); "#/problems/finding:<id>" a report from a move-out inspection finding
+// (DL-132). Buttons show only to a
 // person who holds the right; the server checks every right again.
 
 import "../shell/screens.css";
@@ -12,7 +14,11 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
 import { Chip, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
-import { NewProblemReportForm } from "./NewProblemReport";
+import { MonthlyReport } from "./MonthlyReport";
+import {
+  NewProblemReportForm,
+  NewProblemReportFromFinding,
+} from "./NewProblemReport";
 import { ProblemReportDetail } from "./ProblemReportDetail";
 import {
   type ProblemReport,
@@ -58,7 +64,7 @@ export function StatusChip({
 }
 
 /** The line icon of a problem type; a type without its own icon shows the wrench. */
-export function typeIcon(type: ProblemType): ShellIcon {
+export function typeIcon(type: Pick<ProblemType, "icon">): ShellIcon {
   const icons: Record<string, ShellIcon> = {
     drop: "drop",
     zap: "zap",
@@ -184,7 +190,11 @@ export function ProblemReportsPage({
 
   // Read again each time the list is opened, so it shows what others changed meanwhile.
   useEffect(() => {
-    if (active && (detail === null || detail === "new")) load();
+    if (
+      active &&
+      (detail === null || detail === "new" || detail.startsWith("finding:"))
+    )
+      load();
   }, [active, detail, load]);
 
   if (propertyId === "") {
@@ -214,25 +224,50 @@ export function ProblemReportsPage({
       />
     );
   }
+  if (detail === "month" && may("problem_reports.plan")) {
+    return (
+      <MonthlyReport
+        api={api}
+        key={propertyId}
+        language={language}
+        now={now}
+        propertyId={propertyId}
+      />
+    );
+  }
+  const saved = (made: ProblemReport) => {
+    setFlash(
+      made.joined_to === null
+        ? pt(language, "added", made.report_number)
+        : pt(
+            language,
+            "added_same",
+            made.report_number,
+            made.joined_to.report_number,
+          ),
+    );
+    openPageInAddress("problems", true, `pr:${made.report_id}`);
+  };
+  if (detail?.startsWith("finding:") === true && may("problem_reports.add")) {
+    return (
+      <NewProblemReportFromFinding
+        api={api}
+        findingId={detail.slice(8)}
+        key={`${detail}:${propertyId}`}
+        language={language}
+        onSaved={saved}
+        propertyId={propertyId}
+        reports={reports ?? []}
+      />
+    );
+  }
   if (detail === "new" && may("problem_reports.add")) {
     return (
       <NewProblemReportForm
         api={api}
         key={propertyId}
         language={language}
-        onSaved={(made) => {
-          setFlash(
-            made.joined_to === null
-              ? pt(language, "added", made.report_number)
-              : pt(
-                  language,
-                  "added_same",
-                  made.report_number,
-                  made.joined_to.report_number,
-                ),
-          );
-          openPageInAddress("problems", true, `pr:${made.report_id}`);
-        }}
+        onSaved={saved}
         propertyId={propertyId}
         reports={reports ?? []}
       />
@@ -301,12 +336,23 @@ export function ProblemReportsPage({
       {failure}
       <div className="ui-head">
         <p>{pt(language, "sub")}</p>
-        {may("problem_reports.add") && (
+        {(may("problem_reports.plan") || may("problem_reports.add")) && (
           <div className="ui-actions">
-            <a className="ui-btn primary" href={hashForPage("problems", "new")}>
-              <Icon name="plus" />
-              {pt(language, "add")}
-            </a>
+            {may("problem_reports.plan") && (
+              <a className="ui-btn" href={hashForPage("problems", "month")}>
+                <Icon name="reports" />
+                {pt(language, "m_title")}
+              </a>
+            )}
+            {may("problem_reports.add") && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage("problems", "new")}
+              >
+                <Icon name="plus" />
+                {pt(language, "add")}
+              </a>
+            )}
           </div>
         )}
       </div>

@@ -10,7 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProblemReportsPage } from "./ProblemReportsPage";
 import {
+  type FindingSource,
   type ProblemChoices,
+  type ProblemMonth,
   type ProblemReport,
   ProblemsError,
   type ProblemsApi,
@@ -92,6 +94,8 @@ function report(extra: Partial<ProblemReport>): ProblemReport {
     tenant_can_answer: true,
     damage: null,
     done_at: null,
+    finding: null,
+    cost: null,
     closes_on: null,
     closed_at: null,
     close_note: null,
@@ -228,6 +232,20 @@ const MANAGER = new Set([
   "problem_reports.join",
 ]);
 
+const FINDING: FindingSource = {
+  finding_id: "f-1",
+  inspection_id: "i-1",
+  lease_id: "lease-1",
+  inspection_date: "2026-11-03",
+  ordinal: 2,
+  description: "Bedroom door handle broken",
+  pet_related: false,
+  unit_id: "u-101",
+  unit_number: "U101",
+  replaced: false,
+  report: null,
+};
+
 function apiOf(overrides: Partial<ProblemsApi> = {}): ProblemsApi {
   return {
     list: vi.fn(() => Promise.resolve([UP1, UP2, BP1, BP2, DONE])),
@@ -242,6 +260,13 @@ function apiOf(overrides: Partial<ProblemsApi> = {}): ProblemsApi {
     ),
     step: vi.fn((_: string, one: ProblemReport) => Promise.resolve(one)),
     answer: vi.fn((_: string, one: ProblemReport) => Promise.resolve(one)),
+    cost: vi.fn((_: string, one: ProblemReport) => Promise.resolve(one)),
+    checkCost: vi.fn((_: string, one: ProblemReport) => Promise.resolve(one)),
+    summary: vi.fn(() =>
+      Promise.resolve({ open: 0, urgent: 0, late: 0, costs_to_check: [] }),
+    ),
+    month: vi.fn(() => Promise.reject(new ProblemsError(403))),
+    finding: vi.fn(() => Promise.resolve(FINDING)),
     ...overrides,
   };
 }
@@ -667,5 +692,479 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       await screen.findByText(/Only a Manager or the Owner can join reports/),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Undo join" })).toBeNull();
+  });
+
+  it("TEST-FE-1291 Repair cost: from Repair planned on, staff type parts and outside workers in dollars or riel (or No cost); the box waits for a Manager; a person without Check repair costs gets no check button", async () => {
+    window.location.hash = "#/problems/pr:r-1";
+    const done = report({
+      status: "DONE",
+      state: "DONE",
+      pays: "OWNER",
+      done_at: "2026-11-04T02:30:00Z",
+      version: 7,
+    });
+    const typed = report({
+      ...done,
+      version: 8,
+      cost: {
+        set_no: 1,
+        no_cost: false,
+        note: null,
+        entered_at: "2026-11-04T02:40:00Z",
+        entered_by_name: "Staff One",
+        lines: [
+          {
+            kind: "PARTS",
+            description: "New tap",
+            currency: "USD",
+            amount_minor: 1250,
+          },
+          {
+            kind: "OUTSIDE_WORKER",
+            description: "Plumber",
+            currency: "KHR",
+            amount_minor: 40000,
+          },
+        ],
+        totals: [
+          { currency: "USD", amount_minor: 1250 },
+          { currency: "KHR", amount_minor: 40000 },
+        ],
+        check: null,
+        expense_requests: [],
+        can_enter: true,
+      },
+    });
+    const cost = vi.fn(() => Promise.resolve(typed));
+    show(apiOf({ get: vi.fn(() => Promise.resolve(done)), cost }), STAFF);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Type the cost" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(within(dialog).getByText("Choose one.")).toBeTruthy();
+    expect(within(dialog).getByText("Type dollars, like 12.50.")).toBeTruthy();
+    expect(cost).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Kind"), {
+      target: { value: "PARTS" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("What"), {
+      target: { value: " New tap " },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Amount"), {
+      target: { value: "12.50" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add a line" }));
+    const second = within(dialog).getByRole("group", { name: "Line 2" });
+    fireEvent.change(within(second).getByLabelText("Kind"), {
+      target: { value: "OUTSIDE_WORKER" },
+    });
+    fireEvent.change(within(second).getByLabelText("What"), {
+      target: { value: "Plumber" },
+    });
+    fireEvent.change(within(second).getByLabelText("Currency"), {
+      target: { value: "KHR" },
+    });
+    fireEvent.change(within(second).getByLabelText("Amount"), {
+      target: { value: "40.5" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      within(dialog).getByText("Type whole riel, like 40000."),
+    ).toBeTruthy();
+    fireEvent.change(within(second).getByLabelText("Amount"), {
+      target: { value: "40,000" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(cost).toHaveBeenCalledWith("property-1", done, {
+        no_cost: false,
+        lines: [
+          {
+            kind: "PARTS",
+            description: "New tap",
+            currency: "USD",
+            amount_minor: 1250,
+          },
+          {
+            kind: "OUTSIDE_WORKER",
+            description: "Plumber",
+            currency: "KHR",
+            amount_minor: 40000,
+          },
+        ],
+      });
+    });
+    const box = element(
+      (await screen.findByRole("heading", { name: "Repair cost" })).closest(
+        "section",
+      ),
+    );
+    // Each line, then the total of each currency.
+    expect(within(box).getAllByText("$12.50")).toHaveLength(2);
+    expect(within(box).getAllByText("40,000 ៛")).toHaveLength(2);
+    expect(
+      within(box).getByText("Waiting for a Manager to check the cost."),
+    ).toBeTruthy();
+    expect(
+      within(box).queryByRole("button", {
+        name: "Checked, make Expense report",
+      }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1292 Repair cost check: a Manager with Check repair costs confirms the receipt, how it was paid and the day; the box then shows the Expense reports with links and their status", async () => {
+    window.location.hash = "#/problems/pr:r-1";
+    const waiting = report({
+      status: "DONE",
+      state: "DONE",
+      pays: "TENANT",
+      done_at: "2026-11-04T02:30:00Z",
+      version: 8,
+      cost: {
+        set_no: 1,
+        no_cost: false,
+        note: null,
+        entered_at: "2026-11-04T02:40:00Z",
+        entered_by_name: "Staff One",
+        lines: [
+          {
+            kind: "OUTSIDE_WORKER",
+            description: "Plumber",
+            currency: "KHR",
+            amount_minor: 40000,
+          },
+        ],
+        totals: [{ currency: "KHR", amount_minor: 40000 }],
+        check: null,
+        expense_requests: [],
+        can_enter: true,
+      },
+    });
+    const checked = report({
+      ...waiting,
+      version: 9,
+      cost: {
+        ...(waiting.cost ?? ({} as never)),
+        check: {
+          checked_at: "2026-11-04T03:00:00Z",
+          checked_by_name: "Manager One",
+          spent_on: "2026-11-04",
+          paid_how: "OWN_MONEY",
+        },
+        expense_requests: [
+          {
+            request_number: "ER26000003",
+            status: "WAITING",
+            currency: "KHR",
+            amount_cents: 980,
+            original_amount_minor: 40000,
+          },
+        ],
+        can_enter: false,
+      },
+    });
+    const checkCost = vi.fn(() => Promise.resolve(checked));
+    show(
+      apiOf({ get: vi.fn(() => Promise.resolve(waiting)), checkCost }),
+      new Set([...MANAGER, "problem_reports.costs"]),
+    );
+    expect(
+      await screen.findByText(
+        "For comparison only; it does not change the Damage Invoice draft.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Checked, make Expense report" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText(/Riel turns into dollars at today's riel rate/),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Checked, make Expense report",
+      }),
+    );
+    expect(within(dialog).getByText("Check the receipt first.")).toBeTruthy();
+    expect(checkCost).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByLabelText("Staff's own money (paid back later)"),
+    );
+    fireEvent.click(
+      within(dialog).getByLabelText(
+        "I have seen the receipt and it matches these lines.",
+      ),
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Checked, make Expense report",
+      }),
+    );
+    await waitFor(() => {
+      expect(checkCost).toHaveBeenCalledWith("property-1", waiting, {
+        receipt_seen: true,
+        spent_on: "2026-11-04",
+        paid_how: "OWN_MONEY",
+      });
+    });
+    expect(
+      await screen.findByText(
+        "UP260001: cost checked. Expense report ER26000003 made.",
+      ),
+    ).toBeTruthy();
+    const link = screen.getByRole("link", { name: "ER26000003" });
+    expect(link.getAttribute("href")).toContain("ER26000003");
+    expect(screen.getByText(/Waiting for approval/)).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Type the cost again" }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1293 Monthly report: a person who may plan repairs opens it from the list; it shows one month's counts, who pays, repeats, late reports and the repair cost by Unit and by type with dollars and riel apart; another month is read again; Staff get no button", async () => {
+    const DAY: ProblemMonth = {
+      month: "2026-11-01",
+      received: 5,
+      joined: 1,
+      unit_problems: 3,
+      building_problems: 2,
+      urgent: 2,
+      urgent_on_time: 1,
+      normal: 3,
+      normal_on_time: 3,
+      done: 2,
+      average_days_to_fix: 1.5,
+      still_open: 3,
+      not_accepted: 0,
+      opened_again: 1,
+      owner_pays: 2,
+      tenant_pays: 1,
+      damage_usd_cents: 2500,
+      by_type: [
+        {
+          code: "WATER",
+          name_en: "Water",
+          name_kh: null,
+          icon: "drop",
+          reports: 3,
+        },
+      ],
+      by_place: [
+        {
+          kind: "UNIT",
+          unit_number: "U101",
+          place_code: null,
+          place_en: null,
+          place_kh: null,
+          reports: 3,
+        },
+        {
+          kind: "BUILDING",
+          unit_number: null,
+          place_code: "LOBBY",
+          place_en: "Lobby",
+          place_kh: null,
+          reports: 2,
+        },
+      ],
+      repeats: [
+        {
+          code: "WATER",
+          name_en: "Water",
+          name_kh: null,
+          icon: "drop",
+          unit_number: "U101",
+          reports: 2,
+          found: [
+            { report_id: "r-1", report_number: "UP260001" },
+            { report_id: "r-2", report_number: "UP260002" },
+          ],
+        },
+      ],
+      late_now: [
+        { report_id: "r-3", report_number: "BP260003", late: "URGENT" },
+      ],
+      cost_by_unit: [
+        {
+          unit_number: "U101",
+          reports: 1,
+          parts_usd_cents: 1400,
+          outside_usd_cents: 0,
+          parts_khr: 0,
+          outside_khr: 40000,
+        },
+        {
+          unit_number: null,
+          reports: 1,
+          parts_usd_cents: 0,
+          outside_usd_cents: 0,
+          parts_khr: 0,
+          outside_khr: 0,
+        },
+      ],
+      cost_by_type: [],
+    };
+    const month = vi.fn(() => Promise.resolve(DAY));
+    window.location.hash = "#/problems";
+    show(apiOf(), STAFF);
+    await screen.findByText("UP260001");
+    expect(screen.queryByRole("link", { name: "Monthly report" })).toBeNull();
+    cleanup();
+
+    show(apiOf({ month }), MANAGER);
+    await screen.findByText("UP260001");
+    expect(
+      screen.getByRole("link", { name: "Monthly report" }).getAttribute("href"),
+    ).toBe("#/problems/month");
+    cleanup();
+
+    window.location.hash = "#/problems/month";
+    show(apiOf({ month }), MANAGER);
+    expect(await screen.findByText("Reports received")).toBeTruthy();
+    expect(month).toHaveBeenCalledWith("property-1", "2026-11");
+    expect(
+      screen.getByText("3 Unit · 2 Building · 1 joined, not counted again"),
+    ).toBeTruthy();
+    expect(screen.getByText("1.5 days to fix on average")).toBeTruthy();
+    expect(screen.getByText("1 opened again · 0 not accepted")).toBeTruthy();
+    expect(screen.getByText("1 / 2")).toBeTruthy();
+    expect(screen.getByText("Normal planned on time: 3 / 3")).toBeTruthy();
+    expect(
+      screen.getByText("Owner pays 2 · Tenant pays 1 · Damage charges $25.00"),
+    ).toBeTruthy();
+    const byUnit = screen.getByRole("region", { name: "Repair cost by Unit" });
+    const u101 = within(byUnit).getByRole("row", { name: /U101/ });
+    expect(within(u101).getByText("$14.00 + 40,000 ៛")).toBeTruthy();
+    expect(within(u101).getByText("40,000 ៛")).toBeTruthy();
+    expect(
+      within(byUnit).getByRole("row", { name: /Building \(shared places\)/ }),
+    ).toBeTruthy();
+    expect(
+      within(
+        screen.getByRole("region", { name: "Repair cost by type" }),
+      ).getByText("No repair done this month."),
+    ).toBeTruthy();
+    const repeats = screen.getByRole("region", {
+      name: "Same problem again in one Unit",
+    });
+    expect(
+      within(repeats)
+        .getByRole("link", { name: "UP260002" })
+        .getAttribute("href"),
+    ).toBe("#/problems/pr%3Ar-2");
+    expect(
+      within(
+        screen.getByRole("region", { name: "Reports by place" }),
+      ).getByText(/Lobby/),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("region", { name: "Late now" })).getByText(
+        /Late: the tenant is not contacted yet/,
+      ),
+    ).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Month"), {
+      target: { value: "2026-10" },
+    });
+    await waitFor(() => {
+      expect(month).toHaveBeenLastCalledWith("property-1", "2026-10");
+    });
+    expect(screen.getAllByRole("option")).toHaveLength(12);
+  });
+
+  it("TEST-FE-1295 Make a Problem report from a move-out inspection finding: the form says where it comes from, keeps the Unit, copies the text and saves with the source Inspection and the finding; a finding with a report links to it; the report page links back to the move-out", async () => {
+    window.location.hash = "#/problems/finding:f-1";
+    const add = vi.fn(() =>
+      Promise.resolve(report({ report_id: "r-9", report_number: "UP260009" })),
+    );
+    const finding = vi.fn(() => Promise.resolve(FINDING));
+    show(apiOf({ add, finding }), STAFF);
+    expect(
+      await screen.findByText(
+        "From the move-out inspection of 03/11/2026, finding 2. The Unit and the text come from the finding; you may change the text.",
+      ),
+    ).toBeTruthy();
+    expect(finding).toHaveBeenCalledWith("property-1", "f-1");
+    const unit = element(
+      document.getElementById("np-unit"),
+    ) as HTMLSelectElement;
+    expect(unit.value).toBe("u-101");
+    expect(unit.disabled).toBe(true);
+    expect(screen.queryByLabelText("Walk-in")).toBeNull();
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>(/^What is wrong/).value,
+    ).toBe("Bedroom door handle broken");
+    fireEvent.click(screen.getByLabelText(/Water/));
+    const urgent = document.querySelectorAll<HTMLInputElement>(
+      'input[name="np-urgent"]',
+    );
+    fireEvent.click(element(urgent[1] ?? null));
+    fireEvent.click(screen.getByRole("button", { name: "Save report" }));
+    await waitFor(() => {
+      expect(add).toHaveBeenCalledWith("property-1", {
+        kind: "UNIT",
+        source: "INSPECTION",
+        problem_type_id: "t-water",
+        description: "Bedroom door handle broken",
+        urgent: false,
+        unit_id: "u-101",
+        may_enter: false,
+        best_time: "ANY",
+        finding_id: "f-1",
+      });
+    });
+    cleanup();
+
+    window.location.hash = "#/problems/finding:f-1";
+    show(
+      apiOf({
+        finding: vi.fn(() =>
+          Promise.resolve({
+            ...FINDING,
+            report: { report_id: "r-7", report_number: "UP260007" },
+          }),
+        ),
+      }),
+      STAFF,
+    );
+    expect(
+      await screen.findByText("This finding already has a Problem report:"),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "UP260007" }).getAttribute("href"),
+    ).toBe("#/problems/pr%3Ar-7");
+    expect(screen.queryByRole("button", { name: "Save report" })).toBeNull();
+    cleanup();
+
+    window.location.hash = "#/problems/pr:r-1";
+    show(
+      apiOf({
+        get: vi.fn(() =>
+          Promise.resolve(
+            report({
+              source: "INSPECTION",
+              finding: {
+                finding_id: "f-1",
+                inspection_id: "i-1",
+                lease_id: "lease-1",
+                inspection_date: "2026-11-03",
+                ordinal: 2,
+                description: "Bedroom door handle broken",
+              },
+            }),
+          ),
+        ),
+      }),
+      STAFF,
+    );
+    expect(
+      await screen.findByText(
+        /From the move-out inspection of 03\/11\/2026: Bedroom door handle broken/,
+      ),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "Open the move-out" })
+        .getAttribute("href"),
+    ).toBe("#/moveout/lease-1");
   });
 });

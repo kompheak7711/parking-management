@@ -2,15 +2,20 @@
 // mock-up round 32. A Unit Problem names the Unit (and a place in it, if known); a Building
 // problem names the shared place and floor. "Open reports here" offers Same problem: the report
 // is saved with its own number, joined to that report. Safety is always urgent.
+// DL-132: "#/problems/finding:<id>" makes the report from a move-out inspection finding: the
+// Unit and the text come from the finding and the source is Inspection.
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 import { Icon } from "../shell/icons";
+import { dayText } from "../shell/format";
+import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { isOpen, typeIcon, typeName, whereText } from "./ProblemReportsPage";
 import {
   type BestTime,
+  type FindingSource,
   type NewProblemReport,
   type ProblemChoices,
   type ProblemKind,
@@ -50,12 +55,99 @@ function Missing({
   );
 }
 
+function BackToList({ language }: { language: Language }) {
+  return (
+    <button
+      className="ui-crumb"
+      onClick={() => {
+        openPageInAddress("problems");
+      }}
+      type="button"
+    >
+      <Icon name="back" small />
+      {pt(language, "back")}
+    </button>
+  );
+}
+
+/** DL-132: reads the finding, then opens the form filled from it. */
+export function NewProblemReportFromFinding({
+  findingId,
+  ...form
+}: {
+  findingId: string;
+  language: Language;
+  propertyId: string;
+  api: ProblemsApi;
+  reports: ProblemReport[];
+  onSaved: (made: ProblemReport) => void;
+}) {
+  const { api, language, propertyId } = form;
+  const [found, setFound] = useState<FindingSource | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const read = useCallback(() => {
+    setProblem(null);
+    void api
+      .finding(propertyId, findingId)
+      .then(setFound)
+      .catch((error: unknown) => {
+        setProblem(
+          error instanceof ProblemsError && error.status === 422
+            ? pt(language, "fi_missing")
+            : problemRefusal(language, error),
+        );
+      });
+  }, [api, findingId, language, propertyId]);
+  useEffect(() => {
+    read();
+  }, [read]);
+  if (found === null || found.report !== null || found.replaced)
+    return (
+      <>
+        <BackToList language={language} />
+        {problem !== null ? (
+          <div className="ui-notice warn" role="status">
+            <Icon name="alert" />
+            <p>{problem}</p>
+            <button className="ui-btn" onClick={read} type="button">
+              {pt(language, "retry")}
+            </button>
+          </div>
+        ) : found === null ? (
+          <p className="ui-muted" role="status">
+            {pt(language, "loading")}
+          </p>
+        ) : found.report !== null ? (
+          <div className="ui-notice" role="status">
+            <Icon name="info" />
+            <p>
+              {pt(language, "fi_has")}{" "}
+              <a
+                className="ui-num"
+                href={hashForPage("problems", `pr:${found.report.report_id}`)}
+              >
+                {found.report.report_number}
+              </a>
+            </p>
+          </div>
+        ) : (
+          <div className="ui-notice warn" role="status">
+            <Icon name="alert" />
+            <p>{pt(language, "fi_replaced")}</p>
+          </div>
+        )}
+      </>
+    );
+  return <NewProblemReportForm {...form} finding={found} />;
+}
+
 export function NewProblemReportForm({
   language,
   propertyId,
   api,
   reports,
   onSaved,
+  finding,
 }: {
   language: Language;
   propertyId: string;
@@ -63,18 +155,22 @@ export function NewProblemReportForm({
   /** The list as read, for "Open reports here". */
   reports: ProblemReport[];
   onSaved: (made: ProblemReport) => void;
+  /** DL-132: a report made from a move-out inspection finding. */
+  finding?: FindingSource;
 }) {
   const [choices, setChoices] = useState<ProblemChoices | null>(null);
   const [readFailed, setReadFailed] = useState(false);
   const [kind, setKind] = useState<ProblemKind>("UNIT");
-  const [source, setSource] = useState<Source>("PHONE");
-  const [unitId, setUnitId] = useState("");
+  const [source, setSource] = useState<Source>(
+    finding === undefined ? "PHONE" : "INSPECTION",
+  );
+  const [unitId, setUnitId] = useState(finding?.unit_id ?? "");
   const [place, setPlace] = useState("");
   const [sharedId, setSharedId] = useState("");
   const [floor, setFloor] = useState("");
   const [reportedBy, setReportedBy] = useState("");
   const [typeId, setTypeId] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(finding?.description ?? "");
   const [urgent, setUrgent] = useState<boolean | null>(null);
   const [mayEnter, setMayEnter] = useState(false);
   const [best, setBest] = useState<BestTime>("ANY");
@@ -95,18 +191,7 @@ export function NewProblemReportForm({
     read();
   }, [read]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("problems");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {pt(language, "back")}
-    </button>
-  );
+  const back = <BackToList language={language} />;
   if (choices === null)
     return (
       <>
@@ -185,6 +270,7 @@ export function NewProblemReportForm({
       if (floor.trim() !== "") body.floor = floor.trim();
     }
     if (sameAs !== null) body.same_as = sameAs;
+    if (finding !== undefined) body.finding_id = finding.finding_id;
     setBusy(true);
     void api
       .add(propertyId, body)
@@ -242,45 +328,60 @@ export function NewProblemReportForm({
         <h2>{pt(language, "add_t")}</h2>
       </div>
       <form className="ui-card ui-form" noValidate onSubmit={submit}>
-        <div className="ui-row2">
-          <fieldset className="ui-radios">
-            <legend>{pt(language, "add_kind")}</legend>
-            {(["UNIT", "BUILDING"] as const).map((value) => (
-              <label className="ui-chk" key={value}>
-                <input
-                  checked={kind === value}
-                  disabled={busy}
-                  name="np-kind"
-                  onChange={() => {
-                    setKind(value);
-                  }}
-                  type="radio"
-                />
-                {pt(language, `k_${value}`)}
-                <span className="ui-muted">
-                  · {pt(language, `k_${value}_s`)}
-                </span>
-              </label>
-            ))}
-          </fieldset>
-          <fieldset className="ui-radios">
-            <legend>{pt(language, "add_how")}</legend>
-            {(["PHONE", "WALKIN", "SEEN"] as const).map((value) => (
-              <label className="ui-chk" key={value}>
-                <input
-                  checked={source === value}
-                  disabled={busy}
-                  name="np-source"
-                  onChange={() => {
-                    setSource(value);
-                  }}
-                  type="radio"
-                />
-                {pt(language, `how_${value}`)}
-              </label>
-            ))}
-          </fieldset>
-        </div>
+        {finding !== undefined && (
+          <div className="ui-notice" role="note">
+            <Icon name="info" />
+            <p>
+              {pt(
+                language,
+                "fi_from",
+                dayText(finding.inspection_date),
+                finding.ordinal,
+              )}
+            </p>
+          </div>
+        )}
+        {finding === undefined && (
+          <div className="ui-row2">
+            <fieldset className="ui-radios">
+              <legend>{pt(language, "add_kind")}</legend>
+              {(["UNIT", "BUILDING"] as const).map((value) => (
+                <label className="ui-chk" key={value}>
+                  <input
+                    checked={kind === value}
+                    disabled={busy}
+                    name="np-kind"
+                    onChange={() => {
+                      setKind(value);
+                    }}
+                    type="radio"
+                  />
+                  {pt(language, `k_${value}`)}
+                  <span className="ui-muted">
+                    · {pt(language, `k_${value}_s`)}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+            <fieldset className="ui-radios">
+              <legend>{pt(language, "add_how")}</legend>
+              {(["PHONE", "WALKIN", "SEEN"] as const).map((value) => (
+                <label className="ui-chk" key={value}>
+                  <input
+                    checked={source === value}
+                    disabled={busy}
+                    name="np-source"
+                    onChange={() => {
+                      setSource(value);
+                    }}
+                    type="radio"
+                  />
+                  {pt(language, `how_${value}`)}
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        )}
         {kind === "UNIT" ? (
           <div className="ui-row2">
             <div className="ui-field">
@@ -294,7 +395,7 @@ export function NewProblemReportForm({
                 }
                 aria-invalid={checked && problems.unit}
                 className="ui-sel"
-                disabled={busy}
+                disabled={busy || finding !== undefined}
                 id="np-unit"
                 onChange={(event) => {
                   setUnitId(event.currentTarget.value);

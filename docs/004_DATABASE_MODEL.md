@@ -5737,3 +5737,26 @@ Added by DL-124 (migration `20270426_276`, forward-only).
 - `app.authorized_nonrecurring_obligations.problem_report_id` (unique): a Damage charge comes from a Move-out finding or from one Problem report, and must match its Lease, main tenant and amount.
 - Business rules area REPAIRS: REPEAT_COUNT, REPEAT_DAYS, TR_URGENT_HOURS, TR_PLAN_WORKDAYS, TR_AUTO_CLOSE_DAYS.
 - Functions: `app.problem_reports_read`, `app.problem_report_read`, `app.problem_report_choices`, `app.add_problem_report`, `app.problem_report_step` (runtime) and `app.record_problem_tenant_answer` (financial; AGREED makes the Damage Invoice draft). New rights `problem_reports.read`, `.add`, `.plan`, `.join` (group Operations); the default roles get a new version: the Owner and the Manager all four, Staff read and add.
+
+## DB-PR-002 — Problem report repair cost
+
+Added by DL-130 (migration `20270510_290`, forward-only).
+
+- `app.problem_report_cost_sets` (`report_id`, `set_no`, `no_cost`, `note`, entered at and by) and `app.problem_report_cost_lines` (`line_no` 1 to 20, `kind` PARTS or OUTSIDE_WORKER, `description` at most 200, `currency` USD or KHR, `amount_minor`: cents or whole riel). The latest set is the cost shown.
+- `app.problem_report_cost_checks` (one per set: `receipt_seen` always true, `spent_on`, `paid_how` OWN_MONEY or CASH, checked at and by) and `app.problem_report_cost_expense_requests` (the check, the currency and the Expense request it made, unique). All four are append-only, no truncate.
+- Functions: `app.record_problem_report_cost` (`problem_reports.add`; expected version; from Repair planned on) and `app.check_problem_report_cost` (`problem_reports.costs`; expected version; calls `app.gl_submit_expense_request` as an URGENT_REPORT on 6050 for the Unit, one per currency, riel at the latest rate), both runtime. `app.problem_report_json` gains `cost` on the full read. New right `problem_reports.costs` (permission PROBLEM_REPORTS_COSTS, group Operations); the default Owner and Manager roles get a new version with it.
+
+## DB-PR-003 — Problem report Home card and Monthly report
+
+Added by DL-131 (migration `20270511_291`, forward-only, read only).
+
+- `app.problem_report_summary(property, actor)` (`problem_reports.read`): `open`, `urgent`, `late`, and `costs_to_check` (each latest cost entry, not No cost, with no check yet: report, kind, Unit or shared place, when typed, totals by currency).
+- `app.problem_report_month(property, actor, month)` (`problem_reports.plan`; `month` is a first day, from 2026-01-01 to this month, else 22023): the counts, `by_type`, `by_place`, `repeats`, `late_now`, `cost_by_unit` and `cost_by_type` of DL-131. Helpers `app.problem_report_late` and `app.problem_report_cost_parts` (not granted).
+
+## DB-PR-004 — Problem report from an inspection finding
+
+Added by DL-132 (migration `20270512_292`, forward-only).
+
+- `app.problem_report_inspection_links` (`report_id` primary key, `finding_id` unique, created at and by): append-only, no truncate. One report per finding.
+- `app.add_problem_report` takes the source `INSPECTION` only with a `finding_id`: a Unit Problem in the inspected Lease's Unit, from an inspection not replaced, and a finding with no report yet (22023 or 55000 otherwise). `app.problem_report_json` gains `finding` (inspection, Lease, day, number and text).
+- `app.problem_report_finding(property, actor, finding)` (`problem_reports.add`, runtime): what the form copies (Unit, text, day), whether the inspection was replaced, and the report the finding already has.

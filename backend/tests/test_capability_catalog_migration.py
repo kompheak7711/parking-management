@@ -59,6 +59,7 @@ QUOTATION_RIGHTS = frozenset({"quotations.lower_price", "quotations.make", "quot
 PROBLEM_REPORT_RIGHTS = frozenset(
     {
         "problem_reports.add",
+        "problem_reports.costs",
         "problem_reports.join",
         "problem_reports.plan",
         "problem_reports.read",

@@ -65,6 +65,10 @@ const TEXT = {
   n_read_s: ["Reading day {0}", "ថ្ងៃអាន {0}"],
   n_letters: ["Letters due", "លិខិតត្រូវផ្តល់"],
   n_letters_s: ["Day-20 and day-30 letters", "លិខិតថ្ងៃទី២០ និងថ្ងៃទី៣០"],
+  // DL-131 (mock-up round 32 A10); Khmer is new and needs the native check.
+  n_problems: ["Problem reports", "របាយការណ៍បញ្ហា"],
+  n_problems_s: ["{0} urgent · {1} late", "{0} បន្ទាន់ · {1} យឺត"],
+  n_costs: ["Repair costs to check", "ថ្លៃជួសជុលត្រូវពិនិត្យ"],
 
   todo_t: ["What to do", "អ្វីដែលត្រូវធ្វើ"],
   todo_sum: [

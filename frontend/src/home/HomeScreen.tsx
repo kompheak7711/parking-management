@@ -6,6 +6,7 @@
 import "../shell/screens.css";
 
 import {
+  Fragment,
   type ReactNode,
   useCallback,
   useEffect,
@@ -25,6 +26,12 @@ import { Icon, type ShellIcon } from "../shell/icons";
 import { type PageId, hashForPage } from "../shell/navigation";
 import type { Language } from "../signInText";
 import { monthText } from "../utilities/text";
+import {
+  type ProblemSummary,
+  type ProblemsApi,
+  problemsApi as defaultProblemsApi,
+} from "../problems/problemsClient";
+import { costText } from "../problems/RepairCost";
 import { type HomeTextKey, hmt, weekdayText } from "./text";
 
 export interface HomeApi {
@@ -38,6 +45,8 @@ export interface HomeScreenProps {
   active: boolean;
   homeApi: HomeApi;
   capabilities: ReadonlySet<string> | null;
+  /** DL-131: the Problem reports card, read only by a person who may see Problem reports. */
+  problemsApi?: Pick<ProblemsApi, "summary">;
 }
 
 type Tone = "err" | "warn" | "info" | "neutral" | "ok" | "brand";
@@ -267,10 +276,13 @@ function Cards({
   language,
   cards,
   today,
+  extra,
 }: {
   language: Language;
   cards: HomeCards;
   today: string;
+  /** A card from another read (the Problem reports card). */
+  extra?: ReactNode;
 }) {
   const shown: ReactNode[] = [];
   const units = cards.units_occupied;
@@ -446,8 +458,67 @@ function Cards({
       />,
     );
   }
+  if (extra !== null && extra !== undefined)
+    shown.push(<Fragment key="problems">{extra}</Fragment>);
   if (shown.length === 0) return null;
   return <div className="ui-kpis ui-home-kpis">{shown}</div>;
+}
+
+function ProblemsCard({
+  language,
+  summary,
+}: {
+  language: Language;
+  summary: ProblemSummary;
+}) {
+  return (
+    <Card
+      empty={summary.open === 0}
+      icon="wrench"
+      label={hmt(language, "n_problems")}
+      note={hmt(language, "n_problems_s", summary.urgent, summary.late)}
+      page="problems"
+      tone={summary.urgent > 0 || summary.late > 0 ? "err" : "info"}
+      value={String(summary.open)}
+    />
+  );
+}
+
+/** Home lists each repair cost still waiting for a Manager's check (mock-up round 32 A5). */
+function CostsToCheck({
+  language,
+  summary,
+}: {
+  language: Language;
+  summary: ProblemSummary;
+}) {
+  if (summary.costs_to_check.length === 0) return null;
+  return (
+    <section aria-labelledby="home-costs" className="ui-card">
+      <h2 id="home-costs">{hmt(language, "n_costs")}</h2>
+      <ul className="ui-plain">
+        {summary.costs_to_check.map((item) => (
+          <li key={item.report_id}>
+            <a
+              className="ui-num"
+              href={hashForPage("problems", `pr:${item.report_id}`)}
+            >
+              {item.report_number}
+            </a>{" "}
+            ·{" "}
+            {item.unit_number ??
+              (language === "km" ? item.place_kh : null) ??
+              item.place_en ??
+              ""}{" "}
+            ·{" "}
+            {item.totals
+              .map((total) => costText(total.currency, total.amount_minor))
+              .join(" + ")}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function TodoList({ language, page }: { language: Language; page: HomePage }) {
@@ -585,12 +656,17 @@ export function HomeScreen({
   active,
   homeApi,
   capabilities,
+  problemsApi = defaultProblemsApi,
 }: HomeScreenProps) {
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const [page, setPage] = useState<HomePage | null>(null);
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
+  const [problems, setProblems] = useState<ProblemSummary | null>(null);
   const sequence = useRef(0);
+  // Only a person known to see Problem reports reads the card.
+  const seesProblems = capabilities?.has("problem_reports.read") === true;
+  const checksCosts = capabilities?.has("problem_reports.costs") === true;
 
   const load = useCallback(() => {
     if (propertyId === "") return;
@@ -609,12 +685,23 @@ export function HomeScreen({
           error instanceof ReportsNotAllowedError ? "not_allowed" : "failed",
         );
       });
-  }, [homeApi, propertyId]);
+    if (seesProblems)
+      problemsApi
+        .summary(propertyId)
+        .then((loaded) => {
+          if (operation === sequence.current) setProblems(loaded);
+        })
+        .catch(() => {
+          // The card is left out; the rest of Home still shows.
+          if (operation === sequence.current) setProblems(null);
+        });
+  }, [homeApi, problemsApi, propertyId, seesProblems]);
 
   // Another Property never shows the numbers of the one before.
   useEffect(() => {
     sequence.current++;
     setPage(null);
+    setProblems(null);
   }, [propertyId]);
 
   useEffect(() => {
@@ -688,9 +775,17 @@ export function HomeScreen({
       {head}
       <Cards
         cards={page.cards}
+        extra={
+          problems === null ? null : (
+            <ProblemsCard language={language} summary={problems} />
+          )
+        }
         language={language}
         today={page.business_date}
       />
+      {problems !== null && checksCosts && (
+        <CostsToCheck language={language} summary={problems} />
+      )}
       <TodoList language={language} page={page} />
       <JobsLine language={language} page={page} />
     </>

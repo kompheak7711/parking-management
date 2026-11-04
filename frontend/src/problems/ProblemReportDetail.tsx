@@ -42,10 +42,16 @@ import {
   type StepName,
   type TenantAnswer,
 } from "./problemsClient";
+import {
+  CostCheckDialog,
+  CostDialog,
+  RepairCostCard,
+  showsCost,
+} from "./RepairCost";
 import { hasText, pt, type ProblemsTextKey } from "./text";
 
 type Problem = "failed" | "missing";
-type DialogName = StepName | "REPLAN" | "ANSWER";
+type DialogName = StepName | "REPLAN" | "ANSWER" | "COST" | "COST_CHECK";
 
 /** The visit times: every 30 minutes from 07:00 to 16:30. */
 export const VISIT_TIMES: readonly string[] = Array.from(
@@ -121,6 +127,16 @@ function historyText(
     case "JOINED_IN":
     case "UNJOINED_OUT":
       return pt(language, key, detail("report_number"));
+    case "COST_CHECKED": {
+      const made = details?.expense_requests;
+      return pt(
+        language,
+        key,
+        Array.isArray(made)
+          ? made.filter((item) => typeof item === "string").join(", ")
+          : "",
+      );
+    }
     default:
       return pt(language, key);
   }
@@ -378,6 +394,22 @@ export function ProblemReportDetail({
           <p>{notice}</p>
         </div>
       )}
+      {report.finding !== null && (
+        <div className="ui-notice" role="note">
+          <Icon name="info" />
+          <p>
+            {pt(
+              language,
+              "fi_link",
+              dayText(report.finding.inspection_date),
+              report.finding.description,
+            )}{" "}
+            <a href={hashForPage("moveout", report.finding.lease_id)}>
+              {pt(language, "fi_open")}
+            </a>
+          </p>
+        </div>
+      )}
       {report.late !== null && (
         <div className="ui-notice err" role="note">
           <Icon name="clock" />
@@ -510,6 +542,20 @@ export function ProblemReportDetail({
               )}
             </dl>
           </section>
+          {showsCost(report) && (
+            <RepairCostCard
+              language={language}
+              mayAdd={may("problem_reports.add")}
+              mayCheck={may("problem_reports.costs")}
+              onCheck={() => {
+                open("COST_CHECK");
+              }}
+              onEnter={() => {
+                open("COST");
+              }}
+              report={report}
+            />
+          )}
           {tenantPays && (
             <section aria-labelledby="pr-dmg" className="ui-card">
               <h2 id="pr-dmg">{pt(language, "dmg_h")}</h2>
@@ -624,11 +670,10 @@ export function ProblemReportDetail({
           </section>
         </div>
       </div>
-      {dialog !== null && dialog !== "ANSWER" && (
-        <StepDialog
+      {dialog === "COST" && (
+        <CostDialog
           api={api}
           language={language}
-          name={dialog}
           onClose={() => {
             setDialog(null);
           }}
@@ -637,17 +682,63 @@ export function ProblemReportDetail({
             setReport(changed);
             setNotice(pt(language, "saved", changed.report_number));
           }}
-          onStale={() => {
+          propertyId={propertyId}
+          report={report}
+        />
+      )}
+      {dialog === "COST_CHECK" && (
+        <CostCheckDialog
+          api={api}
+          language={language}
+          onClose={() => {
             setDialog(null);
-            load();
-            setNotice(null);
           }}
-          others={others}
+          onDone={(changed) => {
+            setDialog(null);
+            setReport(changed);
+            setNotice(
+              pt(
+                language,
+                "ck_done",
+                changed.report_number,
+                (changed.cost?.expense_requests ?? [])
+                  .map((made) => made.request_number)
+                  .join(", "),
+              ),
+            );
+          }}
           propertyId={propertyId}
           report={report}
           today={today}
         />
       )}
+      {dialog !== null &&
+        dialog !== "ANSWER" &&
+        dialog !== "COST" &&
+        dialog !== "COST_CHECK" && (
+          <StepDialog
+            api={api}
+            language={language}
+            name={dialog}
+            onClose={() => {
+              setDialog(null);
+            }}
+            onDone={(changed) => {
+              setDialog(null);
+              setReport(changed);
+              setNotice(pt(language, "saved", changed.report_number));
+            }}
+            onStale={() => {
+              setDialog(null);
+              load();
+              setNotice(null);
+            }}
+            others={others}
+            propertyId={propertyId}
+            report={report}
+            today={today}
+          />
+        )}
       {dialog === "ANSWER" && (
         <AnswerDialog
           api={api}
@@ -732,7 +823,7 @@ function StepDialog({
   language: Language;
   propertyId: string;
   report: ProblemReport;
-  name: Exclude<DialogName, "ANSWER">;
+  name: Exclude<DialogName, "ANSWER" | "COST" | "COST_CHECK">;
   api: ProblemsApi;
   others: ProblemReport[];
   today: string;

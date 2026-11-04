@@ -89,6 +89,7 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "payments.record": "Record Payments",
     "payments.reverse": "Reverse or return a Payment",
     "problem_reports.add": "Add a Problem report",
+    "problem_reports.costs": "Check repair costs and make their Expense reports",
     "problem_reports.join": "Join Problem reports and undo a join",
     "problem_reports.plan": "Plan, check and close Problem reports and record the tenant's answer",
     "problem_reports.read": "See Problem reports",

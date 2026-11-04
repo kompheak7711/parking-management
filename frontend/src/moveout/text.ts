@@ -401,6 +401,8 @@ const TEXT = {
     "រកឃើញនៅការត្រួតពិនិត្យថ្ងៃ {0}។ ថ្លៃបង្កើតវិក្កយបត្រព្រាង; អ្នកគ្រប់គ្រងចេញវានៅទំព័រវិក្កយបត្រ។",
   ],
   st4_no_charge: ["no charge", "គ្មានថ្លៃ"],
+  st4_make_problem: ["Make a Problem report", "បង្កើតរបាយការណ៍បញ្ហា"],
+  st4_problem: ["Problem report {0}", "របាយការណ៍បញ្ហា {0}"],
   st4_draft: ["Draft", "ព្រាង"],
   st4_open: ["Open", "បើក"],
   st4_clean_rate: [

@@ -1651,6 +1651,7 @@ export function App({
           capabilities={capabilities}
           homeApi={homeApi}
           language={language}
+          problemsApi={problemsApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
       </div>
@@ -2193,6 +2194,7 @@ export function App({
         <MoveoutPage
           active={shown("moveout")}
           capabilities={capabilities}
+          problemsApi={problemsApi}
           depositApi={depositApi}
           language={language}
           leaseApi={leaseApi}

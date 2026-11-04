@@ -348,4 +348,72 @@ describe("Home", () => {
       expect(screen.getByText("បានបង់សម្រាប់ខែវិច្ឆិកា")).toBeTruthy();
     });
   });
+
+  it("TEST-FE-1294 the Problem reports card shows open, urgent and late to a person who may read them; a Manager who checks repair costs sees each cost still waiting with a link; a person without the right reads nothing", async () => {
+    const summary = vi.fn(() =>
+      Promise.resolve({
+        open: 4,
+        urgent: 1,
+        late: 2,
+        costs_to_check: [
+          {
+            report_id: "r-7",
+            report_number: "UP260007",
+            kind: "UNIT" as const,
+            unit_number: "U101",
+            place_en: null,
+            place_kh: null,
+            entered_at: "2026-11-04T02:40:00Z",
+            totals: [
+              { currency: "USD" as const, amount_minor: 1400 },
+              { currency: "KHR" as const, amount_minor: 40000 },
+            ],
+          },
+        ],
+      }),
+    );
+    const showWith = (capabilities: ReadonlySet<string>) =>
+      render(
+        <HomeScreen
+          active
+          capabilities={capabilities}
+          homeApi={{ home: vi.fn(() => Promise.resolve(PAGE)) }}
+          language="en"
+          problemsApi={{ summary }}
+          propertyId="property-1"
+        />,
+      );
+
+    showWith(new Set(["reports.read"]));
+    expect(await screen.findByText("21 / 23")).toBeTruthy();
+    expect(summary).not.toHaveBeenCalled();
+    expect(screen.queryByText("Problem reports")).toBeNull();
+    cleanup();
+
+    showWith(new Set(["reports.read", "problem_reports.read"]));
+    expect(await screen.findByText("1 urgent · 2 late")).toBeTruthy();
+    expect(summary).toHaveBeenCalledWith("property-1");
+    expect(card(/Problem reports/).getAttribute("href")).toBe(
+      hashForPage("problems"),
+    );
+    expect(screen.queryByText("Repair costs to check")).toBeNull();
+    cleanup();
+
+    showWith(
+      new Set([
+        "reports.read",
+        "problem_reports.read",
+        "problem_reports.costs",
+      ]),
+    );
+    const costs = await screen.findByRole("region", {
+      name: "Repair costs to check",
+    });
+    expect(
+      within(costs)
+        .getByRole("link", { name: "UP260007" })
+        .getAttribute("href"),
+    ).toBe(hashForPage("problems", "pr:r-7"));
+    expect(within(costs).getByText(/U101 · \$14\.00 \+ 40,000 ៛/)).toBeTruthy();
+  });
 });
