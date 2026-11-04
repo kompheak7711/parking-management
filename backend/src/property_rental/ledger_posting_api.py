@@ -5,7 +5,8 @@ Manager); setting the ledger account of a Payment Method or Refund method needs
 `ledger.accounts.manage` (Owner only) and the browser mutation checks.
 
 - `GET /api/v1/properties/{property_id}/ledger/needs-check` lists the money records the automatic
-  posting could not post yet, with the reason.
+  posting could not post yet, with the reason: the kept list and the records with a problem the
+  posting job has not met yet (`app.gl_waiting_records`, owner test 04/11/2026).
 - `GET /api/v1/properties/{property_id}/ledger/method-accounts` lists every Payment Method and
   Refund method with the ledger account it posts to today (none = its records wait in "Needs
   check").
@@ -17,7 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Literal, Protocol
+from typing import Final, Literal, Protocol
 from uuid import UUID, uuid4
 
 import psycopg
@@ -37,6 +38,19 @@ from property_rental.settings import Settings
 LEDGER_READ = "ledger.read"
 LEDGER_ACCOUNTS_MANAGE = "ledger.accounts.manage"
 MethodKind = Literal["PAYMENT", "REFUND"]
+# Both reads go through functions: the runtime login may not read app.refund_methods, and the
+# posting job's kept list misses records it has not met yet (owner test 04/11/2026).
+NEEDS_CHECK: Final = (
+    "SELECT problem.posting_key, problem.source_type, problem.source_id, "
+    "problem.event_date, problem.problem, problem.first_seen_at, "
+    f"problem.last_seen_at, ({source_sql('problem', None)}), "
+    f"({link_sql('problem')}) FROM app.gl_waiting_records(%s) AS problem "
+    "ORDER BY problem.event_date, problem.posting_key"
+)
+METHOD_ACCOUNTS: Final = """
+    SELECT kind, method_id, code, name, account_code, account_name, effective_from
+    FROM app.gl_method_list(%(prop)s, %(day)s)
+"""
 
 
 class LedgerPostingNotFound(LookupError):
@@ -125,15 +139,7 @@ class PostgresLedgerPostingFlow:
         try:
             with psycopg.connect(self._database_url) as connection:
                 self._property_day(connection, property_id)
-                rows = connection.execute(
-                    "SELECT problem.posting_key, problem.source_type, problem.source_id, "
-                    "problem.event_date, problem.problem, problem.first_seen_at, "
-                    f"problem.last_seen_at, ({source_sql('problem', None)}), "
-                    f"({link_sql('problem')}) FROM app.gl_posting_problems AS problem "
-                    "WHERE problem.property_id = %s "
-                    "ORDER BY problem.event_date, problem.posting_key",
-                    (property_id,),
-                ).fetchall()
+                rows = connection.execute(NEEDS_CHECK, (property_id,)).fetchall()
         except psycopg.Error as exc:
             raise LedgerPostingUnavailable from exc
         return tuple(
@@ -152,29 +158,12 @@ class PostgresLedgerPostingFlow:
         )
 
     def method_accounts(self, property_id: UUID) -> tuple[MethodAccount, ...]:
-        query = """
-            SELECT method.kind, method.id, method.code, method.name, account.code,
-                account.name_en, mapped.effective_from
-            FROM (
-                SELECT 'PAYMENT' AS kind, id, code, display_name AS name, accepted AS active
-                FROM app.payment_methods
-                UNION ALL
-                SELECT 'REFUND', id, code, display_name, active FROM app.refund_methods
-            ) AS method
-            LEFT JOIN LATERAL (
-                SELECT map.account_id, map.effective_from FROM app.gl_method_accounts AS map
-                WHERE map.property_id = %(prop)s AND map.effective_from <= %(day)s
-                  AND CASE method.kind WHEN 'PAYMENT' THEN map.payment_method_id
-                      ELSE map.refund_method_id END = method.id
-                ORDER BY map.effective_from DESC, map.created_at DESC LIMIT 1
-            ) AS mapped ON true
-            LEFT JOIN app.gl_accounts AS account ON account.id = mapped.account_id
-            ORDER BY method.kind, method.code
-        """
         try:
             with psycopg.connect(self._database_url) as connection:
                 day = self._property_day(connection, property_id)
-                rows = connection.execute(query, {"prop": property_id, "day": day}).fetchall()
+                rows = connection.execute(
+                    METHOD_ACCOUNTS, {"prop": property_id, "day": day}
+                ).fetchall()
         except psycopg.Error as exc:
             raise LedgerPostingUnavailable from exc
         return tuple(

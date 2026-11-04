@@ -150,6 +150,8 @@ import type { CashApi } from "./ledger/cashClient";
 import type { AssetsApi } from "./ledger/assetsClient";
 import type { BudgetApi } from "./ledger/budgetClient";
 import { BudgetPage } from "./ledger/BudgetPage";
+import { ChartPage } from "./ledger/ChartPage";
+import type { OpeningApi } from "./ledger/openingClient";
 import { FixedAssetsPage } from "./ledger/FixedAssetsPage";
 import { MonthEndPage } from "./ledger/MonthEndPage";
 import type { MonthEndApi } from "./ledger/monthEndClient";
@@ -183,6 +185,7 @@ export interface AppProps {
   monthEndApi?: MonthEndApi;
   assetsApi?: AssetsApi;
   budgetApi?: BudgetApi;
+  openingApi?: OpeningApi;
   /** V1.1 part 6: Office › Invoices › Quotations; the real server when not given. */
   quotationsApi?: QuotationsApi;
   /** V1.1 part 7: Building › Problem reports; the real server when not given. */
@@ -669,6 +672,7 @@ export function App({
   monthEndApi,
   assetsApi,
   budgetApi,
+  openingApi,
   quotationsApi,
   problemsApi,
   propertyApi = propertyConfigurationApi,
@@ -1912,13 +1916,13 @@ export function App({
         />
       </div>
       <div className="shell-page" data-page="chart" hidden={!shown("chart")}>
-        <LedgerPage
+        <ChartPage
           active={shown("chart")}
           api={generalLedgerApi}
           capabilities={capabilities}
           language={language}
+          openingApi={openingApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
-          tab="chart"
         />
       </div>
       <div

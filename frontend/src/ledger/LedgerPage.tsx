@@ -46,6 +46,9 @@ import {
 
 export type LedgerTab = "journal" | "needscheck" | "chart" | "statements";
 
+/** The Chart of accounts address that opens Opening balances (#/chart/opening). */
+export const OPENING = "opening";
+
 export interface LedgerPageProps {
   language: Language;
   propertyId: string;
@@ -755,6 +758,13 @@ function NeedsCheckTab({
         <MethodAccountDialog
           busy={busy}
           cash={cash}
+          earliest={data.problems.reduce<string | null>(
+            (first, problem) =>
+              first === null || problem.event_date < first
+                ? problem.event_date
+                : first,
+            null,
+          )}
           failure={failure}
           language={language}
           method={open}
@@ -807,6 +817,7 @@ function MethodAccountDialog({
   language,
   method,
   cash,
+  earliest,
   busy,
   failure,
   onClose,
@@ -815,13 +826,21 @@ function MethodAccountDialog({
   language: Language;
   method: MethodAccount;
   cash: readonly Account[];
+  /** The oldest record waiting in Needs check, if any. */
+  earliest: string | null;
   busy: boolean;
   failure: string | null;
   onClose: () => void;
   onSave: (code: string, from: string) => void;
 }) {
   const [code, setCode] = useState(method.account_code ?? cash[0]?.code ?? "");
-  const [from, setFrom] = useState(todayInPhnomPenh());
+  // A method with no account yet starts on the oldest waiting record, so it can post
+  // (owner test 04/11/2026: from today, older Payments kept waiting).
+  const [from, setFrom] = useState(
+    method.account_code === null && earliest !== null
+      ? earliest
+      : todayInPhnomPenh(),
+  );
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (code === "" || from === "") return;
@@ -953,8 +972,18 @@ function ChartTab({
   return (
     <>
       <section aria-labelledby="chart-title" className="ui-card">
-        <h2 id="chart-title">{lt(language, "a_title")}</h2>
-        <p className="ui-muted">{lt(language, "a_sub")}</p>
+        <div className="ui-head">
+          <div>
+            <h2 id="chart-title">{lt(language, "a_title")}</h2>
+            <p className="ui-muted">{lt(language, "a_sub")}</p>
+          </div>
+          <span className="ui-actions">
+            <a className="ui-btn" href={hashForPage("chart", OPENING)}>
+              <Icon name="list" small />
+              {lt(language, "ob_t")}
+            </a>
+          </span>
+        </div>
       </section>
       {ACCOUNT_TYPES.map((type) => {
         const accounts = data.accounts.filter(

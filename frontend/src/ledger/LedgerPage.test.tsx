@@ -440,6 +440,8 @@ describe("Needs check", () => {
           kind: "PAYMENT",
           method_id: "m-khqr",
           account_code: "1020",
+          // A method with no account starts on the oldest waiting record.
+          effective_from: "2027-01-12",
         }),
       );
     });

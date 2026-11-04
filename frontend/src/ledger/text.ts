@@ -1067,6 +1067,85 @@ const TEXT = {
   ent39: ["The entry:", "ធាតុ៖"],
   wo_dr: ["debit {0}", "ឥណពន្ធ {0}"],
   wo_cr: ["credit {0}", "ឥណទាន {0}"],
+  // Opening balances (mock-up lopen, DESIGN.md round 22, phase 6 plan L3).
+  ob_t: ["Opening balances", "សមតុល្យដើម"],
+  ob_sub: [
+    "What the business had and owed on the day the books start.",
+    "អ្វីដែលអាជីវកម្មមាន និងជំពាក់ នៅថ្ងៃចាប់ផ្ដើមសៀវភៅ។",
+  ],
+  ob_on: ["Books start on {0}", "សៀវភៅចាប់ផ្ដើមនៅ {0}"],
+  ob_locked: ["Locked", "បានចាក់សោ"],
+  ob_draft: ["Not posted yet", "មិនទាន់ប្រកាស"],
+  ob_note: [
+    "Opening balances are locked once posted. A later fix goes in as an adjusting entry.",
+    "សមតុល្យដើមចាក់សោពេលបានប្រកាស។ ការកែក្រោយចូលជាធាតុកែតម្រូវ។",
+  ],
+  ob_none: [
+    "The books have not started yet. They start on 1 January of the first year, with what the business had and owed the day before.",
+    "សៀវភៅមិនទាន់ចាប់ផ្ដើមទេ។ វាចាប់ផ្ដើមថ្ងៃទី១ ខែមករា នៃឆ្នាំដំបូង ជាមួយអ្វីដែលអាជីវកម្មមាន និងជំពាក់ នៅថ្ងៃមុន។",
+  ],
+  ob_start: ["Start the books", "ចាប់ផ្ដើមសៀវភៅ"],
+  ob_year: ["First year", "ឆ្នាំដំបូង"],
+  ob_year_n: [
+    "The books start on 01/01/{0}. Opening balances are as at 31/12/{1}.",
+    "សៀវភៅចាប់ផ្ដើមនៅ 01/01/{0}។ សមតុល្យដើមគិតត្រឹម 31/12/{1}។",
+  ],
+  ob_e_year: ["Type a year such as 2027.", "វាយឆ្នាំ ដូចជា 2027។"],
+  ob_started: [
+    "The books start on {0}. Type the opening balances next.",
+    "សៀវភៅចាប់ផ្ដើមនៅ {0}។ បន្ទាប់មក វាយបញ្ចូលសមតុល្យដើម។",
+  ],
+  ob_typed_t: ["Accounts you type", "គណនីដែលអ្នកវាយបញ្ចូល"],
+  ob_typed_s: [
+    "Cash, bank, equipment, loans, the Owner's capital and every other account the app does not work out.",
+    "សាច់ប្រាក់ ធនាគារ ឧបករណ៍ ប្រាក់កម្ចី ដើមទុនម្ចាស់ និងគណនីផ្សេងទៀតដែលកម្មវិធីមិនគណនា។",
+  ],
+  ob_typed_none: ["Nothing typed yet.", "មិនទាន់វាយបញ្ចូលអ្វីទេ។"],
+  ob_worked_t: ["Worked out by the app", "កម្មវិធីគណនា"],
+  ob_worked_s: [
+    "Customer debt, Deposits, Customer Credit, money not used yet and Rent billed in advance come from the app's own lists.",
+    "បំណុលអតិថិជន ប្រាក់កក់ ឥណទានអតិថិជន ប្រាក់មិនទាន់ប្រើ និងថ្លៃឈ្នួលចេញវិក្កយបត្រមុន មកពីបញ្ជីរបស់កម្មវិធីផ្ទាល់។",
+  ],
+  ob_worked_none: [
+    "Nothing to bring from the app's lists.",
+    "គ្មានអ្វីត្រូវយកពីបញ្ជីរបស់កម្មវិធីទេ។",
+  ],
+  ob_type: ["Type the opening balances", "វាយបញ្ចូលសមតុល្យដើម"],
+  ob_add: ["Add account", "បន្ថែមគណនី"],
+  ob_remove: ["Remove {0}", "ដកចេញ {0}"],
+  ob_pick: ["Choose an account", "ជ្រើសរើសគណនី"],
+  ob_e_acct: ["Choose an account.", "សូមជ្រើសរើសគណនី។"],
+  ob_e_twice: ["Each account goes in once.", "គណនីនីមួយៗចូលតែម្ដង។"],
+  ob_e_one: [
+    "Type a debit or a credit, more than zero, not both.",
+    "វាយឥណពន្ធ ឬឥណទាន ច្រើនជាងសូន្យ មិនមែនទាំងពីរទេ។",
+  ],
+  ob_e_lines: ["Add at least one account.", "បន្ថែមយ៉ាងហោចណាស់មួយគណនី។"],
+  ob_saved: ["Opening balances saved.", "បានរក្សាទុកសមតុល្យដើម។"],
+  ob_off: [
+    "Off by {0}. Put the difference on an equity account such as 3000 Owner's capital.",
+    "ខុសគ្នា {0}។ សូមដាក់ភាពខុសគ្នាលើគណនីមូលធន ដូចជា 3000 ដើមទុនម្ចាស់។",
+  ],
+  ob_nc: [
+    "{0} records wait in Needs check. Clear that list before you post.",
+    "កំណត់ត្រា {0} កំពុងរង់ចាំក្នុង ត្រូវពិនិត្យ។ សូមដោះស្រាយបញ្ជីនោះ មុនពេលប្រកាស។",
+  ],
+  ob_empty: [
+    "Type the opening balances first. Post opens when Debit and Credit are equal.",
+    "សូមវាយបញ្ចូលសមតុល្យដើមជាមុនសិន។ ប៊ូតុងប្រកាសបើកពេលឥណពន្ធ និងឥណទានស្មើគ្នា។",
+  ],
+  ob_post: ["Post opening balances", "ប្រកាសសមតុល្យដើម"],
+  ob_post_n: [
+    "This posts one entry dated {0}. After that the opening balances are locked; a later fix goes in as an adjusting entry.",
+    "នេះប្រកាសធាតុមួយ ចុះថ្ងៃ {0}។ បន្ទាប់មក សមតុល្យដើមត្រូវចាក់សោ ការកែក្រោយចូលជាធាតុកែតម្រូវ។",
+  ],
+  ob_posted: ["Opening balances posted.", "បានប្រកាសសមតុល្យដើម។"],
+  ob_entry: ["Entry {0}", "ធាតុ {0}"],
+  ob_by: ["Posted by {0} · {1}", "ប្រកាសដោយ {0} · {1}"],
+  ob_owner: [
+    "Only the Owner starts the books and types the opening balances.",
+    "មានតែម្ចាស់ទេ ដែលចាប់ផ្ដើមសៀវភៅ និងវាយបញ្ចូលសមតុល្យដើម។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type LedgerTextKey = keyof typeof TEXT;

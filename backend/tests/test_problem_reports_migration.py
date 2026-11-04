@@ -28,7 +28,7 @@ from test_move_in_migration import migrated_database_url as migrated_database_ur
 from test_move_in_migration import runtime_database_url
 from test_role_bundle_migration import add_account, the_property
 
-HEAD = "20270426_276"
+REVISION = "20270426_276"
 GRANTS = "SELECT capability_id FROM app.actor_capability_grants(%s)"
 RIGHTS = {
     "problem_reports.read",
@@ -202,10 +202,9 @@ def unit_problem(db: ProblemDatabase, **report: Any) -> uuid.UUID:
     )
 
 
-def test_migration_276_is_the_head() -> None:
+def test_migration_276_follows_the_quotations() -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_current_head() == HEAD
-    migration = scripts.get_revision(HEAD)
+    migration = scripts.get_revision(REVISION)
     assert migration is not None
     assert migration.down_revision == "20270425_275"
     with pytest.raises(RuntimeError, match="forward-only"):

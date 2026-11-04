@@ -366,11 +366,11 @@ VIEWS = {
     "write-offs": """
         SELECT write_off.id, write_off.invoice_id, invoice.invoice_number, invoice.customer_id,
             write_off.amount_cents, write_off.reason, write_off.approved_by, write_off.created_at,
-            write_off.settlement_correction_id, correction.final_settlement_id
+            write_off.settlement_correction_id,
+            app.gl_write_off_settlement(write_off.settlement_correction_id)
+                AS final_settlement_id
         FROM app.gl_write_offs AS write_off
         JOIN app.invoices AS invoice ON invoice.id = write_off.invoice_id
-        JOIN app.settlement_corrections AS correction
-            ON correction.id = write_off.settlement_correction_id
         WHERE write_off.property_id = %(prop)s
         ORDER BY write_off.created_at DESC
         LIMIT 500

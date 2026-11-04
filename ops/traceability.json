@@ -61021,7 +61021,7 @@
       "notes": "V1.1 part 6: the Postgres flow of Quotations makes, reads, signs (412 for a stale version, 409 while an Item is not in stock, then the Invoice) and refuses through the database functions."
     },
     {
-      "test_id": "test_migration_276_is_the_head",
+      "test_id": "test_migration_276_follows_the_quotations",
       "upstream_ids": [
         "DL-124",
         "DB-PR-001"
@@ -62140,6 +62140,160 @@
       "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
       "status": "implemented",
       "notes": "V1.1 part 7 step 2, owner test 04/11: before the reading day only the test app (not production) shows Import, for a user who may record readings, with a note that the readings get today's date."
+    },
+    {
+      "test_id": "TEST-FE-1213",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Lets the Owner start the books on 1 January of the first year."
+    },
+    {
+      "test_id": "TEST-FE-1214",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Shows typed and worked-out lines, says how far off they are and keeps Post closed."
+    },
+    {
+      "test_id": "TEST-FE-1215",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Types the lines once each, one side each, and saves them whole."
+    },
+    {
+      "test_id": "TEST-FE-1216",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Posts balanced opening balances after the Owner confirms."
+    },
+    {
+      "test_id": "TEST-FE-1217",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Shows posted opening balances locked with their entry and who posted them."
+    },
+    {
+      "test_id": "TEST-FE-1218",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Holds posting while records wait in Needs check and shows the Owner-only note to others."
+    },
+    {
+      "test_id": "TEST-FE-1219",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, mock-up lopen): Opens from the Chart of accounts button and its address."
+    },
+    {
+      "test_id": "test_the_opening_sheet_follows_the_books_from_start_to_posted",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances): the opening sheet follows the books from start to posted, and the runtime login can run every query."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_opening_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances): the opening sheet follows the books from start to posted, and the runtime login can run every query."
+    },
+    {
+      "test_id": "test_the_ledger_readers_see_the_opening_sheet",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_opening.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances): only ledger readers see the opening sheet; no query values are taken."
+    },
+    {
+      "test_id": "TEST-FE-1290",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/OpeningPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Opening balances, owner test 04/11/2026): says why Post is closed before anything is typed."
+    },
+    {
+      "test_id": "test_records_the_posting_job_has_not_met_keep_post_closed_and_show_in_needs_check",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
+      "status": "implemented",
+      "notes": "Owner test 04/11/2026: records with a problem that the posting job has not met yet (migration 20270427_277, app.gl_waiting_records) count in the Opening balances sheet and show in Needs check, as the Post refusal does; they leave once the method has its ledger account."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_needs_check_reads",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
+      "status": "implemented",
+      "notes": "Owner test 04/11/2026: Needs check failed for every Property because the runtime login may not read app.refund_methods; the runtime login runs the Needs check list and the method list (migration 20270428_278, app.gl_method_list) and sees Payment and Refund methods."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_every_close_list",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
+      "status": "implemented",
+      "notes": "Owner test 04/11/2026 follow-up: every close list (adjusting entries, periods, bank lines and matches, write-offs, budgets and the rest) runs with the runtime login; the write-off list reads the Final Settlement through app.gl_write_off_settlement (migration 20270428_278)."
     }
   ]
 }
