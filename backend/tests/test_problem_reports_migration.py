@@ -221,7 +221,7 @@ def test_rights_rules_and_numbers_are_seeded(problem_database: ProblemDatabase) 
         }
         assert RIGHTS <= held[db.owner] and RIGHTS <= held[db.manager]
         assert held[db.staff] & RIGHTS == {"problem_reports.read", "problem_reports.add"}
-        rules = dict(
+        rules: dict[str, Any] = dict(
             connection.execute(
                 "SELECT name.code, rule.value FROM app.business_rule_names AS name "
                 "JOIN app.business_rules AS rule ON rule.rule_name_id = name.id "
