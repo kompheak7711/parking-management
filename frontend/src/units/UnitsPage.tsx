@@ -1,6 +1,10 @@
 // V1-058 R2: the Units page of the rebuilt app. "#/units" shows the list; "#/units/<Unit id>"
 // shows the Unit page.
 
+import {
+  type ProductsApi,
+  productsApi as defaultProductsApi,
+} from "../products/productsClient";
 import { serviceSettingsApi } from "../settings/serviceSettingsClient";
 import "../shell/screens.css";
 
@@ -34,6 +38,8 @@ export interface UnitsPageProps {
   utilityApi: UtilityPricesApi;
   /** V1-061 (DL-110): the Property's Services; the real server when not given. */
   servicesApi?: RentTermsServicesApi;
+  /** V1.1 part 5 (DL-122): products and stock; the real server when not given. */
+  productsApi?: ProductsApi;
 }
 
 export function UnitsPage({
@@ -46,6 +52,7 @@ export function UnitsPage({
   capabilities,
   utilityApi,
   servicesApi = serviceSettingsApi,
+  productsApi = defaultProductsApi,
 }: UnitsPageProps) {
   const detail = useHashDetail("units");
   const [data, setData] = useState<UnitsData | null>(null);
@@ -127,6 +134,7 @@ export function UnitsPage({
         tenanciesKnown={data.leases !== null && data.reservations !== null}
         unitApi={unitApi}
         servicesApi={servicesApi}
+        productsApi={productsApi}
         unitId={detail}
         utilityApi={utilityApi}
       />

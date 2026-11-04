@@ -7,9 +7,10 @@
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
-import { UnitInventoryPanel } from "../UnitInventoryPanel";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
+import type { ProductsApi } from "../products/productsClient";
+import { UnitInventoryCard } from "../products/UnitInventory";
 import type { ReservationResource } from "../reservationClient";
 import {
   dayText,
@@ -241,6 +242,8 @@ export interface UnitDetailProps {
   utilityApi: UtilityPricesApi;
   /** V1-061 (DL-110): the Property's Services, for the required Services. */
   servicesApi: RentTermsServicesApi;
+  /** V1.1 part 5 (DL-122): the Unit inventory form moves items through stock. */
+  productsApi: ProductsApi;
 }
 
 export function UnitDetail({
@@ -257,6 +260,7 @@ export function UnitDetail({
   onChanged,
   utilityApi,
   servicesApi,
+  productsApi,
 }: UnitDetailProps) {
   const khmer = language === "km";
   const [unit, setUnit] = useState<UnitResource | null>(null);
@@ -665,37 +669,32 @@ export function UnitDetail({
             )}
             {unit.notes !== null && <p className="ui-small">{unit.notes}</p>}
             {/* V1.1 (DL-115 (I)): the features list replaces Bedrooms, Bathrooms, Kitchen and
-                the Room features. Parking Step 5: hidden on Parking (ROOM_FEATURES,
-                UNIT_INVENTORY); the panels stay in the code. */}
-            {ROOM_FEATURES && (
-              <UnitFeaturesPanel
-                api={unitApi}
-                canManage={canManage && unit.can_manage !== false}
-                language={language}
-                lists={lists}
-                onConflict={() => {
-                  setWarning(ut(language, "conflict"));
-                  load();
-                }}
-                onSaved={(saved) => {
-                  setNotice(ut(language, "uf_saved", saved.unit_number));
-                  onChanged(saved);
-                  load();
-                }}
-                unit={unit}
-              />
-            )}
-            {UNIT_INVENTORY && (
-              <UnitInventoryPanel
-                api={unitApi}
-                features={unit.features ?? []}
-                key={unit.unit_id}
-                lists={lists}
-                onSaved={load}
-                propertyId={propertyId}
-                unitId={unit.unit_id}
-              />
-            )}
+                the Room features. */}
+            <UnitFeaturesPanel
+              api={unitApi}
+              canManage={canManage && unit.can_manage !== false}
+              language={language}
+              lists={lists}
+              onConflict={() => {
+                setWarning(ut(language, "conflict"));
+                load();
+              }}
+              onSaved={(saved) => {
+                setNotice(ut(language, "uf_saved", saved.unit_number));
+                onChanged(saved);
+                load();
+              }}
+              unit={unit}
+            />
+            <UnitInventoryCard
+              api={productsApi}
+              capabilities={capabilities}
+              key={unit.unit_id}
+              language={language}
+              propertyId={propertyId}
+              unitId={unit.unit_id}
+              unitNumber={unit.unit_number}
+            />
           </section>
           <RentTermsCard
             canManage={canManage && unit.can_manage !== false}

@@ -98,6 +98,19 @@ class InMemoryProducts:
         self.calls.append(("move", movement))
         return "SM260001"
 
+    def record_movements(
+        self, property_id: UUID, movements: list[Json], *, actor_id: str
+    ) -> list[str]:
+        before, calls = self.stock, len(self.calls)
+        try:
+            return [
+                self.record_movement(property_id, movement, actor_id=actor_id)
+                for movement in movements
+            ]
+        except ProductConflict:
+            self.stock, self.calls[calls:] = before, []
+            raise
+
     def locations(self, property_id: UUID) -> Json:
         self._check(property_id)
         return {"places": [], "features": []}
@@ -237,3 +250,34 @@ def test_adding_a_place_needs_products_manage() -> None:
     manager = client(flow, "products.manage")
     answer = manager.post(url, json=body, headers=HEADERS)
     assert answer.status_code == 201 and answer.json()["data"] == {"number": 3}
+
+
+def test_the_unit_inventory_rows_are_saved_together_with_each_kind_s_right() -> None:
+    """V1.1 part 5 (DL-122): the batch needs every right its rows need and saves all or none."""
+    flow = InMemoryProducts(stock=2)
+    url = base(flow) + "/stock-movements/batch"
+    place = {"unit_id": str(uuid4()), "item_id": str(uuid4()), "number": 1}
+    room = {**place, "number": 2}
+    transfer = {
+        "kind": "TRANSFER",
+        "product_id": str(flow.product_id),
+        "quantity": "1",
+        "from": place,
+        "to": room,
+    }
+    broken = {**transfer, "kind": "ADJUSTMENT_OUT", "to": None, "reason": "Broken"}
+    staff = client(flow, "products.read", "stock.purchase", "stock.transfer")
+    assert staff.post(url, json={"movements": []}, headers=HEADERS).status_code == 422
+    assert staff.post(url, json={"movements": [transfer] * 21}, headers=HEADERS).status_code == 422
+    assert staff.post(url, json={"movements": [transfer]}).status_code == 403
+    both = {"movements": [transfer, broken]}
+    assert staff.post(url, json=both, headers=HEADERS).status_code == 403
+    saved = staff.post(url, json={"movements": [transfer, transfer]}, headers=HEADERS)
+    assert saved.status_code == 201
+    assert saved.json()["data"] == {"movement_numbers": ["SM260001", "SM260001"]}
+    assert flow.stock == 2 and len(flow.calls) == 2
+    too_many = {"movements": [transfer, {**transfer, "quantity": "3"}]}
+    assert staff.post(url, json=too_many, headers=HEADERS).status_code == 409
+    assert len(flow.calls) == 2
+    manager = client(flow, "stock.transfer", "stock.adjust")
+    assert manager.post(url, json=both, headers=HEADERS).status_code == 201

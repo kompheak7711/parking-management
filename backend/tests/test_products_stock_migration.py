@@ -620,3 +620,45 @@ def test_the_product_flow_reads_and_writes_through_the_functions(
     assert (
         flow.add_place(database.property_id, database.room, database.bedroom, actor_id=owner) == 3
     )
+
+
+def test_the_unit_inventory_rows_are_saved_all_or_none(stock_database: StockDatabase) -> None:
+    """V1.1 part 5 (DL-122): a refused row leaves no movement from the same save."""
+    from property_rental.products_api import PostgresProductFlow, ProductConflict
+
+    database = stock_database
+    flow = PostgresProductFlow(database.runtime_url)
+    owner, staff = str(database.owner), str(database.staff)
+    product_id = flow.create(
+        database.property_id,
+        {"name_en": "Bed batch", "category_code": "FURNITURE", "measure_unit": "PIECE"},
+        actor_id=owner,
+    )
+    warehouse = {"unit_id": database.warehouse, "item_id": database.bedroom, "number": 2}
+    rooms = [{"unit_id": database.room, "item_id": database.bedroom, "number": n} for n in (1, 2)]
+    flow.record_movement(
+        database.property_id,
+        {
+            "kind": "PURCHASE",
+            "product_id": product_id,
+            "quantity": "2",
+            "to": warehouse,
+            "unit_cost_usd_cents": 5000,
+        },
+        actor_id=staff,
+    )
+    move = {"kind": "TRANSFER", "product_id": product_id, "from": warehouse}
+    with pytest.raises(ProductConflict, match="not enough stock"):
+        flow.record_movements(
+            database.property_id,
+            [{**move, "quantity": "1", "to": rooms[0]}, {**move, "quantity": "2", "to": rooms[1]}],
+            actor_id=staff,
+        )
+    assert len(flow.movements(database.property_id, product_id)) == 1
+    numbers = flow.record_movements(
+        database.property_id,
+        [{**move, "quantity": "1", "to": room} for room in rooms],
+        actor_id=staff,
+    )
+    assert len(set(numbers)) == 2
+    assert len(flow.movements(database.property_id, product_id)) == 5

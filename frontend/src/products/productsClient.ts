@@ -214,6 +214,11 @@ export interface ProductsApi {
     propertyId: string,
     movement: NewMovement,
   ) => Promise<string>;
+  /** V1.1 part 5: several movements saved together or not at all. */
+  recordMovements: (
+    propertyId: string,
+    movements: NewMovement[],
+  ) => Promise<string[]>;
   locations: (propertyId: string) => Promise<Locations>;
   addPlace: (
     propertyId: string,
@@ -487,6 +492,15 @@ export const productsApi: ProductsApi = {
       ),
     );
     return text(data.movement_number);
+  },
+  recordMovements: async (propertyId, movements) => {
+    const data = record(
+      await request(
+        `${base(propertyId)}/stock-movements/batch`,
+        send("POST", { movements }),
+      ),
+    );
+    return list(data.movement_numbers).map(text);
   },
   locations: async (propertyId) =>
     locationsOf(await request(`${base(propertyId)}/locations`)),

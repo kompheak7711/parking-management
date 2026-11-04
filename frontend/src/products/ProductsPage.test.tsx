@@ -220,6 +220,7 @@ function apiOf(extra: Partial<ProductsApi> = {}) {
     ),
     movements: vi.fn(() => Promise.resolve([MOVEMENT])),
     recordMovement: vi.fn(() => Promise.resolve("SM260002")),
+    recordMovements: vi.fn(() => Promise.resolve(["SM260003", "SM260004"])),
     locations: vi.fn(() => Promise.resolve(LOCATIONS)),
     addPlace: vi.fn(() => Promise.resolve(3)),
     ...extra,

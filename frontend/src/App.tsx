@@ -1750,6 +1750,7 @@ export function App({
           language={language}
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          productsApi={productsApi}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           utilityApi={utilityApi}

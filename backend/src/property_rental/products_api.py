@@ -9,6 +9,8 @@ Service's cost (`products.manage`). `GET .../products/{product_id}/prices` is th
 
 `GET .../stock-movements` lists the latest movements and `POST .../stock-movements` records a
 Purchase (`stock.purchase`), a Transfer (`stock.transfer`) or an Adjustment (`stock.adjust`).
+`POST .../stock-movements/batch` records up to 20 of them together, all or none, for the Unit
+inventory form (V1.1 part 5, DL-122); it needs the right of every kind in it.
 `GET .../locations` lists each place (a Unit plus one of its Unit features) with its stock, and
 `POST .../units/{unit_id}/places` adds a place to a Unit (`products.manage`).
 
@@ -105,6 +107,10 @@ class ProductFlow(Protocol):
 
     def record_movement(self, property_id: UUID, movement: Json, *, actor_id: str) -> str: ...
 
+    def record_movements(
+        self, property_id: UUID, movements: list[Json], *, actor_id: str
+    ) -> list[str]: ...
+
     def locations(self, property_id: UUID) -> Json: ...
 
     def add_place(
@@ -141,6 +147,9 @@ class UnavailableProductFlow:
         raise ProductUnavailable
 
     def record_movement(self, property_id: UUID, movement: Json, **_: object) -> str:
+        raise ProductUnavailable
+
+    def record_movements(self, property_id: UUID, movements: list[Json], **_: object) -> list[str]:
         raise ProductUnavailable
 
     def locations(self, property_id: UUID) -> Json:
@@ -183,6 +192,10 @@ def _quantity(value: object) -> str:
     return format(Decimal(str(value)).normalize(), "f")
 
 
+MOVE = (
+    "SELECT app.record_stock_movement(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+    "%s, %s, %s, %s)"
+)
 PRODUCT_COLUMNS = """
     product.id, product.sku, product.name_en, product.name_kh, product.description,
     category.code, category.kind, product.measure_unit, product.cost_usd_cents,
@@ -506,34 +519,52 @@ class PostgresProductFlow:
             ) in rows
         ]
 
-    def record_movement(self, property_id: UUID, movement: Json, *, actor_id: str) -> str:
+    @staticmethod
+    def _movement_parameters(
+        property_id: UUID, movement: Json, actor_id: str
+    ) -> tuple[object, ...]:
         source = movement.get("from")
         target = movement.get("to")
         place_from = source if isinstance(source, dict) else {}
         place_to = target if isinstance(target, dict) else {}
-        number = self._write(
-            "SELECT app.record_stock_movement(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-            "%s, %s, %s, %s)",
-            (
-                property_id,
-                movement["kind"],
-                movement["product_id"],
-                Decimal(str(movement["quantity"])),
-                place_from.get("unit_id"),
-                place_from.get("item_id"),
-                place_from.get("number"),
-                place_to.get("unit_id"),
-                place_to.get("item_id"),
-                place_to.get("number"),
-                movement.get("unit_cost_usd_cents"),
-                movement.get("supplier"),
-                movement.get("receipt_reference"),
-                movement.get("reason"),
-                UUID(actor_id),
-                uuid4(),
-            ),
+        return (
+            property_id,
+            movement["kind"],
+            movement["product_id"],
+            Decimal(str(movement["quantity"])),
+            place_from.get("unit_id"),
+            place_from.get("item_id"),
+            place_from.get("number"),
+            place_to.get("unit_id"),
+            place_to.get("item_id"),
+            place_to.get("number"),
+            movement.get("unit_cost_usd_cents"),
+            movement.get("supplier"),
+            movement.get("receipt_reference"),
+            movement.get("reason"),
+            UUID(actor_id),
+            uuid4(),
         )
-        return str(number)
+
+    def record_movement(self, property_id: UUID, movement: Json, *, actor_id: str) -> str:
+        return self.record_movements(property_id, [movement], actor_id=actor_id)[0]
+
+    def record_movements(
+        self, property_id: UUID, movements: list[Json], *, actor_id: str
+    ) -> list[str]:
+        """Every movement or none (V1.1 part 5: the Unit inventory form saves its rows at once)."""
+        numbers: list[str] = []
+        try:
+            with self._connect() as connection:
+                for movement in movements:
+                    row = connection.execute(
+                        MOVE, self._movement_parameters(property_id, movement, actor_id)
+                    ).fetchone()
+                    assert row is not None
+                    numbers.append(str(row[0]))
+        except psycopg.Error as exc:
+            raise _refusal(exc) from exc
+        return numbers
 
     def locations(self, property_id: UUID) -> Json:
         try:
@@ -680,6 +711,10 @@ class StockMovement(_Body):
     supplier: Short | None = None
     receipt_reference: Reference | None = None
     reason: Text | None = None
+
+
+class StockMovements(_Body):
+    movements: Annotated[list[StockMovement], Field(min_length=1, max_length=20)]
 
 
 class NewPlace(_Body):
@@ -848,6 +883,21 @@ def create_products_router(
         except REFUSED as exc:
             raise _http(exc) from exc
         return envelope(request, {"movement_number": number})
+
+    @router.post("/stock-movements/batch", status_code=status.HTTP_201_CREATED)
+    def record_movements(property_id: UUID, batch: StockMovements, request: Request) -> Json:
+        """V1.1 part 5: the rows of the Unit inventory form, saved together or not at all."""
+        actor = None
+        for capability in sorted({STOCK_RIGHT[movement.kind] for movement in batch.movements}):
+            actor = _require(request, resolver, capability, property_id)
+        assert actor is not None
+        require_browser_mutation(request, settings)
+        bodies: list[Json] = [movement.model_dump(by_alias=True) for movement in batch.movements]
+        try:
+            numbers = flow.record_movements(property_id, bodies, actor_id=actor.actor_id)
+        except REFUSED as exc:
+            raise _http(exc) from exc
+        return envelope(request, {"movement_numbers": numbers})
 
     @router.get("/locations")
     def list_locations(property_id: UUID, request: Request, response: Response) -> Json:

@@ -2497,4 +2497,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-118, DL-120.
 - **Decision date:** 2026-11-03.
 
+## DL-122 — V1.1 part 5: Unit inventory form
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the V1.1 rework plan part 5 ("Only a form on the Unit page. It is not a table: what is in a Unit is worked out from product_transactions"; "Location | Item | Storage | Qty, with New purchase at the top right. Take out sends an item back, or records it as Broken or lost"; "It starts empty, because the test data is not moved"), DESIGN.md round 18 (Unit inventory) and the owner's message of 03/11/2026 16:31 ("Continue your task"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no money rule changes and no new table or migration.
+- **(A) The Unit page.** The Unit page shows what is in the Unit, worked out from the stock movements of DL-121 ("7 items in 3 places"), and a Unit inventory button. A person without "See products and stock" does not see it. Every Unit starts empty; the old Unit inventory list is no longer shown and its rows are not moved.
+- **(B) The form.** Each row is Location (a place in this Unit), Item (only Furniture and Appliances that a storage place holds), Storage (a place of a Unit not for rent, with what it holds) and Qty; a new row appears when the last one is used. Save records every row as a Transfer in one step: all rows are saved or none (`POST .../stock-movements/batch`, at most 20 rows, each row needs its own right). The form refuses a row that takes more than its storage place holds, counting the rows above it.
+- **(C) New purchase.** A Purchase always goes into a storage place first (Reorder fills in the last cost; New product, Furniture or Appliances with the unit Piece, needs "Add and change products"). Then the form opens again with the item already in a row, so the item enters the Unit by a Transfer. This keeps DL-121 (C): items enter a Unit only by Transfer or Purchase, with one SM number each.
+- **(D) Take out.** "Now in this Unit" lists each item with Take out: Back to storage (a Transfer) or Broken or lost (an Adjustment out, Manager or Owner). A reason is always needed.
+- **Built:** API-PS-001 (batch route), the Unit page.
+- **Links:** DL-121.
+- **Decision date:** 2026-11-04.
+
 

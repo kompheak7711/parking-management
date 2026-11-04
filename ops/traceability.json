@@ -60806,6 +60806,72 @@
       "test_path": "frontend/src/products/ProductsPage.test.tsx",
       "status": "implemented",
       "notes": "V1.1 part 4: the price helper rounds up to the step and quantities follow the unit."
+    },
+    {
+      "test_id": "test_the_unit_inventory_rows_are_saved_together_with_each_kind_s_right",
+      "upstream_ids": [
+        "DL-122",
+        "API-PS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_products_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 5: the batch needs 1 to 20 rows, the browser checks and the right of every kind in it, and saves all rows or none."
+    },
+    {
+      "test_id": "test_the_unit_inventory_rows_are_saved_all_or_none",
+      "upstream_ids": [
+        "DL-122",
+        "API-PS-001",
+        "DB-PS-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_products_stock_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 5: the Unit inventory rows are written in one transaction; when one row is refused no row is kept."
+    },
+    {
+      "test_id": "TEST-FE-1148",
+      "upstream_ids": [
+        "DL-122"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/UnitInventory.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 5: the Unit page counts what is in the Unit from the stock, starts empty, and is hidden without products.read."
+    },
+    {
+      "test_id": "TEST-FE-1149",
+      "upstream_ids": [
+        "DL-122",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/UnitInventory.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 5: the form puts items in from storage row by row, lists only stored Furniture and Appliances, refuses more than a storage place holds, and saves the rows together as Transfers."
+    },
+    {
+      "test_id": "TEST-FE-1150",
+      "upstream_ids": [
+        "DL-122",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/UnitInventory.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 5: New purchase buys into storage (Reorder fills the last cost, New product for a Manager) and goes back to the form with the item in a row."
+    },
+    {
+      "test_id": "TEST-FE-1151",
+      "upstream_ids": [
+        "DL-122",
+        "API-PS-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/products/UnitInventory.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 5: Take out sends an item back to storage or records it as Broken or lost (Manager or Owner), always with a reason; a refusal stays in the form."
     }
   ]
 }
