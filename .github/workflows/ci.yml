@@ -23,7 +23,8 @@ jobs:
   backend:
     name: Backend quality, tests, build, and traceability
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # V1.1: the suite passed 60 minutes on 04/11/2026 once the ledger screens joined it.
+    timeout-minutes: 90
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
