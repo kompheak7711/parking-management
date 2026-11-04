@@ -53,6 +53,7 @@ Area = Literal[
     "LEDGER",
     "STAFF",
     "ATTENDANCE",
+    "REPAIRS",
     "OTHER",
 ]
 CODE = re.compile(r"^[A-Z][A-Z0-9_]{1,62}$")

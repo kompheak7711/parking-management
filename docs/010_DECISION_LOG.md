@@ -2526,3 +2526,20 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Decision date:** 2026-11-04.
 
 
+## DL-124 — V1.1 part 7: Problem reports
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's card answer of 04/11/2026 03:38 ("Problem report flow", not the old Repair Quotation plan), the owner's message of 04/11/2026 03:29 ("Start part 7"), the Problem report PRD, flows and database plan of 03/11/2026, and DESIGN.md round 32 (one list, UP and BP numbers, Joined) and its v75 change (Agree makes the Damage Invoice draft at once). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; the money rules are the owner's from the design.
+- **(A) One list.** A Problem report is a Unit problem (UPyy000n) or a Building problem (BPyy000n), with its problem type, a description, urgent or not, how it came in (phone, walk-in, seen by staff; later the bots and inspections), may staff enter, and the best time. A Safety problem is always urgent. A report of the same problem can be joined to the first one (it then reads Joined) and the join can be undone.
+- **(B) Steps.** Received → (Contacted) → Visit planned (technician name, day, time 07:00 to 16:30) → Checked (cause: wear, damage or not sure; an urgent problem can be fixed at the check) → who pays. A Building problem can also be a cleaning job or a repair job. "Not a repair" closes the report as Not accepted with a note.
+- **(C) Who pays.** The Owner pays: the repair is planned. The tenant pays: a Manager or the Owner (permission "Plan repairs") types the amount and the reason; the report waits for the tenant.
+- **(D) The tenant's answer.** Staff note how the tenant answered (signed, Telegram, phone, in person). Agreed: the Damage Invoice draft for that amount is made at once for the Lease's main tenant (there is no Repair Quotation paper). Refused: staff note what the tenant said and choose "The Owner pays" or "At move-out" (the report closes and waits for the Move-out inspection).
+- **(E) Repair.** Waiting for parts → parts arrived → Done. A tenant who can answer has 3 days (rule TR_AUTO_CLOSE_DAYS) to say "Not fixed"; after that the report reads Closed.
+- **(F) Late and repeat.** An urgent report not planned in 1 hour (TR_URGENT_HOURS) or a normal one not planned in 1 working day (TR_PLAN_WORKDAYS; Sunday is not a working day) reads Late. The same problem type in the same Unit 3 times (REPEAT_COUNT) in 90 days (REPEAT_DAYS) shows the earlier reports. These rules are in Settings › Business, area "Problem reports".
+- **(G) Rights.** New permissions See Problem reports, Add Problem reports, Plan repairs and Join reports (group Operations). The Owner and the Manager get all four; Staff get See and Add.
+- **(H) Waits for later:** photos, voice notes and receipts; the repair cost and its Expense request; Telegram messages; Employees (the technician is a typed name for now).
+- **Built:** migration `20270426_276` (DB-PR-001), API-PR-001, Operations › Problem reports.
+- **Links:** DL-118, DL-120, DL-123.
+- **Decision date:** 2026-11-04.
+

@@ -88,6 +88,10 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "payments.read": "Read Payments",
     "payments.record": "Record Payments",
     "payments.reverse": "Reverse or return a Payment",
+    "problem_reports.add": "Add a Problem report",
+    "problem_reports.join": "Join Problem reports and undo a join",
+    "problem_reports.plan": "Plan, check and close Problem reports and record the tenant's answer",
+    "problem_reports.read": "See Problem reports",
     "products.manage": "Add and change products, Service costs and places",
     "products.prices": "Change product mark-ups",
     "products.read": "See products, stock and Locations",
@@ -230,12 +234,18 @@ OWNER_ONLY_PRODUCT_CAPABILITIES: Final = frozenset({"products.prices"})
 # Quotations (V1.1 part 6, migration `20270425_275`, DL-123): Staff see them; the Owner and the
 # Manager make them and lower a price (the Owner can tick "Make Quotations" for Staff in Roles).
 STAFF_QUOTATION_CAPABILITIES: Final = frozenset({"quotations.read"})
+# Problem reports (V1.1 part 7, migration `20270426_276`, DL-124): Staff see and add them; the
+# Owner and the Manager plan, close and join them.
+STAFF_PROBLEM_REPORT_CAPABILITIES: Final = frozenset(
+    {"problem_reports.read", "problem_reports.add"}
+)
 STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     STAFF_L1C_BUNDLE_CAPABILITIES
     | STAFF_RENT_LETTER_CAPABILITIES
     | STAFF_LEDGER_CAPABILITIES
     | STAFF_PRODUCT_CAPABILITIES
     | STAFF_QUOTATION_CAPABILITIES
+    | STAFF_PROBLEM_REPORT_CAPABILITIES
 )
 # The default Manager bundle: every bundle capability except the Owner-only rights.
 MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = (

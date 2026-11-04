@@ -38,6 +38,9 @@ DOCUMENTS = {
     "STOCK_MOVEMENT": "SMyy000n",
     # V1.1 part 6 (DL-123): Quotations, migration 20270425_275.
     "QUOTATION": "QTyy000n",
+    # V1.1 part 7 (DL-124): Problem reports, migration 20270426_276.
+    "UNIT_PROBLEM": "UPyy000n",
+    "BUILDING_PROBLEM": "BPyy000n",
 }
 SET_RULE = "SELECT app.set_business_rule(%s, %s, %s, %s::date, %s, %s, gen_random_uuid())"
 

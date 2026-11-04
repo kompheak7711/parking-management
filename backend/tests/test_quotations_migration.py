@@ -28,7 +28,7 @@ from test_move_in_migration import migrated_database_url as migrated_database_ur
 from test_move_in_migration import runtime_database_url
 from test_role_bundle_migration import add_account, the_property
 
-HEAD = "20270425_275"
+REVISION = "20270425_275"
 GRANTS = "SELECT capability_id FROM app.actor_capability_grants(%s)"
 RIGHTS = {"quotations.read", "quotations.make", "quotations.lower_price"}
 CREATE = "SELECT app.create_product(%s, %s, NULL, NULL, %s, %s, NULL, NULL, %s, %s, NULL)"
@@ -209,10 +209,9 @@ def take(database: QuotationDatabase, position: int = 1) -> str:
     )
 
 
-def test_migration_275_is_the_head() -> None:
+def test_migration_275_follows_the_products() -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_current_head() == HEAD
-    migration = scripts.get_revision(HEAD)
+    migration = scripts.get_revision(REVISION)
     assert migration is not None
     assert migration.down_revision == "20270424_274"
     with pytest.raises(RuntimeError, match="forward-only"):

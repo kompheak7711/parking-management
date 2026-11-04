@@ -60853,7 +60853,7 @@
       "notes": "V1.1 part 5: Take out sends an item back to storage or records it as Broken or lost (Manager or Owner), always with a reason; a refusal stays in the form."
     },
     {
-      "test_id": "test_migration_275_is_the_head",
+      "test_id": "test_migration_275_follows_the_products",
       "upstream_ids": [
         "DL-123",
         "DB-QT-001"
@@ -61019,6 +61019,118 @@
       "test_path": "backend/tests/test_quotations_migration.py",
       "status": "implemented",
       "notes": "V1.1 part 6: the Postgres flow of Quotations makes, reads, signs (412 for a stale version, 409 while an Item is not in stock, then the Invoice) and refuses through the database functions."
+    },
+    {
+      "test_id": "test_migration_276_is_the_head",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Migration 20270426_276 follows 275 and is forward-only."
+    },
+    {
+      "test_id": "test_rights_rules_and_numbers_are_seeded",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001",
+        "DL-120",
+        "DL-118"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: the four Problem report rights, the default roles, the REPAIRS rules, the UP and BP numbers and the choices are seeded."
+    },
+    {
+      "test_id": "test_a_unit_problem_the_tenant_pays_makes_the_damage_draft_when_agreed",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: a Unit problem goes from Received to a planned visit, the check and Tenant pays; Agreed makes the Damage Invoice draft for the main tenant at once; Done then Closed after the auto-close days."
+    },
+    {
+      "test_id": "test_a_refused_charge_or_a_unit_without_a_lease_charges_nothing",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Refused needs what the tenant said and makes no charge; At move-out closes the report; a Unit without a Lease cannot charge a tenant; Safety is always urgent."
+    },
+    {
+      "test_id": "test_building_problems_join_and_a_manager_undoes_a_join",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Building problems get BP numbers, can be a cleaning or repair job, and a report can be joined to the same problem and the join undone by a Manager only."
+    },
+    {
+      "test_id": "test_late_and_repeat_are_worked_out_when_read",
+      "upstream_ids": [
+        "DL-124",
+        "DB-PR-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_problem_reports_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: an urgent report not planned in time reads Late; the same problem 3 times in 90 days shows the earlier reports."
+    },
+    {
+      "test_id": "test_reading_problem_reports_needs_problem_reports_read",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: the list, the report and the choices need problem_reports.read and are never cached."
+    },
+    {
+      "test_id": "test_adding_a_report_needs_its_right_and_a_valid_form",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: adding needs problem_reports.add and the browser checks; the form is checked and trimmed."
+    },
+    {
+      "test_id": "test_steps_need_the_plan_right_if_match_and_the_join_right_to_join",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: a step needs problem_reports.plan and If-Match (428, 412); a wrong step is 409 or 422; Join needs problem_reports.join."
+    },
+    {
+      "test_id": "test_the_tenant_answer_needs_the_plan_right_and_if_match",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_problem_reports_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7: the tenant answer needs problem_reports.plan and If-Match, and a known way of answering."
     }
   ]
 }
