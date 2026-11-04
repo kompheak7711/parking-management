@@ -108,6 +108,8 @@ NON_CAPABILITY_LABELS = frozenset(
         "sign_in_prune.config_invalid",
         "sign_in_prune.failed",
         "sign_in_prune.usage",
+        # A SQL column name in ledger_books_api.source_sql, not a capability.
+        "entry.id",
     }
 )
 
