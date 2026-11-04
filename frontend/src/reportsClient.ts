@@ -146,8 +146,8 @@ export interface TotalsPage {
     measurement_unit?: "KWH" | "M3";
   };
   chart: {
-    // parts: Income rent, utilities, move_out_and_damage, other; Payments paid_to_invoices,
-    // deposits, other; Utilities reading, estimate.
+    // parts: Income rent, utilities, move_out_and_damage, products_and_services, other;
+    // Payments paid_to_invoices, deposits, other; Utilities reading, estimate.
     months: { month: string; parts: Record<string, number> }[];
     top_units: {
       unit_id: string;

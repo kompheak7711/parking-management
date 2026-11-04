@@ -60631,7 +60631,7 @@
       "notes": "V1.1 part 3: the Owner keeps the Owner role locked in their roles; a server refusal stays in the role form in English; Khmer role names show."
     },
     {
-      "test_id": "test_migration_274_is_the_head",
+      "test_id": "test_migration_274_follows_the_roles",
       "upstream_ids": [
         "DL-121",
         "DB-PS-001"
@@ -60872,6 +60872,107 @@
       "test_path": "frontend/src/products/UnitInventory.test.tsx",
       "status": "implemented",
       "notes": "V1.1 part 5: Take out sends an item back to storage or records it as Broken or lost (Manager or Owner), always with a reason; a refusal stays in the form."
+    },
+    {
+      "test_id": "test_migration_275_is_the_head",
+      "upstream_ids": [
+        "DL-123",
+        "DB-QT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Migration 20270425_275 follows 274 and is forward-only."
+    },
+    {
+      "test_id": "test_the_default_roles_get_the_quotation_rights",
+      "upstream_ids": [
+        "DL-123",
+        "DB-QT-001",
+        "DL-120"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: the Owner and the Manager get every Quotation right; Staff read Quotations."
+    },
+    {
+      "test_id": "test_a_quotation_keeps_its_prices_and_a_new_one_replaces_it",
+      "upstream_ids": [
+        "DL-123",
+        "DB-QT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: a Quotation is valid 7 days, never above the list price; a lower price needs a Manager or the Owner and a reason; a new Quotation replaces a waiting one; a Quotation is never changed or removed."
+    },
+    {
+      "test_id": "test_customer_signed_issues_the_invoice_and_a_void_puts_the_items_back",
+      "upstream_ids": [
+        "DL-123",
+        "DB-QT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Customer signed waits until the Items are in stock, then issues the Products Invoice and the Items leave stock; a void puts them back at the same places."
+    },
+    {
+      "test_id": "test_the_regular_services_became_service_products",
+      "upstream_ids": [
+        "DL-123",
+        "DB-QT-001",
+        "DL-121"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: each Regular service became a Service product with no cost."
+    },
+    {
+      "test_id": "test_reading_quotations_needs_quotations_read",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_quotations_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: the Quotation list and page need quotations.read for that Property and are never cached."
+    },
+    {
+      "test_id": "test_making_a_quotation_needs_quotations_make_and_a_lower_price_its_reason",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_quotations_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: making a Quotation needs quotations.make and the browser checks; lines are checked; a lower price without its right or reason is refused."
+    },
+    {
+      "test_id": "test_customer_signed_needs_if_match_and_waits_for_stock",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_quotations_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Customer signed needs quotations.make and If-Match (428, 412) and answers 409 while an Item is not in stock."
+    },
+    {
+      "test_id": "test_refusing_needs_a_reason",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_quotations_api.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Customer refused needs a reason."
     }
   ]
 }

@@ -231,6 +231,7 @@ const TEXT = {
   s_rent: ["Monthly Rent and Services", "ថ្លៃឈ្នួលប្រចាំខែ និងសេវា"],
   s_utilities: ["Utilities", "ទឹកភ្លើង"],
   s_move_out_and_damage: ["Move-out and damage", "ចាកចេញ និងខូចខាត"],
+  s_products_and_services: ["Products and services", "ផលិតផល និងសេវា"],
   // new
   s_other_income: [
     "Late charges and kept Deposits",

@@ -196,13 +196,15 @@ MOVE = (
     "SELECT app.record_stock_movement(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
     "%s, %s, %s, %s)"
 )
-PRODUCT_COLUMNS = """
+# Stock that comes in; a Sale returned by a voided Invoice too (V1.1 part 6, DL-123).
+IN_KINDS = "'PURCHASE', 'ADJUSTMENT_IN', 'TRANSFER_IN', 'SALE_RETURN'"
+PRODUCT_COLUMNS = f"""
     product.id, product.sku, product.name_en, product.name_kh, product.description,
     category.code, category.kind, product.measure_unit, product.cost_usd_cents,
     product.mark_up_basis_points, product.min_mark_up_basis_points,
     product.max_mark_up_basis_points, product.price_usd_cents, product.reorder_level,
     product.reorder_quantity, product.discontinued, product.version, product.updated_at,
-    COALESCE((SELECT sum(CASE WHEN movement.kind IN ('PURCHASE', 'ADJUSTMENT_IN', 'TRANSFER_IN')
+    COALESCE((SELECT sum(CASE WHEN movement.kind IN ({IN_KINDS})
                               THEN movement.quantity ELSE -movement.quantity END)
               FROM app.product_transactions AS movement
               WHERE movement.product_id = product.id), 0)
@@ -584,19 +586,18 @@ class PostgresProductFlow:
                     (property_id,),
                 ).fetchall()
                 stock = connection.execute(
-                    """
+                    f"""
                     SELECT movement.unit_id, movement.place_item_id, movement.place_number,
                         product.id, product.sku, product.name_en, product.measure_unit,
-                        sum(CASE WHEN movement.kind IN ('PURCHASE', 'ADJUSTMENT_IN', 'TRANSFER_IN')
+                        sum(CASE WHEN movement.kind IN ({IN_KINDS})
                                  THEN movement.quantity ELSE -movement.quantity END)
                     FROM app.product_transactions AS movement
                     JOIN app.products AS product ON product.id = movement.product_id
                     WHERE product.property_id = %s
                     GROUP BY movement.unit_id, movement.place_item_id, movement.place_number,
                         product.id, product.sku, product.name_en, product.measure_unit
-                    HAVING sum(CASE WHEN movement.kind IN ('PURCHASE', 'ADJUSTMENT_IN',
-                                    'TRANSFER_IN') THEN movement.quantity
-                                    ELSE -movement.quantity END) <> 0
+                    HAVING sum(CASE WHEN movement.kind IN ({IN_KINDS})
+                                    THEN movement.quantity ELSE -movement.quantity END) <> 0
                     ORDER BY product.sku
                     """,
                     (property_id,),

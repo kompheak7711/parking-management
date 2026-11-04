@@ -15,7 +15,11 @@ export type MovementRowKind =
   | "ADJUSTMENT_IN"
   | "ADJUSTMENT_OUT"
   | "TRANSFER_OUT"
-  | "TRANSFER_IN";
+  | "TRANSFER_IN"
+  // V1.1 part 6 (DL-123): made by the app when a Quotation is signed, and when its Invoice is
+  // voided.
+  | "SALE"
+  | "SALE_RETURN";
 
 /** Item units, by group (DESIGN.md round 16), then the Service units. */
 export const ITEM_UNITS = [

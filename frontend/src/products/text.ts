@@ -129,6 +129,8 @@ const TEXT = {
   sm_ADJUSTMENT_OUT: ["Adjustment out", "កែតម្រូវចេញ"],
   sm_TRANSFER_OUT: ["Transfer out", "ផ្ទេរចេញ"],
   sm_TRANSFER_IN: ["Transfer in", "ផ្ទេរចូល"],
+  sm_SALE: ["Sale", "ការលក់"],
+  sm_SALE_RETURN: ["Sale returned", "ការលក់ត្រឡប់មកវិញ"],
   sm_saved: ["{0} saved.", "បានរក្សាទុក {0}។"],
   // Movement dialog
   md_purchase_t: ["New purchase", "ការទិញថ្មី"],

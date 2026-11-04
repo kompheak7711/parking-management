@@ -37,6 +37,8 @@ INCOME_GROUPS: Final[Mapping[str, str]] = {
     "UTILITIES": "utilities",
     "DAMAGE_CHARGES": "move_out_and_damage",
     "MISCELLANEOUS_CHARGES": "move_out_and_damage",
+    # V1.1 part 6 (DL-123): the lines of a Products Invoice made from a Quotation.
+    "PRODUCT_CHARGES": "products_and_services",
     "LATE_PAYMENT_CHARGES": "other",
     "DEPOSIT_KEPT": "other",
 }

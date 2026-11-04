@@ -572,7 +572,8 @@ function MovementsTable({
               {movements.map((movement) => {
                 const out =
                   movement.kind === "ADJUSTMENT_OUT" ||
-                  movement.kind === "TRANSFER_OUT";
+                  movement.kind === "TRANSFER_OUT" ||
+                  movement.kind === "SALE";
                 const detail = [
                   movement.unit_cost_usd_cents === null
                     ? null

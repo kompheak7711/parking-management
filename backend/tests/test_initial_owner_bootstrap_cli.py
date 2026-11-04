@@ -1088,6 +1088,10 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/products/{product_id}/prices": {"get"},
         "/api/v1/properties/{property_id}/stock-movements": {"get", "post"},
         "/api/v1/properties/{property_id}/stock-movements/batch": {"post"},
+        "/api/v1/properties/{property_id}/quotations": {"get", "post"},
+        "/api/v1/properties/{property_id}/quotations/{quotation_id}": {"get"},
+        "/api/v1/properties/{property_id}/quotations/{quotation_id}/sign": {"post"},
+        "/api/v1/properties/{property_id}/quotations/{quotation_id}/refuse": {"post"},
         "/api/v1/properties/{property_id}/locations": {"get"},
         "/api/v1/properties/{property_id}/units/{unit_id}/places": {"post"},
     }

@@ -36,6 +36,8 @@ DOCUMENTS = {
     "MONEY_MOVEMENT": "MVyy000n",
     # V1.1 part 4 (DL-121): stock movements, migration 20270424_274.
     "STOCK_MOVEMENT": "SMyy000n",
+    # V1.1 part 6 (DL-123): Quotations, migration 20270425_275.
+    "QUOTATION": "QTyy000n",
 }
 SET_RULE = "SELECT app.set_business_rule(%s, %s, %s, %s::date, %s, %s, gen_random_uuid())"
 
@@ -110,6 +112,8 @@ def test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes
             "RESERVATION_DAYS",
             "RESERVATION_EXTENSION_DAYS",
             "RESERVATION_DEPOSIT_PERCENT",
+            # V1.1 part 6 (DL-123): a Quotation is valid for QUOTATION_DAYS.
+            "QUOTATION_DAYS",
         }
         assert {"METER_READING_DAY", "INVOICE_ISSUE_DAY", "RENT_DUE_DAY"} <= {
             code for code, _ in codes

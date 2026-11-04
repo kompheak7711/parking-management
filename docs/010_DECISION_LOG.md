@@ -2510,4 +2510,19 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-121.
 - **Decision date:** 2026-11-04.
 
+## DL-123 — V1.1 part 6: Quotation and Products Invoice
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE V1.1 BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the V1.1 rework plan part 6 ("Quotation (QT, valid 7 days), printed. Only staff with 'Make Quotation' make one"; "A Quotation can be made when stock is 0. 'Customer signed' waits until the Items are in stock"; "When the Customer signs, the Products Invoice is issued and the Items leave stock. A void puts them back"; "A Products Invoice counts in a new report bar, 'Products and services'"; "Create Invoice loses its Miscellaneous and Services kinds"; Regular services become Service products), DESIGN.md round 16 (only a Manager or the Owner lowers a price, the printed line shows the list price, a price is never above the list, a lower price makes a new Quotation that replaces the old one, the Invoice is due in 7 days) and the owner's message of 03/11/2026 16:31 ("Continue your task"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; the money rules are the owner's from the plan and the design.
+- **(A) A Quotation.** A Quotation (QTyy000n) is for one Customer (and, if chosen, one of their Leases), with 1 to 20 lines of products (Items or Services), each with a quantity, its list price and its price, and a note. It is valid for the business rule `QUOTATION_DAYS` (7 days). It can be made when stock is 0. It is never changed or removed: a change (for example a lower price) is a new Quotation that replaces the waiting one, for the same Customer.
+- **(B) Prices.** A price is never above the list price. A lower price needs the permission "Lower a price on a Quotation" (Manager and Owner) and a reason; the printed line shows the list price under it. A product without a price, or a discontinued Service, cannot be quoted.
+- **(C) Customer signed.** "Customer signed" records the day the Customer signed (not before the Quotation day, not after it ran out) and, for each Item, the place it is taken from. It waits until every Item is in stock at its place. Then, in one step, the Products Invoice is issued (due in the one-time charge due days, 7 by default) and each Item leaves stock as a Sale movement (SM number). "Customer refused" closes the Quotation with a reason.
+- **(D) Void.** Voiding a Products Invoice puts each Item back at the place it came from, as a Sale return movement.
+- **(E) Rights.** New permissions See Quotations (`quotations.read`), Make Quotations (`quotations.make`) and Lower a price on a Quotation (`quotations.lower_price`), group Money. The Owner and the Manager get all three; Staff get See Quotations. The Owner can tick Make Quotations for Staff in Settings › Users and sign-in.
+- **(F) Other changes.** Each Regular service becomes a Service product with no cost (a Manager or the Owner types its cost before it can be quoted); the Settings Regular services tab is no longer shown. Create Invoice keeps only Damage. Reports count Products Invoice lines in a new bar "Products and services". Stock still makes no ledger entries; the cost of a Sale is for the General Ledger work.
+- **Built:** migration `20270425_275` (DB-QT-001), API-QT-001, Office › Invoices › Quotations.
+- **Links:** DL-118, DL-120, DL-121.
+- **Decision date:** 2026-11-04.
+
 

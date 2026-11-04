@@ -254,6 +254,12 @@ from property_rental.property_api import (
     UnavailablePropertyResourceFlow,
     create_property_router,
 )
+from property_rental.quotations_api import (
+    PostgresQuotationFlow,
+    QuotationFlow,
+    UnavailableQuotationFlow,
+    create_quotations_router,
+)
 from property_rental.receipt import ReceiptIdempotencyKeyReused
 from property_rental.refund import RefundIdempotencyKeyReused
 from property_rental.report_exports import (
@@ -568,6 +574,7 @@ def create_app(
     business_rule_flow: BusinessRuleFlow | None = None,
     business_settings_flow: BusinessSettingsFlow | None = None,
     product_flow: ProductFlow | None = None,
+    quotation_flow: QuotationFlow | None = None,
     ledger_posting_flow: LedgerPostingFlow | None = None,
     ledger_money_flow: LedgerMoneyFlow | None = None,
     ledger_close_flow: LedgerCloseFlow | None = None,
@@ -1234,6 +1241,23 @@ def create_app(
                 PostgresProductFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableProductFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_quotations_router(
+            actor_resolver,
+            quotation_flow
+            or (
+                PostgresQuotationFlow(
+                    resolved_settings.database_url.get_secret_value(),
+                    resolved_settings.financial_database_url.get_secret_value()
+                    if resolved_settings.financial_database_url is not None
+                    else None,
+                )
+                if resolved_settings.database_url is not None
+                else UnavailableQuotationFlow()
             ),
             resolved_settings,
         )

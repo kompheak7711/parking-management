@@ -16,6 +16,7 @@ from property_rental.access_control import (
     STAFF_L1C_BUNDLE_CAPABILITIES,
     STAFF_LEDGER_CAPABILITIES,
     STAFF_PRODUCT_CAPABILITIES,
+    STAFF_QUOTATION_CAPABILITIES,
     STAFF_RENT_LETTER_CAPABILITIES,
 )
 from test_default_role_bundles_migration import (
@@ -49,7 +50,10 @@ def test_the_staff_letter_rights_are_the_two_rent_case_rights() -> None:
     }
     assert (
         STAFF_DEFAULT_BUNDLE_CAPABILITIES
-        == STAFF_BUNDLE_AT_229 | STAFF_LEDGER_CAPABILITIES | STAFF_PRODUCT_CAPABILITIES
+        == STAFF_BUNDLE_AT_229
+        | STAFF_LEDGER_CAPABILITIES
+        | STAFF_PRODUCT_CAPABILITIES
+        | STAFF_QUOTATION_CAPABILITIES
     )
     # The Termination notice and Terminate stay with the Owner and Managers.
     assert "leases.terminate" not in STAFF_DEFAULT_BUNDLE_CAPABILITIES

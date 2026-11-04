@@ -93,6 +93,9 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "products.read": "See products, stock and Locations",
     "property.manage": "Update the Property and create and update Units",
     "property.read": "Read the Property",
+    "quotations.lower_price": "Lower a price on a Quotation",
+    "quotations.make": "Make Quotations and record the Customer's answer",
+    "quotations.read": "See Quotations",
     "receipts.read": "Read Receipts",
     "receipts.reprint": "Reprint a Receipt",
     "refunds.correct": "Correct a Refund",
@@ -224,11 +227,15 @@ OWNER_ONLY_LEDGER_CAPABILITIES: Final = frozenset(
 # record Purchases and transfers; the Owner alone changes mark-ups (round 19).
 STAFF_PRODUCT_CAPABILITIES: Final = frozenset({"products.read", "stock.purchase", "stock.transfer"})
 OWNER_ONLY_PRODUCT_CAPABILITIES: Final = frozenset({"products.prices"})
+# Quotations (V1.1 part 6, migration `20270425_275`, DL-123): Staff see them; the Owner and the
+# Manager make them and lower a price (the Owner can tick "Make Quotations" for Staff in Roles).
+STAFF_QUOTATION_CAPABILITIES: Final = frozenset({"quotations.read"})
 STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     STAFF_L1C_BUNDLE_CAPABILITIES
     | STAFF_RENT_LETTER_CAPABILITIES
     | STAFF_LEDGER_CAPABILITIES
     | STAFF_PRODUCT_CAPABILITIES
+    | STAFF_QUOTATION_CAPABILITIES
 )
 # The default Manager bundle: every bundle capability except the Owner-only rights.
 MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = (

@@ -27,6 +27,8 @@ const PARTS: Record<
     ["rent", "s_rent"],
     ["utilities", "s_utilities"],
     ["move_out_and_damage", "s_move_out_and_damage"],
+    // V1.1 part 6 (DL-123): the Products Invoices made from Quotations.
+    ["products_and_services", "s_products_and_services"],
     ["other", "s_other_income"],
   ],
   total_payment: [
