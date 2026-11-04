@@ -62130,6 +62130,16 @@
       "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
       "status": "implemented",
       "notes": "General Ledger owner test fix (04/11/2026): when the bills cannot be read again after a save, the screen says so instead of showing the old list."
+    },
+    {
+      "test_id": "TEST-FE-1226",
+      "upstream_ids": [
+        "DL-124"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7 step 2, owner test 04/11: before the reading day only the test app (not production) shows Import, for a user who may record readings, with a note that the readings get today's date."
     }
   ]
 }

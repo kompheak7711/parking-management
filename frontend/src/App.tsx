@@ -1737,6 +1737,7 @@ export function App({
           language={language}
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          testApp={environment !== "production"}
           unitApi={unitApi ?? defaultUnitApi}
           utilityApi={utilityApi}
         />

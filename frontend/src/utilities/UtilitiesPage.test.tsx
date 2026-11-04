@@ -272,6 +272,7 @@ function show(
     capabilities?: ReadonlySet<string> | null;
     units?: UnitResource[];
     problemsApi?: Pick<ProblemsApi, "choices" | "add">;
+    testApp?: boolean;
   } = {},
 ) {
   const api = options.api ?? utilityApi();
@@ -284,6 +285,7 @@ function show(
       leaseApi={leaseApi()}
       problemsApi={options.problemsApi}
       propertyId="property-1"
+      testApp={options.testApp}
       today={options.today ?? READING_DAY}
       unitApi={units}
       utilityApi={api}
@@ -547,6 +549,37 @@ describe("Utilities page (V1-058 R4)", () => {
     });
     // Four Units, read twice.
     expect(api.loadMeters).toHaveBeenCalledTimes(8);
+  });
+
+  it("TEST-FE-1226 Before reading day only the test app shows Import, with a note that the readings get today's date; the dialog opens", async () => {
+    show({ today: "2026-10-10" });
+    await screen.findByText(
+      "Reading day is 24/10/2026. The list to type the readings opens that day.",
+    );
+    expect(screen.queryByRole("button", { name: "Import" })).toBeNull();
+    cleanup();
+
+    show({ today: "2026-10-10", testApp: true });
+    await screen.findByText(
+      "Test app only: Import works before the reading day. The readings get today's date, 10/10/2026.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    expect(
+      await screen.findByRole("dialog", {
+        name: "Import readings from a spreadsheet",
+      }),
+    ).toBeTruthy();
+    cleanup();
+
+    show({
+      today: "2026-10-10",
+      testApp: true,
+      capabilities: new Set(["utility_readings.read"]),
+    });
+    await screen.findByText(
+      "Reading day is 24/10/2026. The list to type the readings opens that day.",
+    );
+    expect(screen.queryByRole("button", { name: "Import" })).toBeNull();
   });
 
   it("TEST-FE-878 Before reading day This month shows the month's readings; Pick a month lists one month; 6 months shows a grid with the use under each reading", async () => {

@@ -302,6 +302,11 @@ const TEXT = {
   ],
   // R4c Import (mock-up i18n.js and i18n9.js; owner 22/10/2026: one row per Unit)
   im_btn: ["Import", "នាំចូល"],
+  // new (test app only)
+  im_test_app: [
+    "Test app only: Import works before the reading day. The readings get today's date, {0}.",
+    "សម្រាប់កម្មវិធីសាកល្បងតែប៉ុណ្ណោះ៖ អាចនាំចូលមុនថ្ងៃអាន។ អំណាននឹងមានកាលបរិច្ឆេទថ្ងៃនេះ {0}។",
+  ],
   im_t: ["Import readings from a spreadsheet", "នាំចូលអំណានពីតារាង"],
   im_intro: [
     "Import the readings for reading day {0} from an .xlsx or .csv file.",

@@ -59,6 +59,11 @@ export interface UtilitiesPageProps {
   today?: string;
   /** V1.1 part 7: a broken meter in the import gets a Problem report. */
   problemsApi?: Pick<ProblemsApi, "choices" | "add">;
+  /**
+   * The test app (not production) lets Import open before the reading day, so the owner can
+   * try the import on any day. The readings get today's date, as they always do.
+   */
+  testApp?: boolean;
 }
 
 type Period = "month" | "six" | "all" | "pick";
@@ -75,6 +80,7 @@ export function UtilitiesPage({
   capabilities,
   today: fixedToday,
   problemsApi,
+  testApp = false,
 }: UtilitiesPageProps) {
   const detail = useHashDetail("utilities");
   const meterId =
@@ -188,6 +194,7 @@ export function UtilitiesPage({
           }}
           onReload={load}
           problemsApi={problemsApi}
+          testApp={testApp}
           today={today}
         />
       ) : tab === "meters" ? (
@@ -226,6 +233,7 @@ function ReadingsTab({
   onChange,
   onReload,
   problemsApi,
+  testApp,
 }: {
   language: Language;
   api: UtilityApi;
@@ -236,6 +244,7 @@ function ReadingsTab({
   onChange: (update: (data: UtilitiesData) => UtilitiesData) => void;
   onReload: () => void;
   problemsApi?: Pick<ProblemsApi, "choices" | "add">;
+  testApp: boolean;
 }) {
   const [importing, setImporting] = useState(false);
   const [unit, setUnit] = useState<UnitResource | null>(null);
@@ -252,6 +261,7 @@ function ReadingsTab({
 
   const readingDay = readingDayOf(today);
   const entry = period === "month" && today >= readingDay;
+  const earlyImport = testApp && canSave && period === "month" && !entry;
   const working = (row: EntryRow) => !isBroken(row.meter);
   const counts = new Map(
     TYPES.map((kind) => {
@@ -402,6 +412,18 @@ function ReadingsTab({
             )}
           </>
         )}
+        {earlyImport && (
+          <button
+            className="ui-btn ui-push"
+            onClick={() => {
+              setImporting(true);
+            }}
+            type="button"
+          >
+            <Icon name="upload" small />
+            {utt(language, "im_btn")}
+          </button>
+        )}
       </div>
       {importing && (
         <ImportDialog
@@ -464,6 +486,11 @@ function ReadingsTab({
               <Icon name="info" />
               <p>{utt(language, "before_day", dayText(readingDay))}</p>
             </div>
+          )}
+          {earlyImport && (
+            <p className="ui-sub2 warn">
+              {utt(language, "im_test_app", dayText(today))}
+            </p>
           )}
           <SavedReadings
             data={data}
