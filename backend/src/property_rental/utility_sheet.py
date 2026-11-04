@@ -1,9 +1,11 @@
 """V1-058 R4c: the meter-readings spreadsheet (DESIGN.md "Import from a spreadsheet").
 
-The file has one row for each Unit and three columns: Unit, Electricity and Water (owner,
-22/10/2026). These helpers only turn a file into rows and rows into a blank file; they read
-and change nothing in the database. Each reading is checked again when it is saved, the same
-as a typed reading.
+The file has one row for each Unit and the columns Unit, Electricity and Water (owner,
+22/10/2026). V1.1 part 7 (DL-124, owner 30/10/2026): two more columns, "Electricity broken" and
+"Water broken", say yes or no (no by default); yes means no reading and the meter is broken.
+A file without them still reads, with every meter working. These helpers only turn a file into
+rows and rows into a blank file; they read and change nothing in the database. Each reading is
+checked again when it is saved, the same as a typed reading.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from typing import Literal
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
+from openpyxl.worksheet.datavalidation import DataValidation
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 500
@@ -27,7 +30,8 @@ MAX_UNPACKED_BYTES = 20 * 1024 * 1024
 MAX_PARTS = 200
 # A header further right than this is not looked for; it keeps a huge sheet cheap to read.
 MAX_COLUMNS = 26
-COLUMNS = ("parking", "electricity", "water")
+COLUMNS = ("unit", "electricity", "water")
+BROKEN_COLUMNS = ("electricity broken", "water broken")
 
 SheetProblem = Literal["FILE_TYPE", "UNREADABLE", "COLUMNS", "TOO_MANY_ROWS", "EMPTY"]
 
@@ -38,6 +42,8 @@ class SheetRow:
     unit: str
     electricity: str
     water: str
+    electricity_broken: str = ""
+    water_broken: str = ""
 
 
 class SheetError(ValueError):
@@ -81,13 +87,26 @@ def _rows(cells: _Rows) -> list[SheetRow]:
     names = ["parking" if name == "unit" else name for name in names]
     if any(name not in names for name in COLUMNS):
         raise SheetError("COLUMNS")
-    where = {name: names.index(name) for name in COLUMNS}
+    where = {name: names.index(name) for name in COLUMNS + BROKEN_COLUMNS if name in names}
     found: list[SheetRow] = []
     for number, row in cells.items[1:]:
-        values = [_text(row[where[name]]) if where[name] < len(row) else "" for name in COLUMNS]
-        if not any(values):
+        values = [
+            _text(row[where[name]]) if name in where and where[name] < len(row) else ""
+            for name in COLUMNS + BROKEN_COLUMNS
+        ]
+        # A row with only "no" in the broken columns is an empty row of the blank file.
+        if not any(values[:3]) and all(value.lower() in ("", "no") for value in values[3:]):
             continue
-        found.append(SheetRow(row=number, unit=values[0], electricity=values[1], water=values[2]))
+        found.append(
+            SheetRow(
+                row=number,
+                unit=values[0],
+                electricity=values[1],
+                water=values[2],
+                electricity_broken=values[3],
+                water_broken=values[4],
+            )
+        )
     if not found:
         raise SheetError("EMPTY")
     return found
@@ -158,16 +177,23 @@ def blank_sheet(units: list[str]) -> bytes:
     if sheet is None:  # pragma: no cover - a new Workbook always has one sheet
         raise RuntimeError("New workbook has no sheet")
     sheet.title = "Readings"
-    sheet.append(["Parking", "Electricity", "Water"])
+    sheet.append(["Unit", "Electricity", "Electricity broken", "Water", "Water broken"])
     for cell in sheet[1]:
         cell.font = Font(bold=True)
     for unit in units:
-        sheet.append([unit, None, None])
+        sheet.append([unit, None, "no", None, "no"])
         # A Unit is always text, so a name that starts with "=" never becomes a formula.
         sheet.cell(row=sheet.max_row, column=1).data_type = "s"
+    # The broken columns offer only yes and no.
+    if units:
+        choice = DataValidation(type="list", formula1='"yes,no"', allow_blank=True)
+        sheet.add_data_validation(choice)
+        last = len(units) + 1
+        choice.add(f"C2:C{last}")
+        choice.add(f"E2:E{last}")
     sheet.column_dimensions["A"].width = 12
-    sheet.column_dimensions["B"].width = 14
-    sheet.column_dimensions["C"].width = 14
+    for column in ("B", "C", "D", "E"):
+        sheet.column_dimensions[column].width = 18
     sheet.freeze_panes = "A2"
     buffer = io.BytesIO()
     workbook.save(buffer)

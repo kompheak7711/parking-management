@@ -79,16 +79,47 @@ def test_a_file_that_cannot_be_used_says_why(name: str, content: bytes, problem:
     assert raised.value.problem == problem
 
 
-def test_the_blank_file_lists_every_unit_under_the_three_columns() -> None:
+def test_the_blank_file_lists_every_unit_under_the_five_columns() -> None:
     workbook = load_workbook(io.BytesIO(blank_sheet(["U101", "U102"])))
     sheet = workbook.worksheets[0]
     assert [list(row) for row in sheet.iter_rows(values_only=True)] == [
-        ["Parking", "Electricity", "Water"],
-        ["U101", None, None],
-        ["U102", None, None],
+        ["Unit", "Electricity", "Electricity broken", "Water", "Water broken"],
+        ["U101", None, "no", None, "no"],
+        ["U102", None, "no", None, "no"],
     ]
-    assert read_sheet("blank.xlsx", blank_sheet(["U101"])) == [
-        SheetRow(row=2, unit="U101", electricity="", water="")
+    rules = sheet.data_validations.dataValidation
+    assert len(rules) == 1 and rules[0].formula1 == '"yes,no"'
+    assert str(rules[0].sqref) == "C2:C3 E2:E3"
+    filled = xlsx(
+        [
+            ["Unit", "Electricity", "Electricity broken", "Water", "Water broken"],
+            ["U101", None, "no", None, "no"],
+            ["U102", 2430, "No", None, "yes"],
+        ]
+    )
+    assert read_sheet("blank.xlsx", filled) == [
+        SheetRow(
+            row=2,
+            unit="U101",
+            electricity="",
+            water="",
+            electricity_broken="no",
+            water_broken="no",
+        ),
+        SheetRow(
+            row=3,
+            unit="U102",
+            electricity="2430",
+            water="",
+            electricity_broken="No",
+            water_broken="yes",
+        ),
+    ]
+
+
+def test_a_file_without_the_broken_columns_still_reads() -> None:
+    assert read_sheet("r.csv", b"Unit,Electricity,Water\nU101,1,2\n") == [
+        SheetRow(row=2, unit="U101", electricity="1", water="2")
     ]
 
 
@@ -168,7 +199,16 @@ def test_the_sheet_routes_need_their_rights_and_the_browser_checks() -> None:
     assert response.json()["data"] == {
         "file_name": "r.csv",
         "problem": None,
-        "rows": [{"row": 2, "unit": "U101", "electricity": "5", "water": "6"}],
+        "rows": [
+            {
+                "row": 2,
+                "unit": "U101",
+                "electricity": "5",
+                "water": "6",
+                "electricity_broken": "",
+                "water_broken": "",
+            }
+        ],
     }
     broken = recorder.post(
         sheet_path,

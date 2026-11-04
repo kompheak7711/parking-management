@@ -1663,6 +1663,8 @@ def create_utility_router(
                     "unit": item.unit,
                     "electricity": item.electricity,
                     "water": item.water,
+                    "electricity_broken": item.electricity_broken,
+                    "water_broken": item.water_broken,
                 }
                 for item in read_sheet(body.file_name, content)
             ]

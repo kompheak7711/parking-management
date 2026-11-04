@@ -5,6 +5,10 @@
 
 import { type FormEvent, useRef, useState } from "react";
 
+import {
+  type ProblemsApi,
+  problemsApi as defaultProblemsApi,
+} from "../problems/problemsClient";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
@@ -67,6 +71,20 @@ export interface ImportLine {
   warning: string | null;
   /** The key of this reading's save, kept for a retry. */
   idempotencyKey: string;
+  /** V1.1 part 7 (DL-124): "yes" in the broken column of a working meter. Confirm marks the
+   * meter broken (no reading) and makes a Problem report. */
+  broken: boolean;
+}
+
+/** What a broken line did on Confirm. */
+type BrokenOutcome = "done" | "meter_only" | "failed";
+
+/** A broken column: "" and no are false, yes is true; anything else is not understood. */
+export function yesOrNo(text: string): boolean | null {
+  const value = text.trim().toLowerCase();
+  if (["", "no", "n", "false", "0", "ទេ"].includes(value)) return false;
+  if (["yes", "y", "true", "1", "បាទ", "ចាស"].includes(value)) return true;
+  return null;
 }
 
 /** What the import did, shown on the readings screen after the dialog closes. */
@@ -105,6 +123,7 @@ export function importLines(
     problem: null,
     warning: null,
     idempotencyKey: crypto.randomUUID(),
+    broken: false,
     ...fields,
   });
   for (const row of sheet.rows) {
@@ -144,6 +163,10 @@ export function importLines(
     }
     for (const type of TYPES) {
       const typed = type === "ELECTRICITY" ? row.electricity : row.water;
+      const brokenText =
+        (type === "ELECTRICITY" ? row.electricity_broken : row.water_broken) ??
+        "";
+      const broken = yesOrNo(brokenText);
       const meter = data.meters.find(
         (item) =>
           item.current &&
@@ -152,14 +175,14 @@ export function importLines(
       );
       const key = `${unit.unit_id}-${type}`;
       if (meter === undefined) {
-        if (typed !== "")
+        if (typed !== "" || broken === true)
           lines.push(
             line({
               key,
               unitText: unit.unit_number,
               unit,
               type,
-              current: typed,
+              current: typed === "" ? brokenText : typed,
               problem: utt(
                 language,
                 "im_e_no_meter",
@@ -180,8 +203,23 @@ export function importLines(
       const previous = last === undefined ? null : last.effective_value;
       let problem: string | null = null;
       let warning: string | null = null;
-      if (isBroken(meter)) problem = utt(language, "im_e_broken");
-      else if (saved !== undefined)
+      if (broken === null) problem = utt(language, "im_e_yesno");
+      else if (isBroken(meter)) problem = utt(language, "im_e_broken");
+      else if (broken && typed !== "") problem = utt(language, "im_e_both");
+      else if (broken) {
+        lines.push(
+          line({
+            key,
+            unitText: unit.unit_number,
+            unit,
+            type,
+            meter,
+            previous,
+            broken: true,
+          }),
+        );
+        continue;
+      } else if (saved !== undefined)
         problem = utt(
           language,
           "im_e_saved",
@@ -255,9 +293,12 @@ export function ImportDialog({
   readingDay,
   onChange,
   onClose,
+  problemsApi = defaultProblemsApi,
 }: {
   language: Language;
   api: UtilityApi;
+  /** V1.1 part 7: a broken meter in the file gets a Problem report. */
+  problemsApi?: Pick<ProblemsApi, "choices" | "add">;
   data: UtilitiesData;
   propertyId: string;
   today: string;
@@ -279,6 +320,7 @@ export function ImportDialog({
   // The keys of each batch stay the same on a retry, so a batch is saved only once.
   const batchKeys = useRef(new Map<string, string>());
   const results = useRef(new Map<string, BatchReadingResult>());
+  const brokenResults = useRef(new Map<string, BrokenOutcome>());
   // Once a batch saved readings or the meters changed, the screen reads them again on close.
   const changed = useRef(false);
 
@@ -360,8 +402,21 @@ export function ImportDialog({
   ): ImportResult {
     const notConfirmed = badNames(lines);
     let count = 0;
+    let brokenCount = 0;
     for (const line of lines) {
       if (line.problem !== null) continue;
+      if (line.broken) {
+        const outcome = brokenResults.current.get(line.idempotencyKey);
+        if (outcome === "done") brokenCount += 1;
+        else
+          notConfirmed.push(
+            `${lineName(language, line)}: ${utt(
+              language,
+              outcome === "meter_only" ? "im_r_report" : "im_r_broken",
+            )}`,
+          );
+        continue;
+      }
       const answer = results.current.get(line.idempotencyKey);
       if (answer?.status === "SUCCEEDED") {
         count += 1;
@@ -379,12 +434,20 @@ export function ImportDialog({
         )}`,
       );
     }
+    const text =
+      count > 0
+        ? utt(language, "im_done", count, fileName)
+        : brokenCount > 0
+          ? ""
+          : utt(language, "im_none", fileName);
     return {
-      ok: count > 0,
-      text:
-        count > 0
-          ? utt(language, "im_done", count, fileName)
-          : utt(language, "im_none", fileName),
+      ok: count > 0 || brokenCount > 0,
+      text: [
+        text,
+        brokenCount > 0 ? utt(language, "im_broken_done", brokenCount) : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
       notConfirmed,
     };
   }
@@ -392,14 +455,67 @@ export function ImportDialog({
   const savedSome = () =>
     [...results.current.values()].some(
       (answer) => answer.status === "SUCCEEDED",
-    );
+    ) || brokenResults.current.size > 0;
+
+  /** Marks one broken meter and makes its Problem report; a retry skips what was done. */
+  async function markBroken(
+    line: ImportLine,
+    fileName: string,
+    typeIds: Map<string, string> | null,
+  ): Promise<void> {
+    const meter = line.meter;
+    const unit = line.unit;
+    if (meter === null || unit === null || line.type === null) return;
+    let outcome = brokenResults.current.get(line.idempotencyKey);
+    if (outcome === undefined || outcome === "failed") {
+      try {
+        await api.reportBroken(
+          meter.id,
+          {
+            expected_version: meter.version,
+            failure_date: today,
+            reason: utt(language, "im_br_reason", fileName).slice(0, 500),
+          },
+          line.idempotencyKey,
+        );
+        outcome = "meter_only";
+      } catch {
+        outcome = "failed";
+      }
+      changed.current = true;
+      brokenResults.current.set(line.idempotencyKey, outcome);
+    }
+    if (outcome !== "meter_only") return;
+    const typeId = typeIds?.get(line.type);
+    if (typeId === undefined) return;
+    try {
+      await problemsApi.add(propertyId, {
+        kind: "UNIT",
+        source: "SEEN",
+        problem_type_id: typeId,
+        description: utt(
+          language,
+          "im_pr_text",
+          utt(language, line.type),
+          dayText(today),
+        ),
+        urgent: false,
+        unit_id: unit.unit_id,
+      });
+      brokenResults.current.set(line.idempotencyKey, "done");
+    } catch {
+      // The meter stays marked broken; the result says to add the report by hand.
+    }
+  }
 
   function confirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (checked === null) return;
-    const ready = checked.lines.filter((line) => line.problem === null);
+    const usable = checked.lines.filter((line) => line.problem === null);
+    const ready = usable.filter((line) => !line.broken);
+    const brokenLines = usable.filter((line) => line.broken);
     const bad = checked.lines.filter((line) => line.problem !== null);
-    if (ready.length === 0 || (how === "all" && bad.length > 0)) {
+    if (usable.length === 0 || (how === "all" && bad.length > 0)) {
       onClose(
         {
           ok: false,
@@ -453,6 +569,20 @@ export function ImportDialog({
             onChange((current) => withReading(current, reading));
           else changed.current = true;
         }
+      }
+      if (brokenLines.length > 0) {
+        // The Problem report types for each meter kind; without them only the meters are marked.
+        let typeIds: Map<string, string> | null = null;
+        try {
+          const choices = await problemsApi.choices(propertyId);
+          typeIds = new Map(
+            choices.types.map((type) => [type.code, type.id] as const),
+          );
+        } catch {
+          typeIds = null;
+        }
+        for (const line of brokenLines)
+          await markBroken(line, checked.fileName, typeIds);
       }
     })()
       .then(() => {
@@ -624,7 +754,11 @@ export function ImportDialog({
                       : line.current}
                 </td>
                 <td className="wrap">
-                  {line.problem !== null ? (
+                  {line.broken ? (
+                    <Chip icon="alert" tone="warn">
+                      {utt(language, "im_broken")}
+                    </Chip>
+                  ) : line.problem !== null ? (
                     <span className="ui-rdmsg err">
                       <Icon name="alert" small /> {line.problem}
                     </span>

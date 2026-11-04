@@ -11,7 +11,6 @@ export type ShellIcon =
   | "info"
   | "x"
   | "door"
-  | "wrench"
   | "plus"
   | "back"
   | "swap"

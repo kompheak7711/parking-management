@@ -11,6 +11,7 @@ export type PageId =
   | "utilities"
   | "approvals"
   | "units"
+  | "problems"
   | "products"
   | "stock"
   | "locations"
@@ -32,6 +33,7 @@ export type IconName =
   | "check"
   | "units"
   | "box"
+  | "wrench"
   | "customers"
   | "calendar"
   | "lease"
@@ -102,6 +104,8 @@ export const MENU: readonly MenuGroup[] = [
         icon: "box",
         tabs: ["products", "stock", "locations"],
       },
+      // V1.1 part 7 (DL-124): one list for Unit and Building problems.
+      { page: "problems", icon: "wrench" },
     ],
   },
   {
@@ -124,6 +128,7 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   utilities: ["Utilities", "ទឹកភ្លើង"],
   approvals: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
   units: ["Units", "បន្ទប់"],
+  problems: ["Problem reports", "របាយការណ៍បញ្ហា"],
   // new
   products: ["Products", "ផលិតផល"],
   // new
@@ -161,6 +166,8 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   utilities: ["utility.read"],
   approvals: ["financial.approve"],
   units: ["units.read"],
+  // V1.1 part 7 (DL-124).
+  problems: ["problem_reports.read"],
   // V1.1 part 4 (DL-121): every Products tab reads with products.read.
   products: ["products.read"],
   stock: ["products.read"],

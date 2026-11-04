@@ -7,6 +7,7 @@ import "../shell/screens.css";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { ProblemsApi } from "../problems/problemsClient";
 import type { LeaseApi } from "../leaseClient";
 import { measurementUnitLabel } from "../measurementUnits";
 import { dayText, todayInPhnomPenh } from "../shell/format";
@@ -56,6 +57,8 @@ export interface UtilitiesPageProps {
   capabilities: ReadonlySet<string> | null;
   /** Today in Phnom Penh; tests pass a fixed day. */
   today?: string;
+  /** V1.1 part 7: a broken meter in the import gets a Problem report. */
+  problemsApi?: Pick<ProblemsApi, "choices" | "add">;
 }
 
 type Period = "month" | "six" | "all" | "pick";
@@ -71,6 +74,7 @@ export function UtilitiesPage({
   leaseApi,
   capabilities,
   today: fixedToday,
+  problemsApi,
 }: UtilitiesPageProps) {
   const detail = useHashDetail("utilities");
   const meterId =
@@ -183,6 +187,7 @@ export function UtilitiesPage({
             );
           }}
           onReload={load}
+          problemsApi={problemsApi}
           today={today}
         />
       ) : tab === "meters" ? (
@@ -220,6 +225,7 @@ function ReadingsTab({
   canSave,
   onChange,
   onReload,
+  problemsApi,
 }: {
   language: Language;
   api: UtilityApi;
@@ -229,6 +235,7 @@ function ReadingsTab({
   canSave: boolean;
   onChange: (update: (data: UtilitiesData) => UtilitiesData) => void;
   onReload: () => void;
+  problemsApi?: Pick<ProblemsApi, "choices" | "add">;
 }) {
   const [importing, setImporting] = useState(false);
   const [unit, setUnit] = useState<UnitResource | null>(null);
@@ -399,6 +406,7 @@ function ReadingsTab({
       {importing && (
         <ImportDialog
           api={api}
+          problemsApi={problemsApi}
           data={data}
           language={language}
           onChange={onChange}

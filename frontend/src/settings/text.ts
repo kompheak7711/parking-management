@@ -943,6 +943,8 @@ const TEXT = {
   br_area_RESERVATIONS: ["Reservations", "ការកក់"],
   br_area_PRICES: ["Prices", "តម្លៃ"],
   br_area_QUOTATIONS: ["Quotations", "សម្រង់តម្លៃ"],
+  // V1.1 part 7 (DL-124).
+  br_area_REPAIRS: ["Problem reports", "របាយការណ៍បញ្ហា"],
   br_area_RIEL_RATE: ["Riel rate", "អត្រារៀល"],
   br_area_LEDGER: ["Ledger", "សៀវភៅបញ្ជី"],
   br_area_STAFF: ["Staff and payroll", "បុគ្គលិក និងប្រាក់ខែ"],
@@ -1024,6 +1026,8 @@ const TEXT = {
   // new
   nr_STOCK_MOVEMENT: ["Stock movement", "ចលនាស្តុក"],
   nr_QUOTATION: ["Quotation", "សម្រង់តម្លៃ"],
+  nr_UNIT_PROBLEM: ["Unit Problem", "បញ្ហាបន្ទប់"],
+  nr_BUILDING_PROBLEM: ["Building problem", "បញ្ហាអគារ"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

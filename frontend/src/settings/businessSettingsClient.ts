@@ -32,6 +32,7 @@ export type RuleArea =
   | "RESERVATIONS"
   | "PRICES"
   | "QUOTATIONS"
+  | "REPAIRS"
   | "RIEL_RATE"
   | "LEDGER"
   | "STAFF"
@@ -43,6 +44,7 @@ export const RULE_AREAS: readonly RuleArea[] = [
   "RESERVATIONS",
   "PRICES",
   "QUOTATIONS",
+  "REPAIRS",
   "RIEL_RATE",
   "LEDGER",
   "STAFF",

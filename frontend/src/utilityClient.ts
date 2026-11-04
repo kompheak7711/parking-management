@@ -176,6 +176,9 @@ export interface ReadingSheetRow {
   unit: string;
   electricity: string;
   water: string;
+  /** V1.1 part 7 (DL-124): "yes" or "no" in the broken columns; "" when the file has none. */
+  electricity_broken?: string;
+  water_broken?: string;
 }
 
 export interface ReadingSheet {
@@ -904,6 +907,12 @@ export const utilityApi: UtilityApi = {
           unit: string(row.unit),
           electricity: string(row.electricity),
           water: string(row.water),
+          ...(typeof row.electricity_broken === "string"
+            ? { electricity_broken: row.electricity_broken }
+            : {}),
+          ...(typeof row.water_broken === "string"
+            ? { water_broken: row.water_broken }
+            : {}),
         };
       }),
     };

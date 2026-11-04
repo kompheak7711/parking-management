@@ -53368,7 +53368,7 @@
       "notes": "V1-058 R4c Import readings: the server reads an .xlsx or .csv file with one row for each Unit (Unit, Electricity, Water; owner 22/10/2026) and makes the blank file; it saves nothing (openpyxl approved by the owner; technical points decided by Claude under the owner's 2026-10-23 22:30 rule)."
     },
     {
-      "test_id": "test_the_blank_file_lists_every_unit_under_the_three_columns",
+      "test_id": "test_the_blank_file_lists_every_unit_under_the_five_columns",
       "upstream_ids": [
         "DL-074",
         "API-046",
@@ -61131,6 +61131,81 @@
       "test_path": "backend/tests/test_problem_reports_api.py",
       "status": "implemented",
       "notes": "V1.1 part 7: the tenant answer needs problem_reports.plan and If-Match, and a known way of answering."
+    },
+    {
+      "test_id": "TEST-FE-1220",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Building > Problem reports shows Open, Urgent, Late and Done with counts, oldest first, the Urgent, Repeat and joined marks, a joined report under its main report, the Kind and Type filters, and New Problem report only with the add right."
+    },
+    {
+      "test_id": "TEST-FE-1221",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7: New Problem report checks the form; Safety is always urgent; a Building problem asks for the shared place and floor; Same problem saves the report joined to an open report here."
+    },
+    {
+      "test_id": "TEST-FE-1222",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Next step fits the status: an urgent report is marked Contacted, then the visit is planned with a typed technician, a day and a time every 30 minutes from 07:00 to 16:30; Staff see a lock line."
+    },
+    {
+      "test_id": "TEST-FE-1223",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Tenant pays needs the amount and the reason; the tenant's answer Agreed makes the Damage Invoice draft and the page links to it; Refused needs what the tenant said and what happens next."
+    },
+    {
+      "test_id": "TEST-FE-1224",
+      "upstream_ids": [
+        "DL-124",
+        "API-PR-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7: Join to a report offers only open reports of the same kind and place and needs a reason; Undo join needs a reason; a report changed meanwhile is read again; Staff see a lock line."
+    },
+    {
+      "test_id": "TEST-FE-1225",
+      "upstream_ids": [
+        "DL-124"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/UtilitiesPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 7 step 2: the meter import reads the Electricity broken and Water broken columns; yes on a working meter with no reading marks the meter broken and makes a Problem report; yes with a reading or another word needs fixing."
+    },
+    {
+      "test_id": "test_a_file_without_the_broken_columns_still_reads",
+      "upstream_ids": [
+        "DL-124"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_sheet.py",
+      "status": "implemented",
+      "notes": "V1.1 part 7 step 2: a meter-readings file without the broken columns still reads, with every meter working."
     }
   ]
 }

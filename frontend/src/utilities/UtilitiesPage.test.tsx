@@ -27,6 +27,7 @@ import {
   type UtilityReading,
   type UtilityType,
 } from "../utilityClient";
+import type { ProblemReport, ProblemsApi } from "../problems/problemsClient";
 import { UtilitiesPage } from "./UtilitiesPage";
 import { dayText } from "../shell/format";
 
@@ -270,6 +271,7 @@ function show(
     today?: string;
     capabilities?: ReadonlySet<string> | null;
     units?: UnitResource[];
+    problemsApi?: Pick<ProblemsApi, "choices" | "add">;
   } = {},
 ) {
   const api = options.api ?? utilityApi();
@@ -280,6 +282,7 @@ function show(
       capabilities={options.capabilities ?? null}
       language="en"
       leaseApi={leaseApi()}
+      problemsApi={options.problemsApi}
       propertyId="property-1"
       today={options.today ?? READING_DAY}
       unitApi={units}
@@ -297,6 +300,11 @@ const SHEET_ROWS: ReadingSheetRow[] = [
   { row: 6, unit: "301", electricity: "60", water: "21" },
   { row: 7, unit: "U301", electricity: "7", water: "" },
 ];
+
+/** The report the import made; the import reads nothing from it. */
+function problemReport(): ProblemReport {
+  return { report_id: "r-1", report_number: "UP260001" } as ProblemReport;
+}
 
 function sheetOf(rows: ReadingSheetRow[]) {
   return vi.fn(() =>
@@ -1731,6 +1739,121 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
     ).toHaveLength(10);
     await waitFor(() => {
       expect(units.list).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("TEST-FE-1225 The import reads the Electricity broken and Water broken columns: yes on a working meter with no reading marks the meter broken and makes a Problem report; yes with a reading, or a word that is not yes or no, needs fixing", async () => {
+    const recordBatch = vi.fn(
+      (_property: string, _mode: string, items: BatchReadingInput[]) =>
+        Promise.resolve(
+          items.map(
+            (item, index): BatchReadingResult => ({
+              index,
+              idempotency_key: item.idempotency_key,
+              status: "SUCCEEDED",
+              reading: reading(
+                item.meter_id,
+                item.reading.reading_date,
+                item.reading.reading_value,
+              ),
+              error: null,
+            }),
+          ),
+        ),
+    );
+    const reportBroken = vi.fn(() =>
+      Promise.resolve(meter("el-101", "U101", "ELECTRICITY")),
+    );
+    const problems = {
+      choices: vi.fn(() =>
+        Promise.resolve({
+          types: [
+            {
+              id: "t-elec",
+              code: "ELECTRICITY",
+              name_en: "Electricity",
+              name_kh: null,
+              icon: "zap",
+              always_urgent: false,
+            },
+          ],
+          places: [],
+          units: [],
+          rules: {
+            repeat_count: 3,
+            repeat_days: 90,
+            urgent_hours: 1,
+            plan_workdays: 1,
+            auto_close_days: 3,
+          },
+          today: READING_DAY,
+        }),
+      ),
+      add: vi.fn(() => Promise.resolve(problemReport())),
+    };
+    show({
+      api: utilityApi({
+        readSheet: sheetOf([
+          {
+            row: 2,
+            unit: "U101",
+            electricity: "",
+            electricity_broken: "yes",
+            water: "999",
+            water_broken: "no",
+          },
+          {
+            row: 3,
+            unit: "U102",
+            electricity: "340",
+            electricity_broken: "Yes",
+            water: "5",
+            water_broken: "maybe",
+          },
+        ]),
+        recordBatch,
+        reportBroken,
+      }),
+      problemsApi: problems,
+    });
+    const dialog = await openCheck();
+    expect(
+      within(dialog)
+        .getByText("Broken: mark the meter and make a Problem report")
+        .closest("tr")?.textContent,
+    ).toContain("U101Electricity");
+    expect(
+      within(dialog).getByText("Broken is yes, so leave the reading empty."),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByText("Write yes or no in the broken column."),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm readings" }),
+    );
+    expect(
+      await screen.findByText(
+        "1 readings confirmed from readings.csv. 1 meters marked broken, each with a Problem report.",
+      ),
+    ).toBeTruthy();
+    const [, , items] = recordBatch.mock.calls[0] ?? [];
+    expect(items?.map((item) => item.meter_id)).toEqual(["wa-101"]);
+    expect(reportBroken).toHaveBeenCalledWith(
+      "el-101",
+      {
+        expected_version: 4,
+        failure_date: READING_DAY,
+        reason: "Marked broken in the meter import (readings.csv)",
+      },
+      expect.any(String),
+    );
+    expect(problems.add).toHaveBeenCalledWith("property-1", {
+      kind: "UNIT",
+      source: "SEEN",
+      problem_type_id: "t-elec",
+      description: `Electricity meter is broken. Found on ${dayText(READING_DAY)} (meter import).`,
+      urgent: false,
+      unit_id: "unit-U101",
     });
   });
 });

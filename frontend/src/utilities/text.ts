@@ -308,8 +308,9 @@ const TEXT = {
     "នាំចូលអំណានសម្រាប់ថ្ងៃអាន {0} ពីឯកសារ .xlsx ឬ .csv។",
   ],
   im_cols: [
-    "One row for each Parking, with three columns: Parking, Electricity, Water. The Parking is already filled in, so staff type only the readings. No meter numbers.",
-    "មួយជួរសម្រាប់ចំណតនីមួយៗ មានបីជួរឈរ៖ ចំណត អគ្គិសនី ទឹក។ ចំណតបានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
+    "One row for each Unit, with the columns Unit, Electricity, Electricity broken, Water, Water broken. The Units are already filled in, so staff type only the readings. A broken column says yes or no (no by default); yes means the meter is broken, so leave its reading empty. No meter numbers.",
+    // new (the broken columns, V1.1 part 7)
+    "មួយជួរសម្រាប់បន្ទប់នីមួយៗ មានជួរឈរ៖ បន្ទប់ អគ្គិសនី អគ្គិសនីខូច ទឹក ទឹកខូច។ បន្ទប់បានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ ជួរឈរខូចសរសេរ yes ឬ no (no ជាលំនាំដើម); yes មានន័យថានាឡិកាស្ទង់ខូច ដូច្នេះទុកអំណានទទេ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
   ],
   im_blank: ["Download the blank file", "ទាញយកឯកសារទទេ"],
   im_blank_s: [
@@ -390,6 +391,39 @@ const TEXT = {
   im_e_number: ["Not a whole number", "មិនមែនលេខគត់"],
   // new
   im_e_saved: ["Already saved this month: {0}", "បានរក្សាទុករួចខែនេះ៖ {0}"],
+  // V1.1 part 7 (DL-124): the Electricity broken and Water broken columns. Khmer is new.
+  im_e_yesno: [
+    "Write yes or no in the broken column.",
+    "សរសេរ yes ឬ no ក្នុងជួរឈរខូច។",
+  ],
+  im_e_both: [
+    "Broken is yes, so leave the reading empty.",
+    "ខូចគឺ yes ដូច្នេះទុកអំណានទទេ។",
+  ],
+  im_broken: [
+    "Broken: mark the meter and make a Problem report",
+    "ខូច៖ សម្គាល់នាឡិកាស្ទង់ ហើយធ្វើរបាយការណ៍បញ្ហា",
+  ],
+  im_broken_done: [
+    "{0} meters marked broken, each with a Problem report.",
+    "នាឡិកាស្ទង់ {0} ត្រូវបានសម្គាល់ថាខូច ហើយនីមួយៗមានរបាយការណ៍បញ្ហា។",
+  ],
+  im_r_broken: [
+    "The meter was not marked broken. Mark it on the Meters tab.",
+    "នាឡិកាស្ទង់មិនត្រូវបានសម្គាល់ថាខូចទេ។ សូមសម្គាល់វានៅផ្ទាំងនាឡិកាស្ទង់។",
+  ],
+  im_r_report: [
+    "Meter marked broken, but the Problem report was not made. Add it on Problem reports.",
+    "បានសម្គាល់នាឡិកាស្ទង់ថាខូច ប៉ុន្តែមិនបានធ្វើរបាយការណ៍បញ្ហាទេ។ សូមបញ្ចូលវានៅរបាយការណ៍បញ្ហា។",
+  ],
+  im_pr_text: [
+    "{0} meter is broken. Found on {1} (meter import).",
+    "នាឡិកាស្ទង់{0}ខូច។ រកឃើញនៅ {1} (នាំចូលអំណាន)។",
+  ],
+  im_br_reason: [
+    "Marked broken in the meter import ({0})",
+    "បានសម្គាល់ថាខូចក្នុងការនាំចូលអំណាន ({0})",
+  ],
   // new
   im_w_high: [
     "Much more than usual (about {0}). Check the meter.",
