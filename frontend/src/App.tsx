@@ -144,6 +144,18 @@ import { CustomersPage } from "./customers/CustomersPage";
 import { ReservationsPage } from "./reservations/ReservationsPage";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
+import { LedgerPage } from "./ledger/LedgerPage";
+import { BankCashPage } from "./ledger/BankCashPage";
+import type { CashApi } from "./ledger/cashClient";
+import type { AssetsApi } from "./ledger/assetsClient";
+import type { BudgetApi } from "./ledger/budgetClient";
+import { BudgetPage } from "./ledger/BudgetPage";
+import { FixedAssetsPage } from "./ledger/FixedAssetsPage";
+import { MonthEndPage } from "./ledger/MonthEndPage";
+import type { MonthEndApi } from "./ledger/monthEndClient";
+import { SpendingPage } from "./ledger/SpendingPage";
+import type { SpendingApi } from "./ledger/spendingClient";
+import type { LedgerApi } from "./ledger/ledgerClient";
 import { ProductsPage } from "./products/ProductsPage";
 import { QuotationsPage } from "./quotations/QuotationsPage";
 import { ProblemReportsPage } from "./problems/ProblemReportsPage";
@@ -163,6 +175,14 @@ export interface AppProps {
   rolesApi?: RolesApi;
   /** V1.1 part 4: Building › Products; the real server when not given. */
   productsApi?: ProductsApi;
+  /** General Ledger step 6: Office › Ledger; the real server when not given. */
+  generalLedgerApi?: LedgerApi;
+  /** General Ledger step 6 part 2: Expense requests, Expenses, Supplier bills. */
+  spendingApi?: SpendingApi;
+  cashApi?: CashApi;
+  monthEndApi?: MonthEndApi;
+  assetsApi?: AssetsApi;
+  budgetApi?: BudgetApi;
   /** V1.1 part 6: Office › Invoices › Quotations; the real server when not given. */
   quotationsApi?: QuotationsApi;
   /** V1.1 part 7: Building › Problem reports; the real server when not given. */
@@ -643,6 +663,12 @@ export function App({
   administrationApi = accessAdministrationApi,
   rolesApi = accessRolesApi,
   productsApi,
+  generalLedgerApi,
+  spendingApi,
+  cashApi,
+  monthEndApi,
+  assetsApi,
+  budgetApi,
   quotationsApi,
   problemsApi,
   propertyApi = propertyConfigurationApi,
@@ -1817,6 +1843,141 @@ export function App({
           language={language}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           tab="locations"
+        />
+      </div>
+      <div className="shell-page" data-page="exreqs" hidden={!shown("exreqs")}>
+        <SpendingPage
+          active={shown("exreqs")}
+          actorId={sessionActorId}
+          api={spendingApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="exreqs"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="expenses"
+        hidden={!shown("expenses")}
+      >
+        <SpendingPage
+          active={shown("expenses")}
+          actorId={sessionActorId}
+          api={spendingApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="expenses"
+        />
+      </div>
+      <div className="shell-page" data-page="bills" hidden={!shown("bills")}>
+        <SpendingPage
+          active={shown("bills")}
+          actorId={sessionActorId}
+          api={spendingApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="bills"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="journal"
+        hidden={!shown("journal")}
+      >
+        <LedgerPage
+          active={shown("journal")}
+          api={generalLedgerApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="journal"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="needscheck"
+        hidden={!shown("needscheck")}
+      >
+        <LedgerPage
+          active={shown("needscheck")}
+          api={generalLedgerApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="needscheck"
+        />
+      </div>
+      <div className="shell-page" data-page="chart" hidden={!shown("chart")}>
+        <LedgerPage
+          active={shown("chart")}
+          api={generalLedgerApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="chart"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="statements"
+        hidden={!shown("statements")}
+      >
+        <LedgerPage
+          active={shown("statements")}
+          api={generalLedgerApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          tab="statements"
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="bankcash"
+        hidden={!shown("bankcash")}
+      >
+        <BankCashPage
+          active={shown("bankcash")}
+          api={cashApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div className="shell-page" data-page="budget" hidden={!shown("budget")}>
+        <BudgetPage
+          active={shown("budget")}
+          actorId={sessionActorId}
+          api={budgetApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="fassets"
+        hidden={!shown("fassets")}
+      >
+        <FixedAssetsPage
+          active={shown("fassets")}
+          api={assetsApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          spendingApi={spendingApi}
+        />
+      </div>
+      <div className="shell-page" data-page="lclose" hidden={!shown("lclose")}>
+        <MonthEndPage
+          active={shown("lclose")}
+          api={monthEndApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
       </div>
       <div

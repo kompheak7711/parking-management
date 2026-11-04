@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Annotated, Any, Literal, Protocol
 from uuid import UUID, uuid4
 
@@ -328,6 +329,13 @@ REQUESTS_QUERY = """
         request.supplier_id, supplier.name AS supplier_name, request.unit_id, request.spent_on,
         request.decided_by, request.decided_at, request.decision_note, request.own_spending_note,
         request.void_reason, request.created_at,
+        requester.display_name AS requested_by_name, account.name_km AS account_name_km,
+        paid_from.name_en AS paid_from_name, paid_from.name_km AS paid_from_name_km,
+        unit.unit_number, out_entry.entry_number AS advance_entry_number,
+        out_entry.entry_date AS advance_date,
+        (request.status = 'PAID_OUT' AND out_entry.entry_date
+            + coalesce(app.business_rule_value('EXP_REPORT_DAYS', out_entry.entry_date), 3)::int
+            < timezone(property.timezone_name, now())::date) AS advance_late,
         (request.request_kind = 'URGENT_REPORT'
             AND timezone(property.timezone_name, request.created_at)::date - request.spent_on
                 > coalesce(app.business_rule_value('EXP_REPORT_DAYS', request.spent_on), 3))
@@ -335,13 +343,16 @@ REQUESTS_QUERY = """
         coalesce((SELECT sum(line.credit_cents - line.debit_cents)
                   FROM app.gl_journal_lines AS line
                   JOIN app.gl_accounts AS owed ON owed.id = line.account_id
-                  WHERE line.expense_request_id = request.id AND owed.code = '2310'), 0)
+                  WHERE line.expense_request_id = request.id AND owed.code = '2310'), 0)::bigint
             AS owed_to_staff_cents
     FROM app.gl_expense_requests AS request
     JOIN app.properties AS property ON property.id = request.property_id
     JOIN app.gl_accounts AS account ON account.id = request.account_id
     LEFT JOIN app.gl_accounts AS paid_from ON paid_from.id = request.paid_from_account_id
     LEFT JOIN app.gl_suppliers AS supplier ON supplier.id = request.supplier_id
+    LEFT JOIN app.user_accounts AS requester ON requester.actor_id = request.requested_by
+    LEFT JOIN app.units AS unit ON unit.id = request.unit_id
+    LEFT JOIN app.gl_journal_entries AS out_entry ON out_entry.id = request.paid_out_entry_id
     WHERE request.property_id = %(prop)s
       AND (%(mine)s::uuid IS NULL OR request.requested_by = %(mine)s::uuid)
     ORDER BY request.created_at DESC, request.request_number DESC
@@ -359,8 +370,23 @@ VIEWS = {
             expense.amount_cents, expense.original_currency, expense.original_amount_minor,
             paid_from.code AS paid_from_code, expense.bill_number, expense.supplier_id,
             supplier.name AS supplier_name, expense.unit_id, expense.expense_request_id,
-            request.request_number, expense.void_reason, expense.created_at
+            request.request_number, expense.void_reason, expense.created_at,
+            account.name_km AS account_name_km, paid_from.name_en AS paid_from_name,
+            paid_from.name_km AS paid_from_name_km, unit.unit_number,
+            entry.entry_number, bill.bill_number AS supplier_bill_number,
+            voider.display_name AS voided_by_name, expense.voided_at,
+            void_entry.entry_number AS void_entry_number,
+            EXISTS (SELECT 1 FROM app.gl_bill_payments AS payment
+                    WHERE payment.supplier_bill_id = bill.id
+                      AND NOT EXISTS (SELECT 1 FROM app.gl_bill_payment_reversals AS reversal
+                                      WHERE reversal.bill_payment_id = payment.id))
+                AS bill_has_payments
         FROM app.gl_expenses AS expense
+        LEFT JOIN app.user_accounts AS voider ON voider.actor_id = expense.voided_by
+        LEFT JOIN app.gl_journal_entries AS void_entry ON void_entry.id = expense.void_entry_id
+        LEFT JOIN app.units AS unit ON unit.id = expense.unit_id
+        LEFT JOIN app.gl_journal_entries AS entry ON entry.id = expense.entry_id
+        LEFT JOIN app.gl_supplier_bills AS bill ON bill.expense_id = expense.id
         JOIN app.gl_accounts AS account ON account.id = expense.account_id
         LEFT JOIN app.gl_accounts AS paid_from ON paid_from.id = expense.paid_from_account_id
         LEFT JOIN app.gl_suppliers AS supplier ON supplier.id = expense.supplier_id
@@ -378,9 +404,36 @@ VIEWS = {
                 WHERE payment.supplier_bill_id = bill.id
                   AND NOT EXISTS (SELECT 1 FROM app.gl_bill_payment_reversals AS reversal
                                   WHERE reversal.bill_payment_id = payment.id)), 0)
-                AS still_to_pay_cents
+                ::bigint AS still_to_pay_cents,
+            account.code AS account_code, account.name_en AS account_name,
+            account.name_km AS account_name_km, entry.entry_number,
+            coalesce((
+                SELECT jsonb_agg(jsonb_build_object(
+                    'id', payment.id, 'paid_on', payment.paid_on,
+                    'amount_cents', payment.amount_cents, 'paid_from_code', paid_from.code,
+                    'paid_from_name', paid_from.name_en, 'paid_from_name_km', paid_from.name_km,
+                    'entry_number', paid_entry.entry_number,
+                    'reversed', reversal.id IS NOT NULL,
+                    'reversal_reason', reversal.reason,
+                    'reversed_at', reversal.created_at,
+                    'reversed_by_name', reverser.display_name,
+                    'reversal_entry_number', reversal_entry.entry_number)
+                    ORDER BY payment.paid_on, payment.created_at)
+                FROM app.gl_bill_payments AS payment
+                JOIN app.gl_accounts AS paid_from ON paid_from.id = payment.paid_from_account_id
+                LEFT JOIN app.gl_journal_entries AS paid_entry
+                    ON paid_entry.id = payment.entry_id
+                LEFT JOIN app.gl_bill_payment_reversals AS reversal
+                    ON reversal.bill_payment_id = payment.id
+                LEFT JOIN app.user_accounts AS reverser ON reverser.actor_id = reversal.created_by
+                LEFT JOIN app.gl_journal_entries AS reversal_entry
+                    ON reversal_entry.id = reversal.entry_id
+                WHERE payment.supplier_bill_id = bill.id), '[]'::jsonb) AS payments
         FROM app.gl_supplier_bills AS bill
         JOIN app.gl_suppliers AS supplier ON supplier.id = bill.supplier_id
+        LEFT JOIN app.gl_expenses AS expense ON expense.id = bill.expense_id
+        LEFT JOIN app.gl_accounts AS account ON account.id = expense.account_id
+        LEFT JOIN app.gl_journal_entries AS entry ON entry.id = expense.entry_id
         WHERE bill.property_id = %(prop)s
         ORDER BY bill.due_date, bill.bill_number
         LIMIT 500
@@ -393,6 +446,9 @@ def _json(value: Any) -> Any:
         return value.isoformat()
     if isinstance(value, UUID):
         return str(value)
+    # A SQL sum of cents is numeric: send it as a whole number, never as a string.
+    if isinstance(value, Decimal) and value == value.to_integral_value():
+        return int(value)
     return value
 
 

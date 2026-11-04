@@ -24,12 +24,14 @@ from psycopg.types.json import Jsonb
 from deposit_receipt_reversal_test_support import reverse_receipt_as_owner
 from payment_test_support import seed_payment
 from property_rental.deposit import ReverseDepositReceiptCommand
+from property_rental.ledger_posting_api import PostgresLedgerPostingFlow
 from property_rental.ledger_posting_job import LedgerPostingJob, LedgerPostingResult
 from property_rental.payment_allocation import ReverseAllocationCommand
 from refund_test_support import create_usd_refund
 from test_credit_migration import actor, recognize
 from test_credit_migration import source as payment_source
 from test_customer_ledger_migration import canonical_invoice
+from test_gl_money_records_migration import Borrowed
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import designated
@@ -171,12 +173,25 @@ def test_an_invoice_payment_and_allocation_post_once_with_the_right_accounts(
 
 def test_a_method_without_an_account_waits_in_needs_check_until_it_is_set(
     invoice_paid: tuple[Connection, UUID, UUID, UUID, UUID, UUID],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     connection, prop, human, invoice, payment, _ = invoice_paid
     key = f"payment:{payment}"
     post(connection, prop, human)
     assert entry(connection, key) is None
     assert "No ledger account is set for the Payment Method" in str(problem(connection, key))
+    # Step 6 part 1: the Needs check row names the Receipt and opens it by its Payment.
+    monkeypatch.setattr(psycopg, "connect", lambda *_a, **_k: Borrowed(connection))
+    waiting = {
+        row.posting_key: row
+        for row in PostgresLedgerPostingFlow("postgresql://unused").needs_check(prop)
+    }
+    monkeypatch.undo()
+    receipt = connection.execute(
+        "SELECT receipt_number FROM app.receipts WHERE payment_id = %s", (payment,)
+    ).fetchone()
+    assert waiting[key].source_number == (None if receipt is None else receipt[0])
+    assert waiting[key].source_link == {"page": "payments", "detail": f"receipt:{payment}"}
     assert entry(connection, f"invoice:{invoice}:issue") is not None
     connection.execute(SET_ACCOUNT, (prop, method_of(connection, payment), None, "1020", human))
     post(connection, prop, human)

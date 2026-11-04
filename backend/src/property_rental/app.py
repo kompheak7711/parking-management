@@ -193,6 +193,30 @@ from property_rental.lease_signing_api import (
     UnavailableLeaseSigningFlow,
     create_lease_signing_router,
 )
+from property_rental.ledger_assets_api import (
+    LedgerAssetsFlow,
+    PostgresLedgerAssets,
+    UnavailableLedgerAssets,
+    create_ledger_assets_router,
+)
+from property_rental.ledger_books_api import (
+    LedgerBooksFlow,
+    PostgresLedgerBooks,
+    UnavailableLedgerBooks,
+    create_ledger_books_router,
+)
+from property_rental.ledger_budget_api import (
+    LedgerBudgetFlow,
+    PostgresLedgerBudget,
+    UnavailableLedgerBudget,
+    create_ledger_budget_router,
+)
+from property_rental.ledger_cash_api import (
+    LedgerCashFlow,
+    PostgresLedgerCash,
+    UnavailableLedgerCash,
+    create_ledger_cash_router,
+)
 from property_rental.ledger_close_api import (
     LedgerCloseFlow,
     PostgresLedgerCloseFlow,
@@ -204,6 +228,12 @@ from property_rental.ledger_money_api import (
     PostgresLedgerMoneyFlow,
     UnavailableLedgerMoneyFlow,
     create_ledger_money_router,
+)
+from property_rental.ledger_month_end_api import (
+    LedgerMonthEndFlow,
+    PostgresLedgerMonthEnd,
+    UnavailableLedgerMonthEnd,
+    create_ledger_month_end_router,
 )
 from property_rental.ledger_posting_api import (
     LedgerPostingFlow,
@@ -217,6 +247,12 @@ from property_rental.ledger_reports import (
     UnavailableLedgerReports,
 )
 from property_rental.ledger_reports_api import create_ledger_reports_router
+from property_rental.ledger_spending_api import (
+    LedgerSpendingFlow,
+    PostgresLedgerSpending,
+    UnavailableLedgerSpending,
+    create_ledger_spending_router,
+)
 from property_rental.logging import create_application_logger
 from property_rental.move_out_api import (
     MoveOutFlow,
@@ -586,6 +622,12 @@ def create_app(
     ledger_money_flow: LedgerMoneyFlow | None = None,
     ledger_close_flow: LedgerCloseFlow | None = None,
     ledger_report_flow: LedgerReportFlow | None = None,
+    ledger_books_flow: LedgerBooksFlow | None = None,
+    ledger_spending_flow: LedgerSpendingFlow | None = None,
+    ledger_cash_flow: LedgerCashFlow | None = None,
+    ledger_month_end_flow: LedgerMonthEndFlow | None = None,
+    ledger_assets_flow: LedgerAssetsFlow | None = None,
+    ledger_budget_flow: LedgerBudgetFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
     lease_resource_flow: LeaseResourceFlow | None = None,
@@ -1330,6 +1372,72 @@ def create_app(
                 PostgresLedgerReports(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableLedgerReports()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_books_router(
+            actor_resolver,
+            ledger_books_flow
+            or (
+                PostgresLedgerBooks(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerBooks()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_spending_router(
+            actor_resolver,
+            ledger_spending_flow
+            or (
+                PostgresLedgerSpending(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerSpending()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_cash_router(
+            actor_resolver,
+            ledger_cash_flow
+            or (
+                PostgresLedgerCash(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerCash()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_month_end_router(
+            actor_resolver,
+            ledger_month_end_flow
+            or (
+                PostgresLedgerMonthEnd(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerMonthEnd()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_assets_router(
+            actor_resolver,
+            ledger_assets_flow
+            or (
+                PostgresLedgerAssets(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerAssets()
+            ),
+        )
+    )
+    include_signed_in(
+        create_ledger_budget_router(
+            actor_resolver,
+            ledger_budget_flow
+            or (
+                PostgresLedgerBudget(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLedgerBudget()
             ),
         )
     )

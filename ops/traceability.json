@@ -61206,6 +61206,930 @@
       "test_path": "backend/tests/test_utility_sheet.py",
       "status": "implemented",
       "notes": "V1.1 part 7 step 2: a meter-readings file without the broken columns still reads, with every meter working."
+    },
+    {
+      "test_id": "TEST-FE-1190",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Lists entries newest first with the record they came from."
+    },
+    {
+      "test_id": "TEST-FE-1191",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Reads one month when a month is picked."
+    },
+    {
+      "test_id": "TEST-FE-1192",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Opens one entry from the address with its lines and totals."
+    },
+    {
+      "test_id": "TEST-FE-1193",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Says when the entry is not in the ledger."
+    },
+    {
+      "test_id": "TEST-FE-1194",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Groups accounts by type with their balance and marks."
+    },
+    {
+      "test_id": "TEST-FE-1157",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Shows Khmer account names when the screen is in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1158",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Opens an account with every line and the running balance."
+    },
+    {
+      "test_id": "TEST-FE-1159",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Lists records waiting with a reason in the screen's words only."
+    },
+    {
+      "test_id": "TEST-FE-1160",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Lets the Owner set a method's account from a date."
+    },
+    {
+      "test_id": "TEST-FE-1161",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Says when nothing waits."
+    },
+    {
+      "test_id": "TEST-FE-1162",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Shows a statement with its state and check line."
+    },
+    {
+      "test_id": "TEST-FE-1163",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Asks each statement for its own values."
+    },
+    {
+      "test_id": "TEST-FE-1164",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Downloads Excel and PDF files."
+    },
+    {
+      "test_id": "TEST-FE-1165",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (Ledger screens, mock-up v76): Shows the Books check lines."
+    },
+    {
+      "test_id": "test_the_books_need_the_ledger_right_and_are_not_cached",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_books.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): The books need the ledger right and are not cached."
+    },
+    {
+      "test_id": "test_the_books_refuse_unknown_values_and_say_when_an_entry_is_not_there",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_books.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): The books refuse unknown values and say when an entry is not there."
+    },
+    {
+      "test_id": "test_a_source_links_to_its_invoice_or_receipt_page",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_books.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): A source links to its invoice or receipt page."
+    },
+    {
+      "test_id": "test_the_chart_shows_each_balance_on_its_normal_side",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_books_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): The chart shows each balance on its normal side."
+    },
+    {
+      "test_id": "test_the_journal_lists_entries_newest_first_with_their_app_record",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_books_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): The journal lists entries newest first with their app record."
+    },
+    {
+      "test_id": "test_one_entry_shows_its_lines_and_who_posted_it",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_books_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): One entry shows its lines and who posted it."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_read_what_the_books_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_books_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 1 (books reads for the Ledger screens): The runtime login can read what the books read."
+    },
+    {
+      "test_id": "TEST-FE-1166",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Shows the open requests with their next step for the Accountant."
+    },
+    {
+      "test_id": "TEST-FE-1167",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Lets the Owner approve above the limit and shows Staff only their own."
+    },
+    {
+      "test_id": "TEST-FE-1168",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Sends a request with its Unit, a new supplier and the advance."
+    },
+    {
+      "test_id": "TEST-FE-1169",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Sends an Expense report in riel with today's rate and refuses an asset on an expense account."
+    },
+    {
+      "test_id": "TEST-FE-1170",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Approves, gives an advance and records the bill with the entry numbers."
+    },
+    {
+      "test_id": "TEST-FE-1171",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Pays staff back from the chosen money account with the entry number."
+    },
+    {
+      "test_id": "TEST-FE-1172",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Opens one request from the address with its steps and entries."
+    },
+    {
+      "test_id": "TEST-FE-1173",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Says when a request is not there."
+    },
+    {
+      "test_id": "TEST-FE-1174",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Void shows a server refusal and keeps the dialog open."
+    },
+    {
+      "test_id": "TEST-FE-1175",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Shows Khmer words when the screen is in Khmer."
+    },
+    {
+      "test_id": "TEST-FE-1176",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Lists expenses with their entry, request and pay-later marks."
+    },
+    {
+      "test_id": "TEST-FE-1177",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Records a bill paid at once and needs a supplier and amount."
+    },
+    {
+      "test_id": "TEST-FE-1178",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Hides Record a bill without the right."
+    },
+    {
+      "test_id": "TEST-FE-1179",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Shows bills to pay with late days and paid bills."
+    },
+    {
+      "test_id": "TEST-FE-1180",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Pays a bill in part and not more than is left."
+    },
+    {
+      "test_id": "TEST-FE-1181",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (Expense requests, Expenses, Supplier bills; mock-up v76): Adds a supplier bill to pay later with its due date."
+    },
+    {
+      "test_id": "test_every_role_that_sends_requests_reads_the_form_and_staff_read_only_their_own",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_spending.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): Every role that sends requests reads the form and staff read only their own."
+    },
+    {
+      "test_id": "test_the_spending_reads_refuse_unknown_values_and_say_when_a_request_is_not_there",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_spending.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): The spending reads refuse unknown values and say when a request is not there."
+    },
+    {
+      "test_id": "test_the_form_answers_the_rules_accounts_suppliers_and_units",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_spending_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): The form answers the rules accounts suppliers and units."
+    },
+    {
+      "test_id": "test_one_request_shows_its_steps_advance_bill_and_entries",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_spending_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): One request shows its steps advance bill and entries."
+    },
+    {
+      "test_id": "test_the_lists_name_people_units_entries_and_bill_payments",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_spending_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): The lists name people units entries and bill payments."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_spending_reads",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_spending_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 2 (spending reads for the ledger screens): The runtime login can run the spending reads."
+    },
+    {
+      "test_id": "test_the_ledger_readers_see_bank_and_cash_for_a_month",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_cash.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): The ledger readers see bank and cash for a month."
+    },
+    {
+      "test_id": "test_the_bank_and_cash_read_refuses_unknown_values",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_cash.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): The bank and cash read refuses unknown values."
+    },
+    {
+      "test_id": "test_the_entry_of_a_money_record_is_read_by_its_kind",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_cash.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): The entry of a money record is read by its kind."
+    },
+    {
+      "test_id": "test_a_month_shows_the_bank_lines_to_match_and_the_cash_to_count",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_cash_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): A month shows the bank lines to match and the cash to count."
+    },
+    {
+      "test_id": "test_petty_cash_and_riel_cash_show_what_they_hold",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_cash_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): Petty cash and riel cash show what they hold."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_bank_and_cash_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_cash_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash read for the ledger screen): The runtime login can run the bank and cash read."
+    },
+    {
+      "test_id": "TEST-FE-1182",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Shows the petty cash float, the riel held and the month to match."
+    },
+    {
+      "test_id": "TEST-FE-1183",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Matches the bank once the lines not on the statement are ticked."
+    },
+    {
+      "test_id": "TEST-FE-1184",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Shows a matched month and a counted month as done."
+    },
+    {
+      "test_id": "TEST-FE-1185",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Counts dollars and riel, and a difference needs a reason."
+    },
+    {
+      "test_id": "TEST-FE-1186",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Moves money between places and says which entry it made."
+    },
+    {
+      "test_id": "TEST-FE-1187",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Changes riel at the rate typed and shows the gain."
+    },
+    {
+      "test_id": "TEST-FE-1188",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Tops up petty cash only up to the float."
+    },
+    {
+      "test_id": "TEST-FE-1189",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 3 (Bank and cash; mock-up v76): Lets only the Owner record Owner money, with a note."
+    },
+    {
+      "test_id": "test_the_ledger_readers_see_the_month_end_checks",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_month_end.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close read for the ledger screen): The ledger readers see the month end checks."
+    },
+    {
+      "test_id": "test_the_month_to_close_shows_its_checks_and_closed_months_say_who",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_month_end_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close read for the ledger screen): The month to close shows its checks and closed months say who."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_month_end_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_month_end_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close read for the ledger screen): The runtime login can run the month end read."
+    },
+    {
+      "test_id": "TEST-FE-1195",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/MonthEndPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close; mock-up v76): Shows each check of the month to close and keeps Close off while one is red."
+    },
+    {
+      "test_id": "TEST-FE-1196",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/MonthEndPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close; mock-up v76): Closes the month when every line is green."
+    },
+    {
+      "test_id": "TEST-FE-1197",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/MonthEndPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close; mock-up v76): Closes a year after December and says the entry."
+    },
+    {
+      "test_id": "TEST-FE-1198",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-010"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/MonthEndPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Month-end close; mock-up v76): Tells a reader without the close right that only the Owner closes."
+    },
+    {
+      "test_id": "test_the_ledger_readers_see_the_fixed_asset_register",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_assets.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed asset register read for the ledger screen): The ledger readers see the fixed asset register."
+    },
+    {
+      "test_id": "test_the_register_lists_each_item_with_its_value_and_the_1590_balance",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_asset_register_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed asset register read for the ledger screen): The register lists each item with its value and the 1590 balance."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_register_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_asset_register_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed asset register read for the ledger screen): The runtime login can run the register read."
+    },
+    {
+      "test_id": "test_the_ledger_readers_see_the_budget_sheet",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_budget.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget read for the ledger screen): The ledger readers see the budget sheet."
+    },
+    {
+      "test_id": "test_the_budget_sheet_shows_the_years_budgets_and_last_years_lines",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_budget_sheet_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget read for the ledger screen): The budget sheet shows the year's budgets and last year's lines."
+    },
+    {
+      "test_id": "test_the_runtime_login_can_run_the_budget_read",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_gl_budget_sheet_migration.py",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget read for the ledger screen): The runtime login can run the budget read."
+    },
+    {
+      "test_id": "TEST-FE-1199",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/FixedAssetsPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed assets; mock-up v76): Shows the register with its totals and the 1590 check."
+    },
+    {
+      "test_id": "TEST-FE-1200",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/FixedAssetsPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed assets; mock-up v76): Refuses an item below the Asset limit and adds one at or above it."
+    },
+    {
+      "test_id": "TEST-FE-1201",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/FixedAssetsPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed assets; mock-up v76): Sets other years and a supplier bill when paid later."
+    },
+    {
+      "test_id": "TEST-FE-1202",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-011"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/FixedAssetsPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Fixed assets; mock-up v76): Shows the register without Add to a reader who cannot record."
+    },
+    {
+      "test_id": "TEST-FE-1203",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Shows a waiting budget by month with totals and lets the Owner approve it."
+    },
+    {
+      "test_id": "TEST-FE-1204",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Sends a budget back with a reason."
+    },
+    {
+      "test_id": "TEST-FE-1205",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Tells the sender someone else must approve."
+    },
+    {
+      "test_id": "TEST-FE-1206",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Lets the Accountant type a sent-back budget again and send it."
+    },
+    {
+      "test_id": "TEST-FE-1207",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Asks the Owner for a note on their own budget and shows it approved and locked."
+    },
+    {
+      "test_id": "TEST-FE-1208",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BudgetPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 part 4 (Budget; mock-up v76): Switches the year."
+    },
+    {
+      "test_id": "TEST-FE-1209",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-013"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Void Expense and Reverse bill payment; mock-up v77): Voids an expense with a reason and shows the reversing entry."
+    },
+    {
+      "test_id": "TEST-FE-1210",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-013"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger phase 6 step 6 (Void Expense and Reverse bill payment; mock-up v77): Shows each payment under its bill and reverses one with a reason."
+    },
+    {
+      "test_id": "TEST-FE-1211",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger owner test fix (04/11/2026): a new supplier typed on a bill is added once, even when the app refuses the first save."
+    },
+    {
+      "test_id": "TEST-FE-1212",
+      "upstream_ids": [
+        "DL-117",
+        "API-GL-008"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/SpendingPage.test.tsx",
+      "status": "implemented",
+      "notes": "General Ledger owner test fix (04/11/2026): when the bills cannot be read again after a save, the screen says so instead of showing the old list."
     }
   ]
 }

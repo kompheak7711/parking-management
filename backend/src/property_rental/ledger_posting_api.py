@@ -31,6 +31,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.ledger_books_api import link_sql, source_link, source_sql
 from property_rental.settings import Settings
 
 LEDGER_READ = "ledger.read"
@@ -59,6 +60,9 @@ class PostingProblem:
     problem: str
     first_seen_at: datetime
     last_seen_at: datetime
+    # Step 6 part 1: the app record's number and the page that opens it, when known.
+    source_number: str | None = None
+    source_link: dict[str, str] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,16 +126,29 @@ class PostgresLedgerPostingFlow:
             with psycopg.connect(self._database_url) as connection:
                 self._property_day(connection, property_id)
                 rows = connection.execute(
-                    "SELECT posting_key, source_type, source_id, event_date, problem, "
-                    "first_seen_at, last_seen_at FROM app.gl_posting_problems "
-                    "WHERE property_id = %s ORDER BY event_date, posting_key",
+                    "SELECT problem.posting_key, problem.source_type, problem.source_id, "
+                    "problem.event_date, problem.problem, problem.first_seen_at, "
+                    f"problem.last_seen_at, ({source_sql('problem', None)}), "
+                    f"({link_sql('problem')}) FROM app.gl_posting_problems AS problem "
+                    "WHERE problem.property_id = %s "
+                    "ORDER BY problem.event_date, problem.posting_key",
                     (property_id,),
                 ).fetchall()
         except psycopg.Error as exc:
             raise LedgerPostingUnavailable from exc
         return tuple(
-            PostingProblem(str(key), str(kind), UUID(str(source)), day, str(problem), first, last)
-            for key, kind, source, day, problem, first, last in rows
+            PostingProblem(
+                str(key),
+                str(kind),
+                UUID(str(source)),
+                day,
+                str(problem),
+                first,
+                last,
+                None if number is None else str(number),
+                source_link(str(kind), target),
+            )
+            for key, kind, source, day, problem, first, last, number, target in rows
         )
 
     def method_accounts(self, property_id: UUID) -> tuple[MethodAccount, ...]:
@@ -295,6 +312,8 @@ def create_ledger_posting_router(
                     "problem": row.problem,
                     "first_seen_at": row.first_seen_at.isoformat(),
                     "last_seen_at": row.last_seen_at.isoformat(),
+                    "source_number": row.source_number,
+                    "source_link": row.source_link,
                 }
                 for row in rows
             ],
