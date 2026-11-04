@@ -53602,6 +53602,7 @@
     {
       "test_id": "TEST-FE-904",
       "upstream_ids": [
+        "DL-123",
         "DL-074",
         "UI-057",
         "BR-INV-018"
@@ -53609,7 +53610,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R5b-2 Create Invoice: every box is checked with a summary, a confirmation dialog, the one-time charge is recorded and a Draft made once even when pressed again after no answer; Damage points to Move-out; Create Invoice needs invoices.create."
+      "notes": "V1.1 part 6 (DL-123): New Quotation replaced Create Invoice; the Invoices list links to it for a person who may make Quotations, and the old Create Invoice address opens it."
     },
     {
       "test_id": "TEST-FE-905",
@@ -57503,18 +57504,6 @@
       "notes": "V1-060 B6: PUT /invoices/{id}/items hides the Invoice without invoices.create (404), needs If-Match (412) and the reason for the change (422), answers an old version with 412 and the current version, and sends the version and reason, answering the new ETag."
     },
     {
-      "test_id": "TEST-FE-1064",
-      "upstream_ids": [
-        "DL-103",
-        "UI-049",
-        "BR-INV-016"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
-      "status": "implemented",
-      "notes": "V1-060 B6: Create Invoice adds up to 20 items and then says so, keeps at least one item and moves the focus to the next item when one is removed, refuses a quantity that is not a whole number from 1 to 9,999, and adds each amount into the total."
-    },
-    {
       "test_id": "TEST-FE-1065",
       "upstream_ids": [
         "DL-103",
@@ -59007,16 +58996,6 @@
       "test_path": "frontend/src/settings/RegularServices.test.tsx",
       "status": "implemented",
       "notes": "V1.1 (DL-115 (I)): without Settings access the prices show with no changes; the client reads only a well-formed answer."
-    },
-    {
-      "test_id": "TEST-FE-1129",
-      "upstream_ids": [
-        "DL-115"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
-      "status": "implemented",
-      "notes": "V1.1 (DL-115 (I)): Create Invoice › Services takes each price from Settings, joins a service picked twice, checks every line and saves one Draft once."
     },
     {
       "test_id": "TEST-FE-1130",
@@ -60973,6 +60952,73 @@
       "test_path": "backend/tests/test_quotations_api.py",
       "status": "implemented",
       "notes": "V1.1 part 6: Customer refused needs a reason."
+    },
+    {
+      "test_id": "TEST-FE-1152",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/quotations/QuotationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Office > Invoices > Quotations lists each Quotation with its Customer, days, amount and status; the cards Waiting, Signed and Expired or declined filter it; New Quotation shows only with Make Quotations."
+    },
+    {
+      "test_id": "TEST-FE-1153",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/quotations/QuotationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 6: New Quotation picks a Customer with a signed Lease and products with the price from Products (none without a price), adds a row when the last is used, keeps the price locked without the right, checks the form and saves the lines."
+    },
+    {
+      "test_id": "TEST-FE-1154",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/quotations/QuotationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Lower the price (Manager or Owner) makes a new version for the same Customer; a price above the list is refused; a lower price shows the list price and needs a reason; the new Quotation replaces the waiting one."
+    },
+    {
+      "test_id": "TEST-FE-1155",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/quotations/QuotationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 6: Customer signed asks for the day and where each Item is taken from, refuses a place without enough stock, says the Quotation waits on a 409, issues the Invoice and links to it."
+    },
+    {
+      "test_id": "TEST-FE-1156",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/quotations/QuotationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "V1.1 part 6: the printed Quotation shows the list price under a lowered line, the due days and the Quotation it replaces; Print prints the sheet; Customer declined needs what the Customer said; an expired Quotation offers Make a new Quotation."
+    },
+    {
+      "test_id": "test_the_quotation_flow_reads_and_writes_through_the_functions",
+      "upstream_ids": [
+        "DL-123",
+        "API-QT-001",
+        "DB-QT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_quotations_migration.py",
+      "status": "implemented",
+      "notes": "V1.1 part 6: the Postgres flow of Quotations makes, reads, signs (412 for a stale version, 409 while an Item is not in stock, then the Invoice) and refuses through the database functions."
     }
   ]
 }

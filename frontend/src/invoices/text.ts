@@ -146,6 +146,8 @@ const TEXT = {
   open_customer: ["Open Customer", "បើកអតិថិជន"],
   // new
   act_print: ["Print Invoice", "បោះពុម្ពវិក្កយបត្រ"],
+  // V1.1 part 6 (DL-123): New Quotation replaced Create Invoice.
+  nq_btn: ["New Quotation", "សម្រង់តម្លៃថ្មី"],
   ni_btn: ["Create Invoice", "បង្កើតវិក្កយបត្រ"],
   // DL-103: one Invoice holds many items.
   ni_intro: [

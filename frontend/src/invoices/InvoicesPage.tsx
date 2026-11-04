@@ -1,6 +1,7 @@
 // V1-058 R5: the Invoices page of the rebuilt app. "#/invoices" shows the list;
 // "#/invoices/inv:<id>" one Invoice; "#/invoices/for:<Customer id>" the list for one Customer;
-// "#/invoices/new" Create Invoice; "#/invoices/edit:<id>" Edit items of a Draft made there (DL-103).
+// "#/invoices/edit:<id>" Edit items of a Draft made with Create Invoice (DL-103). V1.1 part 6
+// (DL-123): "#/invoices/new" opens New Quotation, which replaced Create Invoice.
 // The billing runs and the Due Date settings stay in the earlier forms that App shows under this
 // page until Settings and Home take them over.
 
@@ -12,10 +13,6 @@ import type { CustomerApi } from "../customerClient";
 import type { InvoiceApi } from "../invoiceClient";
 import type { LeaseApi } from "../leaseClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
-import {
-  type RegularServicesApi,
-  regularServicesApi,
-} from "../settings/serviceSettingsClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
@@ -37,7 +34,6 @@ export interface InvoicesPageProps {
     | "get"
     | "issue"
     | "createWithItems"
-    | "createWithServices"
     | "replaceItems"
     | "adjust"
     | "void"
@@ -47,8 +43,6 @@ export interface InvoicesPageProps {
   /** The late-payment card on the Invoice page (R5d). */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   capabilities: ReadonlySet<string> | null;
-  /** V1.1: the Regular services of Create Invoice › Services; the real server when not given. */
-  regularApi?: Pick<RegularServicesApi, "read">;
   /** Today in Phnom Penh; tests pass a fixed day. */
   today?: string;
 }
@@ -62,7 +56,6 @@ export function InvoicesPage({
   customerApi,
   lateApi,
   capabilities,
-  regularApi = regularServicesApi,
   today: fixedToday,
 }: InvoicesPageProps) {
   const detail = useHashDetail("invoices");
@@ -75,6 +68,11 @@ export function InvoicesPage({
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const [data, setData] = useState<InvoicesData | null>(null);
+  // An old "Create Invoice" address opens New Quotation.
+  useEffect(() => {
+    if (active && detail === "new")
+      openPageInAddress("quotations", true, "new");
+  }, [active, detail]);
   const [failed, setFailed] = useState(false);
   const sequence = useRef(0);
 
@@ -147,19 +145,6 @@ export function InvoicesPage({
       )
     );
   }
-  if (detail === "new" && may("invoices.create")) {
-    return (
-      <CreateInvoice
-        api={invoiceApi}
-        data={data}
-        key={propertyId}
-        language={language}
-        onSaved={load}
-        propertyId={propertyId}
-        servicesApi={regularApi}
-      />
-    );
-  }
   if (editId !== null && may("invoices.create")) {
     return (
       <CreateInvoice
@@ -177,7 +162,7 @@ export function InvoicesPage({
     <>
       {failure}
       <InvoicesList
-        canCreate={may("invoices.create")}
+        canCreate={may("quotations.make")}
         customerId={customerId}
         data={data}
         language={language}

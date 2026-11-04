@@ -89,7 +89,7 @@ export function InvoicesList({
   /** Only this Customer's Invoices, from "All Invoices for U201" on an Invoice page. */
   customerId: string | null;
   onClearCustomer: () => void;
-  /** Create Invoice shows only to a person who may create one. */
+  /** V1.1 part 6: New Quotation shows only to a person who may make one. */
   canCreate: boolean;
 }) {
   const [period, setPeriod] = useState<InvoicePeriod>("all");
@@ -245,9 +245,12 @@ export function InvoicesList({
         </p>
         {canCreate && (
           <div className="ui-actions">
-            <a className="ui-btn primary" href={hashForPage("invoices", "new")}>
+            <a
+              className="ui-btn primary"
+              href={hashForPage("quotations", "new")}
+            >
               <Icon name="plus" />
-              {ivt(language, "ni_btn")}
+              {ivt(language, "nq_btn")}
             </a>
           </div>
         )}

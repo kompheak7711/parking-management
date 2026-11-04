@@ -145,6 +145,8 @@ import { ReservationsPage } from "./reservations/ReservationsPage";
 import { ct } from "./customers/text";
 import { UnitsPage } from "./units/UnitsPage";
 import { ProductsPage } from "./products/ProductsPage";
+import { QuotationsPage } from "./quotations/QuotationsPage";
+import type { QuotationsApi } from "./quotations/quotationsClient";
 import type { ProductsApi } from "./products/productsClient";
 import { type ActorAccessApi, actorAccessApi } from "./shell/accessClient";
 import { pageAllowed, type PageId } from "./shell/navigation";
@@ -159,6 +161,8 @@ export interface AppProps {
   rolesApi?: RolesApi;
   /** V1.1 part 4: Building › Products; the real server when not given. */
   productsApi?: ProductsApi;
+  /** V1.1 part 6: Office › Invoices › Quotations; the real server when not given. */
+  quotationsApi?: QuotationsApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
   businessSettingsApi?: BusinessSettingsApi;
@@ -635,6 +639,7 @@ export function App({
   administrationApi = accessAdministrationApi,
   rolesApi = accessRolesApi,
   productsApi,
+  quotationsApi,
   propertyApi = propertyConfigurationApi,
   unitApi,
   customerApi,
@@ -1754,6 +1759,21 @@ export function App({
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           utilityApi={utilityApi}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="quotations"
+        hidden={!shown("quotations")}
+      >
+        <QuotationsPage
+          active={shown("quotations")}
+          api={quotationsApi}
+          capabilities={capabilities}
+          language={language}
+          leaseApi={leaseApi}
+          productsApi={productsApi}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
       </div>
       <div

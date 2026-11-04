@@ -770,6 +770,13 @@ const TEXT = {
   // V1-058 R7b-6d: the move-out cleaning rates by Unit Type.
   // V1.1 (DL-115 (I); mock-up round 13): Regular services with a set price.
   rs_title: ["Regular services", "សេវាធម្មតា"],
+  // V1.1 part 6 (DL-123).
+  rs_moved: [
+    "Regular services moved to Products (category Services). A Manager or the Owner types each cost there.",
+    // new
+    "សេវាធម្មតាបានផ្លាស់ទៅផលិតផល (ប្រភេទ សេវា)។ អ្នកគ្រប់គ្រង ឬម្ចាស់វាយថ្លៃដើមនីមួយៗនៅទីនោះ។",
+  ],
+  rs_moved_go: ["Open Products", "បើកផលិតផល"],
   rs_sub: [
     "One-time services with a set price, billed with Create Invoice, kind Services. Monthly Services stay on the Rent Invoice.",
     "សេវាមួយដងដែលមានតម្លៃកំណត់ គិតថ្លៃតាម បង្កើតវិក្កយបត្រ ប្រភេទ សេវា។ សេវាប្រចាំខែនៅលើវិក្កយបត្រថ្លៃឈ្នួល។",
@@ -1016,6 +1023,7 @@ const TEXT = {
   nr_MONEY_MOVEMENT: ["Money move", "ការផ្ទេរប្រាក់"],
   // new
   nr_STOCK_MOVEMENT: ["Stock movement", "ចលនាស្តុក"],
+  nr_QUOTATION: ["Quotation", "សម្រង់តម្លៃ"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;

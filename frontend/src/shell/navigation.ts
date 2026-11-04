@@ -7,6 +7,7 @@ export type PageId =
   | "home"
   | "payments"
   | "invoices"
+  | "quotations"
   | "utilities"
   | "approvals"
   | "units"
@@ -65,7 +66,8 @@ export const MENU: readonly MenuGroup[] = [
     label: ["Daily work", "ការងារប្រចាំថ្ងៃ"],
     items: [
       { page: "payments", icon: "payments" },
-      { page: "invoices", icon: "invoice" },
+      // V1.1 part 6 (DL-123): Quotations is a tab of Invoices.
+      { page: "invoices", icon: "invoice", tabs: ["invoices", "quotations"] },
       { page: "utilities", icon: "meter" },
       { page: "approvals", icon: "check" },
     ],
@@ -118,6 +120,7 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   home: ["Home", "ទំព័រដើម"],
   payments: ["Payments", "ការបង់ប្រាក់"],
   invoices: ["Invoices", "វិក្កយបត្រ"],
+  quotations: ["Quotations", "សម្រង់តម្លៃ"],
   utilities: ["Utilities", "ទឹកភ្លើង"],
   approvals: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
   units: ["Units", "បន្ទប់"],
@@ -153,6 +156,8 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
     "refunds.read",
   ],
   invoices: ["invoices.read"],
+  // V1.1 part 6 (DL-123).
+  quotations: ["quotations.read"],
   utilities: ["utility.read"],
   approvals: ["financial.approve"],
   units: ["units.read"],

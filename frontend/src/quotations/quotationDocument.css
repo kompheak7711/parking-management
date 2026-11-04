@@ -1,0 +1,23 @@
+/* V1.1 part 6 (DL-123): the printed Quotation uses the Invoice sheet (invoiceDocument.css) with
+   Qty and Price columns and the two signature lines at the bottom. */
+.doc.qdoc td.q {
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 4mm;
+}
+.doc.qdoc th.q {
+  text-align: right;
+  padding-right: 4mm;
+}
+.doc.qdoc .signs {
+  margin: 0 0 9mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm;
+  font-size: 8pt;
+  color: var(--ink2);
+}
+.doc.qdoc .signs div {
+  border-top: 0.2mm solid var(--ink);
+  padding-top: 1.5mm;
+}

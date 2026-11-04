@@ -2478,3 +2478,40 @@ a.ui-kpi.ui-home-kpi {
   width: 4em;
   text-align: center;
 }
+
+/* V1.1 part 6 (DL-123): the Quotation status path, Quotation → Customer signs → Invoice issued →
+   Paid (mock-up .spath). */
+.ui-qpath {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  counter-reset: qpath;
+}
+.ui-qpath li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 14px;
+}
+.ui-qpath li.done {
+  color: var(--ok);
+  border-color: currentColor;
+}
+.ui-qpath li.cur {
+  color: var(--text);
+  border-color: var(--text);
+}
+.ui-qlines li + li {
+  margin-top: 6px;
+}
+.ui-qlines li .ui-sub2 {
+  display: block;
+}

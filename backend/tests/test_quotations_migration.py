@@ -500,3 +500,70 @@ def test_the_regular_services_became_service_products(
             "WHERE lower(product.name_en) = lower(service.name_en))"
         ).fetchone()
     assert missing == (0,)
+
+
+def test_the_quotation_flow_reads_and_writes_through_the_functions(
+    quotation_database: QuotationDatabase,
+) -> None:
+    from property_rental.products_api import ProductConflict, ProductStale
+    from property_rental.quotations_api import PostgresQuotationFlow
+
+    database = quotation_database
+    flow = PostgresQuotationFlow(database.runtime_url, database.financial_url)
+    fan, cleaning = products(database)
+    buy(database, fan, "1")
+    made = flow.make(
+        database.property_id,
+        {
+            "customer_id": database.customer,
+            "lease_id": None,
+            "note": "Fan for the bedroom",
+            "replaces_id": None,
+            "lowered_reason": None,
+            "lines": [
+                {"product_id": str(fan), "quantity": 2, "price_usd_cents": 3000},
+                {"product_id": str(cleaning), "quantity": 1, "price_usd_cents": 1500},
+            ],
+        },
+        actor_id=str(database.manager),
+    )
+    found = flow.quotation(database.property_id, made, actor_id=str(database.staff))
+    assert found["state"] == "WAITING" and found["total_usd_cents"] == 7500
+    assert any(
+        item["quotation_id"] == str(made)
+        for item in flow.quotations(database.property_id, actor_id=str(database.staff))
+    )
+    signature = {
+        "signed_on": date.fromisoformat(str(found["made_on"])),
+        "takes": [
+            {
+                "position": 1,
+                "unit_id": database.warehouse,
+                "item_id": database.cabinet,
+                "number": 1,
+            }
+        ],
+    }
+    with pytest.raises(ProductStale):
+        flow.sign(database.property_id, made, 9, signature, actor_id=str(database.manager))
+    # 1 in stock for 2 quoted: the Quotation waits.
+    with pytest.raises(ProductConflict):
+        flow.sign(database.property_id, made, 1, signature, actor_id=str(database.manager))
+    buy(database, fan, "1")
+    signed = flow.sign(database.property_id, made, 1, signature, actor_id=str(database.manager))
+    assert signed["state"] == "SIGNED" and str(signed["invoice_number"]).startswith("INV")
+    other = flow.make(
+        database.property_id,
+        {
+            "customer_id": database.customer,
+            "lease_id": None,
+            "note": None,
+            "replaces_id": None,
+            "lowered_reason": None,
+            "lines": [{"product_id": str(cleaning), "quantity": 2, "price_usd_cents": 1500}],
+        },
+        actor_id=str(database.manager),
+    )
+    flow.refuse(database.property_id, other, 1, "Too dear", actor_id=str(database.manager))
+    refused_one = flow.quotation(database.property_id, other, actor_id=str(database.staff))
+    assert refused_one["state"] == "REFUSED" and refused_one["refused_reason"] == "Too dear"
