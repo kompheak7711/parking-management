@@ -941,7 +941,9 @@ describe("Settings: Rates and services", () => {
     cleanup();
 
     show(undefined, "km");
-    const khmer = await screen.findByRole("region", { name: "ប្រភេទសេវាប្រចាំខែ" });
+    const khmer = await screen.findByRole("region", {
+      name: "ប្រភេទសេវាប្រចាំខែ",
+    });
     expect(within(khmer).getByText("សំរាម")).toBeTruthy();
     expect(screen.getByText("ប្រមូលសំរាម")).toBeTruthy();
   });
