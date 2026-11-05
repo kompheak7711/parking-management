@@ -178,6 +178,9 @@ export function BankCashPage({
             {data.riel !== null && (
               <RielCard language={language} riel={data.riel} />
             )}
+            {data.riel_bank !== null && (
+              <RielCard bank language={language} riel={data.riel_bank} />
+            )}
           </div>
           <section aria-label={lt(language, "bc_t")} className="ui-card">
             <div
@@ -357,17 +360,23 @@ function PettyCard({
 function RielCard({
   language,
   riel: held,
+  bank = false,
 }: {
   language: Language;
   riel: NonNullable<BankCash["riel"]>;
+  /** The riel bank account rather than riel cash (owner 04/11/2026). */
+  bank?: boolean;
 }) {
+  const titleId = bank ? "khb-title" : "kh-title";
   return (
-    <section aria-labelledby="kh-title" className="ui-card">
-      <h2 id="kh-title">{lt(language, "kh_t")}</h2>
+    <section aria-labelledby={titleId} className="ui-card">
+      <h2 id={titleId}>{lt(language, bank ? "kh_bt" : "kh_t")}</h2>
       <dl className="ui-kv">
         <dt>{lt(language, "kh_q")}</dt>
         <dd className="ui-num">{riel(held.held_riel)}</dd>
-        <dt>{lt(language, "kh_b")}</dt>
+        <dt>
+          {bank ? lt(language, "kh_bb", held.code) : lt(language, "kh_b")}
+        </dt>
         <dd className="ui-num">{money(held.book_cents)}</dd>
         <dt>{lt(language, "kh_last")}</dt>
         <dd>
@@ -382,7 +391,7 @@ function RielCard({
         </dd>
       </dl>
       <p className="ui-muted">
-        <Icon name="info" small /> {lt(language, "kh_n")}
+        <Icon name="info" small /> {lt(language, bank ? "kh_bn" : "kh_n")}
       </p>
     </section>
   );
@@ -392,6 +401,12 @@ function RielCard({
 
 function lineCents(line: BankBook["lines"][number]): number {
   return line.debit_cents - line.credit_cents;
+}
+
+/** A riel bank line in riel: money in adds, money out takes away. */
+function lineRiel(line: BankBook["lines"][number]): number {
+  const amount = line.riel_minor ?? 0;
+  return line.debit_cents > 0 ? amount : -amount;
 }
 
 function BankPart({
@@ -415,8 +430,14 @@ function BankPart({
 }) {
   const end = dayText(month.ends_on);
   const work = useBusy(language);
+  // The riel bank account (owner 04/11/2026) is matched in riel, the dollar bank in dollars.
+  const inRiel = bank.cash_kind === "BANK_KHR";
+  const book = inRiel ? (bank.riel_held ?? 0) : bank.book_cents;
+  const show = (amount: number) => (inRiel ? riel(amount) : money(amount));
+  const amountOf = (line: BankBook["lines"][number]) =>
+    inRiel ? lineRiel(line) : lineCents(line);
   const [statement, setStatement] = useState(
-    (bank.book_cents / 100).toFixed(2),
+    inRiel ? String(book) : (book / 100).toFixed(2),
   );
   const [notYet, setNotYet] = useState<ReadonlySet<string>>(new Set());
   const heading = showCode ? (
@@ -444,10 +465,18 @@ function BankPart({
         <dl className="ui-kv">
           <dt>{lt(language, "bk_stmt", end)}</dt>
           <dd className="ui-num">
-            {money(bank.match.statement_balance_cents)}
+            {inRiel
+              ? riel(bank.match.statement_riel ?? 0)
+              : money(bank.match.statement_balance_cents)}
           </dd>
           <dt>{lt(language, "bk_book", end, bank.code)}</dt>
-          <dd className="ui-num">{money(bank.book_cents)}</dd>
+          <dd className="ui-num">{show(book)}</dd>
+          {inRiel && (
+            <>
+              <dt>{lt(language, "bk_worth", end)}</dt>
+              <dd className="ui-num">{money(bank.book_cents)}</dd>
+            </>
+          )}
         </dl>
       </div>
     );
@@ -460,11 +489,11 @@ function BankPart({
       </div>
     );
   }
-  const typed = centsFromText(statement);
+  const typed = inRiel ? rielFromText(statement) : centsFromText(statement);
   const less = bank.lines
     .filter((line) => notYet.has(line.line_id))
-    .reduce((sum, line) => sum + lineCents(line), 0);
-  const after = bank.book_cents - less;
+    .reduce((sum, line) => sum + amountOf(line), 0);
+  const after = book - less;
   const difference = typed === null ? null : after - typed;
   const matches = difference === 0;
   const fieldId = `bk-s-${bank.code}`;
@@ -476,7 +505,8 @@ function BankPart({
         api.matchBank(propertyId, {
           account_code: bank.code,
           period_id: month.id,
-          statement_balance_cents: typed,
+          statement_balance_cents: inRiel ? null : typed,
+          statement_riel: inRiel ? typed : null,
           lines: bank.lines
             .filter((line) => !notYet.has(line.line_id))
             .map((line) => ({ line_id: line.line_id })),
@@ -493,7 +523,7 @@ function BankPart({
       <div className="ui-field">
         <label htmlFor={fieldId}>{lt(language, "bk_stmt", end)}</label>
         <div className="ui-money">
-          <span aria-hidden="true">$</span>
+          <span aria-hidden="true">{inRiel ? "៛" : "$"}</span>
           <input
             aria-describedby={`${fieldId}-h`}
             autoComplete="off"
@@ -507,11 +537,15 @@ function BankPart({
           />
         </div>
         <p className="ui-muted" id={`${fieldId}-h`}>
-          {lt(language, "bk_stmt_h")}
+          {lt(language, inRiel ? "bk_stmt_hr" : "bk_stmt_h")}
         </p>
         <FieldError
           id={`${fieldId}-e`}
-          text={typed === null ? lt(language, "bk_e_stmt") : null}
+          text={
+            typed === null
+              ? lt(language, inRiel ? "bk_e_stmt_r" : "bk_e_stmt")
+              : null
+          }
         />
       </div>
       <h3>{lt(language, "bk_in_book")}</h3>
@@ -558,7 +592,7 @@ function BankPart({
                         <EntryLink number={line.entry_number} />
                       </span>
                     </td>
-                    <td className="r ui-num">{money(lineCents(line))}</td>
+                    <td className="r ui-num">{show(amountOf(line))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -585,32 +619,30 @@ function BankPart({
           <tbody>
             <tr>
               <td>{lt(language, "bk_book", end, bank.code)}</td>
-              <td className="r ui-num">{money(bank.book_cents)}</td>
+              <td className="r ui-num">{show(book)}</td>
             </tr>
             <tr>
               <td>{lt(language, "bk_less_tr")}</td>
-              <td className="r ui-num">{money(-less)}</td>
+              <td className="r ui-num">{show(-less)}</td>
             </tr>
             <tr>
               <td>
                 <b>{lt(language, "bk_adj")}</b>
               </td>
               <td className="r ui-num">
-                <b>{money(after)}</b>
+                <b>{show(after)}</b>
               </td>
             </tr>
             <tr>
               <td>{lt(language, "bk_stmt", end)}</td>
-              <td className="r ui-num">
-                {typed === null ? "—" : money(typed)}
-              </td>
+              <td className="r ui-num">{typed === null ? "—" : show(typed)}</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
               <th scope="row">{lt(language, "bk_diff")}</th>
               <td className="r ui-num">
-                {difference === null ? "—" : money(difference)}
+                {difference === null ? "—" : show(difference)}
               </td>
             </tr>
           </tfoot>
@@ -1068,11 +1100,13 @@ function MoveDialog({
     data.rate === null ? "" : String(data.rate.khr_per_usd),
   );
   const [error, setError] = useState<string | null>(null);
-  const out = kindOf(from) === "CASH_KHR";
-  const into = kindOf(to) === "CASH_KHR";
+  // Riel cash and the riel bank account both take riel (owner 04/11/2026).
+  const isRiel = (kind: string) => kind === "CASH_KHR" || kind === "BANK_KHR";
+  const out = isRiel(kindOf(from));
+  const into = isRiel(kindOf(to));
   const rielAmount = rielFromText(rielText);
   const rate = Number(rateText.replace(/[,\s]/g, ""));
-  const held = data.riel;
+  const held = kindOf(from) === "BANK_KHR" ? data.riel_bank : data.riel;
   const bookShare =
     out && rielAmount !== null && held !== null && held.held_riel > 0
       ? Math.round((held.book_cents * rielAmount) / held.held_riel)

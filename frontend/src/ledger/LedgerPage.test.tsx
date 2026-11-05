@@ -43,6 +43,7 @@ function account(extra: Partial<Account>): Account {
     name_km: "សាច់ប្រាក់ក្នុងដៃ (USD)",
     account_type: "ASSET",
     control_source: null,
+    cash_kind: null,
     tax_locked: false,
     active: true,
     used: true,
@@ -177,6 +178,8 @@ const METHODS: MethodAccount[] = [
     account_code: "1010",
     account_name: "Cash on hand (USD)",
     effective_from: "2027-01-01",
+    riel_account_code: null,
+    riel_account_name: null,
   },
   {
     kind: "PAYMENT",
@@ -186,6 +189,8 @@ const METHODS: MethodAccount[] = [
     account_code: null,
     account_name: null,
     effective_from: null,
+    riel_account_code: null,
+    riel_account_name: null,
   },
   {
     kind: "REFUND",
@@ -195,6 +200,8 @@ const METHODS: MethodAccount[] = [
     account_code: "1010",
     account_name: "Cash on hand (USD)",
     effective_from: "2027-01-01",
+    riel_account_code: null,
+    riel_account_name: null,
   },
 ];
 
@@ -448,6 +455,69 @@ describe("Needs check", () => {
     expect(
       await screen.findByText("KHQR now uses account 1020."),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1298 sends riel to a Payment Method's riel account and keeps the riel bank out of the main list", async () => {
+    const chart: Chart = {
+      ...CHART,
+      accounts: [
+        ...CHART.accounts,
+        account({
+          code: "1011",
+          name_en: "Cash on hand (KHR)",
+          cash_kind: "CASH_KHR",
+        }),
+        account({
+          code: "1021",
+          name_en: "ABA Bank · KHR account",
+          cash_kind: "BANK_KHR",
+        }),
+      ],
+    };
+    const methods: MethodAccount[] = METHODS.map((method) =>
+      method.method_id === "m-cash"
+        ? {
+            ...method,
+            riel_account_code: "1011",
+            riel_account_name: "Cash on hand (KHR)",
+          }
+        : method,
+    );
+    const api = fakeApi({
+      accounts: vi.fn(() => Promise.resolve(chart)),
+      methodAccounts: vi.fn(() => Promise.resolve(methods)),
+    });
+    show("needscheck", api, new Set(["ledger.read", "ledger.accounts.manage"]));
+    expect(
+      await screen.findByText("Riel: 1011 · Cash on hand (KHR)"),
+    ).toBeInTheDocument();
+    const buttons = await screen.findAllByRole("button", {
+      name: "Set the account",
+    });
+    fireEvent.click(at(buttons, 0));
+    const dialog = await screen.findByRole("dialog");
+    const main = within(dialog).getByLabelText(/Account/);
+    expect(within(main).queryByRole("option", { name: /1021/ })).toBeNull();
+    const riel = within(dialog).getByLabelText("Riel account");
+    expect(riel).toHaveValue("");
+    expect(
+      within(riel)
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("value")),
+    ).toEqual(["", "1011", "1021"]);
+    fireEvent.change(main, { target: { value: "1020" } });
+    fireEvent.change(riel, { target: { value: "1021" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(api.setMethodAccount).toHaveBeenCalledWith(
+        "prop-1",
+        expect.objectContaining({
+          method_id: "m-khqr",
+          account_code: "1020",
+          riel_account_code: "1021",
+        }),
+      );
+    });
   });
 
   it("TEST-FE-1161 says when nothing waits", async () => {

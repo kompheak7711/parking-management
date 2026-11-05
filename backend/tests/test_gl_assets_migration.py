@@ -509,6 +509,7 @@ def test_the_bank_is_matched_month_by_month_to_the_statement(ledger: Books) -> N
             "1020",
             month,
             statement,
+            None,
             Jsonb([{"line_id": str(line), "reference": "ABA"} for line in lines]),
         )
 
@@ -516,11 +517,13 @@ def test_the_bank_is_matched_month_by_month_to_the_statement(ledger: Books) -> N
         ledger.refused(state, "gl_match_bank", ledger.property_id, *arguments, match=text)
 
     items = Jsonb([{"line_id": str(money_in_line)}])
-    refused("42501", ledger.manager, "1020", january, 500_000, items)
-    refused("22023", ledger.owner, "1010", january, 500_000, items, text="not a bank")
-    refused("55000", ledger.owner, "1020", february, 499_000, Jsonb([]), text="earlier month")
-    refused("22023", ledger.owner, "1020", january, 499_000, items, text="off by -1000")
-    refused("23514", ledger.owner, "1020", january, 3_000, Jsonb([{"line_id": str(cash_line)}]))
+    refused("42501", ledger.manager, "1020", january, 500_000, None, items)
+    refused("22023", ledger.owner, "1010", january, 500_000, None, items, text="not a bank")
+    refused("55000", ledger.owner, "1020", february, 499_000, None, Jsonb([]), text="earlier month")
+    refused("22023", ledger.owner, "1020", january, 499_000, None, items, text="off by -1000")
+    refused(
+        "23514", ledger.owner, "1020", january, 3_000, None, Jsonb([{"line_id": str(cash_line)}])
+    )
     assert check(ledger, january, "BANK_MATCHED") is False
     match(january, 499_000, money_in_line, fee_line)
     assert check(ledger, january, "BANK_MATCHED") is True
@@ -530,9 +533,13 @@ def test_the_bank_is_matched_month_by_month_to_the_statement(ledger: Books) -> N
         ).fetchall()
         == []
     )
-    refused("55000", ledger.owner, "1020", january, 499_000, Jsonb([]), text="already matched")
+    refused(
+        "55000", ledger.owner, "1020", january, 499_000, None, Jsonb([]), text="already matched"
+    )
     # February has no new lines: the statement still shows what was cleared before.
-    refused("55000", ledger.owner, "1020", february, 499_000, Jsonb([{"line_id": str(fee_line)}]))
+    refused(
+        "55000", ledger.owner, "1020", february, 499_000, None, Jsonb([{"line_id": str(fee_line)}])
+    )
     match(february, 499_000)
     assert (
         ledger.scalar(
@@ -639,7 +646,7 @@ def test_the_runtime_login_runs_month_end_only_through_the_checked_functions(
             ),
             (
                 "SELECT app.gl_match_bank(gen_random_uuid(), gen_random_uuid(), '1020', "
-                "gen_random_uuid(), 0, '[]', NULL)",
+                "gen_random_uuid(), 0, NULL, '[]', NULL)",
                 "42501",
             ),
         ):

@@ -76,7 +76,9 @@ def test_a_month_shows_the_bank_lines_to_match_and_the_cash_to_count(ledger: Boo
     assert january["matched"] is False and january["counted"] is False
     assert all(month["ends_on"] < ledger.today.isoformat() for month in answer["months"])
     banks = by_code(answer["banks"])
-    assert set(banks) == {"1020"}
+    # The riel bank account (owner 04/11/2026) has nothing yet; it is listed with no lines.
+    assert set(banks) == {"1020", "1021"}
+    assert banks["1021"]["lines"] == [] and banks["1021"]["riel_held"] == 0
     bank = banks["1020"]
     assert bank["book_cents"] == 500_000 and bank["match"] is None
     lines = bank["lines"]
@@ -85,7 +87,13 @@ def test_a_month_shows_the_bank_lines_to_match_and_the_cash_to_count(ledger: Boo
     cash = by_code(answer["cash"])
     assert set(cash) == {"1010", "1011", "1030"}
     assert cash["1010"]["book_cents"] == 3_000 and cash["1010"]["count"] is None
-    assert {row["code"] for row in answer["money_accounts"]} == {"1010", "1011", "1020", "1030"}
+    assert {row["code"] for row in answer["money_accounts"]} == {
+        "1010",
+        "1011",
+        "1020",
+        "1021",
+        "1030",
+    }
 
     ledger.call(
         "gl_match_bank",
@@ -94,6 +102,7 @@ def test_a_month_shows_the_bank_lines_to_match_and_the_cash_to_count(ledger: Boo
         "1020",
         period(ledger, year, 1),
         500_000,
+        None,
         Jsonb([{"line_id": lines[0]["line_id"]}]),
     )
     ledger.call(

@@ -41,10 +41,19 @@ from property_rental.ledger_spending_api import RATE
 
 MONTHS: Final = """
     SELECT period.id, period.starts_on, period.ends_on, period.status,
-        EXISTS (SELECT 1 FROM app.gl_bank_reconciliations AS match
-                JOIN app.gl_accounts AS bank ON bank.id = match.account_id
-                WHERE match.period_id = period.id AND match.status = 'MATCHED'
-                  AND bank.code = '1020') AS matched,
+        -- Every bank account with money up to the month's end is matched (1020 and the riel
+        -- bank account 1021, owner 04/11/2026).
+        NOT EXISTS (SELECT 1 FROM app.gl_accounts AS bank
+                    WHERE bank.property_id = period.property_id
+                      AND bank.cash_kind IN ('BANK', 'BANK_KHR')
+                      AND EXISTS (SELECT 1 FROM app.gl_journal_lines AS line
+                                  JOIN app.gl_journal_entries AS entry ON entry.id = line.entry_id
+                                  WHERE line.account_id = bank.id
+                                    AND entry.entry_date <= period.ends_on)
+                      AND NOT EXISTS (SELECT 1 FROM app.gl_bank_reconciliations AS match
+                                      WHERE match.account_id = bank.id
+                                        AND match.period_id = period.id
+                                        AND match.status = 'MATCHED')) AS matched,
         EXISTS (SELECT 1 FROM app.gl_cash_counts AS counted
                 WHERE counted.period_id = period.id) AS counted
     FROM app.gl_periods AS period
@@ -86,6 +95,15 @@ RIEL_HELD: Final = """
           AND entry.entry_date > coalesce((SELECT counted_on FROM last_count), '-infinity')
           AND entry.entry_date <= %(today)s), 0)
 """
+# A riel bank account keeps riel on every line but the month-end valuation (migration 320).
+BANK_RIEL_HELD: Final = """
+    SELECT coalesce(sum(CASE WHEN line.debit_cents > 0 THEN line.original_amount_minor
+                             ELSE -line.original_amount_minor END), 0)
+    FROM app.gl_journal_lines AS line
+    JOIN app.gl_journal_entries AS entry ON entry.id = line.entry_id
+    WHERE line.account_id = %(account)s AND line.original_currency = 'KHR'
+      AND entry.entry_date <= %(on)s
+"""
 LAST_VALUATION: Final = """
     SELECT period.ends_on, entry.entry_number
     FROM app.gl_fx_revaluations AS valuation
@@ -97,7 +115,7 @@ LAST_VALUATION: Final = """
 """
 BANK_LINES: Final = """
     SELECT line.line_id, line.entry_number, line.entry_date, line.description, line.memo,
-        line.debit_cents, line.credit_cents
+        line.debit_cents, line.credit_cents, line.riel_minor
     FROM app.gl_bank_lines(%(prop)s, %(code)s, %(period)s) AS line
     ORDER BY line.entry_date, line.entry_number
 """
@@ -105,7 +123,8 @@ BANK_MATCH: Final = """
     SELECT match.statement_balance_cents, match.status, person.display_name,
         coalesce(match.matched_at, match.created_at),
         (SELECT count(*) FROM app.gl_bank_reconciliation_items AS item
-         WHERE item.reconciliation_id = match.id)
+         WHERE item.reconciliation_id = match.id),
+        match.statement_riel
     FROM app.gl_bank_reconciliations AS match
     LEFT JOIN app.user_accounts AS person
         ON person.actor_id = coalesce(match.matched_by, match.created_by)
@@ -216,6 +235,7 @@ class PostgresLedgerCash:
         now = [*connection.execute(MONEY, {**key, "on": today})]
         petty = next((r for r in now if r[4] == "PETTY"), None)
         riel = next((r for r in now if r[4] == "CASH_KHR"), None)
+        riel_bank = next((r for r in now if r[4] == "BANK_KHR"), None)
         float_row = connection.execute(
             "SELECT app.business_rule_value('PETTY_CASH', %(today)s)", key
         ).fetchone()
@@ -234,6 +254,19 @@ class PostgresLedgerCash:
                 "last_month_end": None if last is None else last[0].isoformat(),
                 "last_entry_number": None if last is None else last[1],
             }
+        bank_part = None
+        if riel_bank is not None:
+            held = connection.execute(
+                BANK_RIEL_HELD, {"account": riel_bank[0], "on": today}
+            ).fetchone()
+            last = connection.execute(LAST_VALUATION, {"account": riel_bank[0]}).fetchone()
+            bank_part = {
+                "code": riel_bank[1],
+                "held_riel": 0 if held is None else int(held[0]),
+                "book_cents": riel_bank[5],
+                "last_month_end": None if last is None else last[0].isoformat(),
+                "last_entry_number": None if last is None else last[1],
+            }
         rate = connection.execute(RATE, key).fetchone()
         answer: dict[str, Any] = {
             "today": today.isoformat(),
@@ -249,6 +282,8 @@ class PostgresLedgerCash:
                 "waiting": waiting,
             },
             "riel": riel_part,
+            # The riel bank account holds riel on its lines (owner 04/11/2026).
+            "riel_bank": bank_part,
             "money_accounts": [
                 {
                     "code": r[1],
@@ -275,7 +310,7 @@ class PostgresLedgerCash:
                 "cash_kind": account[4],
                 "book_cents": account[5],
             }
-            if account[4] == "BANK":
+            if account[4] in ("BANK", "BANK_KHR"):
                 match = connection.execute(BANK_MATCH, place).fetchone()
                 lines = [
                     {
@@ -286,14 +321,23 @@ class PostgresLedgerCash:
                         "memo": r[4],
                         "debit_cents": r[5],
                         "credit_cents": r[6],
+                        "riel_minor": r[7],
                     }
                     for r in connection.execute(
                         BANK_LINES, {"prop": property_id, "code": account[1], "period": period}
                     )
                 ]
+                held = None
+                if account[4] == "BANK_KHR":
+                    held_row = connection.execute(
+                        BANK_RIEL_HELD, {"account": account[0], "on": ends_on}
+                    ).fetchone()
+                    held = 0 if held_row is None else int(held_row[0])
                 answer["banks"].append(
                     {
                         **base,
+                        # The riel the book holds at the month's end (riel bank only).
+                        "riel_held": held,
                         "lines": lines,
                         "match": None
                         if match is None
@@ -303,6 +347,7 @@ class PostgresLedgerCash:
                             "by_name": match[2],
                             "at": _plain(match[3]),
                             "lines": match[4],
+                            "statement_riel": match[5],
                         },
                     }
                 )

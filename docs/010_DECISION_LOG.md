@@ -2592,3 +2592,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270512_292` (DB-PR-004), API-PR-004, the Move-out finding links and the New Problem report from a finding.
 - **Links:** DL-124, BR-MOVEOUT-006.
 - **Decision date:** 2026-11-04.
+
+## DL-160 — Riel bank account
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE GENERAL LEDGER BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's card answers of 04/11/2026 12:05 ("Riel bank account per method") and 17:52 ("Same as riel cash"), and the owner's facts: the NBC asks for a riel account in every bank; one ABA QR code takes riel and dollars; bank transfers come in both.
+- **(A) Account.** The chart gets 1021 ABA Bank · KHR account.
+- **(B) Riel per method.** Each Payment Method may name a riel account (riel cash 1011 or riel bank 1021). A Payment in riel goes there; with none it goes where it went before. Refund methods have none, because Refunds are paid in dollars (Claude's reading).
+- **(C) Month end.** Riel in the bank is valued at the app's month-end rate, like riel cash; the difference goes to 4100.
+- **(D) Matching.** The riel bank account is matched against the ABA riel statement in riel (Claude's reading); its riel is kept line by line.
+- **(E) Waits for later:** bill payments, owner money, advances and paybacks in or out of 1021; typed lines (adjusting entries, Opening balances) on 1021.
+- **Built:** migration `20270609_320` (DB-GL-008), API-GL-015, Ledger › Needs check (riel account per method) and Ledger › Bank and cash (riel in the bank, matching in riel).
+- **Links:** DL-117.
+- **Decision date:** 2026-11-04.

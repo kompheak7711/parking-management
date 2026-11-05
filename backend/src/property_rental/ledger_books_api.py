@@ -181,7 +181,7 @@ class PostgresLedgerBooks:
                         account.account_type, account.normal_side, account.control_source,
                         account.is_tax_locked, account.is_active, account.is_postable,
                         coalesce(sum(line.debit_cents), 0), coalesce(sum(line.credit_cents), 0),
-                        count(line.id) > 0
+                        count(line.id) > 0, account.cash_kind
                     FROM app.gl_accounts AS account
                     LEFT JOIN app.gl_journal_lines AS line ON line.account_id = account.id
                         AND EXISTS (SELECT 1 FROM app.gl_journal_entries AS entry
@@ -208,6 +208,7 @@ class PostgresLedgerBooks:
             debit,
             credit,
             used,
+            cash_kind,
         ) in rows:
             natural = int(debit) - int(credit)
             accounts.append(
@@ -222,6 +223,7 @@ class PostgresLedgerBooks:
                     "active": bool(active),
                     "postable": bool(postable),
                     "used": bool(used),
+                    "cash_kind": _text(cash_kind),
                     "balance_cents": natural if normal_side == "DEBIT" else -natural,
                 }
             )

@@ -34,6 +34,7 @@ AT = datetime(2027, 1, 5, 2, tzinfo=UTC)
 class InMemoryPosting:
     property_id: UUID = field(default_factory=uuid4)
     accounts: dict[UUID, str] = field(default_factory=dict)
+    riel: dict[UUID, str | None] = field(default_factory=dict)
     changes: list[tuple[str, UUID, str, date, str]] = field(default_factory=list)
 
     def _check(self, property_id: UUID) -> None:
@@ -68,6 +69,8 @@ class InMemoryPosting:
                 code,
                 "Cash on hand (USD)" if code else None,
                 date(2027, 1, 1) if code else None,
+                self.riel.get(CASH),
+                "ABA Bank · KHR account" if self.riel.get(CASH) else None,
             ),
         )
 
@@ -80,13 +83,19 @@ class InMemoryPosting:
         account_code: str,
         effective_from: date,
         actor_id: str,
+        riel_account_code: str | None = None,
     ) -> None:
         self._check(property_id)
         if method_id != CASH:
             raise LedgerPostingNotFound
         if account_code != "1010":
             raise LedgerPostingInvalid("A method goes to an active cash or bank account")
+        if riel_account_code not in (None, "1011", "1021"):
+            raise LedgerPostingInvalid(
+                "The riel account is an active riel cash or riel bank account"
+            )
         self.accounts[method_id] = account_code
+        self.riel[method_id] = riel_account_code
         self.changes.append((kind, method_id, account_code, effective_from, actor_id))
 
 
@@ -123,6 +132,8 @@ def test_needs_check_and_method_accounts_need_ledger_read() -> None:
         "account_code": None,
         "account_name": None,
         "effective_from": None,
+        "riel_account_code": None,
+        "riel_account_name": None,
     }
     other = reader.get(f"/api/v1/properties/{uuid4()}/ledger/needs-check")
     assert other.status_code == 403
@@ -159,3 +170,28 @@ def test_only_ledger_accounts_manage_sets_a_method_account() -> None:
         {**body, "extra": 1},
     ):
         assert owner.put(url, json=bad, headers=HEADERS).status_code == 422, bad
+
+
+def test_a_payment_method_takes_a_riel_account() -> None:
+    flow = InMemoryPosting()
+    url = f"/api/v1/properties/{flow.property_id}/ledger/method-accounts"
+    body = {
+        "kind": "PAYMENT",
+        "method_id": str(CASH),
+        "account_code": "1010",
+        "effective_from": "2027-01-01",
+        "riel_account_code": "1021",
+    }
+    owner = client(flow, "ledger.read", "ledger.accounts.manage")
+    answer = owner.put(url, json=body, headers=HEADERS)
+    assert answer.status_code == 200
+    [method] = answer.json()["data"]
+    assert method["riel_account_code"] == "1021"
+    assert method["riel_account_name"] == "ABA Bank · KHR account"
+    refused = owner.put(url, json={**body, "riel_account_code": "1020"}, headers=HEADERS)
+    assert refused.status_code == 422
+    assert owner.put(
+        url, json={**body, "riel_account_code": "21"}, headers=HEADERS
+    ).status_code == (422)
+    cleared = owner.put(url, json={**body, "riel_account_code": None}, headers=HEADERS)
+    assert cleared.json()["data"][0]["riel_account_code"] is None

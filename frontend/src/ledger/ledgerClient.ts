@@ -25,6 +25,8 @@ export interface Account {
   name_km: string | null;
   account_type: AccountType;
   control_source: string | null;
+  /** CASH_USD, CASH_KHR, BANK, BANK_KHR or PETTY for a cash or bank account, else null. */
+  cash_kind: string | null;
   tax_locked: boolean;
   active: boolean;
   used: boolean;
@@ -101,6 +103,9 @@ export interface MethodAccount {
   account_code: string | null;
   account_name: string | null;
   effective_from: string | null;
+  /** Where a payment in riel goes (owner 04/11/2026); null = as before. */
+  riel_account_code: string | null;
+  riel_account_name: string | null;
 }
 
 export type ReportName =
@@ -165,6 +170,7 @@ export interface LedgerApi {
       method_id: string;
       account_code: string;
       effective_from: string;
+      riel_account_code?: string | null;
     },
   ) => Promise<MethodAccount[]>;
   report: (
@@ -301,6 +307,7 @@ function accountOf(value: unknown): Account {
     name_km: maybeText(row.name_km),
     account_type: type as AccountType,
     control_source: maybeText(row.control_source),
+    cash_kind: maybeText(row.cash_kind),
     tax_locked: row.tax_locked === true,
     active: row.active !== false,
     used: row.used === true,
@@ -365,6 +372,8 @@ function methodOf(value: unknown): MethodAccount {
     account_code: maybeText(row.account_code),
     account_name: maybeText(row.account_name),
     effective_from: maybeText(row.effective_from),
+    riel_account_code: maybeText(row.riel_account_code),
+    riel_account_name: maybeText(row.riel_account_name),
   };
 }
 

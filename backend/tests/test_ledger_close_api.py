@@ -259,6 +259,7 @@ def test_part_two_changes_need_their_right_and_reach_the_database_in_its_shape()
         "account_code": "1020",
         "period_id": month,
         "statement_cents": -2_500,
+        "statement_riel": None,
         "items": [{"line_id": str(line), "statement_date": "2027-01-31", "reference": "ABA 7"}],
     }
     assert flow.writes[3][1] == {

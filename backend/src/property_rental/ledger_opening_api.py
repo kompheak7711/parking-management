@@ -49,12 +49,14 @@ OPENING: Final = """
     WHERE opening.property_id = %(prop)s
 """
 # The accounts the Owner types: postable, in use, not a control account and not tax-locked.
+# The riel bank account keeps riel on every line, which a typed line has not (migration 320).
 ACCOUNTS: Final = """
     SELECT account.code, account.name_en, account.name_km, account.account_type,
         account.normal_side
     FROM app.gl_accounts AS account
     WHERE account.property_id = %(prop)s AND account.is_postable AND account.is_active
       AND account.control_source IS NULL AND NOT account.is_tax_locked
+      AND account.cash_kind IS DISTINCT FROM 'BANK_KHR'
     ORDER BY account.code
 """
 TYPED: Final = """

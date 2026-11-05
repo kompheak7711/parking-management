@@ -383,6 +383,7 @@ ledger_database_test_suites='
   tests/test_gl_asset_register_migration.py
   tests/test_gl_budget_sheet_migration.py
   tests/test_gl_opening_sheet_migration.py
+  tests/test_gl_riel_bank_migration.py
 '
 
 for database_test_file in $database_test_suites $ledger_database_test_suites; do

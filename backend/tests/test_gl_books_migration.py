@@ -39,6 +39,7 @@ def test_the_chart_shows_each_balance_on_its_normal_side(
     assert by_code["4020"]["balance_cents"] >= 80_000
     assert by_code["1100"]["control_source"] == "INVOICES" and by_code["2400"]["tax_locked"]
     assert by_code["1010"]["used"] and not by_code["2400"]["used"]
+    assert by_code["1021"]["cash_kind"] == "BANK_KHR" and by_code["4020"]["cash_kind"] is None
     early = flow.accounts(books.property_id, books.today.replace(year=books.today.year - 1))
     assert {row["code"]: row for row in early["accounts"]}["4020"]["balance_cents"] == 0
 

@@ -583,11 +583,18 @@ function NeedsCheckTab({
   const [notice, setNotice] = useState<string | null>(null);
   if (data === null)
     return <Waiting failed={failed} language={language} onRetry={reload} />;
+  // A riel bank account is never a method's main account: it keeps riel only.
   const cash = data.chart.accounts.filter(
     (account) =>
       account.account_type === "ASSET" &&
       account.active &&
-      account.code.startsWith("10"),
+      account.code.startsWith("10") &&
+      account.cash_kind !== "BANK_KHR",
+  );
+  const riel = data.chart.accounts.filter(
+    (account) =>
+      account.active &&
+      (account.cash_kind === "CASH_KHR" || account.cash_kind === "BANK_KHR"),
   );
   return (
     <>
@@ -712,6 +719,15 @@ function NeedsCheckTab({
                               {method.account_code}
                             </span>{" "}
                             · {chartName(language, data.chart, method)}
+                            {method.riel_account_code !== null && (
+                              <span className="ui-sub2">
+                                {lt(
+                                  language,
+                                  "nc_riel_line",
+                                  `${method.riel_account_code} · ${rielName(language, data.chart, method)}`,
+                                )}
+                              </span>
+                            )}
                             {method.effective_from !== null && (
                               <span className="ui-muted ui-sub2">
                                 {lt(
@@ -768,11 +784,12 @@ function NeedsCheckTab({
           failure={failure}
           language={language}
           method={open}
+          riel={riel}
           onClose={() => {
             setOpen(null);
             setFailure(null);
           }}
-          onSave={(code, from) => {
+          onSave={(code, rielCode, from) => {
             setBusy(true);
             setFailure(null);
             api
@@ -781,6 +798,7 @@ function NeedsCheckTab({
                 method_id: open.method_id,
                 account_code: code,
                 effective_from: from,
+                riel_account_code: rielCode,
               })
               .then(
                 () => {
@@ -813,10 +831,23 @@ function chartName(
   return method.account_name ?? "";
 }
 
+function rielName(
+  language: Language,
+  chart: Chart,
+  method: MethodAccount,
+): string {
+  const account = chart.accounts.find(
+    (item) => item.code === method.riel_account_code,
+  );
+  if (account !== undefined) return accountName(language, account);
+  return method.riel_account_name ?? "";
+}
+
 function MethodAccountDialog({
   language,
   method,
   cash,
+  riel,
   earliest,
   busy,
   failure,
@@ -826,14 +857,17 @@ function MethodAccountDialog({
   language: Language;
   method: MethodAccount;
   cash: readonly Account[];
+  /** Riel cash and riel bank accounts: a Payment Method may send riel to one. */
+  riel: readonly Account[];
   /** The oldest record waiting in Needs check, if any. */
   earliest: string | null;
   busy: boolean;
   failure: string | null;
   onClose: () => void;
-  onSave: (code: string, from: string) => void;
+  onSave: (code: string, rielCode: string | null, from: string) => void;
 }) {
   const [code, setCode] = useState(method.account_code ?? cash[0]?.code ?? "");
+  const [rielCode, setRielCode] = useState(method.riel_account_code ?? "");
   // A method with no account yet starts on the oldest waiting record, so it can post
   // (owner test 04/11/2026: from today, older Payments kept waiting).
   const [from, setFrom] = useState(
@@ -844,7 +878,12 @@ function MethodAccountDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (code === "" || from === "") return;
-    onSave(code, from);
+    // Refunds are paid in dollars, so only a Payment Method has a riel account.
+    onSave(
+      code,
+      method.kind === "PAYMENT" && rielCode !== "" ? rielCode : null,
+      from,
+    );
   }
   return (
     <Dialog
@@ -875,6 +914,29 @@ function MethodAccountDialog({
           ))}
         </select>
       </div>
+      {method.kind === "PAYMENT" && (
+        <div className="ui-field">
+          <label htmlFor="ma-riel">{lt(language, "nc_riel")}</label>
+          <select
+            aria-describedby="ma-riel-h"
+            id="ma-riel"
+            onChange={(event) => {
+              setRielCode(event.target.value);
+            }}
+            value={rielCode}
+          >
+            <option value="">{lt(language, "nc_riel_none")}</option>
+            {riel.map((account) => (
+              <option key={account.code} value={account.code}>
+                {account.code} · {accountName(language, account)}
+              </option>
+            ))}
+          </select>
+          <p className="ui-muted" id="ma-riel-h">
+            {lt(language, "nc_riel_h")}
+          </p>
+        </div>
+      )}
       <div className="ui-field">
         <label htmlFor="ma-from">
           {lt(language, "nc_from")}

@@ -155,7 +155,9 @@ class BankLine(Body):
 class BankMatchBody(Body):
     account_code: Code
     period_id: Id
-    statement_balance_cents: Annotated[int, Field(ge=-(9 * 10**15), le=9 * 10**15)]
+    # A dollar bank account is matched in cents, the riel bank account in riel (owner 04/11/2026).
+    statement_balance_cents: Annotated[int, Field(ge=-(9 * 10**15), le=9 * 10**15)] | None = None
+    statement_riel: Annotated[int, Field(ge=-(9 * 10**15), le=9 * 10**15)] | None = None
     lines: Annotated[list[BankLine], Field(max_length=5000)]
 
 
@@ -240,7 +242,9 @@ ACTIONS: dict[str, Action] = {
         "gl_change_asset_life", "gl_fixed_assets", ("years", "reason"), smallint_field="years"
     ),
     "match_bank": Action(
-        "gl_match_bank", None, ("account_code", "period_id", "statement_cents", "items")
+        "gl_match_bank",
+        None,
+        ("account_code", "period_id", "statement_cents", "statement_riel", "items"),
     ),
     "prepare_budget": Action(
         "gl_prepare_budget",
@@ -352,7 +356,8 @@ VIEWS = {
     """,
     "bank-matches": """
         SELECT match.id, account.code AS account_code, match.period_id, period.ends_on,
-            match.statement_balance_cents, match.status, match.created_by, match.created_at,
+            match.statement_balance_cents, match.statement_riel, match.status, match.created_by,
+            match.created_at,
             match.matched_by, match.matched_at,
             (SELECT count(*) FROM app.gl_bank_reconciliation_items AS item
              WHERE item.reconciliation_id = match.id) AS lines
@@ -660,6 +665,7 @@ def create_ledger_close_router(
             "account_code": body.account_code,
             "period_id": body.period_id,
             "statement_cents": body.statement_balance_cents,
+            "statement_riel": body.statement_riel,
             "items": [line.as_json() for line in body.lines],
         }
         made = change(request, property_id, (RECONCILE,), "match_bank", values)

@@ -5678,6 +5678,17 @@ Owner decisions: DESIGN.md round 22 (Financial statements: Customer debt aging, 
 - `gl_budget_warning(property, actor, day)` (`ledger.read`): the two Budget warning Business rules on a day, percent off in hundredths (`BUDGET_PCT`) and smallest amount off in cents (`BUDGET_MIN`).
 - The other reports read the phase 5 report functions of migration `20270411_261` and the ledger tables with the runtime login, after the route has checked `ledger.read`.
 
+## DB-GL-008 — Riel bank account (General Ledger, DL-160)
+
+Owner decisions: the cards of 04/11/2026 12:05 ("Riel bank account per method") and 17:52 ("Same as riel cash"). Migration `20270609_320` (forward-only; changes the GL tables named below).
+
+- `app.gl_accounts.cash_kind` may be `BANK_KHR`. The chart template and every Property that has 1020 get `1021 ABA Bank · KHR account` (ធនាគារ ABA · រៀល), Asset, current, `BANK_KHR`.
+- `app.gl_method_accounts.riel_account_id` (nullable; FK with the Property): the riel account of a Payment Method, a `CASH_KHR` or `BANK_KHR` account. A Refund method has none (Refunds are paid in USD). A method's main account is never `BANK_KHR`. `gl_set_method_account` takes `p_riel_account_code` as a new last argument; `gl_method_list` answers `riel_account_code` and `riel_account_name`.
+- Posting (`gl_app_record_events`): a riel Payment goes to its method's riel account; with none it goes where it went before (1011 for a `CASH_USD` method, else the method's account).
+- A `BANK_KHR` account keeps riel on every line (`gl_check_line`), except a month-end valuation and its reversal. The riel it holds is the sum of its riel lines. `gl_value_riel` values it at the month-end rate like riel cash; the difference goes to 4100. Money moves in or out of it are typed in riel with the rate; Expenses may be paid from it in riel. It is not counted (`gl_count_cash`), cannot take a typed line (adjusting entries, Opening balances), and the month-end checks BANK_MATCHED and RIEL_VALUED include it.
+- Bank matching: `app.gl_bank_reconciliations.statement_riel` (nullable). `gl_match_bank` takes `p_statement_riel` after `p_statement_cents`; a `BANK_KHR` account is matched in riel (the statement in riel against its riel lines) and `statement_balance_cents` holds the dollars of the cleared lines. `gl_bank_lines` answers `riel_minor` and leaves out valuation lines, which cannot be matched.
+- Waits for later: bill payments, owner money, advances and paybacks in or out of 1021.
+
 ## DB-BS-001 — Settings › Business: numbering, Invoice types, Property fields (V1.1 part 2)
 
 DL-118. Migration `20270421_271`, forward-only.

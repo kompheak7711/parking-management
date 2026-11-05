@@ -38,16 +38,23 @@ export interface BankLine {
   memo: string | null;
   debit_cents: number;
   credit_cents: number;
+  /** The riel of a riel bank account's line (migration 320); null on a dollar bank. */
+  riel_minor: number | null;
 }
 
 export interface BankBook {
   code: string;
   name_en: string;
   name_km: string | null;
+  /** "BANK" for dollars, "BANK_KHR" for the riel bank account (owner 04/11/2026). */
+  cash_kind: string;
   book_cents: number;
+  /** The riel the riel bank account holds at the month's end; null on a dollar bank. */
+  riel_held: number | null;
   lines: BankLine[];
   match: {
     statement_balance_cents: number;
+    statement_riel: number | null;
     status: string;
     by_name: string | null;
     at: string;
@@ -73,6 +80,14 @@ export interface CashBook {
   } | null;
 }
 
+export interface RielHeld {
+  code: string;
+  held_riel: number;
+  book_cents: number;
+  last_month_end: string | null;
+  last_entry_number: string | null;
+}
+
 export interface BankCash {
   today: string;
   months: CashMonth[];
@@ -84,13 +99,9 @@ export interface BankCash {
     balance_cents: number;
     waiting: { request_number: string; amount_cents: number }[];
   } | null;
-  riel: {
-    code: string;
-    held_riel: number;
-    book_cents: number;
-    last_month_end: string | null;
-    last_entry_number: string | null;
-  } | null;
+  riel: RielHeld | null;
+  /** The riel bank account (1021), when the chart has one. */
+  riel_bank: RielHeld | null;
   money_accounts: MoneyAccount[];
   banks: BankBook[];
   cash: CashBook[];
@@ -148,7 +159,9 @@ export interface CashApi {
     body: {
       account_code: string;
       period_id: string;
-      statement_balance_cents: number;
+      /** A dollar bank is matched in cents, the riel bank account in riel. */
+      statement_balance_cents: number | null;
+      statement_riel: number | null;
       lines: { line_id: string }[];
     },
   ) => Promise<string>;
@@ -180,13 +193,25 @@ function monthOf(row: Record<string, unknown>): CashMonth {
   };
 }
 
+function rielHeldOf(riel: Record<string, unknown>): RielHeld {
+  return {
+    code: text(riel.code),
+    held_riel: whole(riel.held_riel),
+    book_cents: whole(riel.book_cents),
+    last_month_end: maybeText(riel.last_month_end),
+    last_entry_number: maybeText(riel.last_entry_number),
+  };
+}
+
 function bankOf(value: unknown): BankBook {
   const row = record(value);
   return {
     code: text(row.code),
     name_en: text(row.name_en),
     name_km: maybeText(row.name_km),
+    cash_kind: row.cash_kind === "BANK_KHR" ? "BANK_KHR" : "BANK",
     book_cents: whole(row.book_cents),
+    riel_held: maybeWhole(row.riel_held),
     lines: list(row.lines).map((item) => {
       const line = record(item);
       return {
@@ -197,10 +222,12 @@ function bankOf(value: unknown): BankBook {
         memo: maybeText(line.memo),
         debit_cents: whole(line.debit_cents),
         credit_cents: whole(line.credit_cents),
+        riel_minor: maybeWhole(line.riel_minor),
       };
     }),
     match: optional(row.match, (match) => ({
       statement_balance_cents: whole(match.statement_balance_cents),
+      statement_riel: maybeWhole(match.statement_riel),
       status: text(match.status),
       by_name: maybeText(match.by_name),
       at: text(match.at),
@@ -270,13 +297,8 @@ export const cashApi: CashApi = {
           };
         }),
       })),
-      riel: optional(data.riel, (riel) => ({
-        code: text(riel.code),
-        held_riel: whole(riel.held_riel),
-        book_cents: whole(riel.book_cents),
-        last_month_end: maybeText(riel.last_month_end),
-        last_entry_number: maybeText(riel.last_entry_number),
-      })),
+      riel: optional(data.riel, rielHeldOf),
+      riel_bank: optional(data.riel_bank, rielHeldOf),
       money_accounts: list(data.money_accounts).map((item) => {
         const row = record(item);
         return {

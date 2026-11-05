@@ -62495,6 +62495,105 @@
       "test_path": "backend/tests/test_gl_opening_sheet_migration.py",
       "status": "implemented",
       "notes": "Owner test 04/11/2026 follow-up: every close list (adjusting entries, periods, bank lines and matches, write-offs, budgets and the rest) runs with the runtime login; the write-off list reads the Final Settlement through app.gl_write_off_settlement (migration 20270428_278)."
+    },
+    {
+      "test_id": "test_the_chart_has_the_riel_bank_account",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): The chart and every Property with 1020 get 1021 ABA Bank · KHR account (BANK_KHR)."
+    },
+    {
+      "test_id": "test_a_riel_payment_goes_to_the_methods_riel_account",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): A riel Payment posts to its Payment Method's riel account."
+    },
+    {
+      "test_id": "test_without_a_riel_account_riel_goes_where_it_went_before",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): With no riel account, a riel Payment posts as before (1011 for a dollar cash method, else the method's account)."
+    },
+    {
+      "test_id": "test_a_method_account_save_checks_the_riel_account",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): A method account save refuses a riel bank main account, a riel account on a Refund method and a riel account that is not riel cash or riel bank."
+    },
+    {
+      "test_id": "test_money_in_the_riel_bank_keeps_its_riel_and_is_valued_at_month_end",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): Money in the riel bank keeps its riel on every line and is valued at the month-end rate; the difference goes to 4100."
+    },
+    {
+      "test_id": "test_the_riel_bank_is_matched_in_riel",
+      "upstream_ids": [
+        "DL-160",
+        "DB-GL-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_bank_migration.py",
+      "status": "implemented",
+      "notes": "Riel bank account (owner cards 04/11/2026 12:05 and 17:52, migration 20270609_320): The riel bank account is matched against the statement in riel; valuation lines are not matched."
+    },
+    {
+      "test_id": "test_a_payment_method_takes_a_riel_account",
+      "upstream_ids": [
+        "DL-160",
+        "API-GL-015"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_ledger_posting_api.py",
+      "status": "implemented",
+      "notes": "Riel bank account: PUT method-accounts passes riel_account_code to gl_set_method_account and answers the method's riel account."
+    },
+    {
+      "test_id": "TEST-FE-1297",
+      "upstream_ids": [
+        "DL-160",
+        "API-GL-015"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/BankCashPage.test.tsx",
+      "status": "implemented",
+      "notes": "Riel bank account: Bank and cash shows the riel in the bank and matches the riel bank account in riel."
+    },
+    {
+      "test_id": "TEST-FE-1298",
+      "upstream_ids": [
+        "DL-160",
+        "API-GL-015"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "Riel bank account: Needs check sets a Payment Method's riel account and keeps the riel bank out of the main account list."
     }
   ]
 }

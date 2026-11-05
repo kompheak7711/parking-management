@@ -11,7 +11,9 @@ Manager); setting the ledger account of a Payment Method or Refund method needs
   Refund method with the ledger account it posts to today (none = its records wait in "Needs
   check").
 - `PUT /api/v1/properties/{property_id}/ledger/method-accounts` sets one method's account from a
-  date; `app.gl_set_method_account` writes the row and the audit event.
+  date; `app.gl_set_method_account` writes the row and the audit event. A Payment Method may
+  also name a riel account (riel cash or the riel bank account, owner 04/11/2026): a payment in
+  riel posts there. Refunds are always in dollars, so a Refund method has none.
 """
 
 from __future__ import annotations
@@ -48,7 +50,8 @@ NEEDS_CHECK: Final = (
     "ORDER BY problem.event_date, problem.posting_key"
 )
 METHOD_ACCOUNTS: Final = """
-    SELECT kind, method_id, code, name, account_code, account_name, effective_from
+    SELECT kind, method_id, code, name, account_code, account_name, effective_from,
+        riel_account_code, riel_account_name
     FROM app.gl_method_list(%(prop)s, %(day)s)
 """
 
@@ -88,6 +91,8 @@ class MethodAccount:
     account_code: str | None
     account_name: str | None
     effective_from: date | None
+    riel_account_code: str | None = None
+    riel_account_name: str | None = None
 
 
 class LedgerPostingFlow(Protocol):
@@ -104,6 +109,7 @@ class LedgerPostingFlow(Protocol):
         account_code: str,
         effective_from: date,
         actor_id: str,
+        riel_account_code: str | None = None,
     ) -> None: ...
 
 
@@ -175,8 +181,10 @@ class PostgresLedgerPostingFlow:
                 None if account is None else str(account),
                 None if account_name is None else str(account_name),
                 since,
+                None if riel is None else str(riel),
+                None if riel_name is None else str(riel_name),
             )
-            for kind, method, code, name, account, account_name, since in rows
+            for kind, method, code, name, account, account_name, since, riel, riel_name in rows
         )
 
     def set_method_account(
@@ -188,6 +196,7 @@ class PostgresLedgerPostingFlow:
         account_code: str,
         effective_from: date,
         actor_id: str,
+        riel_account_code: str | None = None,
     ) -> None:
         payment = method_id if kind == "PAYMENT" else None
         refund = method_id if kind == "REFUND" else None
@@ -195,7 +204,7 @@ class PostgresLedgerPostingFlow:
             with psycopg.connect(self._database_url) as connection:
                 self._property_day(connection, property_id)
                 connection.execute(
-                    "SELECT app.gl_set_method_account(%s, %s, %s, %s, %s, %s, %s)",
+                    "SELECT app.gl_set_method_account(%s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         property_id,
                         payment,
@@ -204,6 +213,7 @@ class PostgresLedgerPostingFlow:
                         effective_from,
                         UUID(actor_id),
                         uuid4(),
+                        riel_account_code,
                     ),
                 )
         except psycopg.errors.ForeignKeyViolation as exc:
@@ -221,6 +231,7 @@ class MethodAccountChange(BaseModel):
     method_id: UUID
     account_code: str = Field(pattern=r"^[0-9]{4}$")
     effective_from: date
+    riel_account_code: str | None = Field(default=None, pattern=r"^[0-9]{4}$")
 
     @field_validator("method_id", mode="before")
     @classmethod
@@ -263,6 +274,8 @@ def _method_body(row: MethodAccount) -> dict[str, object]:
         "account_code": row.account_code,
         "account_name": row.account_name,
         "effective_from": row.effective_from.isoformat() if row.effective_from else None,
+        "riel_account_code": row.riel_account_code,
+        "riel_account_name": row.riel_account_name,
     }
 
 
@@ -331,6 +344,7 @@ def create_ledger_posting_router(
                 account_code=change.account_code,
                 effective_from=change.effective_from,
                 actor_id=actor.actor_id,
+                riel_account_code=change.riel_account_code,
             )
         except (LedgerPostingNotFound, LedgerPostingInvalid, LedgerPostingUnavailable) as exc:
             raise _http(exc) from exc

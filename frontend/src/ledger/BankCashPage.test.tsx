@@ -37,7 +37,9 @@ const BANK: BankCash["banks"][number] = {
   code: "1020",
   name_en: "ABA Bank · USD account",
   name_km: null,
+  cash_kind: "BANK",
   book_cents: 1_610_357,
+  riel_held: null,
   lines: [
     {
       line_id: "line-1",
@@ -47,6 +49,7 @@ const BANK: BankCash["banks"][number] = {
       memo: "RCP260153",
       debit_cents: 45_795,
       credit_cents: 0,
+      riel_minor: null,
     },
     {
       line_id: "line-2",
@@ -56,6 +59,7 @@ const BANK: BankCash["banks"][number] = {
       memo: null,
       debit_cents: 0,
       credit_cents: 1_000,
+      riel_minor: null,
     },
   ],
   match: null,
@@ -79,6 +83,7 @@ const DATA: BankCash = {
     last_month_end: "2026-10-31",
     last_entry_number: "JE260565",
   },
+  riel_bank: null,
   money_accounts: [
     {
       code: "1010",
@@ -155,6 +160,12 @@ function show(api: CashApi, capabilities: ReadonlySet<string> | null = null) {
   );
 }
 
+function at<T>(items: readonly T[], index: number): T {
+  const item = items[index];
+  if (item === undefined) throw new Error(`No item ${String(index)}`);
+  return item;
+}
+
 async function press(name: string | RegExp): Promise<void> {
   await waitFor(() => {
     expect(screen.getByRole("button", { name })).toBeEnabled();
@@ -215,12 +226,86 @@ describe("Bank and cash", () => {
         account_code: "1020",
         period_id: "p-10",
         statement_balance_cents: 1_564_562,
+        statement_riel: null,
         lines: [{ line_id: "line-2" }],
       });
     });
     expect(
       await screen.findByText("Bank matched for October 2026."),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1297 matches the riel bank account in riel and shows the riel it holds", async () => {
+    const rielBank: BankCash["banks"][number] = {
+      code: "1021",
+      name_en: "ABA Bank · KHR account",
+      name_km: null,
+      cash_kind: "BANK_KHR",
+      book_cents: 20_000,
+      riel_held: 820_000,
+      lines: [
+        {
+          line_id: "line-r1",
+          entry_number: "JE260571",
+          entry_date: "2026-10-30",
+          description: "Payment received",
+          memo: "RCP260160",
+          debit_cents: 10_000,
+          credit_cents: 0,
+          riel_minor: 410_000,
+        },
+      ],
+      match: null,
+    };
+    const api = fakeApi({
+      read: vi.fn(() =>
+        Promise.resolve({
+          ...DATA,
+          banks: [BANK, rielBank],
+          riel_bank: {
+            code: "1021",
+            held_riel: 820_000,
+            book_cents: 20_000,
+            last_month_end: "2026-10-31",
+            last_entry_number: "JE260566",
+          },
+        }),
+      ),
+    });
+    show(api);
+    expect(await screen.findByText("Riel in the bank")).toBeInTheDocument();
+    expect(screen.getAllByText("820,000 ៛").length).toBeGreaterThan(0);
+    const statement = at(
+      screen.getAllByLabelText("ABA statement balance on 31/10/2026"),
+      1,
+    );
+    expect(statement).toHaveValue("820000");
+    expect(
+      screen.getByText(
+        "Type the closing riel balance printed on the ABA riel account statement.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(statement, { target: { value: "410,000" } });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Not on the statement yet: JE260571",
+      }),
+    );
+    expect(screen.getByText("-410,000 ៛")).toBeInTheDocument();
+    const buttons = screen.getAllByRole("button", { name: "Mark as matched" });
+    await waitFor(() => {
+      expect(at(buttons, 1)).toBeEnabled();
+    });
+    fireEvent.click(at(buttons, 1));
+    await waitFor(() => {
+      expect(api.matchBank).toHaveBeenCalledWith("prop-1", {
+        account_code: "1021",
+        period_id: "p-10",
+        statement_balance_cents: null,
+        statement_riel: 410_000,
+        lines: [],
+      });
+    });
   });
 
   it("TEST-FE-1184 shows a matched month and a counted month as done", async () => {
@@ -233,6 +318,7 @@ describe("Bank and cash", () => {
           lines: [],
           match: {
             statement_balance_cents: 1_500_000,
+            statement_riel: null,
             status: "MATCHED",
             by_name: "Dara",
             at: "2026-10-02T09:00:00+07:00",
