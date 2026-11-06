@@ -14,6 +14,8 @@ Answered) and `POST .../telegram/contact/{message_id}/answer` answers one messag
 FAQ page (`telegram.faq`, or `telegram.contact` to read only); `POST .../telegram/faq` saves a
 question (a new version; the Owner's is used at once) and
 `POST .../telegram/faq/versions/{version_id}/approve` is the Owner's approval (`telegram.faq`).
+DL-179: `POST .../telegram/faq/starter` loads the 15 starter questions into an empty FAQ, each
+waiting for the Owner (`telegram.faq`).
 
 Step 3a (DL-171): `GET .../visit-requests` answers the Visit requests tab of Bookings: the
 requests the Customer bot saved, oldest first, each with the inquiries that joined it
@@ -111,6 +113,8 @@ class TelegramPageFlow(Protocol):
 
     def approve_faq(self, property_id: UUID, version_id: UUID, *, actor_id: str) -> Json: ...
 
+    def load_faq_starter(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
     def visit_request(self, property_id: UUID, request_id: UUID, *, actor_id: str) -> Json: ...
@@ -146,6 +150,9 @@ class UnavailableTelegramPageFlow:
         raise ProductUnavailable
 
     def approve_faq(self, property_id: UUID, version_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def load_faq_starter(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
     def visit_requests(self, property_id: UUID, **_: object) -> Json:
@@ -240,6 +247,11 @@ class PostgresTelegramPageFlow:
                 "SELECT app.telegram_faq_approve(%s, %s, %s)",
                 (property_id, version_id, UUID(actor_id)),
             )
+        )
+
+    def load_faq_starter(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one("SELECT app.telegram_faq_load_starter(%s, %s)", (property_id, UUID(actor_id)))
         )
 
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json:
@@ -441,6 +453,18 @@ def create_telegram_router(
             return envelope(
                 request,
                 {"approved": approved, "faq": flow.faq(property_id, actor_id=actor.actor_id)},
+            )
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @pages.post("/telegram/faq/starter")
+    def load_telegram_faq_starter(property_id: UUID, request: Request) -> Json:
+        actor = _require(request, resolver, TELEGRAM_FAQ, property_id)
+        require_browser_mutation(request, settings)
+        try:
+            loaded = flow.load_faq_starter(property_id, actor_id=actor.actor_id)
+            return envelope(
+                request, {"loaded": loaded, "faq": flow.faq(property_id, actor_id=actor.actor_id)}
             )
         except REFUSED as exc:
             raise _http(exc) from exc

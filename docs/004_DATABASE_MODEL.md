@@ -5910,3 +5910,9 @@ Added by DL-178 (migration `20270624_335`, forward-only).
 - `app.telegram_staff_maintenance_check` (`telegram.operate`): moves a planned visit to Checked through `app.problem_report_step`. Answers `CHECKED`, `NOT_PLANNED`, `NOT_LINKED`, `NOT_ROLE` or `INVALID`.
 - `app.telegram_staff_form_data` now also gives, in the shared choices, the planned visits (at most 12, urgent first) and the Unit Check areas.
 
+## DB-TG-015 — Starter FAQ questions (DL-179)
+
+Added by DL-179 (migration `20270625_336`, forward-only). No new table.
+
+- `app.telegram_faq_starter()` (internal, not granted): the 15 starter questions as JSON (bots, question and answer in English and Khmer).
+- `app.telegram_faq_load_starter(property, actor)` (`telegram.faq`): locks the Property, refuses with 55000 when its FAQ already has a question, then adds the 15 questions numbered 1 to 15, each with one proposed version and no approval, and answers `{"loaded": 15}`. No bot shows a question until the Owner approves it.

@@ -85,7 +85,9 @@ def pet_case(
     ("return", n) verifies a one-call return of n of the latest one, ("reverse", 0) reverses the
     latest return. The Initial Rent is paid except debt; the Lease is terminated for pet
     noncompliance after three warnings (BR-DEP-022). Nothing is forfeited yet."""
-    source = signed_with_initial(url, this_month(url))
+    # The Initial Rent is due 5 days after the start (migration 64): start at most 5 days ago, so an
+    # unpaid debt is never overdue and needs no late-payment decision (from the 7th of a month).
+    source = signed_with_initial(url, min(this_month(url), 5))
     human, prop, lease = source["actor"], source["property"], source["lease"]
     customer, day = source["customer"], source["today"]
     approval = uuid4()

@@ -330,6 +330,8 @@ export interface TelegramApi {
   ) => Promise<FaqSaved>;
   /** The Owner approves the version waiting and answers the page again. */
   approveFaq: (propertyId: string, versionId: string) => Promise<FaqPage>;
+  /** DL-179: loads the 15 starter questions into an empty FAQ, each waiting for the Owner. */
+  loadFaqStarter: (propertyId: string) => Promise<FaqPage>;
   visitRequests: (propertyId: string) => Promise<VisitRequestsPage>;
   visitRequest: (
     propertyId: string,
@@ -792,6 +794,12 @@ export const telegramApi: TelegramApi = {
         `${root(propertyId)}/faq/versions/${encodeURIComponent(versionId)}/approve`,
         post(),
       ),
+    );
+    return faqPageOf(answer.faq);
+  },
+  async loadFaqStarter(propertyId) {
+    const answer = record(
+      await request(`${root(propertyId)}/faq/starter`, post()),
     );
     return faqPageOf(answer.faq);
   },

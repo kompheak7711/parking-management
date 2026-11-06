@@ -2819,3 +2819,16 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-115, DL-175, DL-177.
 - **Decision date:** 2026-11-05.
 
+## DL-179 — Telegram bots: load the 15 starter FAQ questions
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/telegram-faq-load; WAITS FOR THE OWNER'S OK TO MERGE`
+- **Source:** the owner's OK of 5 Nov 2026 09:17 to load the 15 questions of the FAQ draft (https://claude.ai/artifact/SRHPb3gRAArsJ5jDeAzgQR), and DL-170 (the Owner approves every FAQ answer before a bot shows it). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business or money rule.
+- **(A) What loads.** The 15 questions and answers of the FAQ draft, in English and Khmer, word for word, with the bots that show each one: questions 1 to 5 and 7 to 10 for the Customer bot, 12 to 14 for the Tenant bot, and 6, 11 and 15 for both.
+- **(B) Each waits for the Owner.** A loaded question is a proposed version with no approval, the same as a question typed by the Manager. No bot shows it until the Owner approves it in Office › Telegram › FAQ.
+- **(C) Once only, on an empty FAQ.** The button "Load the 15 starter questions" shows only when the Property's FAQ is empty and the person has `telegram.faq`. Loading again, or loading when a question already exists, is refused (409), so nothing is doubled and nothing typed is changed.
+- **(D) Owner changes of 6 Nov 2026 17:32.** Question 1 ends with the Google Maps link of the building, and question 3 sends the reader to the website for the monthly rent instead of listing prices (the website address is written `[website link]` until the Owner gives it). The public website drops these two questions from its own FAQ.
+- **Open:** the native Khmer check of the answers; the website address in question 3. The Owner can change any answer at any time; each change waits for the Owner's approval.
+- **Built:** migration `20270625_336` (DB-TG-015), API-TG-007, `frontend/src/telegram/TelegramPages.tsx`.
+- **Links:** DL-170.
+- **Decision date:** 2026-11-06.

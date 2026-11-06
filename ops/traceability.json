@@ -65395,6 +65395,50 @@
       "test_path": "frontend/src/hr/HrPages.test.tsx",
       "status": "implemented",
       "notes": "HRIS: Add employee asks Hire again when the ID number belonged to a leaver (owner 06/11 14:09)."
+    },
+    {
+      "test_id": "test_the_starter_questions_load_once_and_wait_for_the_owner",
+      "upstream_ids": [
+        "DL-179",
+        "DB-TG-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_faq_starter_migration.py",
+      "status": "implemented",
+      "notes": "Telegram FAQ starter: the Owner or Manager loads the 15 starter questions once into an empty FAQ; each waits for the Owner's approval and no bot shows it before; Staff and a second load are refused; the next question is numbered 16."
+    },
+    {
+      "test_id": "test_the_starter_words_fit_the_faq_limits",
+      "upstream_ids": [
+        "DL-179",
+        "DB-TG-015"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_faq_starter_migration.py",
+      "status": "implemented",
+      "notes": "Telegram FAQ starter: the 15 questions and answers fit the FAQ length limits in English and Khmer, and the migration is forward-only on 335."
+    },
+    {
+      "test_id": "test_the_starter_faq_loads_once_with_the_faq_right",
+      "upstream_ids": [
+        "DL-179",
+        "API-TG-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram FAQ starter: the load needs telegram.faq and the browser checks, answers the FAQ page, and a second load is refused with 409."
+    },
+    {
+      "test_id": "TEST-FE-1520",
+      "upstream_ids": [
+        "DL-179",
+        "API-TG-007"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram FAQ starter: an empty FAQ offers the Owner and the Manager the 15 starter questions, which load waiting for the Owner; Staff do not see the button."
     }
   ]
 }

@@ -309,6 +309,7 @@ function fakeApi(extra: Partial<TelegramApi> = {}): TelegramApi {
     saveFaq: vi.fn(() =>
       Promise.resolve({ number: 2, approved: false, page: FAQ }),
     ),
+    loadFaqStarter: vi.fn(() => Promise.resolve(FAQ)),
     approveFaq: vi.fn(() =>
       Promise.resolve({
         ...FAQ,
@@ -768,6 +769,53 @@ describe("Office › Telegram", () => {
       question_km: "តើបង់ដោយរបៀបណា?",
       answer_km: "សាច់ប្រាក់ ABA ឬ KHQR។",
     });
+  });
+
+  it("TEST-FE-1520 an empty FAQ offers the Owner and the Manager the 15 starter questions, which load waiting for the Owner; Staff do not see the button", async () => {
+    const api = fakeApi({
+      faq: vi.fn(() => Promise.resolve({ ...FAQ, questions: [] })),
+    });
+    render(
+      <FaqPageView
+        active
+        api={api}
+        capabilities={new Set(["telegram.faq"])}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Load the 15 starter questions",
+      }),
+    );
+    await screen.findByText(
+      "15 questions loaded. Each waits for the Owner to approve it.",
+    );
+    expect(api.loadFaqStarter).toHaveBeenCalledWith("prop-1");
+    expect(
+      screen.queryByRole("button", { name: "Load the 15 starter questions" }),
+    ).toBeNull();
+    cleanup();
+
+    const staff = fakeApi({
+      faq: vi.fn(() =>
+        Promise.resolve({ ...FAQ, questions: [], can_edit: false }),
+      ),
+    });
+    render(
+      <FaqPageView
+        active
+        api={staff}
+        capabilities={new Set(["telegram.contact"])}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    await screen.findByText(/No questions yet/);
+    expect(
+      screen.queryByRole("button", { name: "Load the 15 starter questions" }),
+    ).toBeNull();
   });
 
   it("TEST-FE-1508 the Owner approves the version waiting and saves at once; Staff with only telegram.contact read the FAQ and change nothing", async () => {

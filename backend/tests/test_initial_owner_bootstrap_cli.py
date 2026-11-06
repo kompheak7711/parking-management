@@ -1092,6 +1092,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/telegram/contact/{message_id}/answer": {"post"},
         "/api/v1/properties/{property_id}/telegram/faq": {"get", "post"},
         "/api/v1/properties/{property_id}/telegram/faq/versions/{version_id}/approve": {"post"},
+        "/api/v1/properties/{property_id}/telegram/faq/starter": {"post"},
         "/api/v1/properties/{property_id}/visit-requests": {"get"},
         "/api/v1/properties/{property_id}/visit-requests/{request_id}": {"get"},
         "/api/v1/properties/{property_id}/visit-requests/{request_id}/{action}": {"post"},

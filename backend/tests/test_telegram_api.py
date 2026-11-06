@@ -43,6 +43,7 @@ class InMemoryTelegram:
     approved: list[UUID] = field(default_factory=list)
     steps: list[tuple[str, Json]] = field(default_factory=list)
     owner: bool = False
+    starter_loaded: bool = False
 
     def _check(self, property_id: UUID) -> None:
         if property_id != self.property_id:
@@ -102,6 +103,13 @@ class InMemoryTelegram:
             raise ProductForbidden("Only the Owner approves a FAQ answer")
         self.approved.append(version_id)
         return {"number": 1, "version_number": 1}
+
+    def load_faq_starter(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        if self.starter_loaded:
+            raise ProductConflict("The FAQ already has questions")
+        self.starter_loaded = True
+        return {"loaded": 15}
 
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json:
         self._check(property_id)
@@ -227,6 +235,19 @@ def test_the_faq_is_read_by_contact_staff_and_changed_with_its_right() -> None:
     flow.owner = True
     approved = manager.post(approve, headers=HEADERS)
     assert approved.status_code == 200 and flow.approved == [version]
+
+
+def test_the_starter_faq_loads_once_with_the_faq_right() -> None:
+    flow = InMemoryTelegram()
+    url = f"{base(flow)}/faq/starter"
+    assert client(flow, "telegram.contact").post(url, headers=HEADERS).status_code == 403
+    manager = client(flow, "telegram.faq")
+    assert manager.post(url).status_code == 403
+    loaded = manager.post(url, headers=HEADERS)
+    assert loaded.status_code == 200 and loaded.json()["data"]["loaded"] == {"loaded": 15}
+    assert loaded.json()["data"]["faq"]["questions"] == []
+    again = manager.post(url, headers=HEADERS)
+    assert again.status_code == 409
 
 
 def test_the_visit_requests_list_needs_its_right() -> None:

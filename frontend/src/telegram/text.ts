@@ -378,6 +378,16 @@ const TEXT = {
     // new
     "មិនទាន់មានសំណួរទេ។ បូតប្រាប់ថាមិនទាន់មានសំណួរ ហើយណែនាំឱ្យទាក់ទងការិយាល័យ។",
   ],
+  // new: DL-179.
+  faq_starter: ["Load the 15 starter questions", "ផ្ទុកសំណួរចាប់ផ្តើម ១៥"],
+  faq_starter_sub: [
+    "The questions from the FAQ draft. Each waits for the Owner to approve it before a bot shows it.",
+    "សំណួរពីសេចក្តីព្រាង FAQ។ សំណួរនីមួយៗរង់ចាំម្ចាស់អនុម័ត មុនពេលបូតបង្ហាញ។",
+  ],
+  faq_starter_done: [
+    "15 questions loaded. Each waits for the Owner to approve it.",
+    "បានផ្ទុកសំណួរ ១៥។ សំណួរនីមួយៗរង់ចាំម្ចាស់អនុម័ត។",
+  ],
   faq_read_only: [
     "Only the Owner and the Manager change the FAQ.",
     // new

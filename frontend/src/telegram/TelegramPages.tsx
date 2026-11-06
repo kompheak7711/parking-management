@@ -1239,6 +1239,30 @@ export function FaqPageView({
     );
   };
 
+  const loadStarter = () => {
+    if (busy) return;
+    setBusy(true);
+    setDone(null);
+    setFailure(null);
+    api.loadFaqStarter(propertyId).then(
+      (next) => {
+        setBusy(false);
+        page.set(next);
+        setDone(tt(language, "faq_starter_done"));
+      },
+      (error: unknown) => {
+        setBusy(false);
+        const status = error instanceof TelegramError ? error.status : null;
+        if (status === 409) {
+          setFailure(tt(language, "e_faq_stale"));
+          page.load();
+          return;
+        }
+        setFailure(tt(language, status === 403 ? "e_403" : "e_save"));
+      },
+    );
+  };
+
   return (
     <>
       {head}
@@ -1254,7 +1278,22 @@ export function FaqPageView({
           {pageTitle(language, "faq")}
         </h2>
         {questions.length === 0 ? (
-          <p className="ui-empty">{tt(language, "none_faq")}</p>
+          <div className="ui-empty">
+            <p>{tt(language, "none_faq")}</p>
+            {edit && (
+              <>
+                <p>{tt(language, "faq_starter_sub")}</p>
+                <button
+                  className="ui-btn"
+                  disabled={busy}
+                  onClick={loadStarter}
+                  type="button"
+                >
+                  {tt(language, "faq_starter")}
+                </button>
+              </>
+            )}
+          </div>
         ) : (
           <div className="ui-tablewrap">
             <table className="ui-table">
