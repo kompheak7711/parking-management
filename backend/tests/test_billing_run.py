@@ -27,6 +27,7 @@ from property_rental.billing_worker import (
     property_local_date,
     run_bounded_loop,
 )
+from property_rental.hr_leaver_job import LeaverPassResult
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.ledger_posting_job import LedgerPostingResult
 from property_rental.short_stay_calendar_sync import SiteCalendarResult
@@ -325,6 +326,15 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             self.until.append(until)
             return LedgerPostingResult(0, 0)
 
+    class NoLeavers:
+        def __init__(self) -> None:
+            self.passes = 0
+
+        def run(self, *, as_of: datetime) -> LeaverPassResult:
+            assert as_of.utcoffset() is not None
+            self.passes += 1
+            return LeaverPassResult(0)
+
     class NoSites:
         def run(self) -> SiteCalendarResult:
             return SiteCalendarResult(0, 0)
@@ -352,6 +362,7 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             service=cast(Any, service),
             late_charges=cast(Any, NoLateCharges()),
             ledger_posting=NoLedger(),
+            leavers=NoLeavers(),
             site_calendars=NoSites(),
         )
         result = worker.run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
@@ -374,7 +385,12 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
         ) == ("UTILITIES", late_key, today, date(2026, 9, 3), date(2026, 9, 30))
         assert command.idempotency_key != service.commands[0].idempotency_key
     # A failed late run stops the later late runs of the pass, never the charge pass.
-    failing, charges, ledger = FailingLateService(), NoLateCharges(), NoLedger()
+    failing, charges, ledger, leavers = (
+        FailingLateService(),
+        NoLateCharges(),
+        NoLedger(),
+        NoLeavers(),
+    )
     failed = ScheduledBillingWorker(
         "postgresql://unused",
         property_id=property_id,
@@ -383,12 +399,15 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
         service=cast(Any, failing),
         late_charges=cast(Any, charges),
         ledger_posting=ledger,
+        leavers=leavers,
         site_calendars=NoSites(),
     ).run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
     assert (len(failed.runs), len(failing.commands), charges.passes) == (1, 2, 1)
     # The ledger posting pass still runs, for the Property's business date.
     assert ledger.until == [today] and failed.ledger_posting == LedgerPostingResult(0, 0)
     assert failed.late_utility_error == "BillingRunUnavailable"
+    # The leaver pass (HRIS phase 6 step 4) runs last, once, at the real time.
+    assert leavers.passes == 1 and failed.leavers == LeaverPassResult(0)
 
 
 def test_billing_routes_bind_actor_and_remain_available_without_invoice_read() -> None:

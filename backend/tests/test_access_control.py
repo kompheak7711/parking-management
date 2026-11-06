@@ -167,14 +167,17 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     # `telegram.read` and `telegram.operate` of the Telegram app pages (bots step 2c, DL-128),
     # and `telegram.contact` and `telegram.faq` of Contact office and FAQ (step 2d, DL-170),
     # and `visit_requests.read` of the Visit requests list (step 3a, DL-171), and
-    # `visit_requests.work` and `visit_requests.manage` of the request steps (step 3b, DL-172).
-    assert len(found - NON_CAPABILITY_LABELS) == 115
+    # `visit_requests.work` and `visit_requests.manage` of the request steps (step 3b, DL-172),
+    # and the 12 HR rights the HR routes check (HRIS phase 6).
+    assert len(found - NON_CAPABILITY_LABELS) == 127
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
-    assert len(CAPABILITY_CATALOG) == 126
+    # HRIS phase 1 (migration 20270430_300): 12 HR rights; daily and weekly rent: 5 rights;
+    # Telegram bots: 7 rights.
+    assert len(CAPABILITY_CATALOG) == 138
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -210,7 +213,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 123
+    assert len(BUNDLE_CAPABILITIES) == 135
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -391,6 +394,19 @@ STAFF_NEVER = frozenset(
         "short_stays.credit",
         # DL-130: only a Manager or the Owner checks repair costs.
         "problem_reports.costs",
+        # HRIS phase 1 (migration 20270430_300): Staff hold no HR right.
+        "hr.employees.read",
+        "hr.employees.manage",
+        "hr.salaries.read",
+        "hr.salaries.manage",
+        "hr.loans.prepare",
+        "hr.loans.approve",
+        "hr.payroll.prepare",
+        "hr.payroll.approve",
+        "hr.payroll.pay",
+        "hr.attendance.read",
+        "hr.attendance.manage",
+        "hr.overtime.approve",
     }
 )
 # Owner answer (a) to Q-2026-10-21-164: none of these nine is in the Staff bundle.

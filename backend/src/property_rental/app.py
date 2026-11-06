@@ -136,6 +136,12 @@ from property_rental.financial_reference_api import (
     FinancialReferenceFlow,
     create_financial_reference_router,
 )
+from property_rental.hr_api import (
+    HrFlow,
+    PostgresHrFlow,
+    UnavailableHrFlow,
+    create_hr_router,
+)
 from property_rental.identity import (
     ActorResolver,
     deny_unauthenticated_actor,
@@ -637,6 +643,7 @@ def create_app(
     product_flow: ProductFlow | None = None,
     quotation_flow: QuotationFlow | None = None,
     problem_report_flow: ProblemReportFlow | None = None,
+    hr_flow: HrFlow | None = None,
     telegram_page_flow: TelegramPageFlow | None = None,
     short_stay_flow: ShortStayFlow | None = None,
     ledger_posting_flow: LedgerPostingFlow | None = None,
@@ -1345,6 +1352,18 @@ def create_app(
     # only when the owner has opened that one link (off by default: the app stays office-only).
     if resolved_settings.short_stay_public_calendar:
         app.include_router(create_short_stay_feed_router(resolved_short_stay_flow))
+    include_signed_in(
+        create_hr_router(
+            actor_resolver,
+            hr_flow
+            or (
+                PostgresHrFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableHrFlow()
+            ),
+            resolved_settings,
+        )
+    )
     include_signed_in(
         create_telegram_router(
             actor_resolver,

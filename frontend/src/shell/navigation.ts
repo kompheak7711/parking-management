@@ -36,6 +36,10 @@ export type PageId =
   | "fassets"
   | "bankcash"
   | "lclose"
+  | "employees"
+  | "loans"
+  | "payroll"
+  | "attendance"
   | "tglinks"
   | "tgcontact"
   | "tgfaq"
@@ -58,6 +62,7 @@ export type IconName =
   | "moveout"
   | "reports"
   | "history"
+  | "staff"
   | "settings"
   | "send";
 
@@ -152,6 +157,14 @@ export const MENU: readonly MenuGroup[] = [
           "lclose",
         ],
       },
+      // HRIS phase 6 (mock-up v69, round 23): Employees and payroll with its tabs. Users and
+      // access stays in Settings › Users and sign-in for now.
+      {
+        page: "employees",
+        icon: "staff",
+        label: ["Employees and payroll", "បុគ្គលិក និងប្រាក់ខែ"],
+        tabs: ["employees", "loans", "payroll", "attendance"],
+      },
       // Telegram bots step 2c (DL-128, mock-up round 29): Office › Telegram, with Contact office
       // and FAQ from step 2d part 2 (DL-170), in the mock-up's tab order.
       {
@@ -206,6 +219,10 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   fassets: ["Fixed assets", "ទ្រព្យសកម្មរយៈពេលវែង"],
   bankcash: ["Bank and cash", "ធនាគារ និងសាច់ប្រាក់"],
   lclose: ["Month-end close", "ការបិទចុងខែ"],
+  employees: ["Employees", "បុគ្គលិក"],
+  loans: ["Salary loans", "ប្រាក់កម្ចីប្រាក់ខែ"],
+  payroll: ["Payroll", "បញ្ជីប្រាក់ខែ"],
+  attendance: ["Attendance", "វត្តមាន"],
   tglinks: ["Linked tenants", "អ្នកជួលដែលបានភ្ជាប់"],
   tgcontact: ["Contact office", "ទាក់ទងការិយាល័យ"],
   tgfaq: ["FAQ", "សំណួរញឹកញាប់"],
@@ -270,6 +287,11 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   fassets: ["ledger.read"],
   bankcash: ["ledger.read"],
   lclose: ["ledger.read"],
+  // HRIS phase 6 (rights table, DB plan 03/11/2026): each tab needs its read right.
+  employees: ["hr.employees.read"],
+  loans: ["hr.salaries.read"],
+  payroll: ["hr.salaries.read"],
+  attendance: ["hr.attendance.read"],
   // Telegram bots step 2c (DL-128): Owner and Manager for now.
   tglinks: ["telegram.read"],
   tgcontact: ["telegram.contact"],

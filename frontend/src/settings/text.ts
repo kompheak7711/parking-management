@@ -360,6 +360,13 @@ const TEXT = {
   ],
   ur_copy: ["Copy", "ចម្លង"],
   ur_copied: ["Copied.", "បានចម្លង។"],
+  // HRIS phase 6: the employee an app user belongs to (PR-HR-009).
+  ur_employee: ["Employee {0}", "បុគ្គលិក {0}"],
+  ur_emp_leaves: [
+    "Last working day {0}. The app user turns off the next day.",
+    "ថ្ងៃធ្វើការចុងក្រោយ {0}។ អ្នកប្រើកម្មវិធីនឹងបិទនៅថ្ងៃបន្ទាប់។",
+  ],
+  ur_emp_left: ["Left on {0}.", "បានឈប់នៅ {0}។"],
   // new
   copy_failed: [
     "Could not copy. Write it down instead.",

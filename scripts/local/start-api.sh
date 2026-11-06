@@ -34,9 +34,14 @@ APP_ENVIRONMENT=production
 APP_TOTP_KEY_FILE=/dev/fd/4
 APP_PASSWORD_BLOCKLIST_FILE=$PRM_BLOCKLIST
 APP_ALLOWED_BROWSER_ORIGIN=$origin
+# HRIS phase 6: employee documents and the staff bot's card photos stay on this Mac, in a
+# folder only you can open (.local is never committed).
+APP_HR_FILES_DIRECTORY="$PRM_LOCAL/hr-files"
+mkdir -p "$APP_HR_FILES_DIRECTORY"
+chmod 700 "$APP_HR_FILES_DIRECTORY"
 export APP_DATABASE_URL APP_FINANCIAL_DATABASE_URL APP_ENVIRONMENT APP_TOTP_KEY_FILE
-export APP_PASSWORD_BLOCKLIST_FILE APP_ALLOWED_BROWSER_ORIGIN
-printf 'API for %s, on 127.0.0.1:8001. Stop it with Control-C.\n' "$APP_ALLOWED_BROWSER_ORIGIN"
+export APP_PASSWORD_BLOCKLIST_FILE APP_ALLOWED_BROWSER_ORIGIN APP_HR_FILES_DIRECTORY
+printf 'API for %s, on 127.0.0.1:8000. Stop it with Control-C.\n' "$APP_ALLOWED_BROWSER_ORIGIN"
 cd "$PRM_ROOT/backend"
 # The screen server adds X-Forwarded-For; it is trusted from 127.0.0.1 only, so each device on the
 # Wi-Fi keeps its own sign-in waits and audit address, and none can claim another's.

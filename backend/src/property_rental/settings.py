@@ -51,3 +51,9 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_OPERATIONS_STATUS_DIRECTORY",
     )
+    # HRIS phase 6: the folder for employee documents and the staff bot's card photos; a path
+    # only. Without it a document upload or download answers 503.
+    hr_files_directory: str | None = Field(
+        default=None,
+        validation_alias="APP_HR_FILES_DIRECTORY",
+    )

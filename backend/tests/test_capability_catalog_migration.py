@@ -120,7 +120,7 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
         # with migration `20270414_264`, and the product and stock rights with `20270424_274`,
         # and the Quotation rights with `20270425_275`, and the Problem report rights with
         # `20270426_276`, and the Telegram bot rights with `20270430_281`, and the daily and
-        # weekly rent rights with `20270531_310`.
+        # weekly rent rights with `20270531_310`, and the HR rights with `20270430_300`.
         expected = (
             "v1-057-reports"
             if capability in {"audit.export", "data.export", "reports.read"}
@@ -134,6 +134,8 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
             if capability in QUOTATION_RIGHTS
             else "v1-1-problem-reports"
             if capability in PROBLEM_REPORT_RIGHTS
+            else "hris-phase-1"
+            if capability.startswith("hr.")
             else "v1-1-telegram-base"
             if capability in TELEGRAM_RIGHTS
             else TELEGRAM_STEP_RIGHTS[capability]

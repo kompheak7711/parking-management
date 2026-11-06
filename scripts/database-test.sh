@@ -366,6 +366,11 @@ database_test_suites='
   tests/test_problem_report_costs_migration.py
   tests/test_problem_report_month_migration.py
   tests/test_problem_report_from_finding_migration.py
+  tests/test_hr_employees_migration.py
+  tests/test_hr_payroll_migration.py
+  tests/test_hr_attendance_migration.py
+  tests/test_hr_leaver_turn_off_migration.py
+  tests/test_hr_office_hours_migration.py
   tests/test_telegram_base_migration.py
   tests/test_telegram_tenant_link_migration.py
   tests/test_telegram_tenant_problem_report_migration.py

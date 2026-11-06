@@ -38,7 +38,7 @@ import {
   type RolesApi,
 } from "../access/rolesClient";
 import { at } from "../access/text";
-import { momentText } from "../shell/format";
+import { dayText, momentText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -549,12 +549,52 @@ function PasswordDialog({
   );
 }
 
+/** The employee an app user belongs to (HRIS phase 6), from the employee list. */
+export interface LinkedEmployee {
+  employee_code: string;
+  name_en: string;
+  name_km: string;
+  state: string;
+  left_on: string | null;
+  user: { actor_id: string } | null;
+}
+
+/** The employees with their app users; given only to someone who may see employees. */
+export type StaffLookup = (propertyId: string) => Promise<LinkedEmployee[]>;
+
+function EmployeeLine({
+  language,
+  employee,
+}: {
+  language: Language;
+  employee: LinkedEmployee | undefined;
+}) {
+  if (employee === undefined) return null;
+  const name = language === "km" ? employee.name_km : employee.name_en;
+  return (
+    <span className="ui-sub2">
+      {sst(language, "ur_employee", `${employee.employee_code} · ${name}`)}
+      {employee.left_on !== null && (
+        <>
+          {" "}
+          {sst(
+            language,
+            employee.state === "LEFT" ? "ur_emp_left" : "ur_emp_leaves",
+            dayText(employee.left_on),
+          )}
+        </>
+      )}
+    </span>
+  );
+}
+
 export function UsersTab({
   language,
   propertyId,
   active,
   api,
   rolesApi,
+  staff,
   myUserId,
   reauthenticate,
 }: {
@@ -563,12 +603,17 @@ export function UsersTab({
   active: boolean;
   api: UsersApi;
   rolesApi: RolesApi;
+  /** Without it the list shows no employees. */
+  staff?: StaffLookup;
   /** The signed-in person, whom End all sessions leaves signed in. */
   myUserId: string | null;
   reauthenticate: (request: ReauthenticationRequest) => Promise<void>;
 }) {
   const [users, setUsers] = useState<UserAccount[] | null>(null);
   const [roles, setRoles] = useState<RolesAndPermissions | null>(null);
+  const [employees, setEmployees] = useState<Map<string, LinkedEmployee>>(
+    () => new Map(),
+  );
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const [reauth, setReauth] = useState<{
@@ -609,6 +654,29 @@ export function UsersTab({
         );
       });
   }, [api, rolesApi, propertyId]);
+
+  // The employee line is extra: when the list cannot be read the users still show.
+  useEffect(() => {
+    setEmployees(new Map());
+    if (staff === undefined || propertyId === "" || !active) return;
+    let current = true;
+    staff(propertyId)
+      .then((list) => {
+        if (!current) return;
+        const linked = new Map<string, LinkedEmployee>();
+        for (const employee of list) {
+          if (employee.user !== null)
+            linked.set(employee.user.actor_id, employee);
+        }
+        setEmployees(linked);
+      })
+      .catch(() => {
+        if (current) setEmployees(new Map());
+      });
+    return () => {
+      current = false;
+    };
+  }, [staff, propertyId, active, users]);
 
   // Another Property never shows the users of the one before, and a one-time password made for
   // the one before is gone.
@@ -781,6 +849,10 @@ export function UsersTab({
                       <span className="ui-sub2 ui-num" lang="en">
                         {user.username}
                       </span>
+                      <EmployeeLine
+                        employee={employees.get(user.user_id)}
+                        language={language}
+                      />
                     </td>
                     <td>{roleText(language, user)}</td>
                     <td className="wrap">

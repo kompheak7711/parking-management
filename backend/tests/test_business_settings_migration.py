@@ -46,6 +46,11 @@ DOCUMENTS = {
     # Daily and weekly rent: bookings and price quotes, migration 20270531_310.
     "SHORT_STAY": "STyy000n",
     "SHORT_STAY_QUOTE": "SQyy000n",
+    # HRIS phase 6: Salary loans and the payroll list (migration 20270501_301), overtime
+    # requests (migration 20270502_302).
+    "SALARY_LOAN": "SLyy000n",
+    "PAYROLL": "PAYyy000n",
+    "OVERTIME": "OTyy000n",
 }
 SET_RULE = "SELECT app.set_business_rule(%s, %s, %s, %s::date, %s, %s, gen_random_uuid())"
 

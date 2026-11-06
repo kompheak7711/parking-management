@@ -26,6 +26,7 @@ from alembic.script import ScriptDirectory
 from property_rental.access_control import (
     BUNDLE_CAPABILITIES,
     MANAGER_DEFAULT_BUNDLE_CAPABILITIES,
+    OWNER_ONLY_HR_CAPABILITIES,
     OWNER_ONLY_LEDGER_CAPABILITIES,
     OWNER_ONLY_PRODUCT_CAPABILITIES,
     STAFF_DEFAULT_BUNDLE_CAPABILITIES,
@@ -151,7 +152,9 @@ def test_the_default_bundles_hold_the_approved_capabilities(migrated_database_ur
             MANAGER_DEFAULT_BUNDLE_CAPABILITIES
         )
         assert every_bundle_capability - set(MANAGER_DEFAULT_BUNDLE_CAPABILITIES) == set(
-            OWNER_ONLY_LEDGER_CAPABILITIES | OWNER_ONLY_PRODUCT_CAPABILITIES
+            OWNER_ONLY_LEDGER_CAPABILITIES
+            | OWNER_ONLY_PRODUCT_CAPABILITIES
+            | OWNER_ONLY_HR_CAPABILITIES
         )
         assert bundle_capabilities(connection, staff_bundle) == set(
             STAFF_DEFAULT_BUNDLE_CAPABILITIES

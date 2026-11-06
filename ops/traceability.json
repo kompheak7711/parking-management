@@ -63528,6 +63528,501 @@
       "notes": "Riel bank account: Needs check sets a Payment Method's riel account and keeps the riel bank out of the main account list."
     },
     {
+      "test_id": "test_attendance_entry_and_overtime",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: attendance entry and overtime."
+    },
+    {
+      "test_id": "test_database_refusals_map_to_http",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: database refusals map to http."
+    },
+    {
+      "test_id": "test_documents_are_saved_with_their_hash",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: documents are saved with their hash."
+    },
+    {
+      "test_id": "test_each_read_needs_its_right",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: each read needs its right."
+    },
+    {
+      "test_id": "test_new_employee_with_pay_needs_manage_salaries",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: new employee with pay needs manage salaries."
+    },
+    {
+      "test_id": "test_payroll_steps_take_the_right_of_the_step",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: payroll steps take the right of the step."
+    },
+    {
+      "test_id": "test_qr_codes_come_back_once_and_are_not_cached",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: qr codes come back once and are not cached."
+    },
+    {
+      "test_id": "test_salary_steps_need_manage_salaries_and_if_match",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: salary steps need manage salaries and if match."
+    },
+    {
+      "test_id": "test_without_a_files_folder_uploads_answer_503",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-050"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_hr_api.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: without a files folder uploads answer 503."
+    },
+    {
+      "test_id": "test_card_scan_needs_reason_and_photo",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: card scan needs reason and photo."
+    },
+    {
+      "test_id": "test_night_shift_crosses_midnight",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: night shift crosses midnight."
+    },
+    {
+      "test_id": "test_payroll_takes_the_sheet_and_locks_the_month",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: payroll takes the sheet and locks the month."
+    },
+    {
+      "test_id": "test_phone_scans_follow_the_rules",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: phone scans follow the rules."
+    },
+    {
+      "test_id": "test_sheet_plan_and_overtime",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: sheet plan and overtime."
+    },
+    {
+      "test_id": "test_the_api_calls_only_runtime_functions_with_their_arguments",
+      "upstream_ids": [
+        "PR-HR-050",
+        "PR-HR-060",
+        "PR-HR-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_attendance_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: the api calls only runtime functions with their arguments."
+    },
+    {
+      "test_id": "test_documents_keep_the_file_and_hide_id_cards",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: documents keep the file and hide id cards."
+    },
+    {
+      "test_id": "test_manager_adds_employees_without_salaries",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: manager adds employees without salaries."
+    },
+    {
+      "test_id": "test_owner_adds_salary_and_history_is_kept",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: owner adds salary and history is kept."
+    },
+    {
+      "test_id": "test_rights_follow_the_plan",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: rights follow the plan."
+    },
+    {
+      "test_id": "test_runtime_reads_hr_only_through_functions",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: runtime reads hr only through functions."
+    },
+    {
+      "test_id": "test_telegram_staff_request_and_links",
+      "upstream_ids": [
+        "PR-HR-001",
+        "PR-HR-010",
+        "PR-HR-011",
+        "PR-HR-014"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_employees_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: telegram staff request and links."
+    },
+    {
+      "test_id": "test_a_refusal_or_an_odd_answer_is_one_error",
+      "upstream_ids": [
+        "PR-HR-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_hr_leaver_job.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: a refusal or an odd answer is one error."
+    },
+    {
+      "test_id": "test_the_pass_counts_the_turned_off_users_and_commits_once",
+      "upstream_ids": [
+        "PR-HR-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_hr_leaver_job.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: the pass counts the turned off users and commits once."
+    },
+    {
+      "test_id": "test_the_worker_loop_reports_the_leaver_pass_and_fails_when_it_cannot_run",
+      "upstream_ids": [
+        "PR-HR-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_hr_leaver_job.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: the worker loop reports the leaver pass and fails when it cannot run."
+    },
+    {
+      "test_id": "test_a_leaver_is_turned_off_the_day_after_the_last_working_day",
+      "upstream_ids": [
+        "PR-HR-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_leaver_turn_off_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: a leaver is turned off the day after the last working day."
+    },
+    {
+      "test_id": "test_only_the_worker_runs_the_pass_at_the_real_time",
+      "upstream_ids": [
+        "PR-HR-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_leaver_turn_off_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: only the worker runs the pass at the real time."
+    },
+    {
+      "test_id": "test_loans_follow_the_rules",
+      "upstream_ids": [
+        "PR-HR-020",
+        "PR-HR-025",
+        "PR-HR-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_payroll_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: loans follow the rules."
+    },
+    {
+      "test_id": "test_payroll_month_payslips_entries_and_pay",
+      "upstream_ids": [
+        "PR-HR-020",
+        "PR-HR-025",
+        "PR-HR-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_payroll_migration.py",
+      "status": "implemented",
+      "notes": "HRIS phase 6: payroll month payslips entries and pay."
+    },
+    {
+      "test_id": "TEST-FE-1299",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: lists working employees with their Telegram link and salary, and Left on its own tab"
+    },
+    {
+      "test_id": "TEST-FE-1300",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: adds an employee with the salary in whole cents and says it was added"
+    },
+    {
+      "test_id": "TEST-FE-1301",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: an employee page hides pay without See salaries, and Set end date needs a reason"
+    },
+    {
+      "test_id": "TEST-FE-1302",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: links a Telegram request to an employee with the ticked roles; only the Owner sees Authorizer"
+    },
+    {
+      "test_id": "TEST-FE-1303",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: a new salary loan shows the limit, and a refusal needs a reason"
+    },
+    {
+      "test_id": "TEST-FE-1304",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: makes the month's payroll, adds a line and sends it to the Owner"
+    },
+    {
+      "test_id": "TEST-FE-1305",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: an approved payroll marks each person paid from the joint ABA account"
+    },
+    {
+      "test_id": "TEST-FE-1306",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: the daily sheet shows Late and Needs check, accepts a scan and fixes times with a reason"
+    },
+    {
+      "test_id": "TEST-FE-1307",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: the weekly plan warns about too few days off and plans a coming day off"
+    },
+    {
+      "test_id": "TEST-FE-1308",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: approves overtime, and a new place QR is shown once after it is made"
+    },
+    {
+      "test_id": "TEST-FE-1309",
+      "upstream_ids": [
+        "PR-HR-010",
+        "PR-HR-020",
+        "PR-HR-030",
+        "PR-HR-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: says why a command was refused: no right, someone else's change, or the server's words"
+    },
+    {
+      "test_id": "TEST-FE-1310",
+      "upstream_ids": [
+        "PR-HR-009",
+        "PR-HR-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS phase 6: each app user shows the employee it belongs to, with the last working day; when the employee list cannot be read the users still show (HRIS phase 6, PR-HR-009)"
+    },
+    {
       "test_id": "test_a_booking_and_a_lease_never_share_a_night",
       "upstream_ids": [
         "PR-SS-STEP1"
@@ -64455,6 +64950,86 @@
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
       "notes": "Short stays: Print draft shows the money off the first month for a daily guest's Lease."
+    },
+    {
+      "test_id": "test_add_employee_needs_the_id_details_and_photo",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: a new employee needs ID card or passport, number, date of birth, address, ID photo, and age 15 (owner 06/11)."
+    },
+    {
+      "test_id": "test_only_the_caretaker_works_shifts",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: only the Property caretaker works shifts; other jobs work office hours; caretaker and cleaner have no usual day off (owner 06/11)."
+    },
+    {
+      "test_id": "test_office_late_counts_from_seven",
+      "upstream_ids": [
+        "PR-HR-050"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: office hours 07:00-11:00 and 13:00-17:00; Late counts from 07:00."
+    },
+    {
+      "test_id": "test_the_weekly_plan_counts_days_off_a_month",
+      "upstream_ids": [
+        "PR-HR-052"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: caretaker and cleaner take 2 days off a month on request; the Weekly plan counts them (owner 06/11)."
+    },
+    {
+      "test_id": "TEST-FE-1400",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS: Add employee needs the ID details and ID photo; only the Property caretaker picks a shift (owner 06/11)."
+    },
+    {
+      "test_id": "TEST-FE-1401",
+      "upstream_ids": [
+        "PR-HR-052"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS: the Weekly plan gives the caretaker no day-off warning (owner 06/11); office staff plan office hours only."
+    },
+    {
+      "test_id": "test_add_employee_checks_the_same_id_number",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: the same ID number stops Add employee while that person works; a leaver needs Hire again (owner 06/11 14:09, migration 305)."
+    },
+    {
+      "test_id": "TEST-FE-1402",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS: Add employee asks Hire again when the ID number belonged to a leaver (owner 06/11 14:09)."
     }
   ]
 }

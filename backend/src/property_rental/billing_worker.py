@@ -7,7 +7,10 @@ Since V1-056 slice 11g-1 (DL-076) each pass also runs the automatic late-payment
 (`property_rental.late_payment_job`) after the billing runs, while it holds the same lock.
 
 Since General Ledger phase 6 step 2 (owner plan of 03/11/2026) each pass then posts the money
-records to the ledger (`property_rental.ledger_posting_job`), still under the same lock."""
+records to the ledger (`property_rental.ledger_posting_job`), still under the same lock.
+
+Since HRIS phase 6 step 4 each pass last turns off the app user of an employee whose last working
+day has passed (`property_rental.hr_leaver_job`, PR-HR-009), still under the same lock."""
 
 from __future__ import annotations
 
@@ -33,6 +36,12 @@ from property_rental.billing_run import (
     BillingRunNotFound,
     BillingRunUnavailable,
     PostgresBillingRunService,
+)
+from property_rental.hr_leaver_job import (
+    HrLeaverTurnOffJob,
+    LeaverPass,
+    LeaverPassError,
+    LeaverPassResult,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.late_payment_job import (
@@ -66,6 +75,9 @@ class BillingWorkerResult:
     # The ledger posting pass (phase 6 step 2); it runs even when the charge pass failed.
     ledger_posting: LedgerPostingResult | None = None
     ledger_posting_error: str | None = None
+    # The leaver pass (HRIS phase 6 step 4); it runs even when an earlier pass failed.
+    leavers: LeaverPassResult | None = None
+    leavers_error: str | None = None
     # Daily and weekly rent step 5a: the booking-site calendars read in this pass.
     site_calendars: SiteCalendarResult | None = None
     site_calendars_error: str | None = None
@@ -103,6 +115,7 @@ class ScheduledBillingWorker:
         service: PostgresBillingRunService | None = None,
         late_charges: LateChargePass | None = None,
         ledger_posting: LedgerPass | None = None,
+        leavers: LeaverPass | None = None,
         site_calendars: SiteCalendarPass | None = None,
     ) -> None:
         if not 1 <= max_catchup_runs <= 100:
@@ -116,6 +129,9 @@ class ScheduledBillingWorker:
             financial_database_url, property_id=property_id, actor_id=actor_id
         )
         self._ledger_posting = ledger_posting or LedgerPostingJob(
+            financial_database_url, property_id=property_id, actor_id=actor_id
+        )
+        self._leavers = leavers or HrLeaverTurnOffJob(
             financial_database_url, property_id=property_id, actor_id=actor_id
         )
         self._site_calendars = site_calendars or SiteCalendarSync(
@@ -246,6 +262,13 @@ class ScheduledBillingWorker:
                 ledger_posting = self._ledger_posting.run(until=current_business_date)
             except LedgerPostingError as exc:
                 ledger_posting_error = str(exc)
+            # HRIS phase 6 step 4: at the real time, like the charge pass.
+            leavers: LeaverPassResult | None = None
+            leavers_error: str | None = None
+            try:
+                leavers = self._leavers.run(as_of=datetime.now(UTC))
+            except LeaverPassError as exc:
+                leavers_error = str(exc)
         # Daily and weekly rent step 5a: outside the billing lock, as it reads other websites.
         site_calendars: SiteCalendarResult | None = None
         site_calendars_error: str | None = None
@@ -261,6 +284,8 @@ class ScheduledBillingWorker:
             late_utility_error,
             ledger_posting,
             ledger_posting_error,
+            leavers,
+            leavers_error,
             site_calendars,
             site_calendars_error,
         )
@@ -331,6 +356,11 @@ def run_bounded_loop(
                 f"month_end={ledger.month_end_done}",
                 flush=True,
             )
+        if result.leavers_error is not None:
+            all_succeeded = False
+            print(f"leavers:error:{result.leavers_error}", file=sys.stderr, flush=True)
+        if result.leavers is not None:
+            print(f"leavers:turned_off={result.leavers.turned_off}", flush=True)
         if iteration + 1 < max_iterations:
             sleep(poll_interval_seconds)
     return all_succeeded

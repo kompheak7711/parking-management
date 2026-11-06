@@ -49,6 +49,18 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "expenses.request": "Send an Expense request or an Expense report",
     "final_settlements.prepare": "Prepare Final Settlement and correction drafts",
     "financial.approve": "Confirm financial drafts",
+    "hr.attendance.manage": "Enter and fix attendance, plan shifts, ask for overtime",
+    "hr.attendance.read": "See the attendance sheet, weekly plan and overtime",
+    "hr.employees.manage": "Add employees, change job or shift, leaving, Telegram links",
+    "hr.employees.read": "See employees, their jobs, shifts and Telegram links",
+    "hr.loans.approve": "Approve or refuse a salary loan",
+    "hr.loans.prepare": "Enter a salary loan request and mark a loan paid out",
+    "hr.overtime.approve": "Approve or refuse overtime",
+    "hr.payroll.approve": "Approve the payroll or send it back",
+    "hr.payroll.pay": "Mark salaries paid",
+    "hr.payroll.prepare": "Check the payroll list, add lines and send it for approval",
+    "hr.salaries.manage": "Change a salary, payment method or ID details",
+    "hr.salaries.read": "See salaries, payment methods, ID details, loans and payroll",
     "identity.manage_access": "Manage user accounts, role bundles and assignments",
     "identity.read_self": "Read the signed-in account",
     "invoices.adjust": "Adjust an Invoice",
@@ -280,9 +292,26 @@ STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     | STAFF_VISIT_REQUEST_CAPABILITIES
     | STAFF_SHORT_STAY_CAPABILITIES
 )
+# HRIS phase 1 (migration `20270430_300`, plan VhZTNVv9QHrEF7JXVXVg6W): the Manager sees and
+# manages employees and attendance; salaries, loans and payroll stay with the Owner, who gives
+# "See salaries" to an Accountant role. Staff hold no HR right.
+OWNER_ONLY_HR_CAPABILITIES: Final = frozenset(
+    {
+        "hr.loans.approve",
+        "hr.loans.prepare",
+        "hr.payroll.approve",
+        "hr.payroll.pay",
+        "hr.payroll.prepare",
+        "hr.salaries.manage",
+        "hr.salaries.read",
+    }
+)
 # The default Manager bundle: every bundle capability except the Owner-only rights.
 MANAGER_DEFAULT_BUNDLE_CAPABILITIES: Final = (
-    BUNDLE_CAPABILITIES - OWNER_ONLY_LEDGER_CAPABILITIES - OWNER_ONLY_PRODUCT_CAPABILITIES
+    BUNDLE_CAPABILITIES
+    - OWNER_ONLY_LEDGER_CAPABILITIES
+    - OWNER_ONLY_PRODUCT_CAPABILITIES
+    - OWNER_ONLY_HR_CAPABILITIES
 )
 
 

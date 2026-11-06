@@ -16,7 +16,7 @@ import {
 } from "../adminClient";
 import { AuthenticationError, RateLimitedError } from "../authClient";
 import { rolesApiOf } from "../test/rolesFixtures";
-import { UsersTab } from "./UsersTab";
+import { type LinkedEmployee, UsersTab } from "./UsersTab";
 
 afterEach(() => {
   cleanup();
@@ -473,6 +473,79 @@ describe("Settings: Users and sign-in", () => {
       await screen.findByText("Your account cannot open this tab."),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
+  it("TEST-FE-1310 each app user shows the employee it belongs to, with the last working day; when the employee list cannot be read the users still show (HRIS phase 6, PR-HR-009)", async () => {
+    const people: LinkedEmployee[] = [
+      {
+        employee_code: "E-002",
+        name_en: "Vanna Sok",
+        name_km: "វណ្ណា សុខ",
+        state: "LEAVING",
+        left_on: "2027-05-31",
+        user: { actor_id: STAFF.user_id },
+      },
+      {
+        employee_code: "E-003",
+        name_en: "Rith Chan",
+        name_km: "រិទ្ធ ចាន់",
+        state: "LEFT",
+        left_on: "2027-04-30",
+        user: { actor_id: GONE.user_id },
+      },
+      {
+        employee_code: "E-004",
+        name_en: "No User",
+        name_km: "គ្មាន",
+        state: "ACTIVE",
+        left_on: null,
+        user: null,
+      },
+    ];
+    const staff = vi.fn(() => Promise.resolve(people));
+    const props = {
+      active: true,
+      api: apiOf(),
+      myUserId: "owner-1",
+      propertyId: "property-1",
+      reauthenticate: vi.fn(() => Promise.resolve()),
+      rolesApi: rolesApiOf(),
+      staff,
+    };
+    render(<UsersTab {...props} language="en" />);
+    await screen.findByRole("region", { name: "Users" });
+    expect(
+      await within(row("Vanna")).findByText(
+        "Employee E-002 · Vanna Sok Last working day 31/05/2027. The app user turns off the next day.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(row("Rith")).getByText(
+        "Employee E-003 · Rith Chan Left on 30/04/2027.",
+      ),
+    ).toBeTruthy();
+    expect(within(row("Sok")).queryByText(/Employee/)).toBeNull();
+    expect(staff).toHaveBeenCalledWith("property-1");
+    cleanup();
+
+    render(<UsersTab {...props} language="km" />);
+    expect(
+      await within(await waitFor(() => row("Vanna"))).findByText(
+        /បុគ្គលិក E-002 · វណ្ណា សុខ/,
+      ),
+    ).toBeTruthy();
+    cleanup();
+
+    render(
+      <UsersTab
+        {...props}
+        language="en"
+        staff={() => Promise.reject(new Error("no right"))}
+      />,
+    );
+    await screen.findByRole("region", { name: "Users" });
+    expect(row("Vanna")).toBeTruthy();
+    expect(screen.queryByText(/Employee E-/)).toBeNull();
   });
 
   it("TEST-FE-949 after the password and code, a refused form keeps what was typed; a run stopped part-way does the rest only; a one-time password still shows after the Property changed", async () => {

@@ -30,7 +30,7 @@ import { type SettingsTextKey, sst } from "./text";
 import { type BusinessApi, BusinessTab } from "./BusinessTab";
 import { type RatesApi, RatesTab } from "./RatesTab";
 import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
-import { type UsersApi, UsersTab } from "./UsersTab";
+import { type StaffLookup, type UsersApi, UsersTab } from "./UsersTab";
 import type { RolesApi } from "../access/rolesClient";
 
 export type SettingsTab = "business" | "rates" | "units" | "users" | "health";
@@ -84,6 +84,8 @@ export interface SettingsPageProps {
   rolesApi: RolesApi;
   businessApi: BusinessApi;
   ratesApi: RatesApi;
+  /** The employee list, for the employee line of each app user (HRIS phase 6). */
+  staff?: StaffLookup;
   /** The signed-in person. */
   myUserId: string | null;
   /** The password and sign-in code again, for an action that changes who may use the app. */
@@ -310,6 +312,7 @@ export function SettingsPage({
   rolesApi,
   businessApi,
   ratesApi,
+  staff,
   myUserId,
   reauthenticate,
   earlier,
@@ -393,6 +396,11 @@ export function SettingsPage({
           rolesApi={rolesApi}
           language={language}
           myUserId={myUserId}
+          staff={
+            capabilities === null || capabilities.has("hr.employees.read")
+              ? staff
+              : undefined
+          }
           propertyId={propertyId}
           reauthenticate={reauthenticate}
         />
