@@ -18,6 +18,7 @@ import {
   readUpdate,
 } from "./telegram.ts";
 import { tenantAppPage } from "./tenant_app.ts";
+import { staffAppPage } from "./staff_app.ts";
 import { BOTS, type BotCode, type Bytes, type Env } from "./types.ts";
 
 export const KEEP_DAYS = 7;
@@ -661,15 +662,21 @@ export async function handle(
       ? form(request, env, bot, now)
       : new Response("not found", { status: 404 });
   }
-  // The Mini App pages (the Tenant bot's Problem report form). They hold no data: the page asks
-  // /form/<bot>/start with the person's Telegram sign-in for what to show.
+  // The Mini App pages (the Tenant bot's Problem report form, the Staff forms). They hold no
+  // data: the page asks /form/<bot>/start with the person's Telegram sign-in for what to show.
+  const appPage =
+    path[1] === "tenant"
+      ? tenantAppPage
+      : path[1] === "staff"
+        ? staffAppPage
+        : undefined;
   if (
     path[0] === "app" &&
-    path[1] === "tenant" &&
+    appPage &&
     path.length === 2 &&
     request.method === "GET"
   ) {
-    return new Response(tenantAppPage(), {
+    return new Response(appPage(), {
       headers: {
         "content-type": "text/html; charset=utf-8",
         "cache-control": "no-store",

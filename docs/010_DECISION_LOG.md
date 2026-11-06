@@ -2746,3 +2746,76 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270527_289` (DB-TG-009), API-TG-005, `frontend/src/telegram/`, `frontend/src/reservations/`, TEST-FE-1515 and 1516.
 - **Links:** DL-112, DL-171, DL-172.
 - **Decision date:** 2026-11-05.
+
+## DL-174 — Telegram bots: the Staff bot joins staff and takes check-in and card scans (bots step 4a)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 4A BUILT ON BRANCH claude/telegram-staff-bot; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's staff rules (24 Oct 2026: staff join with Start and their phone, the Owner or a Manager approves and gives the role; staff see Khmer only), the check-in rules of 3 Nov 2026 (Location on before the scan, the phone finds its place, card scan first with reason and photo; HR plan PR-HR-060 to 068) and the staff forms mock-up v14. HR owns the staff tables and the scan rules (HR branch, migrations `20270430_300` to `20270503_303`). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Join.** A new person taps Start in the Staff bot and shares their own Telegram phone (someone else's contact does not count). That makes a request in HR > Staff requests. When the Owner or a Manager links it to an employee with report roles, or refuses it, the person hears it from the bot. A linked person gets the Reports button.
+- **(B) Staff forms.** Reports opens the Staff forms (a Mini App on the relay, `/app/staff`), in Khmer, with the person's name, roles and shift. The relay lets in only linked staff (the office sends the list when it changes).
+- **(C) Check in and Check out.** The form asks for the phone's Location first (Telegram's location access); if it is off, it says so and opens the settings. Then the camera scans the place QR. The HR rules decide (too early, late, needs check, already in), and the bot answers in the chat with the time, about a minute later (the relay's pull every minute).
+- **(D) Scan employee card.** Caretakers and Authorizers: check in or out, scan the card, pick the reason (Other needs a text) and take a half-body photo; Save stays off until all are given. The photo is kept in the HR files folder, not with the Telegram photos, so the 90-day rule removes it; a refused scan keeps no photo. The person's name comes back in the chat answer (the mock-up showed it at once; the relay holds no staff data to show it).
+- **(E) Accounts.** The HR functions take only a service actor, so the Telegram jobs get one more setting, the service actor (`--service-actor-id`), and the HR files folder. Without them the Staff bot answers that it is not ready. The scanned QR and card texts are not kept in the saved message.
+- **Branch:** the Staff bot needs the HR tables, so it is built on `claude/telegram-staff-bot` (the Telegram branch plus the HR branch); migration `20270619_330` starts the Staff bot line after the HR head `20270505_305` (HR follows the Telegram head since 6 Nov 2026). It merges after PR #7 and the HR PR #10.
+- **Next (step 4b):** Report a problem (walk-round) and Close job, and the urgent alert to the caretaker on shift: built in DL-175.
+- **Open:** the Khmer texts need a native-speaker check.
+- **Built:** migrations `20270619_330` and `20270620_331` (DB-TG-010), `backend/src/property_rental/telegram_staff_bot.py`, `relay/src/staff_app.ts`.
+- **Links:** DL-125, DL-127, DL-171.
+- **Decision date:** 2026-11-05.
+
+## DL-175 — Telegram bots: staff report a problem, the Technician closes a job, and the urgent alert (bots step 4b)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 4B BUILT ON BRANCH claude/telegram-staff-bot; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's Problem report Part B (OK 3 Nov 2026 11:22: staff "Report a problem" on the walk-round and "Close job" with the after photo and the cost or No cost), the staff forms mock-up v14, the Problem report design (DL-124, DL-130: the cost waits for the Manager's check, which makes the Expense report) and the tenant mock-up's rule that safety is always urgent and alerts the caretaker on shift and the Manager. Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business or money rule.
+- **(A) Report a problem.** Every linked staff member: Unit Problem (pick the Unit) or Building problem (the place and the floor), the problem type picture, at least one photo (up to 4), and a text or a voice note (up to 1 minute), as on the mock-up. At a place with an open Building problem they pick Same problem (joined at once, DL-124) or Something else. The report goes into the one Problem reports list with source Staff bot and the person's name. Only the always-urgent types (Safety and the like) are urgent; the mock-up has no Urgent question for staff. The tenant is told nothing until the Manager plans a visit (the tenant hears steps only of reports the tenant made, DL-129).
+- **(B) Close job.** Technicians see the planned repairs (Repair planned; urgent first, at most 12) and pick one. The after photo is needed (1 to 3). Cost: No cost, or parts and paid outside workers in dollars (whole cents) with a receipt photo (1 or 2). The repair becomes Done and the cost is saved for the Manager's check (DL-130), which makes the Expense report; a second close of the same job is refused with its number. Our own staff time is not added (it is in payroll).
+- **(C) The urgent alert.** When an urgent report is saved, from the Tenant bot, the Staff bot or the app, the caretakers on shift now (their planned or usual shift, a Night shift into the next morning) and the Authorizers on the Staff bot get one Khmer message with the number, the type and where. A report joined to an open one at once is not sent again, and the person who sent it is not told. The alert is queued when the change is saved, so it is never lost with a failed save.
+- **(D) Photos.** Report photos keep their stage: reported, after the repair, or receipt (DL-127's report photos table).
+- **Open:** the app's Problem report screen does not show photos yet; the Khmer texts need a native-speaker check.
+- **Built:** migration `20270621_332` (DB-TG-011), `backend/src/property_rental/telegram_staff_bot.py`, `relay/src/staff_app.ts`.
+- **Links:** DL-124, DL-127, DL-129, DL-130, DL-174.
+- **Decision date:** 2026-11-05.
+
+## DL-176 — Telegram bots: the meter reader's Utility reading form and the Meter check request (bots step 4c)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 4C BUILT ON BRANCH claude/telegram-staff-bot; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's rule of 22 Oct 2026 (meter readings need no photo), the staff forms mock-up v14 (approved 3 Nov 2026: one table of Unit, Electricity and Water with last month under each box; "Look again" when lower than last month or Electricity much higher; a flag that asks the Technical team to check a meter), the bots plan rev 29 (staff readings wait until a Manager confirms them in Utilities, so billing does not change) and DESIGN.md ("Meter readings sent by Telegram go to Utilities, Check readings"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business or money rule.
+- **(A) Utility reading form.** People with the Meter reader role (and Authorizers) see every Unit with a meter that can be read and type the readings. Only meters that are installed, not broken and not removed are shown. "Look again" shows for a reading lower than last month, and for Electricity more than 300 kWh above it (the mock-up's number). A wrong row (no such meter, not a number) refuses the whole form, and nothing of it is kept.
+- **(B) The readings wait.** A staff reading is not a meter reading. It waits on Utilities > Meter readings ("Readings from the Staff bot"), in the same columns as the import check. Someone who may record readings ticks readings and chooses Confirm (each becomes a normal meter reading on the day it was read, recorded by that person), Ask to read again (the reader gets one Khmer message naming the Units and meters), or Don't use. A meter that already has a reading that day is not overwritten; it stays waiting until it is not used. Readings that look right start ticked.
+- **(C) Meter check request.** The flag beside a Unit asks which meter and what is wrong (broken, cannot read the number, number not sure, other with a note), with up to 2 photos if possible. It becomes a Unit Problem (Electricity or Water) from the Staff bot in the one Problem reports list, for the Technical team.
+- **Open:** the Telegram review of readings by the Manager in the bot (mock-up v14 "Confirm readings" for Authorizers) is not built; readings are confirmed in the app. The Khmer texts need a native-speaker check.
+- **Built:** migration `20270622_333` (DB-TG-012), API-TG-006, `backend/src/property_rental/staff_meter_readings_api.py`, `relay/src/staff_app.ts`, `frontend/src/utilities/StaffReadings.tsx`.
+- **Links:** DL-124, DL-174, DL-175.
+- **Decision date:** 2026-11-05.
+
+## DL-177 — Telegram bots: the daily checklists, patrol rounds and the 18:00 summary (bots step 4d)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 4D BUILT ON BRANCH claude/telegram-staff-bot; WAITS FOR THE OWNER'S TEST AND THE REAL TASK LISTS`
+- **Source:** the owner's staff checklist rules of 24-25 Oct 2026 (Cleaning daily, caretaker shifts Morning 06:30-15:30, Afternoon 14:30-23:30 and Night 22:30-07:30, Technical daily with tasks due on some days; the checklists are the basis of the Telegram forms; daily summaries go out at 18:00; staff see Khmer only) and the staff forms mock-up v14 (approved 3 Nov 2026). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business or money rule.
+- **(A) Three checklists.** Cleaning daily check (cleaners), Caretaker shift check (caretakers) and Technical daily check (the Technician). Authorizers may send all three. Each task due that day is answered Done or Not done (Cleaning), Done or Problem (Caretakers), Good or Needs fixing (Technical), with an optional short note. The floor-cleaning task asks which floor. Extra boxes: rooms checked out, problems found, supplies needed, market money in whole riel (a note only; it is not a ledger record), visitors, broken things, incidents, today's repairs and parts needed. No photo: a broken thing is sent with Report a problem.
+- **(B) Task lists with versions.** The lists are the mock-up's draft lists (two cleaning lists: the building and house 103). They live in the database with a version; a new list is a new version, and a sent check keeps the version it used. A task can be due on some days of the week, some months and some days of the month (so weekly, monthly, quarterly and 6-monthly tasks fit later), and a caretaker task on some shifts.
+- **(C) The caretaker's shift.** It comes from HR (the weekly plan, else the usual shift), from 30 minutes before the start to 2 hours after the end; the caretaker cannot pick another one. An Authorizer picks the shift. A check sent again the same day (and shift) is kept, and the newest counts.
+- **(D) Patrol rounds.** Each round of the shift (the mock-up's sample times) is sent on its own with the places walked (Chetana, rental rooms, parking), from 30 minutes before its time, once per shift; the office keeps the real time it came. The mock-up's "posted to the caretakers' group" waits: the bots have no group chats yet, so missed rounds show in the 18:00 summary.
+- **(E) 18:00 summary.** Once a day at 18:00 Property time, every Authorizer gets one Khmer message: for Cleaning and Technical, who sent today's check out of the people not on a day off, who did not, and the tasks not done or needing fixing; for caretakers, the patrol rounds due in the last 24 hours and the ones missed, the shift checks of the shifts that ended, the tasks with a problem and the incidents.
+- **Open:** the owner's real task lists and patrol times (the drafts stay until then); an app screen to read the sent checks (the summary and the database have them now); the Khmer texts need a native-speaker check.
+- **Built:** migration `20270623_334` (DB-TG-013), `relay/src/staff_app.ts`, `backend/src/property_rental/telegram_staff_bot.py`, the pull job.
+- **Links:** DL-174, DL-175, DL-176.
+- **Decision date:** 2026-11-05.
+
+## DL-178 — Telegram bots: the Unit Check and the Maintenance check (bots step 4e)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 4E BUILT ON BRANCH claude/telegram-staff-bot; WAITS FOR THE OWNER'S TEST`
+- **Source:** the staff forms mock-up v14 (approved 3 Nov 2026: Unit Check with seven areas Good, Broken or Missing, up to 5 photos for each finding, Unit number only; Maintenance check with how staff entered and the cause, "Customer caused" never makes a charge by itself) and DL-115 (a Unit Check never makes a charge; only a confirmed finding in the app can become a Damage charge). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business or money rule.
+- **(A) Who.** The Technician and the Authorizers (Owner and Manager) see both forms.
+- **(B) Unit Check.** Pick the Unit and the kind (regular, or after a repair), then mark the areas: living room, bedroom, bathroom, kitchen, balcony, air conditioner, and keys, key cards and remotes. A Unit without an area leaves it out (at least one area). Each Broken or Missing area needs what is wrong and at least one photo. The Telegram relay takes at most 5 photos in one form, so a Unit Check has at most 5 photos in all (the mock-up said 5 for each finding). Each finding becomes a Unit Problem in the one Problem reports list (source Staff bot; type Air conditioner, Door lock for keys, else Other), so the Manager plans it as usual. The mock-up v14's seven areas replace the "ten checks" of DL-115 for the Telegram form.
+- **(C) Maintenance check.** Pick a planned visit (Visit planned), say how staff entered (urgent, the tenant agreed, notice given first) and the cause (wear, the tenant caused it, not sure yet), take 1 to 5 photos and write a note. An urgent visit may be marked fixed at once. The report moves to Checked with the cause and a note naming who checked it and how they entered; the Manager decides who pays in the app as before. The mock-up's Status (reported, being repaired, done) is not asked: Close job (DL-175) already marks a repair done.
+- **Open:** an app screen to read the sent Unit Checks (each finding is already a Problem report); the Khmer texts need a native-speaker check.
+- **Built:** migration `20270624_335` (DB-TG-014), `relay/src/staff_app.ts`, `backend/src/property_rental/telegram_staff_bot.py`.
+- **Links:** DL-115, DL-175, DL-177.
+- **Decision date:** 2026-11-05.
+

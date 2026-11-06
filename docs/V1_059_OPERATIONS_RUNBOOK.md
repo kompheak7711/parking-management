@@ -185,7 +185,10 @@ container). The health screen itself is built in the screen rebuild (UI-093, DL-
 **The Telegram bots (DL-125; off until the owner sets them up).** `prm-telegram-pull.timer` and
 `prm-telegram-send.timer` run every minute as `prm-ops`. They read
 `/etc/prm/telegram-jobs.env` (`APP_DATABASE_URL`, `PRM_PROPERTY_ID`, `PRM_TELEGRAM_ACTOR_ID`)
-and do nothing while `telegram_bots.enabled` is false. The relay setup steps are in
+and do nothing while `telegram_bots.enabled` is false. The Staff bot (DL-174) also needs
+`PRM_TELEGRAM_SERVICE_ACTOR_ID` (a service actor, for the HR staff functions) and
+`APP_HR_FILES_DIRECTORY=/var/lib/prm/hr-files` (card scan photos, removed after the HR rule's
+90 days); without them the Staff bot answers that it is not ready. The relay setup steps are in
 `relay/README.md`. Each run writes `telegram-pull.json` or `telegram-send.json` to the status
 folder, and then the health page can show:
 

@@ -366,6 +366,12 @@ from property_rental.short_stays_api import (
     create_short_stay_feed_router,
     create_short_stays_router,
 )
+from property_rental.staff_meter_readings_api import (
+    PostgresStaffMeterReadingFlow,
+    StaffMeterReadingFlow,
+    UnavailableStaffMeterReadingFlow,
+    create_staff_meter_readings_router,
+)
 from property_rental.telegram_api import (
     PostgresTelegramPageFlow,
     TelegramPageFlow,
@@ -643,6 +649,7 @@ def create_app(
     product_flow: ProductFlow | None = None,
     quotation_flow: QuotationFlow | None = None,
     problem_report_flow: ProblemReportFlow | None = None,
+    staff_meter_reading_flow: StaffMeterReadingFlow | None = None,
     hr_flow: HrFlow | None = None,
     telegram_page_flow: TelegramPageFlow | None = None,
     short_stay_flow: ShortStayFlow | None = None,
@@ -1336,6 +1343,18 @@ def create_app(
                 )
                 if resolved_settings.database_url is not None
                 else UnavailableProblemReportFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_staff_meter_readings_router(
+            actor_resolver,
+            staff_meter_reading_flow
+            or (
+                PostgresStaffMeterReadingFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableStaffMeterReadingFlow()
             ),
             resolved_settings,
         )

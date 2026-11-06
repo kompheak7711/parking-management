@@ -20,6 +20,7 @@ from property_rental.telegram_pull_job import run_pull
 from property_rental.telegram_relay_client import RelayClient, RelayError, signature
 from property_rental.telegram_seal import seal_for_tests
 from property_rental.telegram_send_job import load_bot_tokens, run_send
+from property_rental.telegram_store import StaffBotUnavailable
 from property_rental.telegram_texts import TextError, render
 
 PULL_KEY = bytes.fromhex("11" * 32)
@@ -124,6 +125,16 @@ class FakeStore:
         self.inquiry_answers: list[dict[str, Any]] = []
         self.reminder_runs = 0
         self.blocked = False
+        # The Staff bot (migration 20270620_331); None is a job given no service actor.
+        self.staff_ready = True
+        self.staff: dict[int, dict[str, Any]] = {}
+        self.staff_waiting: set[int] = set()
+        self.staff_joins: list[tuple[int, str, str]] = []
+        self.staff_scans: list[tuple[str, int, dict[str, Any], str]] = []
+        self.staff_answers: list[dict[str, Any]] = []
+        self.staff_data: dict[str, Any] = {"choices": {}, "users": []}
+        self.photos_due: list[dict[str, Any]] = []
+        self.photos_removed: list[str] = []
 
     def record_item(self, item: dict[str, Any]) -> dict[str, Any]:
         if item["relay_item_id"] in self.items:
@@ -241,6 +252,92 @@ class FakeStore:
     ) -> dict[str, Any]:
         self.inquiries.append((inbound_id, user, chat, language, dict(request)))
         return self.inquiry_answers.pop(0)
+
+    def _staff_ready(self) -> None:
+        if not self.staff_ready:
+            raise StaffBotUnavailable("no service actor")
+
+    def staff_who(self, user: int) -> dict[str, Any]:
+        self._staff_ready()
+        if user in self.staff:
+            return {"linked": True, **self.staff[user]}
+        return {"linked": False, "waiting": user in self.staff_waiting}
+
+    def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]:
+        self._staff_ready()
+        self.staff_joins.append((user, name, phone))
+        self.staff_waiting.add(user)
+        return {"ok": True, "state": "WAITING", "request_id": "r1"}
+
+    def staff_check(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]:
+        self._staff_ready()
+        self.staff_scans.append(("CHECK", user, scan, at))
+        return self.staff_answers.pop(0)
+
+    def staff_card(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]:
+        self._staff_ready()
+        self.staff_scans.append(("CARD", user, scan, at))
+        return self.staff_answers.pop(0)
+
+    def staff_photos_due(self) -> list[dict[str, Any]]:
+        return self.photos_due
+
+    def staff_photo_removed(self, file_id: str) -> None:
+        self.photos_removed.append(file_id)
+
+    def staff_form_data(self) -> dict[str, Any]:
+        return self.staff_data
+
+    def staff_problem_report(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("REPORT", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_close_job(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("CLOSE", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_meter_readings(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("METER", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_meter_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("METER_CHECK", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_checklist(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("CHECKLIST", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_patrol(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("PATROL", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_daily_summary(self) -> int:
+        return 0
+
+    def staff_unit_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("UNIT_CHECK", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
+
+    def staff_maintenance_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        self.staff_scans.append(("MAINT_CHECK", 0, {"form": form, "media": media_ids}, inbound_id))
+        return self.staff_answers.pop(0)
 
 
 def _client(relay: FakeRelay) -> RelayClient:

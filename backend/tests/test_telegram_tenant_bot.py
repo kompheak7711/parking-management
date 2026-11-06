@@ -235,12 +235,18 @@ def test_the_access_list_and_choices_go_to_the_relay_only_when_they_change(
     }
     client = _client(relay)
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is True
-    assert [path for path, _ in relay.pushed] == ["/office/access/tenant", "/office/choices/tenant"]
+    # Each bot's list goes once; the Staff bot list too (step 4a).
+    assert [path for path, _ in relay.pushed] == [
+        "/office/access/tenant",
+        "/office/choices/tenant",
+        "/office/access/staff",
+        "/office/choices/staff",
+    ]
     assert relay.pushed[0][1] == {"users": store.form_data["users"]}
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is False
     store.form_data = store.form_data | {"users": []}
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is True
-    assert len(relay.pushed) == 4
+    assert len(relay.pushed) == 6
     # A relay that cannot be reached is tried again next time.
     store.form_data = store.form_data | {"choices": {"types": []}}
     lines: list[str] = []
@@ -251,7 +257,7 @@ def test_the_access_list_and_choices_go_to_the_relay_only_when_they_change(
         push_form_data(client=broken, store=store, status_directory=tmp_path, log=lines.append)
         is False
     )
-    assert lines == ["telegram_pull:form_data_not_sent:relay_http_503"]
+    assert lines == ["telegram_pull:form_data_not_sent:TENANT:relay_http_503"]
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is True
 
 

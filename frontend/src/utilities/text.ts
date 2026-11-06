@@ -494,6 +494,49 @@ const TEXT = {
   ],
   required: ["Required", "ត្រូវការ"],
   optional: ["Optional", "ស្រេចចិត្ត"],
+  // Telegram bots step 4c (DL-176): readings from the Staff bot. Khmer is new.
+  sb_waiting: [
+    "{0} readings from the Staff bot wait for your check.",
+    "អំណាន {0} ពីបូតបុគ្គលិក រង់ចាំការពិនិត្យរបស់អ្នក។",
+  ],
+  sb_open: ["Check readings", "ពិនិត្យអំណាន"],
+  sb_title: ["Readings from the Staff bot", "អំណានពីបូតបុគ្គលិក"],
+  sb_sent: ["Sent by {0}, read on {1}", "ផ្ញើដោយ {0} អានថ្ងៃ {1}"],
+  sb_pick: ["Pick", "ជ្រើស"],
+  sb_lower: ["Lower than previous", "ទាបជាងអំណានមុន"],
+  sb_high: [
+    "Electricity more than 300 kWh above previous",
+    "ភ្លើងលើសអំណានមុនជាង 300 kWh",
+  ],
+  sb_already: [
+    "A reading is already saved for that day",
+    "មានអំណានរក្សាទុករួចសម្រាប់ថ្ងៃនោះ",
+  ],
+  sb_note: [
+    "Confirm saves the ticked readings as meter readings on the day they were read. Ask to read again tells the meter reader in Telegram. Don't use closes them.",
+    "បញ្ជាក់ រក្សាទុកអំណានដែលបានធីក ជាអំណាននាឡិកាស្ទង់ នៅថ្ងៃដែលបានអាន។ ឱ្យអានម្តងទៀត ប្រាប់អ្នកអានមីទ័រក្នុង Telegram។ មិនប្រើ បិទវា។",
+  ],
+  sb_confirm: ["Confirm readings", "បញ្ជាក់អំណាន"],
+  sb_again: ["Ask to read again", "ឱ្យអានម្តងទៀត"],
+  sb_not_used: ["Don't use", "មិនប្រើ"],
+  sb_none: ["Tick at least one reading.", "សូមធីកអំណានយ៉ាងហោចណាស់មួយ។"],
+  sb_done_CONFIRMED: [
+    "{0} readings confirmed and saved.",
+    "អំណាន {0} បានបញ្ជាក់ និងរក្សាទុក។",
+  ],
+  sb_done_ASK_AGAIN: [
+    "The meter reader was asked to read {0} again.",
+    "បានប្រាប់អ្នកអានមីទ័រឱ្យអាន {0} ម្តងទៀត។",
+  ],
+  sb_done_NOT_USED: ["{0} readings not used.", "អំណាន {0} មិនប្រើ។"],
+  sb_left: [
+    "Not saved, a reading for that day is already there: {0}. Use Don't use or correct the saved reading.",
+    "មិនបានរក្សាទុក មានអំណានសម្រាប់ថ្ងៃនោះរួចហើយ៖ {0}។ សូមប្រើ មិនប្រើ ឬកែអំណានដែលបានរក្សាទុក។",
+  ],
+  sb_failed: [
+    "The staff readings could not be saved just now. Try again.",
+    "មិនអាចរក្សាទុកអំណានពីបុគ្គលិកបានទេឥឡូវនេះ។ សូមព្យាយាមម្តងទៀត។",
+  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type UtilitiesTextKey = keyof typeof TEXT;

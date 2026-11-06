@@ -32,7 +32,7 @@ from property_rental.access_control import (
 from property_rental.identity import CapabilityGrant
 from property_rental.telegram_customer_bot import CUSTOMER_STEPS
 from property_rental.telegram_tenant_bot import TENANT_STEPS
-from property_rental.telegram_texts import CHOICE_KEYBOARDS, KEYBOARDS, TEXTS
+from property_rental.telegram_texts import APP_KEYBOARDS, CHOICE_KEYBOARDS, KEYBOARDS, TEXTS
 
 SOURCE = Path(__file__).parents[1] / "src" / "property_rental"
 DOTTED = re.compile(r"^[a-z][a-z_]*(\.[a-z][a-z_]*)+$")
@@ -140,7 +140,13 @@ def application_constants() -> set[str]:
             found |= dotted_constants(path)
     # The Telegram bots' fixed text codes, keyboards and chat steps are names of their own.
     return (
-        found - set(TEXTS) - set(KEYBOARDS) - set(CHOICE_KEYBOARDS) - TENANT_STEPS - CUSTOMER_STEPS
+        found
+        - set(TEXTS)
+        - set(KEYBOARDS)
+        - set(CHOICE_KEYBOARDS)
+        - set(APP_KEYBOARDS)
+        - TENANT_STEPS
+        - CUSTOMER_STEPS
     )
 
 

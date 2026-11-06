@@ -10,17 +10,21 @@ Type=oneshot
 User=prm-ops
 Group=prm-ops
 UMask=0077
-# /etc/prm/telegram-jobs.env (mode 0600, owner prm-ops) holds three lines:
+# /etc/prm/telegram-jobs.env (mode 0600, owner prm-ops) holds these lines:
 # APP_DATABASE_URL (the runtime login), PRM_PROPERTY_ID and PRM_TELEGRAM_ACTOR_ID
 # (the account the jobs run as; it needs the Telegram rights of an Owner or Manager).
+# For the Staff bot (step 4a, DL-174) also PRM_TELEGRAM_SERVICE_ACTOR_ID (the service actor the
+# HR staff functions need; empty keeps the Staff bot answering "not ready") and
+# APP_HR_FILES_DIRECTORY=/var/lib/prm/hr-files (where caretakers' card photos are kept; the
+# office app reads HR files from the same folder).
 EnvironmentFile=/etc/prm/telegram-jobs.env
-ExecStart=/opt/prm/venv/bin/property-rental-telegram-pull --config /etc/prm/production-operations.json --property-id ${PRM_PROPERTY_ID} --actor-id ${PRM_TELEGRAM_ACTOR_ID}
+ExecStart=/opt/prm/venv/bin/property-rental-telegram-pull --config /etc/prm/production-operations.json --property-id ${PRM_PROPERTY_ID} --actor-id ${PRM_TELEGRAM_ACTOR_ID} --service-actor-id=${PRM_TELEGRAM_SERVICE_ACTOR_ID}
 StandardOutput=journal
 StandardError=journal
 TimeoutStartSec=50s
 NoNewPrivileges=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/prm/status /var/lib/prm/media
+ReadWritePaths=/var/lib/prm/status /var/lib/prm/media -/var/lib/prm/hr-files
 PrivateTmp=true
 # The secret files live in /etc/prm/secrets (kept across restarts); the job sees them at
 # /run/secrets, the paths of production-operations.json.

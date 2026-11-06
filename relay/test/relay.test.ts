@@ -440,7 +440,7 @@ test("the Tenant bot form: the page, its choices and the person's places, then t
   );
   assert.match(await page.text(), /\/form\/tenant\/start/);
   assert.equal(
-    (await handle(new Request("https://relay.test/app/staff"), env, clock))
+    (await handle(new Request("https://relay.test/app/nobody"), env, clock))
       .status,
     404,
   );
@@ -544,4 +544,106 @@ test("the Tenant bot form: the page, its choices and the person's places, then t
   assert.equal(plain.media[0].content_type, "audio/webm");
   assert.equal(plain.media[0].duration, 21);
   assert.equal(plain.media[0].size, voice.length);
+});
+
+test("the Staff forms: the page, the person's name, roles and shift, then a card scan with its photo", async () => {
+  const env = testEnv(keys.publicPem);
+  const token = env.STAFF_BOT_TOKEN as string;
+  const signIn = await signInForTests(token, {
+    auth_date: String(NOW - 30),
+    user: JSON.stringify({ id: 6161, language_code: "km" }),
+  });
+  const page = await handle(
+    new Request("https://relay.test/app/staff?form=home&lang=km"),
+    env,
+    clock,
+  );
+  assert.equal(page.status, 200);
+  assert.match(
+    page.headers.get("content-security-policy") ?? "",
+    /connect-src 'self'/,
+  );
+  const html = await page.text();
+  assert.match(html, /\/form\/staff\/start/);
+  assert.match(html, /showScanQrPopup/);
+  assert.match(html, /LocationManager/);
+  // Step 4b: Report a problem (everyone) and Close job (Technicians).
+  assert.match(html, /type: "REPORT"/);
+  assert.match(html, /type: "CLOSE"/);
+  assert.match(html, /MediaRecorder/);
+  assert.match(html, /type: "METER"/);
+  assert.match(html, /type: "METER_CHECK"/);
+  assert.match(html, /type: "CHECKLIST"/);
+  assert.match(html, /type: "PATROL"/);
+  assert.match(html, /type: "UNIT_CHECK"/);
+  assert.match(html, /type: "MAINT_CHECK"/);
+
+  const mine = {
+    name_km: "ពេជ ភក្រក្ដី",
+    roles: ["CARETAKER"],
+    shift_code: "MORNING",
+    shift_km: "វេនព្រឹក",
+  };
+  const list = { users: [{ id: 6161, role: "STAFF", data: mine }] };
+  assert.equal(
+    (
+      await handle(
+        await officeRequest("PUT", "/office/access/staff", NOW, list),
+        env,
+        clock,
+      )
+    ).status,
+    200,
+  );
+  const started = await handle(
+    new Request("https://relay.test/form/staff/start", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ init_data: signIn }),
+    }),
+    env,
+    clock,
+  );
+  assert.equal(started.status, 200);
+  assert.deepEqual(await started.json(), { ok: true, choices: null, mine });
+
+  const photo = new Uint8Array([0xff, 0xd8, 0xff, 1, 2, 3]);
+  const sent = await handle(
+    new Request("https://relay.test/form/staff", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        init_data: signIn,
+        form: {
+          type: "CARD",
+          mode: "IN",
+          card: "CHETANA-E-x",
+          reason: "NO_PHONE",
+        },
+        photos: [
+          {
+            content_type: "image/jpeg",
+            data: Buffer.from(photo).toString("base64"),
+          },
+        ],
+      }),
+    }),
+    env,
+    clock,
+  );
+  assert.equal(sent.status, 200);
+  const pulled = (await (
+    await handle(await officeRequest("GET", "/office/items", NOW), env, clock)
+  ).json()) as {
+    items: { id: string; bot: string; kind: string; sealed: string }[];
+  };
+  const item = pulled.items[0];
+  assert.ok(item);
+  assert.equal(item.bot, "STAFF");
+  assert.equal(item.kind, "form");
+  const plain = await openItem(item);
+  assert.equal(plain.payload.role, "STAFF");
+  assert.equal(plain.payload.form.type, "CARD");
+  assert.equal(plain.media[0].content_type, "image/jpeg");
+  assert.equal(plain.media[0].size, photo.length);
 });

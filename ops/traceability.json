@@ -65012,6 +65012,371 @@
       "notes": "HRIS: the Weekly plan gives the caretaker no day-off warning (owner 06/11); office staff plan office hours only."
     },
     {
+      "test_id": "test_join_answer_and_who",
+      "upstream_ids": [
+        "DL-174",
+        "DB-TG-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_bot_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: A Start with the own phone becomes an HR staff request through the jobs' account and the service actor; the person hears Approved with the Reports button or Not approved; the relay list holds only linked staff with roles and shift."
+    },
+    {
+      "test_id": "test_check_and_card_scans_answer_in_property_time",
+      "upstream_ids": [
+        "DL-174",
+        "DB-TG-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_bot_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: Check-in and card scans go through the Telegram rights and the HR rules and answer with the time and the shift start in Property time; old card photos are listed only for the jobs."
+    },
+    {
+      "test_id": "test_a_new_person_shares_their_phone_and_waits_for_the_answer",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: Start asks for the own phone; another person's contact does not count; a waiting person is told so; a linked person gets the Reports button that opens /app/staff."
+    },
+    {
+      "test_id": "test_without_the_service_actor_the_bot_says_it_is_not_ready",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: Without the service actor the Staff bot answers that it is not ready."
+    },
+    {
+      "test_id": "test_check_in_and_out_answers_with_the_time",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: A check-in or check-out form sends only the fields the HR rules read and is answered in Khmer with the time, the minutes late or the shift start; an unknown refusal gets the general answer."
+    },
+    {
+      "test_id": "test_card_scan_keeps_the_photo_in_the_hr_folder",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: A card scan photo is written to the HR files folder; a refused scan removes the new file but never an older one; old photos are deleted, then recorded."
+    },
+    {
+      "test_id": "test_the_pull_holds_card_photos_and_keeps_codes_out",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: The pull job keeps a card photo out of the Telegram photos and the scanned card text out of the saved message."
+    },
+    {
+      "test_id": "test_staff_texts_are_khmer_only",
+      "upstream_ids": [
+        "DL-174"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4a: Every Staff bot text is Khmer in both languages (owner rule)."
+    },
+    {
+      "test_id": "test_staff_report_a_problem_with_a_photo",
+      "upstream_ids": [
+        "DL-175",
+        "DB-TG-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_reports_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4b: A linked staff member's Report a problem is saved with source Staff bot, their name and photos; a photo and a text or voice note are needed; unlinked people and wrong Units are refused."
+    },
+    {
+      "test_id": "test_urgent_reports_alert_the_caretaker_on_shift_and_the_authorizers",
+      "upstream_ids": [
+        "DL-175",
+        "DB-TG-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_reports_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4b: An urgent report alerts the caretaker on shift and the Authorizers, not the caretaker off shift or the sender; a report joined at once is not sent again; reports typed in the app alert too."
+    },
+    {
+      "test_id": "test_the_technician_closes_a_job_with_the_after_photo_and_cost",
+      "upstream_ids": [
+        "DL-175",
+        "DB-TG-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_reports_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4b: Technicians see the planned repairs; Close job needs the after photo and the cost (a receipt with a cost); the repair is Done and the cost waits for the Manager's check; a second close is refused."
+    },
+    {
+      "test_id": "test_the_new_functions_are_behind_the_telegram_right",
+      "upstream_ids": [
+        "DL-175",
+        "DB-TG-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_reports_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4b: Staff accounts cannot call the new functions or read the new tables."
+    },
+    {
+      "test_id": "test_report_a_problem_and_close_job_answer_in_the_chat",
+      "upstream_ids": [
+        "DL-175"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4b: The Staff bot answers Report a problem (saved, urgent, joined, refused) and Close job (done with or without cost, not open, cost checked, not a Technician) in Khmer; the same form twice is answered once."
+    },
+    {
+      "test_id": "test_the_form_shows_the_meters_and_their_last_readings",
+      "upstream_ids": [
+        "DL-176",
+        "DB-TG-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_meter_readings_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: The Staff forms give each Unit with a meter that can be read and the last reading of each type, with no names; the meter reader's roles come with the person."
+    },
+    {
+      "test_id": "test_readings_wait_for_the_manager_who_confirms_or_asks_again",
+      "upstream_ids": [
+        "DL-176",
+        "DB-TG-012",
+        "API-TG-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_meter_readings_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: Readings from the meter reader are saved once and flagged lower or much higher; wrong rows, photos and other roles are refused; Confirm makes normal meter readings on the day read, Ask to read again tells the reader, a meter already read that day stays waiting until Don't use."
+    },
+    {
+      "test_id": "test_a_meter_check_request_is_a_unit_problem",
+      "upstream_ids": [
+        "DL-176",
+        "DB-TG-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_meter_readings_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: A Meter check request becomes a Unit Problem (Electricity or Water, source Staff bot) with its photo; Other needs a note; at most 2 photos; the same form twice gives the same report."
+    },
+    {
+      "test_id": "test_the_new_functions_are_behind_their_rights",
+      "upstream_ids": [
+        "DL-176",
+        "DB-TG-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_meter_readings_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: The Staff form functions need telegram.operate, the Utilities list and answer need utility_readings.record, the tables are closed to the runtime and never changed."
+    },
+    {
+      "test_id": "test_utility_reading_and_meter_check_answer_in_the_chat",
+      "upstream_ids": [
+        "DL-176"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: The Staff bot answers the Utility reading (sent, with readings to look at, not a meter reader, refused) and the Meter check request in Khmer; the same form twice is answered once."
+    },
+    {
+      "test_id": "test_staff_readings_need_the_right_to_record_readings",
+      "upstream_ids": [
+        "DL-176",
+        "API-TG-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_staff_meter_readings_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: The Utilities staff readings list and answer need utility_readings.record and are not cached."
+    },
+    {
+      "test_id": "test_an_answer_is_checked",
+      "upstream_ids": [
+        "DL-176",
+        "API-TG-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_staff_meter_readings_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: An answer needs the browser checks, a known decision and 1 to 500 readings; an unknown reading is 404."
+    },
+    {
+      "test_id": "TEST-FE-1517",
+      "upstream_ids": [
+        "DL-176",
+        "API-TG-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/StaffReadings.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: Readings from the Staff bot show a card on Meter readings; Check readings shows previous and current readings, ticks the ones that look right, and Confirm saves them."
+    },
+    {
+      "test_id": "TEST-FE-1518",
+      "upstream_ids": [
+        "DL-176",
+        "API-TG-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/StaffReadings.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: Ask to read again names the Units, a reading already saved that day is left waiting, Don't use closes it, and nothing ticked is refused on the screen."
+    },
+    {
+      "test_id": "TEST-FE-1519",
+      "upstream_ids": [
+        "DL-176",
+        "API-TG-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/utilities/StaffReadings.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 4c: Nothing shows when no reading waits or the list cannot be read; the client sends the answer with the CSRF token and refuses a list of the wrong shape."
+    },
+    {
+      "test_id": "test_the_forms_show_the_checklists_and_each_persons_state",
+      "upstream_ids": [
+        "DL-177",
+        "DB-TG-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_checklists_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: The Staff forms give the checklists with the tasks due today (by day of the week and shift) and each person's state: the caretaker's shift from HR with the rounds sent."
+    },
+    {
+      "test_id": "test_a_cleaner_sends_the_daily_check",
+      "upstream_ids": [
+        "DL-177",
+        "DB-TG-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_checklists_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: A cleaner's check needs every task due answered OK or NOT_OK, keeps notes, the floor and the extra boxes (market money in whole riel); a check sent again is kept and the newest counts; wrong forms, photos and other roles are refused."
+    },
+    {
+      "test_id": "test_a_caretaker_sends_the_shift_check_and_patrol_rounds",
+      "upstream_ids": [
+        "DL-177",
+        "DB-TG-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_checklists_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: A caretaker's check and patrol rounds use the shift from HR (an Authorizer picks it); a round is saved once per shift with the places walked; unknown rounds and places are refused."
+    },
+    {
+      "test_id": "test_the_1800_summary_goes_to_the_authorizers_once",
+      "upstream_ids": [
+        "DL-177",
+        "DB-TG-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_checklists_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: From 18:00 the Authorizers get one Khmer summary a day with who sent the checks, the tasks not done or needing fixing and the caretakers' rounds; before 18:00 and a second time nothing is sent."
+    },
+    {
+      "test_id": "test_the_new_functions_and_tables_are_behind_their_rights",
+      "upstream_ids": [
+        "DL-177",
+        "DB-TG-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_checklists_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: The checklist, patrol and summary functions need telegram.operate, the summary at a chosen time is not open to the runtime, the tables are closed to the runtime and never changed."
+    },
+    {
+      "test_id": "test_daily_checklists_and_patrol_rounds_answer_in_the_chat",
+      "upstream_ids": [
+        "DL-177"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4d: The Staff bot answers the daily checks (sent, with problems, wrong role, no shift, nothing due, refused) and the patrol rounds (sent, already sent, too early) in Khmer, and the 18:00 summary renders."
+    },
+    {
+      "test_id": "test_the_forms_show_the_planned_visits_and_the_unit_check_areas",
+      "upstream_ids": [
+        "DL-178",
+        "DB-TG-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_unit_checks_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4e: The Staff forms give the planned visits and the seven Unit Check areas in the shared choices, not in each person's data."
+    },
+    {
+      "test_id": "test_a_unit_check_makes_a_unit_problem_for_each_finding",
+      "upstream_ids": [
+        "DL-178",
+        "DB-TG-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_unit_checks_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4e: A Unit Check from the Technician or an Authorizer makes one Unit Problem with its photos for each Broken or Missing area; wrong Units, kinds, areas, findings, photos and other roles are refused; the same form twice saves it once."
+    },
+    {
+      "test_id": "test_a_maintenance_check_moves_the_visit_to_checked",
+      "upstream_ids": [
+        "DL-178",
+        "DB-TG-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_unit_checks_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4e: A Maintenance check moves a planned visit to Checked with the cause, how staff entered and the CHECK photos; fixed at once only for an urgent visit; a visit no longer planned is refused."
+    },
+    {
+      "test_id": "test_the_unit_check_functions_are_behind_the_telegram_right",
+      "upstream_ids": [
+        "DL-178",
+        "DB-TG-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_staff_unit_checks_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4e: The Unit Check and Maintenance check functions need telegram.operate; the tables are closed to the runtime and never changed."
+    },
+    {
+      "test_id": "test_unit_checks_and_maintenance_checks_answer_in_the_chat",
+      "upstream_ids": [
+        "DL-178"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_staff_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 4e: The Staff bot answers the Unit Check (all good, findings with their numbers, wrong role, refused) and the Maintenance check (checked, fixed, not planned, refused) in Khmer."
+    },
+    {
       "test_id": "test_add_employee_checks_the_same_id_number",
       "upstream_ids": [
         "PR-HR-011"

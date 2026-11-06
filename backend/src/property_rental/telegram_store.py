@@ -10,6 +10,10 @@ from uuid import UUID
 import psycopg
 
 
+class StaffBotUnavailable(RuntimeError):
+    """The Staff bot needs the HR service actor, and the job was not given one."""
+
+
 class TelegramStore(Protocol):
     def record_item(self, item: dict[str, Any]) -> dict[str, Any]: ...
 
@@ -81,12 +85,69 @@ class TelegramStore(Protocol):
         self, inbound_id: str, user: int, chat: int, language: str, request: dict[str, Any]
     ) -> dict[str, Any]: ...
 
+    def staff_who(self, user: int) -> dict[str, Any]: ...
+
+    def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]: ...
+
+    def staff_check(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]: ...
+
+    def staff_card(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]: ...
+
+    def staff_photos_due(self) -> list[dict[str, Any]]: ...
+
+    def staff_photo_removed(self, file_id: str) -> None: ...
+
+    def staff_form_data(self) -> dict[str, Any]: ...
+
+    def staff_problem_report(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_close_job(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_meter_readings(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_meter_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_checklist(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_patrol(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_daily_summary(self) -> int: ...
+
+    def staff_unit_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
+    def staff_maintenance_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]: ...
+
 
 class PostgresTelegramStore:
-    def __init__(self, database_url: str, *, property_id: UUID, actor_id: UUID) -> None:
+    def __init__(
+        self,
+        database_url: str,
+        *,
+        property_id: UUID,
+        actor_id: UUID,
+        service_actor_id: UUID | None = None,
+    ) -> None:
         self._url = database_url
         self._property = property_id
         self._actor = actor_id
+        # The HR staff functions take only a service actor (migration 20270430_300).
+        self._service = service_actor_id
 
     def __repr__(self) -> str:
         return f"PostgresTelegramStore(property={self._property})"
@@ -333,3 +394,182 @@ class PostgresTelegramStore:
         )
         assert isinstance(result, dict)
         return result
+
+    def _staff(self) -> UUID:
+        if self._service is None:
+            raise StaffBotUnavailable("the Staff bot needs --service-actor-id")
+        return self._service
+
+    def _staff_dict(self, query: str, *values: object) -> dict[str, Any]:
+        result = self._one(query, *values)
+        assert isinstance(result, dict)
+        return result
+
+    def staff_who(self, user: int) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_who(%s, %s, %s, %s)",
+            self._property,
+            user,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_join(%s, %s, %s, %s, NULL, %s, %s)",
+            self._property,
+            user,
+            name,
+            phone,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_check(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_check(%s, %s, %s::jsonb, %s::timestamptz, %s, %s)",
+            self._property,
+            user,
+            json.dumps(scan),
+            at or None,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_card(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_card(%s, %s, %s::jsonb, %s::timestamptz, %s, %s)",
+            self._property,
+            user,
+            json.dumps(scan),
+            at or None,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_photos_due(self) -> list[dict[str, Any]]:
+        result = self._one(
+            "SELECT app.telegram_staff_photos_due(%s, %s, %s)",
+            self._property,
+            self._staff(),
+            self._actor,
+        )
+        assert isinstance(result, list)
+        return [entry for entry in result if isinstance(entry, dict)]
+
+    def staff_photo_removed(self, file_id: str) -> None:
+        self._one(
+            "SELECT app.telegram_staff_photo_removed(%s, %s, %s, %s) IS NULL",
+            self._property,
+            file_id,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_form_data(self) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_form_data(%s, %s)", self._property, self._actor
+        )
+
+    def staff_problem_report(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_problem_report(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_close_job(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_close_job(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_meter_readings(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_meter_readings(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_meter_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_meter_check(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_checklist(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_checklist(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_patrol(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_patrol(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_daily_summary(self) -> int:
+        return int(
+            self._one(
+                "SELECT app.telegram_staff_daily_summary(%s, %s)", self._property, self._actor
+            )
+        )
+
+    def staff_unit_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_unit_check(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )
+
+    def staff_maintenance_check(
+        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+    ) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_maintenance_check(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            self._property,
+            inbound_id,
+            json.dumps(form),
+            json.dumps(media_ids),
+            self._actor,
+        )

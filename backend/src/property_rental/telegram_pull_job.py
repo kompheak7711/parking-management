@@ -10,7 +10,9 @@ removes it and the health page shows a warning.
 After an item is saved, the handler for its bot and kind runs: "ping" to any bot answers that the
 connection works (the owner's setup test); the Tenant bot answers chat messages and saves Problem
 report forms (steps 2a and 2b). After each pull the job sends the relay the Tenant bot access list
-and form choices when they changed.
+and form choices when they changed. The Staff bot (step 4a) joins staff and records check-in and
+card scans with the HR service actor; a card scan's photo goes to the HR files folder, not with
+the Telegram photos, so the HR rule can remove it after 90 days.
 """
 
 from __future__ import annotations
@@ -37,6 +39,11 @@ from property_rental.telegram_customer_bot import handle_customer_update
 from property_rental.telegram_phone import normalize_phone
 from property_rental.telegram_relay_client import RelayClient, RelayError, RelayItem, read_pull_key
 from property_rental.telegram_seal import SealError, load_office_private_key, open_sealed
+from property_rental.telegram_staff_bot import (
+    handle_staff_form,
+    handle_staff_update,
+    remove_old_card_photos,
+)
 from property_rental.telegram_store import PostgresTelegramStore, TelegramStore
 from property_rental.telegram_tenant_bot import handle_tenant_form, handle_tenant_update
 
@@ -52,7 +59,10 @@ MEDIA_TYPES: Final = frozenset(
         "audio/webm",
     }
 )
-FORM_DATA_FILE: Final = "telegram-form-data.sha256"
+FORM_DATA_FILES: Final = {
+    "TENANT": "telegram-form-data.sha256",
+    "STAFF": "telegram-staff-form-data.sha256",
+}
 MAX_MEDIA_BYTES: Final = 20 * 1024 * 1024
 BOT_NAMES: Final = {
     "CUSTOMER": "CHETANA Residence",
@@ -95,8 +105,8 @@ def _ping(bot: str, plain: dict[str, Any], saved: dict[str, Any], store: Telegra
 
 
 HANDLERS: Final[dict[str, list[Handler]]] = {
-    "update": [_ping, handle_tenant_update, handle_customer_update],
-    "form": [handle_tenant_form],
+    "update": [_ping, handle_tenant_update, handle_customer_update, handle_staff_update],
+    "form": [handle_tenant_form, handle_staff_form],
 }
 
 
@@ -107,32 +117,36 @@ def push_form_data(
     status_directory: Path,
     log: Callable[[str], None] = lambda line: print(line, flush=True),
 ) -> bool:
-    """Send the relay who may open the Tenant bot forms and what the forms show. Only a change
-    is sent (the relay's free plan counts writes); a failed send is tried again next minute."""
-    data = store.tenant_form_data()
-    fingerprint = hashlib.sha256(
-        json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-    marker = status_directory / FORM_DATA_FILE
-    try:
-        if marker.read_text(encoding="utf-8").strip() == fingerprint:
-            return False
-    except OSError:
-        pass
-    users = data.get("users")
-    choices = data.get("choices")
-    if not isinstance(users, list) or not isinstance(choices, dict):
-        log("telegram_pull:form_data_invalid")
-        return False
-    try:
-        client.set_access("TENANT", users)
-        client.set_choices("TENANT", choices)
-    except RelayError as error:
-        log(f"telegram_pull:form_data_not_sent:{error.code}")
-        return False
-    status_directory.mkdir(parents=True, exist_ok=True)
-    marker.write_text(fingerprint + "\n", encoding="utf-8")
-    return True
+    """Send the relay who may open the Tenant and Staff bot forms and what the forms show. Only
+    a change is sent (the relay's free plan counts writes); a failed send is tried again next
+    minute. True when anything was sent."""
+    sent = False
+    for bot, read in (("TENANT", store.tenant_form_data), ("STAFF", store.staff_form_data)):
+        data = read()
+        fingerprint = hashlib.sha256(
+            json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        marker = status_directory / FORM_DATA_FILES[bot]
+        try:
+            if marker.read_text(encoding="utf-8").strip() == fingerprint:
+                continue
+        except OSError:
+            pass
+        users = data.get("users")
+        choices = data.get("choices")
+        if not isinstance(users, list) or not isinstance(choices, dict):
+            log(f"telegram_pull:form_data_invalid:{bot}")
+            continue
+        try:
+            client.set_access(bot, users)
+            client.set_choices(bot, choices)
+        except RelayError as error:
+            log(f"telegram_pull:form_data_not_sent:{bot}:{error.code}")
+            continue
+        status_directory.mkdir(parents=True, exist_ok=True)
+        marker.write_text(fingerprint + "\n", encoding="utf-8")
+        sent = True
+    return sent
 
 
 def store_media(directory: Path, sha256: str, data: bytes) -> str:
@@ -212,6 +226,11 @@ def save_item(
     ] != list(item.media_ids):
         raise ItemRefused("media_list_differs")
     media: list[dict[str, Any]] = []
+    # A caretaker's card scan photo is held for the HR files folder (90-day rule), not kept
+    # with the Telegram photos.
+    form = payload.get("form")
+    hold = item.bot == "STAFF" and isinstance(form, dict) and form.get("type") == "CARD"
+    held: list[dict[str, Any]] = []
     for entry in described:
         content_type, sha256, size = (
             entry.get("content_type"),
@@ -228,6 +247,9 @@ def save_item(
             raise ItemRefused("media_cannot_open") from error
         if len(data) != size or hashlib.sha256(data).hexdigest() != sha256:
             raise ItemRefused("media_fingerprint_differs")
+        if hold:
+            held.append({"content_type": content_type, "sha256": sha256, "data": data})
+            continue
         media.append(
             {
                 "sha256": sha256,
@@ -253,11 +275,22 @@ def save_item(
             "language": language if language in {"km", "en"} else None,
             "phone": _phone_from(payload),
         },
-        "summary": {"kind": item.kind, "media": len(media)},
-        "payload": payload,
+        "summary": {"kind": item.kind, "media": len(media), "held_media": len(held)},
+        "payload": _without_codes(payload) if item.bot == "STAFF" else payload,
         "media": media,
     }
+    # What the office adds for the handlers; never saved.
+    plain["office"] = {"received_at": item.received_at, "held_media": held}
     return plain, store.record_item(record)
+
+
+def _without_codes(payload: dict[str, Any]) -> dict[str, Any]:
+    """A Staff form as kept: the scanned QR and card texts stay out (HR keeps only their hash)."""
+    form = payload.get("form")
+    if not isinstance(form, dict):
+        return payload
+    kept = {key: value for key, value in form.items() if key not in {"qr", "card"}}
+    return payload | {"form": kept}
 
 
 def run_pull(
@@ -266,6 +299,7 @@ def run_pull(
     key: Any,
     store: TelegramStore,
     media_directory: Path,
+    hr_files_directory: Path | None = None,
     limit: int = 50,
     now: Callable[[], datetime] = utc_now,
     log: Callable[[str], None] = lambda line: print(line, flush=True),
@@ -304,6 +338,7 @@ def run_pull(
         done.append(item.item_id)
         if saved.get("saved") is True:
             result.saved += 1
+            plain["office"]["hr_files"] = str(hr_files_directory) if hr_files_directory else ""
             for handler in HANDLERS.get(item.kind, []):
                 handler(item.bot, plain, saved, store)
         else:
@@ -339,7 +374,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--config", required=True, type=Path)
     parser.add_argument("--property-id", required=True, type=UUID)
     parser.add_argument("--actor-id", required=True, type=UUID)
+    # The HR service actor the Staff bot calls the HR functions with; empty while not set up.
+    parser.add_argument("--service-actor-id", default="", type=str)
     args = parser.parse_args(argv)
+    try:
+        service_actor = UUID(args.service_actor_id) if args.service_actor_id else None
+    except ValueError:
+        parser.error("--service-actor-id is not a UUID")
+    hr_folder = os.environ.get("APP_HR_FILES_DIRECTORY")
+    hr_files = Path(hr_folder) if hr_folder else None
     database_url = os.environ.get("APP_DATABASE_URL")
     if not database_url:
         parser.error("APP_DATABASE_URL is required")
@@ -353,19 +396,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("telegram_pull:not_enabled", flush=True)
         return 0
     store = PostgresTelegramStore(
-        database_url, property_id=args.property_id, actor_id=args.actor_id
+        database_url,
+        property_id=args.property_id,
+        actor_id=args.actor_id,
+        service_actor_id=service_actor,
     )
     started = utc_now()
     status: dict[str, object] = {"last_run_at": format_time(started)}
     try:
         client = RelayClient(bots.relay_host, read_pull_key(bots.relay_pull_key_file))
         key = load_office_private_key(bots.office_private_key_file)
-        result = run_pull(client=client, key=key, store=store, media_directory=bots.media_directory)
+        result = run_pull(
+            client=client,
+            key=key,
+            store=store,
+            media_directory=bots.media_directory,
+            hr_files_directory=hr_files,
+        )
         store.remove_old_payloads()
         store.tenant_end_finished_links()
         store.remove_old_link_attempts()
         store.visit_reminders()
         store.visit_requests_remove_old()
+        # The 18:00 summary of the staff checklists for the Authorizers, once a day.
+        store.staff_daily_summary()
+        if service_actor is not None:
+            remove_old_card_photos(store, hr_files)
         push_form_data(client=client, store=store, status_directory=config.status_directory)
     except (RelayError, SealError) as error:
         code = error.code if isinstance(error, RelayError) else "office_key_unreadable"

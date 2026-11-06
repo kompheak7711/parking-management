@@ -5853,3 +5853,60 @@ Added by DL-173 (migration `20270527_289`, forward-only).
 - `app.telegram_account_blocks` (append-only): Property, Telegram account, blocked (Block or Unblock), the request, why (needed for Block), created, by whom. `app.telegram_user_blocked` reads the latest. `app.telegram_visit_request_add` and `app.telegram_contact_add` (Customer bot) answer BLOCKED for a blocked account.
 - `app.visit_requests` gets `removed_at`; name and phone may be empty only once removed, and a removed request has no name, phone, email, note or Telegram account. The trigger allows that one change and nothing else. `app.visit_requests_remove_old` (`telegram.operate`, the Telegram jobs) removes them 12 months after the last step or ask, and empties the shared phone of a Customer bot account not seen for 12 months and never linked to a Lease.
 - `app.visit_request_act` gets RESERVE (`visit_requests.work`, the person who has the request or a Manager) and BLOCK and UNBLOCK (`visit_requests.manage`). Each card adds `reservation_id`, `blocked` and `removed`. `app.visit_requests_page` adds `month` (`app.visit_requests_month`) for a person with `visit_requests.manage`, else null.
+
+## DB-TG-010 — The Staff bot: join, check-in and card scans (bots step 4a)
+
+Added by DL-174 (migrations `20270619_330`, which only starts the Staff bot line after the HR head `20270505_305`, and `20270620_331`, forward-only). No new table: the staff requests, links and scans are HR's (`telegram_staff_requests`, `employee_telegram_links`, `attendance_scans`).
+
+- Each call checks the Telegram jobs' account (`telegram.operate`) and then calls the HR function with the service actor the job was given: `app.telegram_staff_who` (`hr_telegram_staff`, plus whether a join request waits), `app.telegram_staff_join` (`hr_record_staff_request`), `app.telegram_staff_check` (`record_staff_check_scan`), `app.telegram_staff_card` (`record_card_check_scan`), `app.telegram_staff_photos_due` and `app.telegram_staff_photo_removed` (`hr_photos_due`, `hr_record_photo_removal`). The scan answers add the time and the shift start in Property time and the shift's Khmer name.
+- `app.telegram_staff_form_data` (`telegram.operate`): the relay's Staff list (staff with a working link today: name, report roles, shift) and the form choices (the Problem report types and places).
+- The trigger `telegram_staff_request_answered` on `telegram_staff_request_decisions` queues `staff.approved` (with the Reports button) or `staff.refused` for the person in the Staff bot.
+
+## DB-TG-011 — Staff Problem reports, Close job and the urgent alert (bots step 4b)
+
+Added by DL-175 (migration `20270621_332`, forward-only).
+
+- `staff_problem_report_sources` (append-only): which Staff bot form made which Problem report (report, inbound form, Telegram user, employee). One form makes one report.
+- `staff_job_closures` (append-only): which Staff bot form closed which repair, with the cost entry it made (`problem_report_cost_sets`). One form closes once.
+- `problem_report_media.stage` also takes `DONE` (after the repair) and `RECEIPT`.
+- `app.telegram_staff_problem_report` and `app.telegram_staff_close_job` (`telegram.operate`): check the linked person (a working link today; Close job needs the Technician role), the form and its files, then save the report (source `STAFF_BOT`), or record the cost (`record_problem_report_cost`) and the Done step (`problem_report_step`). They answer with a fixed result (`ADDED`, `DONE`, `NOT_LINKED`, `NOT_TECHNICIAN`, `NOT_OPEN`, `COST_CHECKED`, `INVALID`).
+- `app.telegram_staff_form_data` now adds the Units (number only) to the choices and, for a Technician, the planned repairs (at most 12).
+- The deferred trigger `telegram_staff_urgent_alert` on `problem_reports` queues `staff.urgent` at the end of the change for the caretakers on shift and the Authorizers, unless the report was joined at once; never to the person who sent it.
+
+## DB-TG-012 — Staff Utility readings and the Meter check request (bots step 4c)
+
+Added by DL-176 (migration `20270622_333`, forward-only).
+
+- `staff_meter_reading_runs` (append-only): one Utility reading form sent in the Staff bot (inbound form, Telegram user, employee, the day it was read). One form is saved once.
+- `staff_meter_reading_proposals` (append-only): one typed reading per meter in a form, with the last saved reading before that day and the flag `LOWER` (lower than last) or `HIGH` (Electricity more than 300 kWh above last).
+- `staff_meter_reading_decisions` (append-only): the answer for a reading, `CONFIRMED` (with the `utility_readings` row it became), `ASK_AGAIN` or `NOT_USED`; one answer per reading.
+- `app.telegram_staff_meter_readings` (`telegram.operate`): the meter reader (or an Authorizer) sends Unit, Electricity and Water with no photo; each value needs a meter that can be read today (installed, not broken, not removed); a wrong row refuses the whole form. Answers `SENT` (count, flagged), `NOT_LINKED`, `NOT_METER_READER` or `INVALID`.
+- `app.telegram_staff_meter_check` (`telegram.operate`): a Meter check request (Electricity or Water; broken, cannot read, not sure, other with a note; up to 2 photos) becomes a Unit Problem (type Electricity or Water, source `STAFF_BOT`).
+- `app.staff_meter_readings_waiting` and `app.decide_staff_meter_readings` (`utility_readings.record`): the Utilities list and answer (API-TG-006). A confirmed reading goes through `record_utility_reading_api` with the person who confirmed it; asking again queues `staff.meter_again` to the reader.
+- `app.telegram_staff_form_data` now also gives the meters (Unit number and last reading of each type, no names) for the form.
+
+## DB-TG-013 — Staff daily checklists, patrol rounds and the 18:00 summary (bots step 4d)
+
+Added by DL-177 (migration `20270623_334`, forward-only).
+
+- `staff_checklists` (append-only): one version of a checklist (`code`, `version`, kind `CLEANING`, `CARETAKER` or `TECHNICAL`, the Khmer name, the extra boxes it asks, and for caretakers the patrol times per shift and the patrol places). The newest version of a code is the live one. Seeded with the mock-up's draft lists `CLEAN_BUILDING`, `CLEAN_HOUSE`, `CARETAKER` and `TECHNICAL`.
+- `staff_checklist_items` (append-only): one task of a version, with its section, order, Khmer text and when it is due (`iso_days`, `months`, `month_days`, `shifts`; empty means always), and whether it asks the floor.
+- `staff_checklist_reports` (append-only): one check sent in the Staff bot (inbound form, employee, Telegram user, work day, shift for caretakers, the answers `OK` or `NOT_OK` with notes, the floor, the extra boxes, the counts). A check sent again is a new row; the newest counts.
+- `staff_patrol_rounds` (append-only): one patrol round (work day, shift, planned time, places walked); once per round and shift; `created_at` is the real time.
+- `staff_summary_runs` (append-only): the 18:00 summary of a day (once per Property and day), its text and how many messages went out.
+- `app.telegram_staff_checklist` and `app.telegram_staff_patrol` (`telegram.operate`): save a check or a round from a pulled Staff form. Answers `SENT`, `NOT_LINKED`, `NOT_ROLE`, `NO_SHIFT`, `NOTHING_DUE`, `TOO_EARLY`, `ROUND_DONE` or `INVALID` (with the reason). Every task due must be answered, nothing else.
+- `app.telegram_staff_daily_summary` (`telegram.operate`): run by the pull job every minute; from 18:00 Property time it queues `staff.daily_summary` once to every live Authorizer link.
+- `app.telegram_staff_form_data` now also gives the checklists with the tasks due today, and for each person the caretaker's shift now with the rounds already sent, the checks already sent and a day off.
+
+## DB-TG-014 — Staff Unit Check and Maintenance check (bots step 4e)
+
+Added by DL-178 (migration `20270624_335`, forward-only).
+
+- `staff_unit_checks` (append-only): one Unit Check sent in the Staff bot (inbound form, employee, Telegram user, Unit, day, kind `REGULAR` or `AFTER_REPAIR`, the areas marked `GOOD`, `BROKEN` or `MISSING`, the note, how many findings).
+- `staff_unit_check_findings` (append-only): one Broken or Missing area of a Unit Check, what is wrong, how many photos, and the Unit Problem it made (`report_id`, unique).
+- `staff_maintenance_checks` (append-only): a planned visit checked in the Staff bot (report, inbound form, employee, how staff entered `URGENT`, `TENANT_OK` or `NOTICE`, the cause, fixed at once, the note, how many photos).
+- `problem_report_media.stage` also takes `CHECK` (photos taken at the Maintenance check).
+- `app.telegram_staff_unit_check` (`telegram.operate`): saves a Unit Check from a pulled Staff form and makes one Unit Problem (source `STAFF_BOT`) with its photos for each finding. Answers `SENT` (with the report numbers), `NOT_LINKED`, `NOT_ROLE` or `INVALID` (with the reason).
+- `app.telegram_staff_maintenance_check` (`telegram.operate`): moves a planned visit to Checked through `app.problem_report_step`. Answers `CHECKED`, `NOT_PLANNED`, `NOT_LINKED`, `NOT_ROLE` or `INVALID`.
+- `app.telegram_staff_form_data` now also gives, in the shared choices, the planned visits (at most 12, urgent first) and the Unit Check areas.
+

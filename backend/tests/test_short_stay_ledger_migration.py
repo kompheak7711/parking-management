@@ -120,7 +120,7 @@ def test_migration_350_names_short_stay_invoices() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision("20270610_350")
     assert revision is not None and revision.down_revision == REVISION
-    assert scripts.get_heads() == ["20270505_305"]
+    assert scripts.get_heads() == ["20270624_335"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 

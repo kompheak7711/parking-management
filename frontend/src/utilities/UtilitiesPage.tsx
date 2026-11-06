@@ -26,6 +26,8 @@ import {
   type UtilityType,
 } from "../utilityClient";
 import { ImportDialog } from "./ImportDialog";
+import { StaffReadings } from "./StaffReadings";
+import type { StaffReadingsApi } from "./staffReadingsClient";
 import { monthText, utt } from "./text";
 import { MeterDetail, MetersTab } from "./MetersTab";
 import { UnitBox, whoText } from "./UnitBox";
@@ -64,6 +66,8 @@ export interface UtilitiesPageProps {
    * try the import on any day. The readings get today's date, as they always do.
    */
   testApp?: boolean;
+  /** Telegram bots step 4c: readings from the Staff bot that wait for a check. */
+  staffReadingsApi?: StaffReadingsApi;
 }
 
 type Period = "month" | "six" | "all" | "pick";
@@ -81,6 +85,7 @@ export function UtilitiesPage({
   today: fixedToday,
   problemsApi,
   testApp = false,
+  staffReadingsApi,
 }: UtilitiesPageProps) {
   const detail = useHashDetail("utilities");
   const meterId =
@@ -181,22 +186,33 @@ export function UtilitiesPage({
           </p>
         )
       ) : tab === "read" ? (
-        <ReadingsTab
-          api={utilityApi}
-          propertyId={propertyId}
-          canSave={may("utility_readings.record")}
-          data={data}
-          language={language}
-          onChange={(update) => {
-            setData((previous) =>
-              previous === null ? previous : update(previous),
-            );
-          }}
-          onReload={load}
-          problemsApi={problemsApi}
-          testApp={testApp}
-          today={today}
-        />
+        <>
+          {staffReadingsApi !== undefined && may("utility_readings.record") && (
+            <StaffReadings
+              active={active}
+              api={staffReadingsApi}
+              language={language}
+              onSaved={load}
+              propertyId={propertyId}
+            />
+          )}
+          <ReadingsTab
+            api={utilityApi}
+            propertyId={propertyId}
+            canSave={may("utility_readings.record")}
+            data={data}
+            language={language}
+            onChange={(update) => {
+              setData((previous) =>
+                previous === null ? previous : update(previous),
+              );
+            }}
+            onReload={load}
+            problemsApi={problemsApi}
+            testApp={testApp}
+            today={today}
+          />
+        </>
       ) : tab === "meters" ? (
         <MetersTab
           api={utilityApi}
