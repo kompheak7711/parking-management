@@ -1171,6 +1171,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/ledger/periods/{period_id}/close-checks": {"get"},
         "/api/v1/properties/{property_id}/ledger/periods/{period_id}/month-end": {"post"},
         "/api/v1/properties/{property_id}/ledger/petty-cash-top-ups": {"post"},
+        "/api/v1/properties/{property_id}/ledger/refund-riel": {"post"},
         "/api/v1/properties/{property_id}/ledger/reports/{report}": {"get"},
         "/api/v1/properties/{property_id}/ledger/accounts": {"get"},
         "/api/v1/properties/{property_id}/ledger/entries": {"get"},

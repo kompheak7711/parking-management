@@ -18,7 +18,8 @@ Reads (`private, no-store`):
 
 Changes (browser mutation checks): Expense requests and reports, decisions, advances, bills, pay
 back staff, voids, expenses recorded straight, supplier bill payments and their reversal, money
-moves, owner money, petty cash top-ups and cash counts.
+moves, owner money, petty cash top-ups, cash counts and the riel paid for a Refund from a riel
+account (`POST .../ledger/refund-riel`, `ledger.money_move`, DL-161).
 """
 
 from __future__ import annotations
@@ -179,6 +180,11 @@ class PettyCashBody(Body):
     amount_cents: Cents
 
 
+class RefundRielBody(Body):
+    refund_id: Id
+    riel_minor: Annotated[int, Field(ge=1, le=10**15)]
+
+
 class CashCountBody(Body):
     account_code: Code
     counted_on: IsoDate
@@ -275,6 +281,8 @@ ACTIONS: dict[str, Action] = {
     "top_up_petty_cash": Action(
         "gl_top_up_petty_cash", None, ("topped_up_on", "from_code", "amount_cents")
     ),
+    # A Refund paid from a riel account: the riel that left it (owner 05/11/2026, DL-161).
+    "refund_riel": Action("gl_record_refund_riel", None, ("refund_id", "riel_minor")),
     "count_cash": Action(
         "gl_count_cash",
         None,
@@ -730,6 +738,12 @@ def create_ledger_money_router(
         property_id: UUID, body: PettyCashBody, request: Request
     ) -> dict[str, object]:
         return run(request, property_id, "ledger.petty_cash", "top_up_petty_cash", body)
+
+    @router.post("/ledger/refund-riel", status_code=status.HTTP_201_CREATED)
+    def record_refund_riel(
+        property_id: UUID, body: RefundRielBody, request: Request
+    ) -> dict[str, object]:
+        return run(request, property_id, "ledger.money_move", "refund_riel", body)
 
     @router.post("/ledger/cash-counts", status_code=status.HTTP_201_CREATED)
     def count_cash(property_id: UUID, body: CashCountBody, request: Request) -> dict[str, object]:

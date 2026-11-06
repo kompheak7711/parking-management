@@ -12,7 +12,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage, type PageId } from "../shell/navigation";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
-import { money, useRead, Waiting } from "./LedgerPage";
+import { accountName, money, useRead, Waiting } from "./LedgerPage";
 import {
   type CloseCheck,
   type LedgerMonth,
@@ -177,6 +177,7 @@ export function MonthEndPage({
               setClosing(month);
             }}
           />
+          <RielAtMonthEnd data={data} language={language} />
           <MonthsTable data={data} language={language} />
           <YearsTable
             canClose={canClose}
@@ -319,6 +320,78 @@ function NextMonth({
       ) : (
         <p className="ui-muted">{lt(language, "cl_owner")}</p>
       )}
+    </section>
+  );
+}
+
+/** Each riel account's valuation in the chosen month (owner 05/11/2026: month end shows riel). */
+function RielAtMonthEnd({
+  language,
+  data,
+}: {
+  language: Language;
+  data: MonthEnd;
+}) {
+  if (data.month === null || data.riel_accounts.length === 0) return null;
+  return (
+    <section aria-labelledby="cl-riel" className="ui-card pad0">
+      <header className="ui-chead pad">
+        <h2 id="cl-riel">
+          {lt(language, "cl_rt")} · {dayText(data.month.ends_on)}
+        </h2>
+      </header>
+      <p className="ui-muted pad">{lt(language, "cl_rs")}</p>
+      <div className="ui-tablewrap">
+        <table className="ui-table">
+          <thead>
+            <tr>
+              <th scope="col">{lt(language, "account")}</th>
+              <th className="r" scope="col">
+                {lt(language, "cl_rheld")}
+              </th>
+              <th className="r" scope="col">
+                {lt(language, "cl_rrate")}
+              </th>
+              <th className="r" scope="col">
+                {lt(language, "cl_rbefore")}
+              </th>
+              <th className="r" scope="col">
+                {lt(language, "cl_rafter")}
+              </th>
+              <th className="r" scope="col">
+                {lt(language, "cl_rgain")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.riel_accounts.map((item) => (
+              <tr key={item.code}>
+                <td>
+                  <span className="ui-num">{item.code}</span> ·{" "}
+                  {accountName(language, item)}
+                  {item.entry_number !== null && (
+                    <span className="ui-sub2">
+                      <EntryText
+                        language={language}
+                        number={item.entry_number}
+                      />
+                    </span>
+                  )}
+                </td>
+                <td className="r ui-num">
+                  {item.riel_held.toLocaleString("en-US")} ៛
+                </td>
+                <td className="r ui-num">
+                  {item.khr_per_usd.toLocaleString("en-US")}
+                </td>
+                <td className="r ui-num">{money(item.before_cents)}</td>
+                <td className="r ui-num">{money(item.after_cents)}</td>
+                <td className="r ui-num">{money(item.gain_cents)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

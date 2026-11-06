@@ -123,6 +123,11 @@ def test_each_change_needs_its_right_and_the_browser_checks() -> None:
             {"account_code": "1010", "counted_on": "2027-01-05", "counted_cents": 0},
         ),
         (
+            "/ledger/refund-riel",
+            "ledger.money_move",
+            {"refund_id": str(target), "riel_minor": 410_000},
+        ),
+        (
             f"/ledger/supplier-bills/{target}/payments",
             "supplier_bills.pay",
             {"from_code": "1020", "paid_on": "2027-01-05", "amount_cents": 100},
@@ -145,6 +150,7 @@ def test_each_change_needs_its_right_and_the_browser_checks() -> None:
         "owner_money",
         "top_up_petty_cash",
         "count_cash",
+        "refund_riel",
         "pay_bill",
     ]
     # A decision and an advance answer with the request they act on.

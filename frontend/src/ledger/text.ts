@@ -226,6 +226,38 @@ const TEXT = {
     "ការបង់ប្រាក់ជារៀលចូលគណនីនេះ។ បើគ្មាន រៀលដែលបង់តាមមធ្យោបាយសាច់ប្រាក់ដុល្លារចូល ១០១១ ហើយរៀលផ្សេងទៀតចូលគណនីខាងលើ។",
   ],
   nc_riel_line: ["Riel: {0}", "រៀល៖ {0}"],
+  // Refund paid from a riel account (owner 05/11/2026, DL-161)
+  nc_r_riel: [
+    "Paid from a riel account: type the riel that left it. The tenant still got dollars.",
+    "បានសងពីគណនីរៀល៖ វាយបញ្ចូលចំនួនរៀលដែលចេញពីគណនីនោះ។ អ្នកជួលនៅតែទទួលបានដុល្លារ។",
+  ],
+  nc_r_ready: [
+    "Fixed. It goes to the ledger at the next posting run.",
+    "បានកែរួច។ វានឹងចូលសៀវភៅបញ្ជីនៅពេលកត់ត្រាលើកក្រោយ។",
+  ],
+  nc_r_rcorr: [
+    "A correction of a Refund paid from a riel account. It cannot go to the ledger yet; it waits for a later version of the app.",
+    "ការកែការសងប្រាក់ដែលបានសងពីគណនីរៀល។ វាមិនទាន់អាចចូលសៀវភៅបញ្ជីបានទេ; វារង់ចាំកំណែក្រោយរបស់កម្មវិធី។",
+  ],
+  nc_riel_type: ["Type the riel", "វាយបញ្ចូលរៀល"],
+  nc_rr_t: ["Riel paid for {0}", "រៀលដែលបានសងសម្រាប់ {0}"],
+  nc_rr_amt: ["Riel paid (៛)", "រៀលដែលបានសង (៛)"],
+  nc_rr_h: [
+    "Whole riel, as on the bank slip. Type it once: it cannot be changed later.",
+    "ចំនួនរៀលគត់ ដូចលើបង្កាន់ដៃធនាគារ។ វាយបញ្ចូលតែម្ដង៖ មិនអាចប្ដូរក្រោយបានទេ។",
+  ],
+  nc_rr_bad: [
+    "Type the riel as a whole number, more than 0.",
+    "វាយបញ្ចូលរៀលជាចំនួនគត់ ធំជាង ០។",
+  ],
+  nc_rr_saved: [
+    "The riel for {0} is saved. It goes to the ledger at the next posting run.",
+    "រៀលសម្រាប់ {0} បានរក្សាទុក។ វានឹងចូលសៀវភៅបញ្ជីនៅពេលកត់ត្រាលើកក្រោយ។",
+  ],
+  nc_racc_h: [
+    "To pay Refunds from the riel bank account, choose 1021. The Refund stays in dollars; you then type the riel paid in Needs check.",
+    "ដើម្បីសងប្រាក់ពីគណនីធនាគាររៀល សូមជ្រើស ១០២១។ ការសងប្រាក់នៅតែជាដុល្លារ; បន្ទាប់មកអ្នកវាយបញ្ចូលរៀលដែលបានសងនៅក្នុង ត្រូវពិនិត្យ។",
+  ],
   // Financial statements
   r_title: ["Financial statements", "របាយការណ៍ហិរញ្ញវត្ថុ"],
   r_sub: [
@@ -912,10 +944,18 @@ const TEXT = {
     "No payroll for this month.",
     "គ្មានបញ្ជីប្រាក់ខែសម្រាប់ខែនេះ។",
   ],
-  cl_fx: [
-    "Riel cash valued at month-end rate",
-    "សាច់ប្រាក់រៀលវាយតម្លៃតាមអត្រាចុងខែ",
+  cl_fx: ["Riel valued at month-end rate", "រៀលវាយតម្លៃតាមអត្រាចុងខែ"],
+  // Riel at month end (owner 05/11/2026)
+  cl_rt: ["Riel at month end", "រៀលនៅចុងខែ"],
+  cl_rs: [
+    "Each riel account is valued at the app's rate on the month's last day. The difference goes to 4100.",
+    "គណនីរៀលនីមួយៗត្រូវបានវាយតម្លៃតាមអត្រារបស់កម្មវិធីនៅថ្ងៃចុងខែ។ ភាពខុសគ្នាចូល ៤១០០។",
   ],
+  cl_rheld: ["Riel held", "រៀលដែលមាន"],
+  cl_rrate: ["Rate", "អត្រា"],
+  cl_rbefore: ["Value before", "តម្លៃមុន"],
+  cl_rafter: ["Value after", "តម្លៃក្រោយ"],
+  cl_rgain: ["Gain or loss", "ចំណេញ ឬខាត"],
   cl_fx_0: [
     "No change: the riel value is the same.",
     "គ្មានការប្ដូរ៖ តម្លៃរៀលដូចដើម។",

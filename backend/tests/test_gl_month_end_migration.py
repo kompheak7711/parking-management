@@ -19,6 +19,7 @@ from property_rental.ledger_month_end_api import (
     DEPRECIATION,
     MONTHS,
     RIEL,
+    RIEL_ACCOUNTS,
     YEARS,
     PostgresLedgerMonthEnd,
 )
@@ -86,7 +87,7 @@ def test_the_runtime_login_can_run_the_month_end_read(migrated_database_url: str
         for query in (MONTHS, YEARS):
             connection.execute(query, {"prop": uuid4(), "today": date(2027, 1, 31)})
         place = {"prop": uuid4(), "period": uuid4()}
-        for query in (DEPRECIATION, RIEL):
+        for query in (DEPRECIATION, RIEL, RIEL_ACCOUNTS):
             connection.execute(query, place)
         with pytest.raises(psycopg.Error), connection.transaction():
             connection.execute(CHECKS, place)

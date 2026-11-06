@@ -81,6 +81,28 @@ MARGINS: Final = (
     ("Margin: electricity (4030 less 6010)", "4030", "6010"),
     ("Margin: water (4040 less 6020)", "4040", "6020"),
 )
+RIEL_HELD_ON: Final = """
+    SELECT account.code,
+        coalesce(counted.counted_riel, 0) + coalesce((
+            SELECT sum(CASE WHEN line.debit_cents > 0 THEN line.original_amount_minor
+                            ELSE -line.original_amount_minor END)
+            FROM app.gl_journal_lines AS line
+            JOIN app.gl_journal_entries AS entry ON entry.id = line.entry_id
+            WHERE line.account_id = account.id AND line.original_currency = 'KHR'
+              AND entry.entry_date <= %(day)s
+              AND entry.entry_date > coalesce(counted.counted_on, '-infinity')), 0)
+    FROM app.gl_accounts AS account
+    LEFT JOIN LATERAL (
+        SELECT item.counted_on, item.counted_riel
+        FROM app.gl_cash_counts AS item
+        WHERE account.cash_kind = 'CASH_KHR' AND item.account_id = account.id
+          AND item.counted_riel IS NOT NULL AND item.counted_on <= %(day)s
+        ORDER BY item.counted_on DESC, item.created_at DESC
+        LIMIT 1
+    ) AS counted ON true
+    WHERE account.property_id = %(prop)s AND account.cash_kind IN ('CASH_KHR', 'BANK_KHR')
+"""
+
 BALANCE_GROUPS: Final = (
     ("ASSET", "CURRENT", "Assets within 12 months"),
     ("ASSET", "NON_CURRENT", "Building and equipment after depreciation"),
@@ -291,12 +313,18 @@ def profit_and_loss(
 
 
 def balance_sheet(
-    balances: Iterable[tuple[str, str, str, str | None, int, int]], *, period: str, state: str
+    balances: Iterable[tuple[str, str, str, str | None, int, int]],
+    *,
+    period: str,
+    state: str,
+    riel: Mapping[str, int] | None = None,
 ) -> LedgerReport:
     """Assets against what is owed and the Owner's equity, with Profit this year.
 
     ``balances`` holds (code, name, account type, balance sheet section, debits, credits) for every
-    account up to the day; income and cost accounts make Profit this year."""
+    account up to the day; income and cost accounts make Profit this year. ``riel`` holds the riel
+    each riel account (1011, 1021) held on the day; its line says it (owner 05/11/2026)."""
+    held = riel or {}
     groups: dict[tuple[str, str | None], list[dict[str, Any]]] = defaultdict(list)
     profit = 0
     for code, name, account_type, section, debit, credit in balances:
@@ -304,8 +332,10 @@ def balance_sheet(
             profit += credit - debit
             continue
         amount = debit - credit if account_type == "ASSET" else credit - debit
-        if amount:
+        if amount or held.get(code):
             key = (account_type, section if account_type != "EQUITY" else None)
+            if code in held:
+                name = f"{name} ({held[code]:,} riel)"
             groups[key].append(_account(code, name, amount=amount))
     groups[("EQUITY", None)].append(_account("", PROFIT_NAME, amount=profit) | {"code": None})
     rows: list[dict[str, Any]] = []
@@ -694,6 +724,7 @@ class PostgresLedgerReports:
                 self._balances(connection, prop, day),
                 period=f"As at {_day(day)}",
                 state=self._state(connection, prop, day, day),
+                riel=self._riel(connection, prop, day),
             )
         if name == "profit-and-loss":
             return self._profit_and_loss(connection, prop, params.month or today)
@@ -779,6 +810,15 @@ class PostgresLedgerReports:
                 (prop, day),
             ).fetchall()
         ]
+
+    @staticmethod
+    def _riel(connection: Connection, prop: UUID, day: date) -> dict[str, int]:
+        """The riel each riel account held on the day: riel cash is its last count on or before
+        the day plus the riel lines after it; the riel bank is the sum of its riel lines."""
+        return {
+            str(code): int(riel)
+            for code, riel in connection.execute(RIEL_HELD_ON, {"prop": prop, "day": day})
+        }
 
     @staticmethod
     def _natural(connection: Connection, prop: UUID, day: date, codes: Sequence[str]) -> int:

@@ -8,7 +8,9 @@ December) and gaps G2 and G7 (the Books check, riel valued at the month-end rate
   months of the ledger up to today with who closed each, the years with the entry and profit of
   their close, and for one month (`month`, any day of it; default the earliest open month that
   has ended): each close check with what is still open, the month's depreciation entry and its
-  riel valuation.
+  riel valuation, and for each riel account (1011 riel cash, 1021 riel bank) the riel held at the
+  month end, the rate, the dollar value before and after and the gain or loss to 4100 (owner
+  05/11/2026: month end shows the riel).
 
 Read-only and `private, no-store`. Closing is the checked database functions behind the close
 API (`POST .../ledger/periods/{period_id}/close` and `.../fiscal-years/{year_id}/close`).
@@ -78,6 +80,19 @@ RIEL: Final = """
     WHERE valuation.property_id = %(prop)s AND valuation.period_id = %(period)s
     ORDER BY valuation.created_at DESC
     LIMIT 1
+"""
+
+# Each riel account's latest valuation in the month (owner 05/11/2026).
+RIEL_ACCOUNTS: Final = """
+    SELECT DISTINCT ON (account.code) account.code, account.name_en, account.name_km,
+        account.cash_kind, valuation.riel_held_minor, rate.system_rate_khr_per_usd,
+        valuation.book_usd_cents, valuation.new_usd_cents, entry.entry_number
+    FROM app.gl_fx_revaluations AS valuation
+    JOIN app.gl_accounts AS account ON account.id = valuation.account_id
+    JOIN app.exchange_rate_records AS rate ON rate.id = valuation.exchange_rate_record_id
+    LEFT JOIN app.gl_journal_entries AS entry ON entry.id = valuation.entry_id
+    WHERE valuation.property_id = %(prop)s AND valuation.period_id = %(period)s
+    ORDER BY account.code, valuation.created_at DESC
 """
 
 
@@ -158,6 +173,7 @@ class PostgresLedgerMonthEnd:
             "checks": [],
             "depreciation_entry": None,
             "riel": None,
+            "riel_accounts": [],
         }
         if chosen is None:
             return answer
@@ -170,6 +186,21 @@ class PostgresLedgerMonthEnd:
         answer["depreciation_entry"] = None if depreciation is None else depreciation[0]
         riel = connection.execute(RIEL, place).fetchone()
         answer["riel"] = None if riel is None else {"entry_number": riel[0]}
+        answer["riel_accounts"] = [
+            {
+                "code": r[0],
+                "name_en": r[1],
+                "name_km": r[2],
+                "cash_kind": r[3],
+                "riel_held": int(r[4]),
+                "khr_per_usd": int(r[5]),
+                "before_cents": int(r[6]),
+                "after_cents": int(r[7]),
+                "gain_cents": int(r[7]) - int(r[6]),
+                "entry_number": r[8],
+            }
+            for r in connection.execute(RIEL_ACCOUNTS, place)
+        ]
         return answer
 
 

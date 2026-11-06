@@ -79,6 +79,7 @@ const DATA: MonthEnd = {
   ],
   depreciation_entry: "JE260564",
   riel: { entry_number: null },
+  riel_accounts: [],
 };
 
 const GREEN: MonthEnd = {
@@ -138,6 +139,44 @@ describe("Month-end close", () => {
     expect(screen.getByText("Fix the red lines first.")).toBeInTheDocument();
     expect(screen.getByText("To close now")).toBeInTheDocument();
     expect(screen.getByText(/^Closed by Kompheak/)).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1700 shows each riel account's month-end value with the rate and the gain or loss", async () => {
+    show(
+      fakeApi({
+        read: vi.fn(() =>
+          Promise.resolve({
+            ...DATA,
+            riel_accounts: [
+              {
+                code: "1021",
+                name_en: "ABA Bank · KHR account",
+                name_km: null,
+                cash_kind: "BANK_KHR",
+                riel_held: 367_470,
+                khr_per_usd: 4_100,
+                before_cents: 9_000,
+                after_cents: 8_963,
+                gain_cents: -37,
+                entry_number: "JE270031",
+              },
+            ],
+          }),
+        ),
+      }),
+    );
+    const box = await screen.findByRole("region", {
+      name: /Riel at month end/,
+    });
+    expect(box).toHaveTextContent("1021 · ABA Bank · KHR account");
+    expect(within(box).getByText("367,470 ៛")).toBeInTheDocument();
+    expect(within(box).getByText("4,100")).toBeInTheDocument();
+    expect(within(box).getByText("$90.00")).toBeInTheDocument();
+    expect(within(box).getByText("$89.63")).toBeInTheDocument();
+    expect(within(box).getByText("-$0.37")).toBeInTheDocument();
+    expect(
+      within(box).getByRole("link", { name: "JE270031" }),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-1196 closes the month when every line is green", async () => {

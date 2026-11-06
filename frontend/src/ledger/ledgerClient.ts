@@ -173,6 +173,11 @@ export interface LedgerApi {
       riel_account_code?: string | null;
     },
   ) => Promise<MethodAccount[]>;
+  /** The riel paid for a Refund from a riel account (ledger.money_move, DL-161). */
+  recordRefundRiel: (
+    propertyId: string,
+    typed: { refund_id: string; riel_minor: number },
+  ) => Promise<void>;
   report: (
     propertyId: string,
     name: ReportName,
@@ -490,6 +495,16 @@ export const ledgerApi: LedgerApi = {
         body: JSON.stringify(change),
       }),
     ).map(methodOf);
+  },
+  async recordRefundRiel(propertyId, typed) {
+    await request(`${base(propertyId)}/refund-riel`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken(),
+      },
+      body: JSON.stringify(typed),
+    });
   },
   async report(propertyId, name, values) {
     return reportOf(

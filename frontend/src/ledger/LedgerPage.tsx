@@ -173,6 +173,7 @@ export function LedgerPage({
         active={active}
         api={api}
         canSet={may("ledger.accounts.manage")}
+        canType={may("ledger.money_move")}
         language={language}
         propertyId={propertyId}
       />
@@ -513,6 +514,18 @@ function EntryDetail({
 
 const PAY_PREFIX = "No ledger account is set for the Payment Method";
 const REFUND_PREFIX = "No ledger account is set for the Refund method";
+// Refund paid from a riel account (migration 20270612_321, DL-161).
+const TYPE_RIEL = "Type the riel paid for this Refund";
+const READY = "Ready: it posts at the next run";
+const RIEL_CORRECTION = "A Refund correction on a riel account cannot post yet";
+
+/** Riel as typed: whole riel, 1 to 15 digits; commas and spaces are allowed. */
+function typedRiel(typed: string): number | null {
+  const value = typed.trim().replace(/[,\s]/g, "");
+  if (!/^\d{1,15}$/.test(value)) return null;
+  const riel = Number(value);
+  return riel > 0 ? riel : null;
+}
 
 /** The problem in the screen's language; text from the database itself is never shown. */
 function problemText(language: Language, problem: string): string {
@@ -524,6 +537,9 @@ function problemText(language: Language, problem: string): string {
       "nc_r_refund",
       problem.slice(REFUND_PREFIX.length).trim(),
     );
+  if (problem === TYPE_RIEL) return lt(language, "nc_r_riel");
+  if (problem === READY) return lt(language, "nc_r_ready");
+  if (problem === RIEL_CORRECTION) return lt(language, "nc_r_rcorr");
   return lt(language, "nc_r_other");
 }
 
@@ -560,12 +576,15 @@ function NeedsCheckTab({
   active,
   api,
   canSet,
+  canType = false,
 }: {
   language: Language;
   propertyId: string;
   active: boolean;
   api: LedgerApi;
   canSet: boolean;
+  /** ledger.money_move: may type the riel paid for a Refund from a riel account. */
+  canType?: boolean;
 }) {
   const read = useCallback(
     () =>
@@ -578,6 +597,7 @@ function NeedsCheckTab({
   );
   const { data, failed, reload } = useRead<NeedsData>(active, read);
   const [open, setOpen] = useState<MethodAccount | null>(null);
+  const [typing, setTyping] = useState<PostingProblem | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -646,6 +666,19 @@ function NeedsCheckTab({
                         {problemText(language, problem.problem)}
                       </td>
                       <td>
+                        {canType && problem.problem === TYPE_RIEL && (
+                          <button
+                            className="ui-btn"
+                            onClick={() => {
+                              setNotice(null);
+                              setFailure(null);
+                              setTyping(problem);
+                            }}
+                            type="button"
+                          >
+                            {lt(language, "nc_riel_type")}
+                          </button>
+                        )}
                         {canSet && method !== null && (
                           <button
                             className="ui-btn"
@@ -685,9 +718,9 @@ function NeedsCheckTab({
               {lt(language, kind === "PAYMENT" ? "nc_macc" : "nc_racc")}
             </h2>
           </header>
-          {kind === "PAYMENT" && (
-            <p className="ui-muted pad">{lt(language, "nc_macc_s")}</p>
-          )}
+          <p className="ui-muted pad">
+            {lt(language, kind === "PAYMENT" ? "nc_macc_s" : "nc_racc_h")}
+          </p>
           <div className="ui-tablewrap">
             <table className="ui-table">
               <thead>
@@ -770,6 +803,41 @@ function NeedsCheckTab({
           )}
         </section>
       ))}
+      {typing !== null && (
+        <RefundRielDialog
+          busy={busy}
+          failure={failure}
+          language={language}
+          number={typing.source_number ?? ""}
+          onClose={() => {
+            setTyping(null);
+            setFailure(null);
+          }}
+          onSave={(riel) => {
+            setBusy(true);
+            setFailure(null);
+            api
+              .recordRefundRiel(propertyId, {
+                refund_id: typing.source_id,
+                riel_minor: riel,
+              })
+              .then(
+                () => {
+                  setBusy(false);
+                  setTyping(null);
+                  setNotice(
+                    lt(language, "nc_rr_saved", typing.source_number ?? ""),
+                  );
+                  reload();
+                },
+                (error: unknown) => {
+                  setBusy(false);
+                  setFailure(refusal(language, error));
+                },
+              );
+          }}
+        />
+      )}
       {open !== null && (
         <MethodAccountDialog
           busy={busy}
@@ -866,7 +934,14 @@ function MethodAccountDialog({
   onClose: () => void;
   onSave: (code: string, rielCode: string | null, from: string) => void;
 }) {
-  const [code, setCode] = useState(method.account_code ?? cash[0]?.code ?? "");
+  // A Refund method may go to the riel bank account too (owner 05/11/2026, DL-161).
+  const choices =
+    method.kind === "REFUND"
+      ? [...cash, ...riel.filter((account) => account.cash_kind === "BANK_KHR")]
+      : cash;
+  const [code, setCode] = useState(
+    method.account_code ?? choices[0]?.code ?? "",
+  );
   const [rielCode, setRielCode] = useState(method.riel_account_code ?? "");
   // A method with no account yet starts on the oldest waiting record, so it can post
   // (owner test 04/11/2026: from today, older Payments kept waiting).
@@ -907,7 +982,7 @@ function MethodAccountDialog({
           required
           value={code}
         >
-          {cash.map((account) => (
+          {choices.map((account) => (
             <option key={account.code} value={account.code}>
               {account.code} · {accountName(language, account)}
             </option>
@@ -952,6 +1027,75 @@ function MethodAccountDialog({
         />
       </div>
       <p className="ui-muted">{lt(language, "nc_acc_future")}</p>
+      {failure !== null && (
+        <p className="ui-error" role="alert">
+          {failure}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
+function RefundRielDialog({
+  language,
+  number,
+  busy,
+  failure,
+  onClose,
+  onSave,
+}: {
+  language: Language;
+  /** The Refund number. */
+  number: string;
+  busy: boolean;
+  failure: string | null;
+  onClose: () => void;
+  onSave: (riel: number) => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const [bad, setBad] = useState(false);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const riel = typedRiel(typed);
+    setBad(riel === null);
+    if (riel !== null) onSave(riel);
+  }
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={lt(language, "cancel")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitLabel={lt(language, "save")}
+      title={lt(language, "nc_rr_t", number)}
+    >
+      <div className="ui-field">
+        <label htmlFor="rr-riel">
+          {lt(language, "nc_rr_amt")}
+          <span className="req">{lt(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby="rr-riel-h"
+          aria-invalid={bad}
+          autoComplete="off"
+          className="ui-num"
+          id="rr-riel"
+          inputMode="numeric"
+          onChange={(event) => {
+            setTyped(event.target.value);
+          }}
+          required
+          value={typed}
+        />
+        <p className="ui-muted" id="rr-riel-h">
+          {lt(language, "nc_rr_h")}
+        </p>
+      </div>
+      {bad && (
+        <p className="ui-error" role="alert">
+          {lt(language, "nc_rr_bad")}
+        </p>
+      )}
       {failure !== null && (
         <p className="ui-error" role="alert">
           {failure}

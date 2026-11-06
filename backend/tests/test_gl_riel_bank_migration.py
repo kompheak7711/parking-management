@@ -20,7 +20,9 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from property_rental.ledger_cash_api import PostgresLedgerCash
+from property_rental.ledger_month_end_api import PostgresLedgerMonthEnd
 from property_rental.ledger_posting_api import PostgresLedgerPostingFlow
+from property_rental.ledger_reports import PostgresLedgerReports, ReportParams
 from test_gl_assets_migration import check, money_in, rate, zone
 from test_gl_auto_posting_migration import SET_ACCOUNT, invoice_paid, method_of, post
 from test_gl_close_migration import keep_open, lines, period
@@ -197,7 +199,7 @@ def test_a_method_account_save_checks_the_riel_account(ledger: Books) -> None:
 
 
 def test_money_in_the_riel_bank_keeps_its_riel_and_is_valued_at_month_end(
-    ledger: Books,
+    ledger: Books, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     year = ledger.today.year - 1
     local = zone(ledger)
@@ -302,6 +304,34 @@ def test_money_in_the_riel_bank_keeps_its_riel_and_is_valued_at_month_end(
     assert ledger.lines(str(row[5])) == [("4100", 37, 0), ("1021", 0, 37)]
     assert check(ledger, october, "RIEL_VALUED") is True
     assert check(ledger, october, "BANK_MATCHED") is False
+    # Month end and the Balance sheet show the riel (owner 05/11/2026).
+    monkeypatch.setattr(psycopg, "connect", lambda *_a, **_k: Borrowed(ledger.connection))
+    end = PostgresLedgerMonthEnd("postgresql://unused").month_end(
+        ledger.property_id, date(year, 10, 15)
+    )
+    valued = {item["code"]: item for item in end["riel_accounts"]}
+    assert valued["1021"] | {"entry_number": None} == {
+        "code": "1021",
+        "name_en": "ABA Bank · KHR account",
+        "name_km": "ធនាគារ ABA · រៀល",
+        "cash_kind": "BANK_KHR",
+        "riel_held": 367_470,
+        "khr_per_usd": 4_100,
+        "before_cents": 9_000,
+        "after_cents": 8_963,
+        "gain_cents": -37,
+        "entry_number": None,
+    }
+    assert valued["1021"]["entry_number"] is not None
+    sheet = PostgresLedgerReports("postgresql://unused").report(
+        "balance-sheet",
+        ledger.property_id,
+        str(ledger.owner),
+        ReportParams(as_of=date(year, 10, 31)),
+    )
+    names = {row["code"]: row["name"] for row in sheet.rows if row["line"] == "account"}
+    assert names["1021"] == "ABA Bank · KHR account (367,470 riel)"
+    assert "riel" not in names["1020"]
 
 
 def test_the_riel_bank_is_matched_in_riel(ledger: Books, monkeypatch: pytest.MonkeyPatch) -> None:

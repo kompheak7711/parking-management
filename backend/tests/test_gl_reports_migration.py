@@ -8,6 +8,7 @@ check line is green on books made through the checked money functions.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import date
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -21,6 +22,7 @@ from psycopg.types.json import Jsonb
 from property_rental.ledger_money_api import LedgerMoneyNotFound, LedgerMoneyRefused
 from property_rental.ledger_reports import (
     REPORT_NAMES,
+    RIEL_HELD_ON,
     TODAY,
     LedgerReport,
     PostgresLedgerReports,
@@ -204,6 +206,8 @@ def test_the_runtime_login_reads_customer_balances_only_through_the_checked_func
         with pytest.raises(psycopg.errors.InsufficientPrivilege):
             with runtime.transaction():
                 runtime.execute("SELECT * FROM app.customer_ledger_balance_sources LIMIT 1")
+        # The Balance sheet reads the riel each riel account held (owner 05/11/2026).
+        runtime.execute(RIEL_HELD_ON, {"prop": uuid4(), "day": date(2027, 1, 31)})
         runtime.rollback()
 
 

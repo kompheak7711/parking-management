@@ -231,6 +231,7 @@ function fakeApi(extra: Partial<LedgerApi> = {}): LedgerApi {
     needsCheck: vi.fn(() => Promise.resolve(PROBLEMS)),
     methodAccounts: vi.fn(() => Promise.resolve(METHODS)),
     setMethodAccount: vi.fn(() => Promise.resolve(METHODS)),
+    recordRefundRiel: vi.fn(() => Promise.resolve()),
     report: vi.fn(() => Promise.resolve(PROFIT)),
     reportFile: vi.fn(() =>
       Promise.resolve({ fileName: "profit-and-loss.xlsx", file: new Blob() }),
@@ -518,6 +519,98 @@ describe("Needs check", () => {
         }),
       );
     });
+  });
+
+  it("TEST-FE-1701 pays a Refund from the riel bank and takes the riel paid once", async () => {
+    const chart: Chart = {
+      ...CHART,
+      accounts: [
+        ...CHART.accounts,
+        account({
+          code: "1021",
+          name_en: "ABA Bank · KHR account",
+          cash_kind: "BANK_KHR",
+        }),
+      ],
+    };
+    const waiting: PostingProblem[] = [
+      {
+        posting_key: "refund:r-7",
+        source_type: "REFUND",
+        source_id: "r-7",
+        event_date: "2027-01-14",
+        problem: "Type the riel paid for this Refund",
+        first_seen_at: "2027-01-14T03:00:00Z",
+        source_number: "RFD270007",
+        source_link: null,
+      },
+      {
+        posting_key: "refund:r-8",
+        source_type: "REFUND",
+        source_id: "r-8",
+        event_date: "2027-01-15",
+        problem: "Ready: it posts at the next run",
+        first_seen_at: "2027-01-15T03:00:00Z",
+        source_number: "RFD270008",
+        source_link: null,
+      },
+    ];
+    const api = fakeApi({
+      accounts: vi.fn(() => Promise.resolve(chart)),
+      needsCheck: vi.fn(() => Promise.resolve(waiting)),
+    });
+    show(
+      "needscheck",
+      api,
+      new Set(["ledger.read", "ledger.accounts.manage", "ledger.money_move"]),
+    );
+    expect(
+      await screen.findByText(
+        "Paid from a riel account: type the riel that left it. The tenant still got dollars.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Fixed. It goes to the ledger at the next posting run."),
+    ).toBeInTheDocument();
+    // Only the waiting Refund takes riel.
+    const typeButtons = screen.getAllByRole("button", {
+      name: "Type the riel",
+    });
+    expect(typeButtons).toHaveLength(1);
+    fireEvent.click(at(typeButtons, 0));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Riel paid for RFD270007");
+    const box = within(dialog).getByLabelText(/Riel paid/);
+    fireEvent.change(box, { target: { value: "41.5" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await within(dialog).findByText(
+        "Type the riel as a whole number, more than 0.",
+      ),
+    ).toBeInTheDocument();
+    expect(api.recordRefundRiel).not.toHaveBeenCalled();
+    fireEvent.change(box, { target: { value: "410,000" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(api.recordRefundRiel).toHaveBeenCalledWith("prop-1", {
+        refund_id: "r-7",
+        riel_minor: 410000,
+      });
+    });
+    expect(
+      await screen.findByText(
+        "The riel for RFD270007 is saved. It goes to the ledger at the next posting run.",
+      ),
+    ).toBeInTheDocument();
+    // A Refund method may use the riel bank account as its account.
+    const change = screen.getAllByRole("button", { name: "Change" });
+    fireEvent.click(at(change, change.length - 1));
+    const methodDialog = await screen.findByRole("dialog");
+    const main = within(methodDialog).getByLabelText(/Account/);
+    expect(
+      within(main).getByRole("option", { name: /1021/ }),
+    ).toBeInTheDocument();
+    expect(within(methodDialog).queryByLabelText("Riel account")).toBeNull();
   });
 
   it("TEST-FE-1161 says when nothing waits", async () => {

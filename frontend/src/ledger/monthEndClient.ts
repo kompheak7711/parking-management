@@ -37,6 +37,20 @@ export interface CloseCheck {
   open_items: number;
 }
 
+/** One riel account's valuation at the month end (owner 05/11/2026: month end shows the riel). */
+export interface RielValued {
+  code: string;
+  name_en: string;
+  name_km: string | null;
+  cash_kind: string;
+  riel_held: number;
+  khr_per_usd: number;
+  before_cents: number;
+  after_cents: number;
+  gain_cents: number;
+  entry_number: string | null;
+}
+
 export interface MonthEnd {
   today: string;
   months: LedgerMonth[];
@@ -45,6 +59,7 @@ export interface MonthEnd {
   checks: CloseCheck[];
   depreciation_entry: string | null;
   riel: { entry_number: string | null } | null;
+  riel_accounts: RielValued[];
 }
 
 export interface MonthEndApi {
@@ -122,6 +137,21 @@ export const monthEndApi: MonthEndApi = {
         data.riel === null || data.riel === undefined
           ? null
           : { entry_number: maybeText(record(data.riel).entry_number) },
+      riel_accounts: list(data.riel_accounts).map((item) => {
+        const row = record(item);
+        return {
+          code: text(row.code),
+          name_en: text(row.name_en),
+          name_km: maybeText(row.name_km),
+          cash_kind: text(row.cash_kind),
+          riel_held: whole(row.riel_held),
+          khr_per_usd: whole(row.khr_per_usd),
+          before_cents: whole(row.before_cents),
+          after_cents: whole(row.after_cents),
+          gain_cents: whole(row.gain_cents),
+          entry_number: maybeText(row.entry_number),
+        };
+      }),
     };
   },
   async closeMonth(propertyId, periodId) {

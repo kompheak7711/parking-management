@@ -63528,6 +63528,51 @@
       "notes": "Riel bank account: Needs check sets a Payment Method's riel account and keeps the riel bank out of the main account list."
     },
     {
+      "test_id": "test_a_refund_from_the_riel_bank_waits_for_its_riel_then_posts_with_it",
+      "upstream_ids": [
+        "DL-161",
+        "DB-GL-009",
+        "API-GL-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_refund_migration.py",
+      "status": "implemented",
+      "notes": "Refund from a riel account (owner 05/11/2026, migration 20270612_321): the Refund waits for its riel, the riel is typed once with the right, then it posts out of 1021 with its riel."
+    },
+    {
+      "test_id": "test_only_the_function_writes_the_typed_riel",
+      "upstream_ids": [
+        "DL-161",
+        "DB-GL-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_gl_riel_refund_migration.py",
+      "status": "implemented",
+      "notes": "Refund from a riel account: the runtime login reads the typed riel and writes it only through gl_record_refund_riel."
+    },
+    {
+      "test_id": "TEST-FE-1700",
+      "upstream_ids": [
+        "DL-161",
+        "API-GL-016"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/MonthEndPage.test.tsx",
+      "status": "implemented",
+      "notes": "Riel at month end: the Month-end close shows the riel held, the rate, the value before and after and the gain or loss for each riel account."
+    },
+    {
+      "test_id": "TEST-FE-1701",
+      "upstream_ids": [
+        "DL-161",
+        "API-GL-016"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
+      "status": "implemented",
+      "notes": "Refund from a riel account: Needs check takes the riel paid once, refuses a broken number, and a Refund method may use the riel bank account."
+    },
+    {
       "test_id": "test_attendance_entry_and_overtime",
       "upstream_ids": [
         "PR-HR-001",

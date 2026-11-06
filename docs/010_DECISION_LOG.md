@@ -2685,6 +2685,20 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-117.
 - **Decision date:** 2026-11-04.
 
+## DL-161 — Riel at month end, and Refunds paid from a riel account
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `BUILT ON THE GENERAL LEDGER BRANCH; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's message of 05/11/2026 07:25 ("Refund straight from riel account. And month close or end should has riel in report."), the owner's facts of 07:31 and 07:45 (Invoices are in dollars; riel cash uses the ABA rate; money sent to the USD account arrives in dollars and money sent to the KHR account arrives in riel), and the plan sent at 07:30.
+- **(A) Month-end close.** The Month-end close screen shows "Riel at month end" for riel cash (1011) and the riel bank (1021): riel held, the rate, the value before and after, and the gain or loss that went to 4100, with its entry.
+- **(B) Balance sheet.** The riel accounts show the riel they hold next to their name.
+- **(C) Refund from a riel account.** A Refund method may use a riel account (1021, or riel cash 1011). The Refund stays in dollars for the tenant. The riel that left the account is typed once in Ledger › Needs check (right `ledger.money_move`; the card asking "Needs check or the refund screen" is still open, Claude's recommendation built), then the Refund posts DR its source, CR the riel account with the riel.
+- **(D) Waits for later:** a Refund correction on a riel account waits in Needs check.
+- **(E) Bank transfers (no build).** One Payment Method per account the money goes into: "Bank transfer (USD account)" to 1020 with no riel account, and "Bank transfer (KHR account)" to 1020 with riel account 1021.
+- **Built:** migration `20270612_321` (DB-GL-009), API-GL-016, Ledger › Needs check ("Type the riel"), Month-end close ("Riel at month end"), Balance sheet.
+- **Links:** DL-160.
+- **Decision date:** 2026-11-05.
+
 ## DL-170 — Telegram bots: Contact office and the FAQ (bots step 2d part 2)
 
 - **Type:** `TECHNICAL DECISION`

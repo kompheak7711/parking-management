@@ -5689,6 +5689,16 @@ Owner decisions: the cards of 04/11/2026 12:05 ("Riel bank account per method") 
 - Bank matching: `app.gl_bank_reconciliations.statement_riel` (nullable). `gl_match_bank` takes `p_statement_riel` after `p_statement_cents`; a `BANK_KHR` account is matched in riel (the statement in riel against its riel lines) and `statement_balance_cents` holds the dollars of the cleared lines. `gl_bank_lines` answers `riel_minor` and leaves out valuation lines, which cannot be matched.
 - Waits for later: bill payments, owner money, advances and paybacks in or out of 1021.
 
+## DB-GL-009 — Refunds paid from a riel account (General Ledger, DL-161)
+
+Owner message of 05/11/2026 07:25. Migration `20270612_321` (forward-only; changes the GL functions named below).
+
+- `app.gl_refund_riel` (append-only, `app.gl_reject_mutation`): `id`, `property_id`, `refund_id` (unique, FK `app.refunds`), `riel_minor` (1 or more), `created_at`, `created_by`. The runtime login may read it, not write it.
+- `app.gl_record_refund_riel(property, actor, refund, riel_minor, correlation)` (runtime; right `ledger.money_move`): only for a Refund of this Property that waits with "Type the riel paid for this Refund" and is not posted yet (P0002 none, 55000 not waiting or already typed, 22023 riel 0). Audit event `ledger.refund_riel.recorded`.
+- A Refund method's account may be `BANK_KHR` (`gl_check_method_account`, `gl_set_method_account`); a Payment Method's still may not.
+- Posting (`gl_app_record_events`): a Refund whose method account is `CASH_KHR` or `BANK_KHR` waits with "Type the riel paid for this Refund" until its riel is typed; then the credit line carries `KHR` and the riel. A Refund correction (not recovered by a charge) on such an account waits with "A Refund correction on a riel account cannot post yet".
+- `app.gl_waiting_records` shows each kept record's problem as it is now; a record that waited for a method account or its riel and has it now says "Ready: it posts at the next run".
+
 ## DB-BS-001 — Settings › Business: numbering, Invoice types, Property fields (V1.1 part 2)
 
 DL-118. Migration `20270421_271`, forward-only.
