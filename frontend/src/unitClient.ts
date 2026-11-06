@@ -106,7 +106,9 @@ export type UnitStatus =
   | "OCCUPIED"
   | "UNDER_MAINTENANCE"
   | "CLEANING"
-  | "OUT_OF_SERVICE";
+  | "OUT_OF_SERVICE"
+  // Daily and weekly rent: a guest is checked in (only check-in sets it).
+  | "SHORT_STAY";
 
 export interface UnitResource extends UnitDetails {
   unit_id: string;
@@ -421,6 +423,7 @@ function unit(value: unknown): UnitResource {
     "UNDER_MAINTENANCE",
     "CLEANING",
     "OUT_OF_SERVICE",
+    "SHORT_STAY",
   ];
   if (
     !/^[A-Z0-9][A-Z0-9_]{0,39}$/.test(value.unit_type) ||

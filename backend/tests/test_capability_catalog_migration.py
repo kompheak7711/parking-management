@@ -65,6 +65,15 @@ PROBLEM_REPORT_RIGHTS = frozenset(
         "problem_reports.read",
     }
 )
+SHORT_STAY_RIGHTS = frozenset(
+    {
+        "short_stays.approve",
+        "short_stays.credit",
+        "short_stays.desk",
+        "short_stays.housekeeping",
+        "short_stays.read",
+    }
+)
 ADD = (
     "INSERT INTO app.capabilities(capability_id,family,description,grant_path,"
     "provenance) VALUES (%s,%s,'A test capability',%s,'login-slice-l1b-test')"
@@ -101,7 +110,7 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
         # V1-061 lower-Rent right with migration `20270401_251`, and the General Ledger rights
         # with migration `20270414_264`, and the product and stock rights with `20270424_274`,
         # and the Quotation rights with `20270425_275`, and the Problem report rights with
-        # `20270426_276`.
+        # `20270426_276`, and the daily and weekly rent rights with `20270531_310`.
         expected = (
             "v1-057-reports"
             if capability in {"audit.export", "data.export", "reports.read"}
@@ -115,6 +124,8 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
             if capability in QUOTATION_RIGHTS
             else "v1-1-problem-reports"
             if capability in PROBLEM_REPORT_RIGHTS
+            else "short-stays"
+            if capability in SHORT_STAY_RIGHTS
             else "login-slice-capability-catalog"
         )
         assert provenance == expected and finite is True

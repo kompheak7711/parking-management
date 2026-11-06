@@ -41,6 +41,8 @@ export interface InvoiceLine {
   calculation_evidence: Evidence;
   period: JsonValue;
 }
+/** A short-stay Invoice (daily and weekly rent): the stay, or its damage. */
+export type ShortStayInvoiceKind = "SHORT_STAY" | "SHORT_STAY_DAMAGE";
 export interface InvoiceResource {
   id: string;
   property_id: string;
@@ -48,6 +50,8 @@ export interface InvoiceResource {
   lease_id: string | null;
   invoice_number: string;
   category: InvoiceCategory;
+  /** Set when the Invoice is a short stay; screens name it so instead of its type. */
+  short_stay?: ShortStayInvoiceKind | null;
   status: InvoiceStatus;
   invoice_date: string;
   due_date: string | null;
@@ -443,6 +447,10 @@ const categories: readonly InvoiceCategory[] = [
   "DAMAGE_CHARGES",
   "MISCELLANEOUS_CHARGES",
 ];
+export function shortStayKind(value: unknown): ShortStayInvoiceKind | null {
+  return value === "SHORT_STAY" || value === "SHORT_STAY_DAMAGE" ? value : null;
+}
+
 function invoice(value: unknown): InvoiceResource {
   const row = object(value);
   return {
@@ -452,6 +460,7 @@ function invoice(value: unknown): InvoiceResource {
     lease_id: nullableText(row.lease_id),
     invoice_number: text(row.invoice_number),
     category: choice(row.category, categories),
+    short_stay: shortStayKind(row.short_stay),
     status: choice(row.status, [
       "DRAFT",
       "UNPAID",

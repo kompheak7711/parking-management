@@ -625,7 +625,8 @@ table.ui-table a.ui-no {
   font-weight: 600;
 }
 
-.ui-field .req {
+.ui-field .req,
+.ui-radios legend .req {
   margin-left: 6px;
   color: var(--text-2);
   font-size: 0.8rem;

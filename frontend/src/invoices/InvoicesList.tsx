@@ -26,7 +26,7 @@ import {
   stateOf,
   unitOf,
 } from "./invoicesData";
-import { ivt, type InvoicesTextKey } from "./text";
+import { invoiceType, ivt, type InvoicesTextKey } from "./text";
 
 const STATE_CHIPS: Record<
   InvoiceState,
@@ -191,7 +191,7 @@ export function InvoicesList({
           {/* On a phone the type, Due Date and amount fold under the number. */}
           <span className="ui-sub2 ui-phone">
             {[
-              ivt(language, invoice.category),
+              ivt(language, invoiceType(invoice)),
               draft || invoice.due_date === null
                 ? ivt(language, "ni_due_later")
                 : dayText(invoice.due_date),
@@ -207,7 +207,7 @@ export function InvoicesList({
           )}
           <span className="ui-sub2">{unitOf(data, invoice)}</span>
         </td>
-        <td className="ui-wide">{ivt(language, invoice.category)}</td>
+        <td className="ui-wide">{ivt(language, invoiceType(invoice))}</td>
         <td className={draft ? "ui-wide ui-muted" : "ui-wide ui-num"}>
           {draft || invoice.due_date === null
             ? ivt(language, "ni_due_later")

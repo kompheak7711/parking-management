@@ -456,6 +456,7 @@ const TEXT = {
   u_CLEANING: ["Cleaning", "កំពុងសម្អាត"],
   u_UNDER_MAINTENANCE: ["Under maintenance", "កំពុងជួសជុល"],
   u_OUT_OF_SERVICE: ["Out of service", "ឈប់ប្រើ"],
+  u_SHORT_STAY: ["Short stay", "ស្នាក់នៅខ្លី"],
   s_occupied: ["Occupied", "មានអ្នកជួល"],
   s_reserved: ["Reserved", "បានកក់"],
   s_vacant: ["Vacant", "ទំនេរ"],

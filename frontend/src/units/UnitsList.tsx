@@ -28,6 +28,7 @@ const STATUS_CHIPS: Record<UnitStatus, [Tone, ShellIcon | undefined]> = {
   CLEANING: ["warn", undefined],
   UNDER_MAINTENANCE: ["warn", "wrench"],
   OUT_OF_SERVICE: ["err", "alert"],
+  SHORT_STAY: ["ok", "calendar"],
 };
 
 export function UnitChip({

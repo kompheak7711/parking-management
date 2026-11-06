@@ -29,6 +29,7 @@ from property_rental.billing_worker import (
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.ledger_posting_job import LedgerPostingResult
+from property_rental.short_stay_calendar_sync import SiteCalendarResult
 
 
 def run_detail(command: BillingRunCommand, *, source: str = "API") -> BillingRunDetail:
@@ -324,6 +325,10 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             self.until.append(until)
             return LedgerPostingResult(0, 0)
 
+    class NoSites:
+        def run(self) -> SiteCalendarResult:
+            return SiteCalendarResult(0, 0)
+
     class FailingLateService(Service):
         def execute(
             self, command: BillingRunCommand, *, actor: AuthenticatedActor, invocation_source: str
@@ -347,6 +352,7 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
             service=cast(Any, service),
             late_charges=cast(Any, NoLateCharges()),
             ledger_posting=NoLedger(),
+            site_calendars=NoSites(),
         )
         result = worker.run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
         assert len(result.runs) == expected
@@ -377,6 +383,7 @@ def test_the_worker_bills_late_utility_dates_within_its_bound(
         service=cast(Any, failing),
         late_charges=cast(Any, charges),
         ledger_posting=ledger,
+        site_calendars=NoSites(),
     ).run_once(as_of=datetime(2026, 10, 25, 5, tzinfo=UTC))
     assert (len(failed.runs), len(failing.commands), charges.passes) == (1, 2, 1)
     # The ledger posting pass still runs, for the Property's business date.

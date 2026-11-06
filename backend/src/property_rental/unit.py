@@ -41,6 +41,8 @@ class UnitStatus(StrEnum):
     UNDER_MAINTENANCE = "UNDER_MAINTENANCE"
     CLEANING = "CLEANING"
     OUT_OF_SERVICE = "OUT_OF_SERVICE"
+    # Daily and weekly rent: a guest is checked in (counted as occupied; only check-in sets it).
+    SHORT_STAY = "SHORT_STAY"
 
 
 @dataclass(frozen=True, slots=True)

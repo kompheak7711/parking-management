@@ -61,6 +61,7 @@ describe("V1-058 R1 app shell", () => {
       "Utilities",
       "Waiting for approval",
       "Bookings",
+      "Short stays",
       "Leases",
       "Customers",
       "Units",
@@ -74,7 +75,7 @@ describe("V1-058 R1 app shell", () => {
     for (const group of ["Daily work", "Tenants", "Building", "Office"]) {
       expect(within(menu).getByText(group)).toBeInTheDocument();
     }
-    expect(MENU.flatMap((group) => group.items)).toHaveLength(15);
+    expect(MENU.flatMap((group) => group.items)).toHaveLength(16);
   });
 
   it("TEST-FE-802 marks only the open page in the menu and names the work area after it", () => {

@@ -15,7 +15,7 @@ import {
 } from "react";
 
 import type { InvoicesData } from "../invoices/invoicesData";
-import { centsOf } from "../invoices/invoicesData";
+import { centsOf, payerIds } from "../invoices/invoicesData";
 import { InvoiceClientError } from "../invoiceClient";
 import { dayText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -173,7 +173,7 @@ export function ReceivePayment({
     language,
   );
 
-  const customers = [...data.customerLeases.keys()]
+  const customers = payerIds(data)
     .map((id) => ({
       id,
       name: data.names.get(id) ?? pyt(language, "unknown_customer"),
@@ -981,6 +981,8 @@ const CATEGORIES = [
   "SERVICE_CHARGES",
   "MISCELLANEOUS_CHARGES",
   "DAMAGE_CHARGES",
+  "SHORT_STAY",
+  "SHORT_STAY_DAMAGE",
 ] as const;
 
 function isCategory(value: string): value is (typeof CATEGORIES)[number] {

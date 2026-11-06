@@ -17,6 +17,7 @@ export type PageId =
   | "locations"
   | "customers"
   | "reservations"
+  | "shortstays"
   | "leases"
   | "letters"
   | "moveout"
@@ -96,6 +97,8 @@ export const MENU: readonly MenuGroup[] = [
         label: ["Bookings", "ការកក់"],
         tabs: ["reservations"],
       },
+      // Daily and weekly rent (phase 6 step 2, mock-up round 28): Tenants › Short stays.
+      { page: "shortstays", icon: "calendar" },
       {
         page: "leases",
         icon: "lease",
@@ -168,6 +171,8 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   locations: ["Locations", "ទីតាំង"],
   customers: ["Customers", "អតិថិជន"],
   reservations: ["Reservations", "ការកក់ទុក"],
+  // new
+  shortstays: ["Short stays", "ការស្នាក់នៅខ្លី"],
   leases: ["Leases", "កិច្ចសន្យាជួល"],
   letters: ["Letters", "លិខិត"],
   moveout: ["Move-out", "ការចាកចេញ"],
@@ -216,6 +221,8 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   locations: ["products.read"],
   customers: ["customers.read"],
   reservations: ["reservations.read"],
+  // Daily and weekly rent: the calendar and bookings read with short_stays.read.
+  shortstays: ["short_stays.read"],
   leases: ["leases.read"],
   letters: ["rent_nonpayment.read", "leases.warn"],
   moveout: ["deposits.read", "final_settlements.prepare", "leases.move_out"],

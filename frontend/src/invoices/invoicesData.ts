@@ -113,6 +113,21 @@ export async function loadInvoicesData(
   };
 }
 
+/**
+ * Who Receive payment lists: every Customer with a signed Lease, and every Customer who owes on an
+ * issued Invoice without one (a daily or weekly guest pays the stay Invoice this way).
+ */
+export function payerIds(data: InvoicesData): string[] {
+  const ids = new Set(data.customerLeases.keys());
+  for (const invoice of data.invoices)
+    if (
+      (invoice.status === "UNPAID" || invoice.status === "PARTIALLY_PAID") &&
+      cents(invoice.outstanding_balance) > 0
+    )
+      ids.add(invoice.customer_id);
+  return [...ids];
+}
+
 /** "500.00" or "500" as cents; null when it is not a whole-cent amount above zero. */
 export function centsOf(text: string): number | null {
   const value = text.trim();

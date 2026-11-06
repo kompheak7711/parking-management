@@ -6,6 +6,7 @@ import {
   billingTransport,
   type BillingTransmission,
   InvoiceClientError,
+  shortStayKind,
 } from "../invoiceClient";
 import type { PayableItem, PaysTargetInput } from "./payFor";
 
@@ -242,7 +243,10 @@ function payableItem(value: unknown): PayableItem {
     id: text(item.id),
     invoiceId: text(item.invoice_id),
     invoiceNumber: text(item.invoice_number),
-    category: item.category === null ? null : text(item.category),
+    // A short-stay Invoice is named "Short stay" instead of its type (owner test 05/11/2026).
+    category:
+      shortStayKind(item.short_stay) ??
+      (item.category === null ? null : text(item.category)),
     dueDate: item.due_date === null ? null : text(item.due_date),
     owed: cents(item.owed_usd_cents),
   };
@@ -379,7 +383,7 @@ function receiptOf(value: unknown): ReceiptView {
         kind,
         invoiceId: maybeText(line.invoice_id),
         invoiceNumber: maybeText(line.invoice_number),
-        category: maybeText(line.category),
+        category: shortStayKind(line.short_stay) ?? maybeText(line.category),
         dueDate: maybeText(line.due_date),
         depositType: maybeText(line.deposit_type),
         amount: cents(line.amount_usd_cents),

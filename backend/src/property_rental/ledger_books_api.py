@@ -85,6 +85,9 @@ def source_sql(alias: str = "entry", entry_id: str | None = "entry.id") -> str:
             WHERE p.id = {alias}.source_id)
         WHEN 'MONEY_MOVE' THEN (SELECT m.move_number FROM app.gl_money_moves AS m
             WHERE m.id = {alias}.source_id)
+        WHEN 'SHORT_STAY_DEPOSIT' THEN (SELECT b.booking_number
+            FROM app.short_stay_deposits AS d JOIN app.short_stay_bookings AS b
+            ON b.id = d.booking_id WHERE d.id = {alias}.source_id)
         ELSE {adjusting}
     END
 """

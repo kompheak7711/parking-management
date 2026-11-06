@@ -189,6 +189,12 @@ export function LeaseDraftPrint({
                   <td>{usdFromCents(line.amount_usd_cents)}</td>
                 </tr>
               ))}
+              {initial.short_stay_off_usd_cents > 0 && (
+                <tr>
+                  <td>{lt(language, "sp_stay_off")}</td>
+                  <td>−{usdFromCents(initial.short_stay_off_usd_cents)}</td>
+                </tr>
+              )}
               {depositDue !== null && (
                 <tr>
                   <th scope="row">{lt(language, "sp_total")}</th>

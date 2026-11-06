@@ -9,7 +9,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { CustomerApi } from "../customerClient";
 import type { InvoiceApi } from "../invoiceClient";
-import { type InvoicesData, loadInvoicesData } from "../invoices/invoicesData";
+import {
+  type InvoicesData,
+  loadInvoicesData,
+  payerIds,
+} from "../invoices/invoicesData";
 import type { LeaseApi } from "../leaseClient";
 import { Icon } from "../shell/icons";
 import { todayInPhnomPenh } from "../shell/format";
@@ -114,7 +118,7 @@ export function PaymentsPage({
       <ReceivePayment
         api={paymentsApi}
         data={data}
-        initialCustomer={data.customerLeases.has(customerId) ? customerId : ""}
+        initialCustomer={payerIds(data).includes(customerId) ? customerId : ""}
         initialPick={chargeId}
         key={`${propertyId}:${customerId}:${chargeId}`}
         language={language}

@@ -2,6 +2,7 @@
 // (i18n.js). Khmer needs the native check before the app is used. Lines marked "new" are not
 // in the mock-up.
 
+import type { InvoiceCategory, ShortStayInvoiceKind } from "../invoiceClient";
 import type { Language } from "../signInText";
 
 const TEXT = {
@@ -33,6 +34,9 @@ const TEXT = {
   SERVICE_CHARGES: ["Services", "សេវា"],
   MISCELLANEOUS_CHARGES: ["Miscellaneous", "ផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
+  // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
+  SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
+  SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],
   // V1.1 (DL-115 (I)): the Services kind of Create Invoice.
   SERVICES: ["Services", "សេវា"],
   ic_total: ["Total Invoice amount", "ចំនួនវិក្កយបត្រសរុប"],
@@ -624,6 +628,14 @@ const TEXT = {
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type InvoicesTextKey = keyof typeof TEXT;
+
+/** The type a screen names an Invoice by: a short stay, else its type. */
+export function invoiceType(invoice: {
+  category: InvoiceCategory;
+  short_stay?: ShortStayInvoiceKind | null;
+}): InvoicesTextKey {
+  return invoice.short_stay ?? invoice.category;
+}
 
 export function ivt(
   language: Language,

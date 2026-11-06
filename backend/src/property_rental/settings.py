@@ -40,6 +40,11 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_PASSWORD_BLOCKLIST_FILE",
     )
+    # Daily and weekly rent step 5a: our calendar for the booking sites is served without a
+    # sign-in only when the owner opens it (decision pending; off keeps the app office-only).
+    short_stay_public_calendar: bool = Field(
+        default=False, validation_alias="APP_SHORT_STAY_PUBLIC_CALENDAR"
+    )
     # V1-059 (DL-071): the folder of the operations status files, mounted read-only; a path
     # only. Without it the health page says the records are not set up.
     operations_status_directory: str | None = Field(

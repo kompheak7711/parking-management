@@ -163,6 +163,7 @@ function historyLines(
           "CLEANING",
           "UNDER_MAINTENANCE",
           "OUT_OF_SERVICE",
+          "SHORT_STAY",
         ] as const
       ).find((value) => value === status);
       lines.push({
@@ -485,7 +486,8 @@ export function UnitDetail({
         ? "a_unknown"
         : unit.status === "CLEANING" ||
             unit.status === "UNDER_MAINTENANCE" ||
-            unit.status === "OUT_OF_SERVICE"
+            unit.status === "OUT_OF_SERVICE" ||
+            unit.status === "SHORT_STAY"
           ? (`a_${unit.status}` as const)
           : unit.for_rent === false
             ? "fr_no"

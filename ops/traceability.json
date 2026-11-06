@@ -62594,6 +62594,935 @@
       "test_path": "frontend/src/ledger/LedgerPage.test.tsx",
       "status": "implemented",
       "notes": "Riel bank account: Needs check sets a Payment Method's riel account and keeps the riel bank out of the main account list."
+    },
+    {
+      "test_id": "test_a_booking_and_a_lease_never_share_a_night",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): a booking and a lease never share a night."
+    },
+    {
+      "test_id": "test_a_booking_only_moves_forward_and_the_unit_status_follows_the_guest",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): a booking only moves forward and the unit status follows the guest."
+    },
+    {
+      "test_id": "test_a_card_number_is_never_saved_and_steps_move_forward_once",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): a card number is never saved and steps move forward once."
+    },
+    {
+      "test_id": "test_migration_310_follows_the_ledger_method_fix",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): migration 310 follows the ledger method fix."
+    },
+    {
+      "test_id": "test_one_unit_never_has_two_bookings_on_the_same_night",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): one unit never has two bookings on the same night."
+    },
+    {
+      "test_id": "test_the_app_reads_but_never_writes_the_tables",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): the app reads but never writes the tables."
+    },
+    {
+      "test_id": "test_the_total_is_the_sum_of_the_price_lines",
+      "upstream_ids": [
+        "PR-SS-STEP1"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 1 (migration 310): the total is the sum of the price lines."
+    },
+    {
+      "test_id": "test_a_new_booking_keeps_its_price_and_history",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_booking_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 2 (migration 311): a new booking keeps its price and history."
+    },
+    {
+      "test_id": "test_migration_311_follows_step_1",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_booking_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 2 (migration 311): migration 311 follows step 1."
+    },
+    {
+      "test_id": "test_the_prices_match_the_owner_table",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_booking_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 2 (migration 311): the prices match the owner table."
+    },
+    {
+      "test_id": "test_weeks_extra_nights_and_never_more_than_the_next_week",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_booking_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 2 (migration 311): weeks extra nights and never more than the next week."
+    },
+    {
+      "test_id": "test_a_full_stay_from_payment_to_the_deposit",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_check_in_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 3 (migration 312): a full stay from payment to the deposit."
+    },
+    {
+      "test_id": "test_migration_312_follows_step_2",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_check_in_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 3 (migration 312): migration 312 follows step 2."
+    },
+    {
+      "test_id": "test_paid_on_the_site_and_the_guest_without_an_id",
+      "upstream_ids": [
+        "PR-SS-STEP3",
+        "DL-049"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_check_in_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 3 (migration 312): paid on the site and the guest without an id."
+    },
+    {
+      "test_id": "test_a_booked_stay_extends_without_an_invoice",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cleaning_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 313): a booked stay extends without an invoice."
+    },
+    {
+      "test_id": "test_fees_cleaning_and_extending_a_stay",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cleaning_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 313): fees cleaning and extending a stay."
+    },
+    {
+      "test_id": "test_migration_313_follows_step_3",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cleaning_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 313): migration 313 follows step 3."
+    },
+    {
+      "test_id": "test_a_free_cancel_gives_the_money_back_as_credit",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cancel_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migrations 314 and 351): a free cancel gives the money back as credit."
+    },
+    {
+      "test_id": "test_a_late_cancel_keeps_the_money_and_may_give_credit",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cancel_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migrations 314 and 351): a late cancel keeps the money and may give credit."
+    },
+    {
+      "test_id": "test_a_no_show_owes_nothing_unpaid_and_a_site_booking_moves_no_money",
+      "upstream_ids": [
+        "PR-SS-STEP4",
+        "DL-049"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cancel_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migrations 314 and 351): a no show owes nothing unpaid and a site booking moves no money."
+    },
+    {
+      "test_id": "test_migration_314_follows_step_4a",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_cancel_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migrations 314 and 351): migration 314 follows step 4a."
+    },
+    {
+      "test_id": "test_a_daily_guest_signs_a_lease_with_50_dollars_off",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_lease_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 315): a daily guest signs a lease with 50 dollars off."
+    },
+    {
+      "test_id": "test_migration_315_follows_step_4b",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_lease_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 315): migration 315 follows step 4b."
+    },
+    {
+      "test_id": "test_only_a_guest_in_or_after_the_stay_links_their_own_draft",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_lease_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 4 (migration 315): only a guest in or after the stay links their own draft."
+    },
+    {
+      "test_id": "test_a_site_calendar_holds_nights_for_that_site_only",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_site_calendar_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 316): a site calendar holds nights for that site only."
+    },
+    {
+      "test_id": "test_migration_316_follows_step_4c",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_site_calendar_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 316): migration 316 follows step 4c."
+    },
+    {
+      "test_id": "test_our_calendar_shows_busy_nights_by_its_token",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_site_calendar_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 316): our calendar shows busy nights by its token."
+    },
+    {
+      "test_id": "test_the_worker_pass_reads_each_due_link",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_site_calendar_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 316): the worker pass reads each due link."
+    },
+    {
+      "test_id": "test_a_quote_gives_todays_price",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_guests_quotes_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 317): a quote gives todays price."
+    },
+    {
+      "test_id": "test_a_returning_direct_guest_gets_the_thank_you",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_guests_quotes_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 317): a returning direct guest gets the thank you."
+    },
+    {
+      "test_id": "test_an_extra_discount_needs_the_manager_and_a_reason",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_guests_quotes_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 317): an extra discount needs the manager and a reason."
+    },
+    {
+      "test_id": "test_guest_history_notes_and_the_review",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_guests_quotes_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 317): guest history notes and the review."
+    },
+    {
+      "test_id": "test_migration_317_follows_step_5a",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_guests_quotes_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 317): migration 317 follows step 5a."
+    },
+    {
+      "test_id": "test_a_quote_shows_the_month_prices",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_week_report_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 318): a quote shows the month prices."
+    },
+    {
+      "test_id": "test_migration_318_follows_step_5b",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_week_report_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 318): migration 318 follows step 5b."
+    },
+    {
+      "test_id": "test_the_week_counts_paid_nights_money_and_costs",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_week_report_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migration 318): the week counts paid nights money and costs."
+    },
+    {
+      "test_id": "test_migration_319_follows_step_5c",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migrations 319 and 350): migration 319 follows step 5c."
+    },
+    {
+      "test_id": "test_migration_350_names_short_stay_invoices",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migrations 319 and 350): migration 350 names short stay invoices."
+    },
+    {
+      "test_id": "test_short_stay_money_posts_to_rent_damage_cash_and_bank",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migrations 319 and 350): short stay money posts to rent damage cash and bank."
+    },
+    {
+      "test_id": "test_unused_credit_ends_after_its_use_by_day_and_becomes_rent",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 (migrations 319 and 350): unused credit ends after its use by day and becomes rent."
+    },
+    {
+      "test_id": "test_a_link_is_read_over_https_only",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_short_stay_ical.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 calendar files: a link is read over https only."
+    },
+    {
+      "test_id": "test_a_site_calendar_is_read_as_booked_ranges",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_short_stay_ical.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 calendar files: a site calendar is read as booked ranges."
+    },
+    {
+      "test_id": "test_our_calendar_has_busy_dates_only",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_short_stay_ical.py",
+      "status": "implemented",
+      "notes": "Short stays step 5 calendar files: our calendar has busy dates only."
+    },
+    {
+      "test_id": "test_a_booking_needs_the_desk_right_and_a_valid_form",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: a booking needs the desk right and a valid form."
+    },
+    {
+      "test_id": "test_an_unused_credit_ends_with_the_credit_right",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: an unused credit ends with the credit right."
+    },
+    {
+      "test_id": "test_booking_site_links_need_the_approve_right",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: booking site links need the approve right."
+    },
+    {
+      "test_id": "test_each_step_of_a_stay_needs_its_own_right",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: each step of a stay needs its own right."
+    },
+    {
+      "test_id": "test_our_calendar_is_read_by_its_token_without_a_sign_in",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: our calendar is read by its token without a sign in."
+    },
+    {
+      "test_id": "test_quotes_and_a_guests_history",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: quotes and a guests history."
+    },
+    {
+      "test_id": "test_reading_needs_short_stays_read",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: reading needs short stays read."
+    },
+    {
+      "test_id": "test_the_cleaning_list_of_a_day_needs_the_read_right",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: the cleaning list of a day needs the read right."
+    },
+    {
+      "test_id": "test_the_weekly_report_needs_the_approve_right_and_a_complaint_the_desk",
+      "upstream_ids": [
+        "PR-SS-STEP1",
+        "PR-SS-STEP2",
+        "PR-SS-STEP3",
+        "PR-SS-STEP4",
+        "PR-SS-STEP5"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "Short stays API: the weekly report needs the approve right and a complaint the desk."
+    },
+    {
+      "test_id": "TEST-FE-1600",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows one row per Unit and one square per night, each with a word."
+    },
+    {
+      "test_id": "TEST-FE-1601",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: lists bookings and opens one with its price lines and history."
+    },
+    {
+      "test_id": "TEST-FE-1602",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: books a free night for a guest who is a Customer, at the server's price."
+    },
+    {
+      "test_id": "TEST-FE-1603",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: says what is missing, why a Unit cannot be booked, and offers the monthly Lease."
+    },
+    {
+      "test_id": "TEST-FE-1604",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: adds a new guest as a Customer once, even when the booking is tried again."
+    },
+    {
+      "test_id": "TEST-FE-1606",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: makes the Invoice, then sends the desk to Receive payment."
+    },
+    {
+      "test_id": "TEST-FE-1607",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: takes a card hold without the card number, then checks in when all is ready."
+    },
+    {
+      "test_id": "TEST-FE-1608",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows a stale screen as it is now and says why."
+    },
+    {
+      "test_id": "TEST-FE-1609",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: records the room check with damage and lets only the Manager decide."
+    },
+    {
+      "test_id": "TEST-FE-1610",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: approves damage from the deposit, then keeps it."
+    },
+    {
+      "test_id": "TEST-FE-1611",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: adds a late check-out and shows its own Invoice once the stay is billed."
+    },
+    {
+      "test_id": "TEST-FE-1612",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: prices an extension before the desk extends the stay."
+    },
+    {
+      "test_id": "TEST-FE-1613",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: lists the day's cleans and skips one only with a reason."
+    },
+    {
+      "test_id": "TEST-FE-1614",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: cancels with a reason and says the money comes back as credit."
+    },
+    {
+      "test_id": "TEST-FE-1615",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: gives credit after a late cancel, up to the money kept."
+    },
+    {
+      "test_id": "TEST-FE-1628",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: ends a late-cancel credit after its use-by day."
+    },
+    {
+      "test_id": "TEST-FE-1616",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: links the guest's Lease draft for $50 off the first month."
+    },
+    {
+      "test_id": "TEST-FE-1618",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows a booking site's nights, and a clash with our own booking."
+    },
+    {
+      "test_id": "TEST-FE-1619",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: sets up a booking site's calendar link and turns it off."
+    },
+    {
+      "test_id": "TEST-FE-1620",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: hides Booking sites without the approve right."
+    },
+    {
+      "test_id": "TEST-FE-1621",
+      "upstream_ids": [
+        "PR-SS-STEP5",
+        "DL-049"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: warns that a booking site holds the nights, except for that site's own guest."
+    },
+    {
+      "test_id": "TEST-FE-1622",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows the guest's history and notes, and adds a problem-guest note."
+    },
+    {
+      "test_id": "TEST-FE-1623",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: lets only the Owner or Manager give an extra discount with a reason."
+    },
+    {
+      "test_id": "TEST-FE-1624",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: asks for a review once after the check-out."
+    },
+    {
+      "test_id": "TEST-FE-1625",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: makes a quote with today's price and a message for the guest."
+    },
+    {
+      "test_id": "TEST-FE-1626",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: tells the desk about a returning guest's thank-you and a problem guest."
+    },
+    {
+      "test_id": "TEST-FE-1627",
+      "upstream_ids": [
+        "PR-SS-STEP5"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows the weekly report to the Manager and records a tenant's complaint."
+    },
+    {
+      "test_id": "TEST-FE-1605",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: speaks Khmer and hides New booking without the front-desk right."
+    },
+    {
+      "test_id": "TEST-FE-1629",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows the real reason when a booking is refused."
+    },
+    {
+      "test_id": "TEST-FE-1630",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: keeps a Unit without a monthly Rent out of a new booking."
+    },
+    {
+      "test_id": "TEST-FE-1631",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: lists a guest who owes a stay Invoice in Receive payment."
+    },
+    {
+      "test_id": "TEST-FE-1850",
+      "upstream_ids": [
+        "PR-SS-STEP3"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: names a stay Invoice Short stay, not Miscellaneous."
+    },
+    {
+      "test_id": "TEST-FE-1852",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: gives the money back after a free cancel with the Refund button."
+    },
+    {
+      "test_id": "TEST-FE-1853",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: tells a desk without the Refund right to ask a Manager."
+    },
+    {
+      "test_id": "TEST-FE-1851",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: shows matching Customers while the guest's name is typed."
+    },
+    {
+      "test_id": "TEST-FE-1617",
+      "upstream_ids": [
+        "PR-SS-STEP4"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays: Print draft shows the money off the first month for a daily guest's Lease."
     }
   ]
 }

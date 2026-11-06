@@ -389,6 +389,9 @@ const TEXT = {
   SERVICE_CHARGES: ["Services", "សេវា"],
   MISCELLANEOUS_CHARGES: ["Miscellaneous", "ផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
+  // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
+  SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
+  SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],
   // new
   records: ["Earlier forms", "ទម្រង់មុន"],
   // new

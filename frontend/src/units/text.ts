@@ -65,6 +65,7 @@ const TEXT = {
   s_CLEANING: ["Cleaning", "កំពុងសម្អាត"],
   s_UNDER_MAINTENANCE: ["Under maintenance", "កំពុងជួសជុល"],
   s_OUT_OF_SERVICE: ["Out of service", "ឈប់ប្រើ"],
+  s_SHORT_STAY: ["Short stay", "ស្នាក់នៅខ្លី"],
   back: ["Back", "ត្រឡប់ក្រោយ"],
   // new
   unit_missing: [
@@ -151,6 +152,10 @@ const TEXT = {
   a_OUT_OF_SERVICE: [
     "Out of service. It cannot be reserved or leased until a Manager restores it.",
     "ឈប់ប្រើ។ មិនអាចកក់ ឬជួលបានទេ រហូតដល់អ្នកគ្រប់គ្រងដាក់ឱ្យប្រើវិញ។",
+  ],
+  a_SHORT_STAY: [
+    "A daily or weekly guest is staying. It becomes Cleaning when the guest checks out.",
+    "មានភ្ញៀវប្រចាំថ្ងៃ ឬប្រចាំសប្ដាហ៍កំពុងស្នាក់នៅ។ នឹងក្លាយជាកំពុងសម្អាតនៅពេលភ្ញៀវចេញ។",
   ],
   // new
   a_unknown: [

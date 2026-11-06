@@ -34,7 +34,7 @@ import {
   stateOf,
   unitOf,
 } from "./invoicesData";
-import { ivt } from "./text";
+import { invoiceType, ivt } from "./text";
 
 function textOf(value: JsonValue | undefined): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
@@ -400,7 +400,7 @@ export function InvoiceDetail({
             <InvoiceChip language={language} state={state} />
           </div>
           <p>
-            {[ivt(language, invoice.category), name, unit]
+            {[ivt(language, invoiceType(invoice)), name, unit]
               .filter((part) => part !== null && part !== "")
               .join(" · ")}
           </p>

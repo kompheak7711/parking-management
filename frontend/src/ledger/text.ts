@@ -117,6 +117,7 @@ const TEXT = {
   s_STAFF_PAYBACK: ["Staff paid back", "សងប្រាក់បុគ្គលិក"],
   s_BILL_PAYMENT: ["Supplier bill paid", "វិក្កយបត្រអ្នកផ្គត់ផ្គង់បានបង់"],
   s_MONEY_MOVE: ["Money moved", "ផ្ទេរប្រាក់"],
+  s_SHORT_STAY_DEPOSIT: ["Short-stay deposit", "ប្រាក់កក់ស្នាក់នៅខ្លី"],
   s_OWNER_MONEY: ["Owner money", "ប្រាក់ម្ចាស់"],
   s_PETTY_CASH_TOPUP: ["Petty cash top-up", "បំពេញសាច់ប្រាក់រាយ"],
   s_CASH_COUNT: ["Cash count difference", "ភាពខុសគ្នានៃការរាប់សាច់ប្រាក់"],

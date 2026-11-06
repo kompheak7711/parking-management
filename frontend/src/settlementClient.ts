@@ -252,6 +252,8 @@ export interface SigningPreview {
       amount_usd_cents: number;
     }[];
     total_usd_cents: number;
+    /** Daily and weekly rent step 4c: off the first month for a daily guest (already taken off). */
+    short_stay_off_usd_cents: number;
     /** "PARTIAL_SERVICE:<name>" or "NO_RATE:<name>": the Invoice cannot be made yet. */
     problem: string | null;
     invoice_id: string | null;
@@ -320,6 +322,10 @@ function signingPreview(data: SettlementRecord): SigningPreview {
               };
             }),
             total_usd_cents: centsField(initial.total_usd_cents),
+            short_stay_off_usd_cents:
+              initial.short_stay_off_usd_cents === undefined
+                ? 0
+                : centsField(initial.short_stay_off_usd_cents),
             problem:
               initial.problem === null ? null : textField(initial.problem),
             invoice_id:

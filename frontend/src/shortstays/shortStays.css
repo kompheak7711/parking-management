@@ -1,0 +1,247 @@
+/* Daily and weekly rent: the calendar (one row per Unit, one square per night) and the price
+   box. Every square has an icon and a word, never colour only (mock-up round 28). */
+
+table.ss-cal {
+  border-collapse: separate;
+  border-spacing: 3px;
+  min-width: 100%;
+  font-size: 0.82rem;
+}
+
+table.ss-cal th {
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: center;
+  white-space: nowrap;
+  padding: 4px 2px;
+}
+
+table.ss-cal thead th span {
+  display: block;
+}
+
+table.ss-cal thead th.today {
+  color: var(--primary);
+}
+
+table.ss-cal tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+  padding: 4px 8px;
+  min-width: 96px;
+}
+
+.ss-wd {
+  font-weight: 400;
+}
+
+td.ss-night {
+  min-width: 64px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--sunken);
+  vertical-align: middle;
+}
+
+td.ss-night > a,
+td.ss-night > span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 44px;
+  padding: 2px 4px;
+  overflow: hidden;
+  color: var(--text);
+  text-decoration: none;
+}
+
+td.ss-night > a > span:last-child,
+td.ss-night > span > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+td.ss-free {
+  background: var(--surface);
+  border-style: dashed;
+}
+
+td.ss-free > a {
+  color: var(--link);
+  justify-content: center;
+}
+
+td.ss-free > a:hover {
+  background: var(--hover);
+}
+
+td.ss-booked {
+  background: var(--info-bg);
+  border-color: var(--info);
+}
+
+td.ss-checked_in {
+  background: var(--ok-bg);
+  border-color: var(--ok);
+}
+
+td.ss-checked_out {
+  background: var(--sunken);
+}
+
+td.ss-lease,
+td.ss-reserved {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+
+td.ss-not_for_rent,
+td.ss-closed {
+  color: var(--text-2);
+}
+
+.ss-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.ss-lines li + li {
+  border-top: 1px solid var(--border);
+}
+
+.ss-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.ss-found li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* Step 3: a booking not paid yet shows a dashed square on the calendar. */
+td.ss-unpaid {
+  border-style: dashed;
+  border-width: 2px;
+}
+
+.ss-ready li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.ss-ready li.ss-ok {
+  color: var(--ok);
+}
+
+.ss-ready li.ss-todo {
+  color: var(--warn);
+}
+
+.ss-damage {
+  display: grid;
+  gap: 8px;
+}
+
+/* Step 4a: the cleaning list of a day. */
+.ss-clean {
+  display: grid;
+  gap: 8px;
+}
+
+.ss-clean > li .ui-hrow {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Step 5a: nights a booking site holds, and our booking on a night a site also holds. */
+td.ss-hold {
+  background: var(--sunken);
+  border-style: dashed;
+}
+
+td.ss-clash {
+  outline: 2px solid var(--err);
+  outline-offset: -2px;
+}
+
+/* Step 5b: a message to copy for the guest (quote, review request) and the guest's notes. */
+.ss-message {
+  width: 100%;
+  font: inherit;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+.ss-notes > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+}
+.ss-notes > li:last-child {
+  border-bottom: 0;
+}
+
+/* Step 5c: the weekly report's figures are not buttons. */
+.ui-kpi.ss-static {
+  cursor: default;
+}
+.ui-kpi.ss-static:hover {
+  border-color: var(--border);
+}
+@media print {
+  .ui-filters .ui-actions {
+    display: none;
+  }
+}
+
+/* Step 5d: late-cancel credits past their use-by day. */
+.ss-due {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* Owner test 06/11/2026: the short-stay forms use the same full-size boxes as other forms. */
+form.ss-form input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+form.ss-form select,
+form.ss-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+
+form.ss-form textarea {
+  min-height: 76px;
+  padding: 10px 12px;
+}
+
+form.ss-form .ui-date input {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -39,7 +39,12 @@ function periodOf(period: JsonValue | undefined): string | null {
 }
 
 /** The Khmer name printed before each line, by what the line bills. */
-function khmerOf(line: InvoiceLine): string {
+function khmerOf(
+  line: InvoiceLine,
+  shortStay: InvoiceResource["short_stay"],
+): string {
+  if (shortStay === "SHORT_STAY") return "ថ្លៃស្នាក់នៅ";
+  if (shortStay === "SHORT_STAY_DAMAGE") return "ថ្លៃខូចខាត";
   const type = textOf(line.calculation_evidence.utility_type);
   if (line.category === "UTILITIES")
     return type === "WATER"
@@ -185,7 +190,9 @@ export function InvoiceDocument({
               <tr key={line.id}>
                 <td>
                   <div className="cat">
-                    <span className="kh">{khmerOf(line)}</span>
+                    <span className="kh">
+                      {khmerOf(line, invoice.short_stay)}
+                    </span>
                     {line.description}
                   </div>
                   {detail !== null && <div className="det">{detail}</div>}

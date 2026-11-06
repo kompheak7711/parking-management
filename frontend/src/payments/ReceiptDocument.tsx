@@ -30,6 +30,8 @@ const CATEGORY: Record<string, [string, string]> = {
   SERVICE_CHARGES: ["ថ្លៃសេវា", "Services"],
   MISCELLANEOUS_CHARGES: ["ថ្លៃផ្សេងៗ", "Miscellaneous"],
   DAMAGE_CHARGES: ["ថ្លៃខូចខាត", "Damage"],
+  SHORT_STAY: ["ថ្លៃស្នាក់នៅ", "Short stay"],
+  SHORT_STAY_DAMAGE: ["ថ្លៃខូចខាត", "Short-stay damage"],
 };
 
 /** The Khmer and English names of a line and its detail. */

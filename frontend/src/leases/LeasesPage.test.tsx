@@ -295,6 +295,7 @@ function signing(
               rent_usd_cents: 35_484,
               service_lines: [],
               total_usd_cents: 35_484,
+              short_stay_off_usd_cents: 0,
               problem: null,
               invoice_id: null,
               ...preview,
@@ -1430,6 +1431,32 @@ describe("Lease actions", () => {
     window.dispatchEvent(new Event("afterprint"));
     expect(document.body).not.toHaveClass("ui-printing");
     print.mockRestore();
+  });
+
+  it("TEST-FE-1617 Print draft shows the money off the first month for a daily guest's Lease", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    show(
+      api({ get: vi.fn().mockResolvedValue(signable) }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      signing({ short_stay_off_usd_cents: 5_000, total_usd_cents: 30_484 }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Print draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Print draft · U301" });
+    const sheet = within(dialog).getByRole("article", {
+      name: "Draft Lease sheet",
+    });
+    expect(
+      await within(sheet).findByText("Total to receive"),
+    ).toBeInTheDocument();
+    expect(sheet).toHaveTextContent("Off the first month (daily guest)−$50.00");
+    expect(sheet).toHaveTextContent("Total to receive$804.84");
   });
 
   // DL-101: the Reservation's Security Deposit of a draft from a Booking, as the preview shows it.

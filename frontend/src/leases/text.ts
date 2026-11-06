@@ -1002,6 +1002,10 @@ const TEXT = {
   ],
   sp_rent: ["Initial Rent, {0} to {1}", "ថ្លៃឈ្នួលដំបូង {0} ដល់ {1}"],
   sp_service: ["{0}, {1} to {2}", "{0} {1} ដល់ {2}"],
+  sp_stay_off: [
+    "Off the first month (daily guest)",
+    "បញ្ចុះលើខែដំបូង (ភ្ញៀវស្នាក់ប្រចាំថ្ងៃ)",
+  ],
   sp_total: ["Total to receive", "សរុបត្រូវទទួល"],
   sp_note: [
     "The money, the signatures, the Initial Rent Invoice and the Security Deposit are saved together in one step, or nothing is saved. The money pays the Initial Rent Invoice; the rest goes into the Security Deposit.",
