@@ -1,0 +1,22 @@
+# The Telegram relay (bots plan, "The relay"). Placeholders only: the real database id and
+# all secrets are set by the owner in Cloudflare, never in this file (see README.md).
+name = "chetana-relay"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Clean up every hour: items not pulled in 7 days are removed and counted.
+[triggers]
+crons = ["17 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chetana-relay"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "chetana-relay-media"
+
+[observability]
+enabled = false

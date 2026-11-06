@@ -68,6 +68,7 @@ describe("V1-058 R1 app shell", () => {
       "Products",
       "Problem reports",
       "Ledger",
+      "Telegram",
       "Reports",
       "History",
       "Settings",
@@ -75,7 +76,7 @@ describe("V1-058 R1 app shell", () => {
     for (const group of ["Daily work", "Tenants", "Building", "Office"]) {
       expect(within(menu).getByText(group)).toBeInTheDocument();
     }
-    expect(MENU.flatMap((group) => group.items)).toHaveLength(16);
+    expect(MENU.flatMap((group) => group.items)).toHaveLength(17);
   });
 
   it("TEST-FE-802 marks only the open page in the menu and names the work area after it", () => {
@@ -261,10 +262,16 @@ describe("V1-058 R1 app shell", () => {
     cleanup();
     renderShell("reservations");
     expect(screen.getByRole("main")).toHaveAccessibleName("Bookings");
-    // Bookings has one tab in V1 (Visit requests comes in V1.1), so no tab bar.
+    // Telegram bots step 3a (DL-171): Bookings has the Visit requests tab now.
+    const bookings = screen.getByRole("navigation", { name: "Bookings" });
     expect(
-      screen.queryByRole("navigation", { name: "Bookings" }),
-    ).not.toBeInTheDocument();
+      within(bookings)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+      ["Reservations", "#/reservations"],
+      ["Visit requests", "#/visitreqs"],
+    ]);
   });
 
   it("TEST-FE-808 reads the page from the address and follows address changes", () => {

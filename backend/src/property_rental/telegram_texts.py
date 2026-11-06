@@ -1,0 +1,665 @@
+"""The fixed texts the bots send, in Khmer and English (bots plan: "The bot replies ... are fixed
+texts"). A message in the outbox names a text code and its details; the send job puts them
+together here. Only the named fields of a text are filled in; nothing else from the details is
+ever sent. Staff texts are Khmer only (owner rule); for them the English is the same Khmer text.
+"""
+
+from __future__ import annotations
+
+import string
+from collections.abc import Mapping
+from typing import Final
+
+MAX_FIELD_CHARACTERS: Final = 300
+# A field the bot builds itself from fixed texts (My requests), or a long answer or note, may
+# be longer.
+LONG_FIELDS: Final = {"list": 3000, "text": 600, "answer": 800, "note": 500}
+# A keyboard whose buttons the bot builds (FAQ questions, Unit Types, days, months): at most
+# this many, each this long.
+MAX_CHOICES: Final = 30
+MAX_CHOICE_CHARACTERS: Final = 60
+MAX_MESSAGE_CHARACTERS: Final = 4000
+
+TEXTS: Final[dict[str, dict[str, str]]] = {
+    # Step 1: the test the owner runs after setup ("a test message goes from a test bot into
+    # the app and back").
+    "base.ping_reply": {
+        "km": "✅ ប្រព័ន្ធបានទទួលសាររបស់អ្នក ({bot})។ ការភ្ជាប់ដំណើរការល្អ។",
+        "en": "✅ The office app got your message ({bot}). The connection works.",
+    },
+    # Step 2a: the Tenant bot, Start, language and linking (owner rules of 2 and 3 Nov 2026;
+    # tenant mock-up v15). The Khmer waits for the native-speaker check.
+    "tenant.welcome": {
+        "km": (
+            "សូមស្វាគមន៍មកកាន់ CHETANA Residence support។\n"
+            "Welcome to CHETANA Residence support.\n\n"
+            "សូមជ្រើសរើសភាសា។ Please choose your language."
+        ),
+        "en": (
+            "សូមស្វាគមន៍មកកាន់ CHETANA Residence support។\n"
+            "Welcome to CHETANA Residence support.\n\n"
+            "សូមជ្រើសរើសភាសា។ Please choose your language."
+        ),
+    },
+    "tenant.hello": {
+        "km": (
+            "សង្ឃឹមថាលោកអ្នកសុខសប្បាយជាទេ។\nតើយើងអាចជួយអ្វីលោកអ្នកបានថ្ងៃនេះ?\n"
+            "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។"
+        ),
+        "en": (
+            "I hope you are doing well.\nHow can we help you today?\nPlease link your Lease first."
+        ),
+    },
+    "tenant.hello_linked": {
+        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
+        "en": "Welcome, {name}. You are linked to Unit {unit}. What do you need?",
+    },
+    "tenant.ask_phone": {
+        "km": ("សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ បន្ទាប់មក សូមសរសេរឈ្មោះ និងលេខបន្ទប់របស់លោកអ្នក។"),
+        "en": ("Please tap “Share my phone number” below. Then type your name and your Unit."),
+    },
+    "tenant.ask_phone_again": {
+        "km": "សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ មានតែលេខរបស់លោកអ្នកផ្ទាល់ទេ ដែលអាចភ្ជាប់បាន។",
+        "en": "Please tap “Share my phone number” below. Only your own number can link.",
+    },
+    "tenant.ask_name": {
+        "km": "សូមអរគុណ។ សូមសរសេរឈ្មោះពេញរបស់លោកអ្នក ដូចក្នុងកិច្ចសន្យាជួល។",
+        "en": "Thank you. Please type your full name as written on your Lease.",
+    },
+    "tenant.ask_unit": {
+        "km": "សូមអរគុណ។ សូមសរសេរលេខបន្ទប់របស់លោកអ្នក ឧទាហរណ៍ 305។",
+        "en": "Thank you. Please type your Unit number, for example 305.",
+    },
+    "tenant.linked": {
+        "km": (
+            "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?\n\n"
+            "យើងប្រើលេខទូរស័ព្ទ ឈ្មោះ និងលេខបន្ទប់របស់លោកអ្នក "
+            "តែដើម្បីស្វែងរកកិច្ចសន្យាជួល និងឆ្លើយតបសំណើរបស់លោកអ្នកប៉ុណ្ណោះ។"
+        ),
+        "en": (
+            "Welcome, {name}. You are linked to Unit {unit}. What do you need?\n\n"
+            "We use your phone, name and Unit only to find your Lease and answer your requests."
+        ),
+    },
+    "tenant.no_match": {
+        "km": (
+            "យើងរកមិនឃើញអ្នកជួលដែលមានលេខទូរស័ព្ទ ឈ្មោះ និងបន្ទប់នេះទេ។ សូមពិនិត្យ៖\n"
+            "• ឈ្មោះពេញរបស់លោកអ្នក ដូចក្នុងកិច្ចសន្យាជួល (លំដាប់ណាក៏បាន)\n"
+            "• លេខបន្ទប់របស់លោកអ្នក ឧទាហរណ៍ 305\n"
+            "លោកអ្នកនៅសល់ {tries_left} ដងទៀត។"
+        ),
+        "en": (
+            "We cannot find a tenant with this phone, name and Unit. Please check:\n"
+            "• Your full name as written on your Lease (any order is fine)\n"
+            "• Your Unit number, for example 305\n"
+            "You have {tries_left} tries left."
+        ),
+    },
+    "tenant.blocked": {
+        "km": ("ការភ្ជាប់ត្រូវបានបិទ 24 ម៉ោង បន្ទាប់ពីព្យាយាមខុស 5 ដង។ សូមទាក់ទងការិយាល័យ។"),
+        "en": ("Linking is blocked for 24 hours after 5 failed tries. Please contact the office."),
+    },
+    "tenant.link_first": {
+        "km": "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។",
+        "en": "Please link your Lease first.",
+    },
+    "tenant.menu": {
+        "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
+        "en": "How can we help you?",
+    },
+    # Step 2d part 2 (DL-170): Contact office and FAQ (tenant mock-up v15; app screens round 29).
+    "tenant.contact_ask": {
+        "km": ("សូមសរសេរសាររបស់លោកអ្នក។ ក្រុមការងាររបស់យើងឆ្លើយតបពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង ០៧:០០ ដល់ ១៧:០០។"),
+        "en": ("Please write your message. Our team replies Monday to Saturday, 07:00 to 17:00."),
+    },
+    "tenant.contact_text_only": {
+        "km": "សូមសរសេរសាររបស់លោកអ្នកជាអក្សរ។",
+        "en": "Please write your message as text.",
+    },
+    "tenant.contact_saved": {
+        "km": (
+            "សូមអរគុណ។ យើងបានទទួលសាររបស់លោកអ្នក ហើយក្រុមការងារនឹងឆ្លើយតបនៅទីនេះ "
+            "ពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង ០៧:០០ ដល់ ១៧:០០។"
+        ),
+        "en": (
+            "Thank you. We got your message. Our team will reply here, Monday to Saturday, "
+            "07:00 to 17:00."
+        ),
+    },
+    "contact.reply": {
+        "km": "ការឆ្លើយតបពីការិយាល័យ៖\n\n{text}",
+        "en": "Reply from the office:\n\n{text}",
+    },
+    "tenant.faq_list": {
+        "km": "សំណួរដែលសួរញឹកញាប់។ សូមចុចលើសំណួរមួយ។",
+        "en": "Frequently asked questions. Tap a question.",
+    },
+    "tenant.faq_answer": {
+        "km": "{question}\n\n{answer}\n\nមានសំណួរផ្សេងទៀតទេ?",
+        "en": "{question}\n\n{answer}\n\nAny other question?",
+    },
+    "tenant.faq_none": {
+        "km": "មិនទាន់មានសំណួរនៅឡើយទេ។ សូមចុច «ទាក់ទងការិយាល័យ» ដើម្បីសួរយើង។",
+        "en": "There are no questions here yet. Please tap Contact office to ask us.",
+    },
+    # Step 2b: Problem report (owner rules of 3 Nov 2026, Problem report Part B; tenant
+    # mock-up v15). The form itself is the Mini App page in relay/src/tenant_app.ts.
+    "tenant.report_kind": {
+        "km": (
+            "តើជាបញ្ហាប្រភេទណា?\n"
+            "• បញ្ហាក្នុងបន្ទប់៖ អ្វីមួយនៅក្នុងបន្ទប់របស់លោកអ្នក។ លោកអ្នកអាចសម្គាល់ថាបន្ទាន់។\n"
+            "• បញ្ហាអគារ៖ កន្លែងរួម ឧទាហរណ៍ ជណ្ដើរ ចំណតយានយន្ត ជណ្ដើរយន្ត ឬទ្វារធំ។\n"
+            "ភ្លើងឆេះ ឬគ្រោះថ្នាក់ឥឡូវនេះ៖ សូមទូរស័ព្ទ 118 (ពន្លត់អគ្គិភ័យ) ឬ 117 (ប៉ូលិស) ជាមុនសិន។"
+        ),
+        "en": (
+            "What kind of problem?\n"
+            "• Unit Problem: something inside your Unit. You can mark it urgent.\n"
+            "• Building problem: a shared place, for example stairs, parking, lift or gate.\n"
+            "Fire or danger now: call 118 (fire) or 117 (police) first."
+        ),
+    },
+    "tenant.report_received": {
+        "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
+        "យើងនឹងរៀបចំការមកពិនិត្យក្នុងរយៈពេល 1 ថ្ងៃធ្វើការ។",
+        "en": "We got your report {number}. Status: Received.\n"
+        "We will plan a visit within 1 working day.",
+    },
+    "tenant.report_received_days": {
+        "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
+        "យើងនឹងរៀបចំការមកពិនិត្យក្នុងរយៈពេល {days} ថ្ងៃធ្វើការ។",
+        "en": "We got your report {number}. Status: Received.\n"
+        "We will plan a visit within {days} working days.",
+    },
+    "tenant.report_urgent": {
+        "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
+        "នេះជារឿងបន្ទាន់៖ ក្រុមការងាររបស់យើងនឹងទាក់ទងលោកអ្នកក្នុងរយៈពេល 1 ម៉ោង។",
+        "en": "We got your report {number}. Status: Received.\n"
+        "This is urgent: our team will contact you within 1 hour.",
+    },
+    "tenant.report_urgent_hours": {
+        "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
+        "នេះជារឿងបន្ទាន់៖ ក្រុមការងាររបស់យើងនឹងទាក់ទងលោកអ្នកក្នុងរយៈពេល {hours} ម៉ោង។",
+        "en": "We got your report {number}. Status: Received.\n"
+        "This is urgent: our team will contact you within {hours} hours.",
+    },
+    "tenant.report_building": {
+        "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ អ្នកគ្រប់គ្រងនឹងពិនិត្យវា។",
+        "en": "Thank you. We got your report {number}. The Manager will check it.",
+    },
+    "tenant.report_building_urgent": {
+        "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ "
+        "នេះជារឿងបន្ទាន់៖ អ្នកថែទាំដែលកំពុងប្រចាំការនឹងមក។",
+        "en": "Thank you. We got your report {number}. "
+        "This is urgent: the caretaker on shift is coming.",
+    },
+    "tenant.report_joined": {
+        "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ "
+        "វាជាបញ្ហាដូចគ្នានឹង {main} ដែលយើងកំពុងដោះស្រាយរួចហើយ។",
+        "en": "Thank you. We got your report {number}. "
+        "It is the same problem as {main}, which we are already working on.",
+    },
+    "tenant.report_not_linked": {
+        "km": "កិច្ចសន្យាជួលរបស់លោកអ្នកមិនបានភ្ជាប់ទៀតទេ ដូច្នេះយើងមិនអាចរក្សាទុករបាយការណ៍នេះបានទេ។ "
+        "សូមភ្ជាប់ម្ដងទៀត ឬទូរស័ព្ទមកការិយាល័យ។",
+        "en": "Your Lease is not linked any more, so we could not save this report. "
+        "Please link again, or call the office.",
+    },
+    "tenant.report_invalid": {
+        "km": "យើងមិនអាចរក្សាទុករបាយការណ៍នេះបានទេ។ សូមបើកទម្រង់ម្ដងទៀត ហើយព្យាយាមម្ដងទៀត។",
+        "en": "We could not save this report. Please open the form and try again.",
+    },
+    # Step 2d part 1 (DL-129): the tenant hears each step of a report and checks the repair
+    # (tenant mock-up v15). The Khmer waits for the native-speaker check.
+    "tenant.step_received": {
+        "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។",
+        "en": "We got your report {number}. Status: Received.",
+    },
+    "tenant.step_on_way": {
+        "km": "{number}៖ ក្រុមការងាររបស់យើងកំពុងធ្វើដំណើរមក។",
+        "en": "{number}: our team is on the way.",
+    },
+    "tenant.step_planned": {
+        "km": "{number}៖ {technician} នឹងមកពិនិត្យនៅថ្ងៃ {day} ម៉ោង {time}។",
+        "en": "{number}: {technician} will come to check on {day} at {time}.",
+    },
+    "tenant.step_checked": {
+        "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានពិនិត្យរកមូលហេតុ។ យើងនឹងប្រាប់លោកអ្នកពីជំហានបន្ទាប់ឆាប់ៗនេះ។",
+        "en": "{number}: our technician checked the cause. We will tell you the next step soon.",
+    },
+    "tenant.step_checked_fixed": {
+        "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានជួសជុលបញ្ហាបន្ទាន់ ហើយបានពិនិត្យរកមូលហេតុ។ "
+        "យើងនឹងប្រាប់លោកអ្នកពីជំហានបន្ទាប់ឆាប់ៗនេះ។",
+        "en": "{number}: our technician fixed the urgent problem and checked the cause. "
+        "We will tell you the next step soon.",
+    },
+    "tenant.step_owner_pays": {
+        "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានពិនិត្យហើយ។ យើងនឹងជួសជុលដោយមិនគិតថ្លៃលោកអ្នកទេ។ "
+        "{technician} នឹងធ្វើការជួសជុល។",
+        "en": "{number}: our technician checked. We will fix it at no cost to you. "
+        "{technician} will do the repair.",
+    },
+    "tenant.step_parts": {
+        "km": "{number}៖ យើងកំពុងរង់ចាំគ្រឿងបន្លាស់។ យើងនឹងប្រាប់លោកអ្នកបន្ត។",
+        "en": "{number}: we are waiting for parts. We will update you.",
+    },
+    "tenant.step_parts_arrived": {
+        "km": "{number}៖ គ្រឿងបន្លាស់បានមកដល់ហើយ។ {technician} នឹងធ្វើការជួសជុល។",
+        "en": "{number}: the parts arrived. {technician} will do the repair.",
+    },
+    "tenant.step_done_check": {
+        "km": "{number}៖ ជួសជុលរួចរាល់ហើយ។ សូមពិនិត្យ ហើយចុច «ជួសជុលរួច» ឬ «មិនទាន់រួច»។ "
+        "បើគ្មានការឆ្លើយតបក្នុងរយៈពេល {days} ថ្ងៃ វានឹងបិទដោយខ្លួនឯង។",
+        "en": "{number}: done. Please check and tap Fixed or Not fixed. "
+        "If there is no reply in {days} days, it closes by itself.",
+    },
+    "tenant.step_done": {
+        "km": "{number}៖ ការជួសជុលបានរួចរាល់។ សូមអរគុណ។",
+        "en": "{number}: the repair is done. Thank you.",
+    },
+    "tenant.step_repair_job": {
+        "km": "{number}៖ សូមអរគុណ។ យើងបានរៀបចំការជួសជុល។",
+        "en": "{number}: thank you. We have planned a repair.",
+    },
+    "tenant.step_cleaning": {
+        "km": "{number}៖ សូមអរគុណ។ ក្រុមសម្អាតរបស់យើងបានដោះស្រាយរួចហើយ។",
+        "en": "{number}: thank you. Our cleaning team has handled it.",
+    },
+    "tenant.step_handled": {
+        "km": "{number}៖ សូមអរគុណ។ អ្នកគ្រប់គ្រងបានដោះស្រាយរួចហើយ។",
+        "en": "{number}: thank you. The Manager has handled it.",
+    },
+    "tenant.step_not_accepted": {
+        "km": "{number}៖ យើងបានបិទរបាយការណ៍នេះ ព្រោះវាមិនមែនជាការជួសជុលទេ។ បើមានសំណួរ សូមទាក់ទងការិយាល័យ។",
+        "en": "{number}: we closed this report because it is not a repair. "
+        "Please contact the office if you have a question.",
+    },
+    "tenant.step_closed": {
+        "km": "{number} បានបិទហើយ។ សូមអរគុណ។",
+        "en": "{number} is closed. Thank you.",
+    },
+    "tenant.step_reopened": {
+        "km": "{number} បានបើកម្ដងទៀត។ អ្នកបច្ចេកទេសរបស់យើងនឹងមកម្ដងទៀត។",
+        "en": "{number} is open again. Our technician will come back.",
+    },
+    "tenant.step_joined": {
+        "km": "របាយការណ៍ {number} របស់លោកអ្នកត្រូវបានភ្ជាប់ទៅ {main} ដែលជាបញ្ហាដូចគ្នា។ "
+        "លោកអ្នកនឹងទទួលបានព័ត៌មានថ្មីៗរបស់វា។",
+        "en": "Your report {number} is joined to {main}, the same problem. "
+        "You will get its updates.",
+    },
+    "tenant.check_fixed": {
+        "km": "សូមអរគុណ។ {number} បានបិទហើយ។",
+        "en": "Thank you. {number} is closed.",
+    },
+    "tenant.check_not_fixed": {
+        "km": "សូមទោស។ {number} បានបើកម្ដងទៀត។ អ្នកបច្ចេកទេសរបស់យើងនឹងមកម្ដងទៀត។",
+        "en": "Sorry. {number} is open again. Our technician will come back.",
+    },
+    "tenant.check_nothing": {
+        "km": "ឥឡូវនេះ គ្មានការជួសជុលណាមួយរង់ចាំការពិនិត្យរបស់លោកអ្នកទេ។",
+        "en": "No repair is waiting for your check now.",
+    },
+    "tenant.my_requests": {
+        "km": "សំណើរបស់លោកអ្នក (បន្ទប់ {unit})៖\n\n{list}",
+        "en": "Your requests (Unit {unit}):\n\n{list}",
+    },
+    "tenant.my_none": {
+        "km": "លោកអ្នកមិនមានសំណើដែលកំពុងបើកទេឥឡូវនេះ។",
+        "en": "You have no open requests now.",
+    },
+    "tenant.my_line": {
+        "km": "{number} · {type}៖ {status}",
+        "en": "{number} · {type}: {status}",
+    },
+    "tenant.my_visit": {
+        "km": "   មកពិនិត្យ៖ {day} ម៉ោង {time}, {technician}",
+        "en": "   Visit: {day} at {time}, {technician}",
+    },
+    "tenant.my_joined": {
+        "km": "{number} · {type}៖ ភ្ជាប់ទៅ {main}",
+        "en": "{number} · {type}: joined to {main}",
+    },
+    # Step 3a (DL-171): the Customer bot, from the owner-approved CRM mock-up (customer bot view)
+    # and the FAQ document. Texts marked "new" are not in the mock-up and need the Khmer check.
+    "customer.welcome": {
+        "km": (
+            "សូមស្វាគមន៍មកកាន់ CHETANA Residence។\n"
+            "Welcome to CHETANA Residence.\n\n"
+            "សូមជ្រើសរើសភាសា។ Please choose a language."
+        ),
+        "en": (
+            "សូមស្វាគមន៍មកកាន់ CHETANA Residence។\n"
+            "Welcome to CHETANA Residence.\n\n"
+            "សូមជ្រើសរើសភាសា។ Please choose a language."
+        ),
+    },
+    "customer.menu": {
+        "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
+        "en": "How can we help you today?",
+    },
+    "customer.contact_phone": {
+        "km": "សូមចែករំលែកលេខទូរស័ព្ទ ដើម្បីឱ្យផ្នែកបម្រើអតិថិជនរបស់យើងអាចទាក់ទងលោកអ្នកបាន។",
+        "en": "Please share your phone number so our customer service team can reach you.",
+    },
+    "customer.contact_ask": {
+        "km": "សូមសរសេរសាររបស់លោកអ្នក។",
+        "en": "Please write your message.",
+    },
+    "customer.contact_saved": {
+        "km": ("សូមអរគុណ។ ផ្នែកបម្រើអតិថិជនរបស់យើងនឹងឆ្លើយតបពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង ០៧:០០ ដល់ ១៧:០០។"),
+        "en": (
+            "Thank you. Our customer service team will reply Monday to Saturday, 07:00 to 17:00."
+        ),
+    },
+    "customer.ask_how": {
+        "km": "តើយើងគួរទាក់ទងអ្នកតាមរបៀបណា?",
+        "en": "How should we contact you?",
+    },
+    "customer.ask_phone": {
+        "km": "សូមចែករំលែកលេខទូរស័ព្ទរបស់អ្នក។ បុគ្គលិកនឹងប្រើវាដើម្បីហៅទៅអ្នក។",
+        "en": "Please share your phone number. Staff will use it to call you.",
+    },
+    # new
+    "customer.phone_again": {
+        "km": "សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ យើងត្រូវការលេខរបស់លោកអ្នកផ្ទាល់។",
+        "en": "Please tap “Share my phone number” below. We need your own number.",
+    },
+    "customer.ask_email": {
+        "km": "សូមសរសេរអាសយដ្ឋានអ៊ីមែលរបស់អ្នក។",
+        "en": "Please type your email address.",
+    },
+    # new
+    "customer.email_again": {
+        "km": "អាសយដ្ឋានអ៊ីមែលនេះមិនត្រឹមត្រូវ។ សូមសរសេរម្ដងទៀត ឧទាហរណ៍ name@example.com។",
+        "en": "This email address does not look right. Please type it again, "
+        "for example name@example.com.",
+    },
+    "customer.ask_name": {
+        "km": "តើអ្នកឈ្មោះអ្វី?",
+        "en": "What is your name?",
+    },
+    "customer.ask_type": {
+        "km": "តើអ្នកចង់បានប្រភេទបន្ទប់មួយណា?",
+        "en": "Which Unit Type do you want?",
+    },
+    # new
+    "customer.type_again": {
+        "km": "សូមចុចលើប្រភេទបន្ទប់មួយខាងក្រោម។",
+        "en": "Please tap one of the Unit Types below.",
+    },
+    "customer.ask_day": {
+        "km": "តើអ្នកចង់មកមើលនៅថ្ងៃណា?",
+        "en": "Which day would you like to visit?",
+    },
+    # new
+    "customer.day_again": {
+        "km": (
+            "សូមជ្រើសរើសថ្ងៃខាងក្រោម ឬសរសេរថ្ងៃ ឧទាហរណ៍ 12/11។ "
+            "ថ្ងៃមកមើលគឺពី ២ ដល់ ៣០ ថ្ងៃខាងមុខ ពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍។"
+        ),
+        "en": (
+            "Please choose a day below or type one, for example 12/11. "
+            "A visit is 2 to 30 days from today, Monday to Saturday."
+        ),
+    },
+    "customer.ask_part": {
+        "km": "ពេលព្រឹក ឬពេលរសៀល?",
+        "en": "Morning or afternoon?",
+    },
+    "customer.ask_move": {
+        "km": "តើអ្នកចង់ចូលស្នាក់នៅពេលណា?",
+        "en": "When do you want to move in?",
+    },
+    "customer.ask_note": {
+        "km": "មានអ្វីផ្សេងទៀតដែលយើងគួរដឹងទេ? អ្នកអាចរំលងបាន។",
+        "en": "Anything else we should know? You can skip this.",
+    },
+    "customer.check": {
+        "km": (
+            "សូមពិនិត្យសំណើរបស់អ្នក។\n\n"
+            "ឈ្មោះ៖ {name}\nទូរស័ព្ទ៖ {phone}\nទាក់ទងតាម៖ {contact}\n"
+            "ប្រភេទបន្ទប់៖ {type}\nមកមើល៖ {visit}\nចូលស្នាក់នៅ៖ {move}\nកំណត់សម្គាល់៖ {note}"
+        ),
+        "en": (
+            "Please check your request.\n\n"
+            "Name: {name}\nPhone: {phone}\nContact by: {contact}\n"
+            "Unit Type: {type}\nVisit: {visit}\nMove in: {move}\nNote: {note}"
+        ),
+    },
+    # new
+    "customer.no_day": {"km": "មិនទាន់កំណត់", "en": "No day yet"},
+    "customer.request_received": {
+        "km": (
+            "យើងបានទទួលសំណើរបស់អ្នក។ លេខ៖ {number}។\n"
+            "បុគ្គលិកនឹងហៅទៅអ្នកក្នុងរយៈពេល 2 ម៉ោងធ្វើការ។\n"
+            "ម៉ោងធ្វើការ៖ ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។"
+        ),
+        "en": (
+            "We received your request. Number: {number}.\n"
+            "Staff will call you within 2 working hours.\n"
+            "Working hours: Monday to Saturday, 07:00 to 17:00."
+        ),
+    },
+    # new
+    "customer.request_joined": {
+        "km": (
+            "យើងមានសំណើរបស់អ្នករួចហើយ ({main})។ យើងបានបន្ថែមព័ត៌មាននេះទៅវា (លេខ៖ {number})។\n"
+            "បុគ្គលិកនឹងហៅទៅអ្នកក្នុងរយៈពេល 2 ម៉ោងធ្វើការ។\n"
+            "ម៉ោងធ្វើការ៖ ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។"
+        ),
+        "en": (
+            "We already have your request ({main}). We added these details to it "
+            "(number {number}).\n"
+            "Staff will call you within 2 working hours.\n"
+            "Working hours: Monday to Saturday, 07:00 to 17:00."
+        ),
+    },
+    "customer.blocked": {
+        "km": "យើងមិនអាចទទួលសំណើពីគណនីនេះបានទេ។ សូមមកការិយាល័យ ឬទូរស័ព្ទមកយើង។",
+        "en": "We cannot take requests from this account. Please visit or call the office.",
+    },
+    "customer.visit_booked": {
+        "km": (
+            "ការមកមើលរបស់អ្នកត្រូវបានកក់។\n"
+            "ថ្ងៃ៖ {day} ម៉ោង {time}\n"
+            "អាសយដ្ឋាន៖ {address}\n"
+            "បុគ្គលិក៖ {staff}\n"
+            "បើចង់ប្ដូរម៉ោង សូមចុច «ទាក់ទងការិយាល័យ»។"
+        ),
+        "en": (
+            "Your visit is booked.\n"
+            "Date: {day} at {time}\n"
+            "Address: {address}\n"
+            "Staff: {staff}\n"
+            "To change the time, tap Contact office."
+        ),
+    },
+    "customer.visit_moved": {
+        "km": (
+            "ការមកមើលរបស់អ្នកត្រូវបានប្ដូរ។\n"
+            "ថ្ងៃថ្មី៖ {day} ម៉ោង {time}\n"
+            "អាសយដ្ឋាន៖ {address}\n"
+            "បុគ្គលិក៖ {staff}\n"
+            "បើចង់ប្ដូរម៉ោង សូមចុច «ទាក់ទងការិយាល័យ»។"
+        ),
+        "en": (
+            "Your visit has moved.\n"
+            "New date: {day} at {time}\n"
+            "Address: {address}\n"
+            "Staff: {staff}\n"
+            "To change the time, tap Contact office."
+        ),
+    },
+    "customer.visit_reminder": {
+        "km": ("រំលឹក៖ ការមកមើល CHETANA Residence របស់អ្នកគឺនៅថ្ងៃស្អែក {day} ម៉ោង {time}។ ជួបគ្នាឆាប់ៗ។"),
+        "en": (
+            "Reminder: your visit to CHETANA Residence is tomorrow, {day} at {time}. See you soon."
+        ),
+    },
+    # Report states as the tenant sees them (the app's words, Building > Problem reports).
+    "status.RECEIVED": {"km": "បានទទួល", "en": "Received"},
+    "status.PLANNED": {"km": "បានរៀបចំការមកពិនិត្យ", "en": "Visit planned"},
+    "status.CHECKED": {"km": "បានពិនិត្យ", "en": "Checked"},
+    "status.WAITING_TENANT": {"km": "រង់ចាំចម្លើយរបស់លោកអ្នក", "en": "Waiting for your answer"},
+    "status.REPAIR_PLANNED": {"km": "បានរៀបចំការជួសជុល", "en": "Repair planned"},
+    "status.WAITING_PARTS": {"km": "រង់ចាំគ្រឿងបន្លាស់", "en": "Waiting for parts"},
+    "status.DONE": {"km": "រួចរាល់ សូមពិនិត្យ", "en": "Done, please check"},
+    "status.CLOSED": {"km": "បានបិទ", "en": "Closed"},
+    "status.NOT_ACCEPTED": {"km": "មិនមែនជាការជួសជុល", "en": "Not a repair"},
+    "status.JOINED": {"km": "បានភ្ជាប់", "en": "Joined"},
+    # Button labels (no fields). The bot reads a tap as the label's text in either language.
+    "button.link": {"km": "ភ្ជាប់កិច្ចសន្យាជួល", "en": "Link my Lease"},
+    "button.share_phone": {"km": "ចែករំលែកលេខទូរស័ព្ទ", "en": "Share my phone number"},
+    "button.problem": {"km": "រាយការណ៍បញ្ហា", "en": "Problem report"},
+    "button.my_requests": {"km": "សំណើរបស់ខ្ញុំ", "en": "My requests"},
+    "button.faq": {"km": "សំណួរញឹកញាប់", "en": "FAQ"},
+    "button.contact": {"km": "ទាក់ទងការិយាល័យ", "en": "Contact office"},
+    "button.unit_problem": {"km": "បញ្ហាក្នុងបន្ទប់", "en": "Unit Problem"},
+    "button.building_problem": {"km": "បញ្ហាអគារ", "en": "Building problem"},
+    "button.back_menu": {"km": "ត្រឡប់ទៅម៉ឺនុយ", "en": "Back to menu"},
+    "button.fixed": {"km": "ជួសជុលរួច", "en": "Fixed"},
+    "button.not_fixed": {"km": "មិនទាន់រួច", "en": "Not fixed"},
+    "button.khmer": {"km": "ភាសាខ្មែរ", "en": "ភាសាខ្មែរ"},
+    "button.english": {"km": "English", "en": "English"},
+    # Customer bot buttons (step 3a, CRM mock-up).
+    "button.inquiry": {"km": "ផ្ញើការសាកសួរ", "en": "Send an inquiry"},
+    "button.by_telegram": {"km": "Telegram", "en": "Telegram"},
+    "button.by_email": {"km": "អ៊ីមែល", "en": "Email"},
+    "button.by_phone": {"km": "ទូរស័ព្ទ ឬ SMS", "en": "Phone call or SMS"},
+    "button.by_whatsapp": {"km": "WhatsApp", "en": "WhatsApp"},
+    "button.morning": {"km": "ពេលព្រឹក", "en": "Morning"},
+    "button.afternoon": {"km": "ពេលរសៀល", "en": "Afternoon"},
+    "button.later": {"km": "ក្រោយ", "en": "Later"},
+    "button.skip": {"km": "រំលង", "en": "Skip"},
+}
+
+# The keyboards a message can show under the chat. Each button is a label code above; a
+# button that asks for the person's own phone number is marked.
+KEYBOARDS: Final[dict[str, list[list[str]]]] = {
+    "tenant.language": [["button.khmer", "button.english"]],
+    "tenant.start": [["button.link"]],
+    "tenant.share_phone": [["button.share_phone"]],
+    "tenant.menu": [["button.problem", "button.my_requests"], ["button.faq", "button.contact"]],
+    "tenant.reject": [["button.link", "button.contact"]],
+    "tenant.check": [["button.fixed", "button.not_fixed"], ["button.my_requests"]],
+    "tenant.back": [["button.back_menu"]],
+    # Step 3a: the Customer bot.
+    "customer.menu": [["button.inquiry"], ["button.faq", "button.contact"]],
+    "customer.how": [
+        ["button.by_telegram", "button.by_email"],
+        ["button.by_phone", "button.by_whatsapp"],
+        ["button.back_menu"],
+    ],
+    "customer.share_phone": [["button.share_phone"], ["button.back_menu"]],
+    "customer.part": [["button.morning", "button.afternoon"], ["button.back_menu"]],
+    "customer.skip": [["button.skip"], ["button.back_menu"]],
+    "customer.send": [["button.inquiry"], ["button.back_menu"]],
+}
+# Keyboards whose first buttons the bot builds (details[field], one button a row), followed by
+# fixed rows.
+CHOICE_KEYBOARDS: Final[dict[str, tuple[str, list[list[str]]]]] = {
+    "tenant.faq": ("choices", [["button.back_menu"]]),
+    "customer.faq": ("choices", [["button.back_menu"]]),
+    "customer.types": ("choices", [["button.back_menu"]]),
+    "customer.days": ("choices", [["button.skip"], ["button.back_menu"]]),
+    "customer.months": ("choices", [["button.later"], ["button.back_menu"]]),
+}
+CONTACT_BUTTONS: Final = frozenset({"button.share_phone"})
+# Buttons on the message itself that open a Mini App form on the relay
+# (https://<relay>/app/<bot>?form=<form>&lang=<language>). Telegram signs who opens it.
+APP_KEYBOARDS: Final[dict[str, tuple[str, list[list[tuple[str, str]]]]]] = {
+    "tenant.report_kind": (
+        "tenant",
+        [[("button.unit_problem", "unit")], [("button.building_problem", "building")]],
+    ),
+}
+REMOVE_KEYBOARD: Final = "remove"
+
+
+class TextError(KeyError):
+    """The text code is unknown, or a field it needs is missing."""
+
+
+def text_fields(code: str) -> set[str]:
+    template = TEXTS[code]["en"]
+    return {name for _, name, _, _ in string.Formatter().parse(template) if name}
+
+
+def render(code: str, language: str, details: Mapping[str, object]) -> str:
+    """The message text for one outbox row."""
+    texts = TEXTS.get(code)
+    if texts is None:
+        raise TextError(code)
+    template = texts.get(language) or texts["km"]
+    values: dict[str, str] = {}
+    for name in text_fields(code):
+        value = details.get(name)
+        if value is None or isinstance(value, dict | list):
+            raise TextError(f"{code}.{name}")
+        values[name] = str(value)[: LONG_FIELDS.get(name, MAX_FIELD_CHARACTERS)]
+    return template.format_map(values)[:MAX_MESSAGE_CHARACTERS]
+
+
+def keyboard_markup(
+    code: str | None,
+    language: str,
+    app_host: str | None = None,
+    details: Mapping[str, object] | None = None,
+) -> dict[str, object] | None:
+    """Telegram's reply_markup for a keyboard code, or None when the message has none."""
+    if code is None:
+        return None
+    if code == REMOVE_KEYBOARD:
+        return {"remove_keyboard": True}
+    if code in CHOICE_KEYBOARDS:
+        field, fixed_rows = CHOICE_KEYBOARDS[code]
+        choices = (details or {}).get(field)
+        if not isinstance(choices, list) or not all(isinstance(item, str) for item in choices):
+            raise TextError(f"keyboard.{code}.{field}")
+        built: list[list[dict[str, object]]] = [
+            [{"text": choice[:MAX_CHOICE_CHARACTERS]}]
+            for choice in choices[:MAX_CHOICES]
+            if choice.strip()
+        ]
+        built += [[{"text": render(label, language, {})} for label in row] for row in fixed_rows]
+        return {"keyboard": built, "resize_keyboard": True}
+    if code in APP_KEYBOARDS:
+        if not app_host:
+            raise TextError(f"keyboard.{code}.no_app_host")
+        page, app_rows = APP_KEYBOARDS[code]
+        return {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": render(label, language, {}),
+                        "web_app": {
+                            "url": f"https://{app_host}/app/{page}?form={form}&lang={language}"
+                        },
+                    }
+                    for label, form in row
+                ]
+                for row in app_rows
+            ]
+        }
+    rows = KEYBOARDS.get(code)
+    if rows is None:
+        raise TextError(f"keyboard.{code}")
+    keyboard = [
+        [
+            {"text": render(label, language, {}), "request_contact": True}
+            if label in CONTACT_BUTTONS
+            else {"text": render(label, language, {})}
+            for label in row
+        ]
+        for row in rows
+    ]
+    return {"keyboard": keyboard, "resize_keyboard": True}
+
+
+def button_tapped(text: str) -> str | None:
+    """The label code a typed text is, in either language, or None."""
+    typed = text.strip()
+    for code, texts in TEXTS.items():
+        if code.startswith("button.") and typed in texts.values():
+            return code
+    return None

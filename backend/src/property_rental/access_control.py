@@ -138,6 +138,10 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "stock.transfer": "Move stock between places",
     "supplier_bills.manage": "Add Suppliers and record Supplier bills",
     "supplier_bills.pay": "Pay a Supplier bill and reverse a bill payment",
+    "telegram.contact": "See and answer Contact office messages from the bots",
+    "telegram.faq": "Edit the questions and answers the bots show",
+    "telegram.operate": "Run the Telegram pull and send jobs",
+    "telegram.read": "See the Telegram bots health",
     "units.read": "Read Units and their history",
     "utility.calculate": "Run the Utility calculation",
     "utility.estimate": "Record a broken-Meter estimate",
@@ -146,6 +150,9 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "utility_rates.manage": "Change Utility Rates",
     "utility_readings.correct": "Correct a Utility Reading",
     "utility_readings.record": "Record Utility Readings",
+    "visit_requests.manage": "Give Visit requests to another person and mark them Spam",
+    "visit_requests.read": "See the Visit requests new customers send",
+    "visit_requests.work": "Take, call, book a visit for and close Visit requests",
 }
 
 GrantPath = Literal["bundle", "per_user", "owner_class", "service_principal"]
@@ -249,6 +256,14 @@ STAFF_QUOTATION_CAPABILITIES: Final = frozenset({"quotations.read"})
 STAFF_PROBLEM_REPORT_CAPABILITIES: Final = frozenset(
     {"problem_reports.read", "problem_reports.add"}
 )
+# Telegram bots step 2d part 2 (migration `20270524_286`, DL-170, round 29 rights): Staff answer
+# Contact office; the Owner and the Manager edit the FAQ (the Owner alone approves it).
+STAFF_TELEGRAM_CAPABILITIES: Final = frozenset({"telegram.contact"})
+# Telegram bots step 3a (migration `20270525_287`, DL-171): the front desk, Managers and the
+# Owner work the Visit requests the Customer bot sends (owner 28 Oct 2026). Step 3b (migration
+# `20270526_288`, DL-172): Staff take, call, book and close them; only the Owner and the Manager
+# give a request to another person or mark it Spam (`visit_requests.manage`).
+STAFF_VISIT_REQUEST_CAPABILITIES: Final = frozenset({"visit_requests.read", "visit_requests.work"})
 # Daily and weekly rent (phase 6 step 1, migration `20270531_310`): Staff see bookings, work the
 # front desk and do housekeeping; the Owner and the Manager also approve and give Credit.
 STAFF_SHORT_STAY_CAPABILITIES: Final = frozenset(
@@ -261,6 +276,8 @@ STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     | STAFF_PRODUCT_CAPABILITIES
     | STAFF_QUOTATION_CAPABILITIES
     | STAFF_PROBLEM_REPORT_CAPABILITIES
+    | STAFF_TELEGRAM_CAPABILITIES
+    | STAFF_VISIT_REQUEST_CAPABILITIES
     | STAFF_SHORT_STAY_CAPABILITIES
 )
 # The default Manager bundle: every bundle capability except the Owner-only rights.

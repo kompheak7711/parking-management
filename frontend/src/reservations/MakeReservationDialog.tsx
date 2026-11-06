@@ -67,6 +67,33 @@ type Field =
 
 export { suggestedDeposit };
 
+/** The facts a Visit request brings to Make Reservation (Telegram step 3c, DL-173). */
+export interface VisitPrefill {
+  number: string;
+  name: string;
+  phone: string;
+  email: string | null;
+}
+
+/** The same phone written another way: "+855 12 800 200", "012 800 200" and "85512800200". */
+export function samePhone(
+  left: string | null | undefined,
+  right: string,
+): boolean {
+  const local = (value: string) =>
+    value
+      .replace(/[^0-9]/g, "")
+      .replace(/^855/, "")
+      .replace(/^0+/, "");
+  const wanted = local(right);
+  return (
+    left !== null &&
+    left !== undefined &&
+    wanted.length >= 6 &&
+    local(left) === wanted
+  );
+}
+
 /** The saved acceptance reason: the person's own words, and the Rent-below reason after them
  * when there is one. Cut at 500 characters by whole characters (never half an emoji) and
  * trimmed, because the server refuses a reason that starts or ends with a space. */
@@ -93,6 +120,7 @@ export function MakeReservationDialog({
   mayLowerRent = null,
   unitId: chosenUnit,
   rules = EARLIER_RESERVATION_RULES,
+  visit,
   onClose,
   onSaved,
 }: {
@@ -112,6 +140,8 @@ export function MakeReservationDialog({
   unitId?: string;
   /** V1.1 step 2b (DL-119): the Reservation rules in force today. */
   rules?: ReservationRules;
+  /** Telegram step 3c (DL-173): the Visit request this Reservation comes from. */
+  visit?: VisitPrefill;
   onClose: () => void;
   onSaved: (saved: ReservationResource) => void;
 }) {
@@ -205,6 +235,15 @@ export function MakeReservationDialog({
             left.legal_name.localeCompare(right.legal_name),
           ),
         );
+        if (visit !== undefined) {
+          const same = foundCustomers.find((customer) =>
+            samePhone(customer.phone_number, visit.phone),
+          );
+          if (same !== undefined)
+            setCustomerId((current) =>
+              current === "" ? same.customer_id : current,
+            );
+        }
       })
       .catch(() => {
         setFailed(true);
@@ -408,6 +447,15 @@ export function MakeReservationDialog({
       <NewCustomerDialog
         api={customerApi}
         gate={gate}
+        initial={
+          visit === undefined
+            ? undefined
+            : {
+                legal_name: visit.name,
+                phone_number: visit.phone,
+                email_address: visit.email ?? "",
+              }
+        }
         language={language}
         onClose={() => {
           setAdding(false);
@@ -479,6 +527,28 @@ export function MakeReservationDialog({
         </p>
       ) : (
         <>
+          {visit !== undefined && (
+            <div className="ui-notice info" role="status">
+              <Icon name="info" />
+              <p>
+                {rt(
+                  language,
+                  "mk_visit_from",
+                  visit.number,
+                  visit.name,
+                  visit.phone,
+                )}{" "}
+                {rt(
+                  language,
+                  customers.some((customer) =>
+                    samePhone(customer.phone_number, visit.phone),
+                  )
+                    ? "mk_visit_found"
+                    : "mk_visit_new",
+                )}
+              </p>
+            </div>
+          )}
           <div className="ui-row2">
             <div className="ui-field">
               <label htmlFor="mk-unit">{rt(language, "mk_unit")}</label>

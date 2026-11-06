@@ -287,6 +287,10 @@ export interface AddCustomerProps {
   onDirty: (dirty: boolean) => void;
   /** V1-060 B6: shown inside a dialog, which gives the title; no Back link or page head. */
   inDialog?: boolean;
+  /** Telegram step 3c (DL-173): the facts a Visit request already holds. */
+  initial?: Partial<
+    Record<"legal_name" | "phone_number" | "email_address", string>
+  >;
 }
 
 /** "Add Customer" is a form page, not a dialog (owner, 13/10/2026 18:27). */
@@ -299,8 +303,9 @@ export function AddCustomerPage({
   onSaved,
   onDirty,
   inDialog = false,
+  initial,
 }: AddCustomerProps) {
-  const [values, setValues] = useState<Values>(EMPTY);
+  const [values, setValues] = useState<Values>({ ...EMPTY, ...initial });
   const [problems, setProblems] = useState<Problems>({});
   const [busy, setBusy] = useState(false);
   const [matches, setMatches] = useState<CustomerListItem[]>([]);
@@ -711,6 +716,7 @@ export function NewCustomerDialog({
   propertyId,
   onClose,
   onSaved,
+  initial,
 }: {
   language: Language;
   api: CustomerApi;
@@ -718,6 +724,7 @@ export function NewCustomerDialog({
   propertyId: string;
   onClose: () => void;
   onSaved: (customer: CustomerDetail) => void;
+  initial?: AddCustomerProps["initial"];
 }) {
   return (
     <Dialog
@@ -731,6 +738,7 @@ export function NewCustomerDialog({
         api={api}
         gate={gate}
         inDialog
+        initial={initial}
         language={language}
         onCancel={onClose}
         onDirty={() => undefined}

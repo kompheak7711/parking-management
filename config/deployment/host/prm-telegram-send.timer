@@ -1,0 +1,10 @@
+[Unit]
+Description=CHETANA Residence Management Telegram send timer
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

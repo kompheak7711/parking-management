@@ -520,6 +520,8 @@ safely and must not weaken local business integrity.
 
 Amended by DL-071 (owner, 2026-10-05): the critical alerts are also sent by Telegram message (DEPLOY-051). Telegram is such an optional service: the alerts carry no Customer data, the bot token is a secret kept out of the repository and the logs, and when a message cannot be sent the system keeps working and the health page shows the warning. No cloud storage service is used for backups.
 
+Amended by DL-125 (owner, 2026-11-03; Telegram bots): the bots carry tenant and customer messages, photos and phones through a Cloudflare relay. The relay is optional in this sense too: it holds each item sealed with the office public key only until the office pulls it (7 days at most), it cannot read what it holds, and when it or Telegram is down the app keeps working and the health page warns. The record stays in the office database.
+
 # 15. Application and Dependency Security
 
 ## SEC-060 — Supported Components

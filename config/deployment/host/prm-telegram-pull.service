@@ -1,0 +1,27 @@
+# Telegram bots step 1 (bots plan, shared base): the office job that pulls what waits in the Telegram relay (webhooks, Mini App forms, photos).
+# Started every minute by prm-telegram-pull.timer. It does nothing while telegram_bots.enabled is false.
+[Unit]
+Description=CHETANA Residence Management Telegram pull job
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=prm-ops
+Group=prm-ops
+UMask=0077
+# /etc/prm/telegram-jobs.env (mode 0600, owner prm-ops) holds three lines:
+# APP_DATABASE_URL (the runtime login), PRM_PROPERTY_ID and PRM_TELEGRAM_ACTOR_ID
+# (the account the jobs run as; it needs the Telegram rights of an Owner or Manager).
+EnvironmentFile=/etc/prm/telegram-jobs.env
+ExecStart=/opt/prm/venv/bin/property-rental-telegram-pull --config /etc/prm/production-operations.json --property-id ${PRM_PROPERTY_ID} --actor-id ${PRM_TELEGRAM_ACTOR_ID}
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=50s
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/prm/status /var/lib/prm/media
+PrivateTmp=true
+# The secret files live in /etc/prm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/prm/secrets:/run/secrets

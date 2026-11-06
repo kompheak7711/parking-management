@@ -39,7 +39,12 @@ OPERATIONS_KEYS: Final = {
     "status_directory",
     "alerts",
     "logs",
+    "telegram_bots",
 }
+# The three Telegram bots (bots plan 03/11/2026, rule R1): when they are on, the relay on
+# Cloudflare is the one more allowed outbound address.
+RELAY_HOST_SHAPE: Final = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.[a-z0-9-]{1,63}\.workers\.dev")
+BOT_CODES: Final = ("CUSTOMER", "TENANT", "STAFF")
 SECRET_WORDS: Final = ("token", "password", "secret", "key", "chat_id")
 
 
@@ -221,8 +226,18 @@ def check_operations(operations: dict[str, Any], production_profile: dict[str, A
         raise ValidationError("operations configuration must use the Asia/Phnom_Penh time zone")
     if operations.get("remote_access") != {"enabled": False}:
         raise ValidationError("remote access must be off in V1 (DL-071 answer 6)")
-    if operations.get("egress_allowlist") != [TELEGRAM_HOST]:
-        raise ValidationError("the outbound allowed list must be exactly the Telegram host")
+    bots = _object(operations.get("telegram_bots"), "telegram_bots")
+    if not isinstance(bots.get("enabled"), bool):
+        raise ValidationError("telegram_bots.enabled must be true or false")
+    relay_host = bots.get("relay_host")
+    if not isinstance(relay_host, str) or not RELAY_HOST_SHAPE.fullmatch(relay_host):
+        raise ValidationError("the Telegram relay must be a workers.dev address")
+    allowed = [TELEGRAM_HOST, relay_host] if bots["enabled"] else [TELEGRAM_HOST]
+    if operations.get("egress_allowlist") != allowed:
+        raise ValidationError(
+            "the outbound allowed list must be exactly the Telegram host, and the relay when "
+            "the bots are on"
+        )
     secret_value_keys = _secret_value_keys(operations)
     if secret_value_keys:
         raise ValidationError("operations configuration holds a direct secret value field")
@@ -271,6 +286,24 @@ def check_operations(operations: dict[str, Any], production_profile: dict[str, A
     chat_file = _production_secret_path(telegram.get("chat_ids_file"), "chat_ids_file")
     if token_file == chat_file or {token_file, chat_file} & set(sources.values()):
         raise ValidationError("the Telegram secret files must be separate from other secrets")
+
+    bot_files = [
+        _production_secret_path(bots.get("relay_pull_key_file"), "relay_pull_key_file"),
+        _production_secret_path(bots.get("office_private_key_file"), "office_private_key_file"),
+    ]
+    listed = _object(bots.get("bots"), "telegram_bots.bots")
+    if sorted(listed) != sorted(BOT_CODES):
+        raise ValidationError("telegram_bots.bots must name the Customer, Tenant and Staff bots")
+    for code in BOT_CODES:
+        entry = _object(listed[code], f"telegram_bots.bots.{code}")
+        bot_files.append(_production_secret_path(entry.get("token_file"), "bot token_file"))
+    if len(set(bot_files)) != len(bot_files) or set(bot_files) & (
+        set(sources.values()) | {token_file, chat_file}
+    ):
+        raise ValidationError("each Telegram bot secret must be its own file")
+    media = bots.get("media_directory")
+    if not isinstance(media, str) or not media.startswith("/var/lib/prm/") or ".." in media:
+        raise ValidationError("bot photos must be kept under /var/lib/prm (inside the backups)")
 
     logs = _object(operations.get("logs"), "logs")
     if logs.get("operational_retention_days") != 90:

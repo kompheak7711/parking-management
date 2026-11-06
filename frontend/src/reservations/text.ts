@@ -226,6 +226,19 @@ const TEXT = {
   mk_customer: ["Customer", "អតិថិជន"],
   mk_choose_customer: ["Choose a Customer", "ជ្រើសរើសអតិថិជន"],
   mk_new_customer: ["New Customer", "អតិថិជនថ្មី"],
+  // Telegram step 3c (DL-173): Make Reservation from a Visit request. New Khmer.
+  mk_visit_from: [
+    "From Visit request {0}: {1} · {2}",
+    "ពីសំណើមកមើលបន្ទប់ {0}៖ {1} · {2}",
+  ],
+  mk_visit_found: [
+    "The Customer with this phone is chosen.",
+    "អតិថិជនដែលមានលេខទូរស័ព្ទនេះត្រូវបានជ្រើស។",
+  ],
+  mk_visit_new: [
+    "No Customer has this phone yet. Add the Customer with the New Customer button.",
+    "មិនទាន់មានអតិថិជនដែលមានលេខទូរស័ព្ទនេះទេ។ សូមបន្ថែមអតិថិជន ដោយចុចប៊ូតុង អតិថិជនថ្មី។",
+  ],
   mk_date: ["Reservation Date", "ថ្ងៃកក់"],
   mk_expires: ["Expires on", "ផុតកំណត់នៅ"],
   mk_expires_help: [

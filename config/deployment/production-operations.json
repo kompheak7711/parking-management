@@ -53,5 +53,23 @@
     "operational_retention_days": 90,
     "directory": "/var/log/pkm",
     "audit_and_money_history": "kept forever in the database"
+  },
+  "telegram_bots": {
+    "enabled": false,
+    "relay_host": "chetana-relay.example.workers.dev",
+    "relay_pull_key_file": "/run/secrets/prm_production_relay_pull_key",
+    "office_private_key_file": "/run/secrets/prm_production_relay_office_private_key",
+    "bots": {
+      "CUSTOMER": {
+        "token_file": "/run/secrets/prm_production_customer_bot_token"
+      },
+      "TENANT": {
+        "token_file": "/run/secrets/prm_production_tenant_bot_token"
+      },
+      "STAFF": {
+        "token_file": "/run/secrets/prm_production_staff_bot_token"
+      }
+    },
+    "media_directory": "/var/lib/prm/media"
   }
 }

@@ -153,6 +153,8 @@ Built in V1-059 part A (2026-10-24): the outbound allowed list in `config/deploy
 
 Amended by DL-115 (owner, 2026-10-29; V1.1): the allowed list gains one outbound email connection (the mail server of the sending address the owner chooses at setup), used only to send visit confirmations and reminders to visitors who chose email. The public visitor bot and the website relay reach the app only through `api.telegram.org`, which the app calls; the visitor bot has its own secret token, kept like the alert bot's. Nothing on the internet connects in (DEPLOY-015).
 
+Amended by DL-125 (owner, 2026-11-03; Telegram bots): while the bots are on, the allowed list also has our Telegram relay, one `*.workers.dev` address on Cloudflare. The office computer only calls it (pull, confirm, access lists); the relay never calls in. The relay pull key, the office private key and the three bot tokens are secret files under `/run/secrets/`, never in the repository or a log.
+
 # 5. Environment Model
 
 ## DEPLOY-017 — Environments

@@ -27,6 +27,22 @@ class TelegramConfig:
     recipients: tuple[str, ...]
 
 
+BOT_CODES = ("CUSTOMER", "TENANT", "STAFF")
+
+
+@dataclass(frozen=True, slots=True)
+class TelegramBotsConfig:
+    """The three Telegram bots and their relay (bots plan, 04/11/2026). Paths only, no secrets."""
+
+    enabled: bool
+    api_host: str
+    relay_host: str
+    relay_pull_key_file: Path
+    office_private_key_file: Path
+    bot_token_files: dict[str, Path]
+    media_directory: Path
+
+
 @dataclass(frozen=True, slots=True)
 class OperationsConfig:
     backup_directory: Path
@@ -44,6 +60,7 @@ class OperationsConfig:
     disk_minimum_free_bytes: int
     log_directory: Path
     log_retention: timedelta
+    telegram_bots: TelegramBotsConfig | None = None
 
     @property
     def thresholds(self) -> WarningThresholds:
@@ -73,6 +90,33 @@ def _number(value: object, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise OperationsConfigError(f"{name} must be a positive whole number")
     return value
+
+
+def _telegram_bots(value: object, api_host: str) -> TelegramBotsConfig | None:
+    if value is None:
+        return None
+    bots = _object(value, "telegram_bots")
+    enabled = bots.get("enabled")
+    if not isinstance(enabled, bool):
+        raise OperationsConfigError("telegram_bots.enabled must be true or false")
+    listed = _object(bots.get("bots"), "telegram_bots.bots")
+    if sorted(listed) != sorted(BOT_CODES):
+        raise OperationsConfigError("telegram_bots.bots must name the three bots")
+    tokens = {code: _object(listed[code], f"telegram_bots.bots.{code}") for code in BOT_CODES}
+    return TelegramBotsConfig(
+        enabled=enabled,
+        api_host=api_host,
+        relay_host=_text(bots.get("relay_host"), "telegram_bots.relay_host"),
+        relay_pull_key_file=_path(bots.get("relay_pull_key_file"), "relay_pull_key_file"),
+        office_private_key_file=_path(
+            bots.get("office_private_key_file"), "office_private_key_file"
+        ),
+        bot_token_files={
+            code: _path(tokens[code].get("token_file"), "telegram_bots.bots.token_file")
+            for code in BOT_CODES
+        },
+        media_directory=_path(bots.get("media_directory"), "telegram_bots.media_directory"),
+    )
 
 
 def load_operations_config(path: Path) -> OperationsConfig:
@@ -127,5 +171,8 @@ def load_operations_config(path: Path) -> OperationsConfig:
         log_directory=_path(logs.get("directory"), "logs.directory"),
         log_retention=timedelta(
             days=_number(logs.get("operational_retention_days"), "operational_retention_days")
+        ),
+        telegram_bots=_telegram_bots(
+            root.get("telegram_bots"), _text(telegram.get("api_host"), "alerts.telegram.api_host")
         ),
     )

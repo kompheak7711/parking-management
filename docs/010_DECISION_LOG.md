@@ -2554,6 +2554,84 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-118, DL-120, DL-123.
 - **Decision date:** 2026-11-04.
 
+## DL-125 — Telegram bots: the relay and the shared base (R1 to R4)
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `STEP 1 BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's choice of 1 Nov 2026 (Telegram, then a small Cloudflare relay, then the office app pulls every minute), the owner's OK of the Telegram bots tech and database plan (answers T1 to T5 all as recommended, 3 Nov 2026 08:36; that OK also approves the entries R1 to R4 below), and the owner's message of 4 Nov 2026 asking to start the bots coding. Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(R1) Outbound addresses.** The office computer may call `api.telegram.org` and, only while the bots are on (`telegram_bots.enabled`), one more address: our relay, a `*.workers.dev` address on Cloudflare. The deployment checker allows exactly these. Nothing on the internet connects in (DEPLOY-015 stays).
+- **(R2) What Telegram carries.** The three bots (Customer, Tenant, Staff) carry tenant and customer messages, photos, voice notes and shared phones. The relay seals every item and file with the office public key (RSA-OAEP 3072 bits or more, with AES-256-GCM tied to the item id) before it stores it, keeps it only until the office confirms it (7 days at most; what is removed unpulled is counted and warned on the health page), and never reads the database. Group posts still carry no tenant name or phone. The alert bot (DL-071 answer 8) stays as it is.
+- **(R3) Problem reports.** V1.1 adds Problem reports (UP and BP, DL-124). The Tenant bot and the Staff bot add reports to that same list (sources TENANT_BOT and STAFF_BOT).
+- **(R4) Visit requests.** A visit request can also come from the Customer bot, into the same list with the same rules as the website form (DL-115).
+- **(A) Shared base (step 1).** Tables `telegram_bots`, `telegram_accounts`, `telegram_inbound_events` (each relay item once, each Telegram update once; the raw message is removed after 90 days and the summary stays), `media_files` (each file once by its SHA-256 fingerprint, on the office disk under `/var/lib/prm/media`), `telegram_outbox` and `telegram_outbox_attempts` (every message waits in the outbox, every try is a row; a failed try waits 1, 2, 4 ... up to 60 minutes; after 7 days of failures the message is given up), and `relay_pull_runs`. History is never changed. Two new rights, `telegram.read` and `telegram.operate`, for the Owner and Manager bundles; the pull and send jobs run as such an account, like the billing worker.
+- **(B) Limits.** At most 30 messages a minute per person; photos at the largest Telegram size up to 1600 px; voice notes up to 60 seconds, videos up to 30 seconds, files up to 20 MB, 5 files per item. Mini App forms need a Telegram sign-in less than 24 hours old, and for the Tenant and Staff bots a person on the access list the office sends.
+- **(C) Health page.** New warnings: `telegram_bots_jobs_stale`, `telegram_bots_not_pulled`, `telegram_bots_relay_dropped`, `telegram_bots_send_failing` (12 hours), `telegram_bots_send_gave_up`. They show only after the bot jobs first run.
+- **Rules changed:** docs/009 DEPLOY-016 and docs/008 SEC-059 (each "Amended by DL-125").
+- **Built:** migration `20270430_281` (DB-TG-001); `relay/` (Cloudflare Worker, no packages); `telegram_pull_job.py`, `telegram_send_job.py`; host timers `prm-telegram-pull` and `prm-telegram-send`.
+- **Links:** DL-071, DL-115, DL-124.
+- **Decision date:** 2026-11-04.
+
+## DL-126 — Telegram bots: the Tenant bot links a tenant (bots step 2a)
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `STEP 2A BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's rules for the Tenant bot "CHETANA Residence support" (2 and 3 Nov 2026, tenant mock-up v15) and the owner's OK of the Telegram bots tech and database plan (3 Nov 2026 08:36). Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) Start and language.** Start greets the person in Khmer and English and asks for Khmer or English. The choice is saved per bot. Before a choice, every message asks again.
+- **(B) Who can link.** A person who is not linked sees only "Link my Lease". Linking asks, in order, for the person's own Telegram phone number (Telegram's share button; a typed number or someone else's contact does not count), the full name, and the Unit. All three must match one person (primary tenant, signer or current occupant) on a signed Lease that has not ended. Capitals, spaces, punctuation and word order in the name do not matter; "Unit", "Room", "No" or "#" before the Unit number do not matter. The phone is matched against each number on the Customer.
+- **(C) Wrong tries.** Each answer tells the person how many tries are left. 5 wrong tries in 24 hours block linking for 24 hours. Every try is kept for 90 days, then removed.
+- **(D) The link.** The link shows a short privacy line. A link ends when its Lease ends (checked every minute by the pull job), when staff remove it with a note (Owner and Manager), or when the person links again to someone else. History is never changed.
+- **(E) After linking.** A linked tenant sees the menu: Problem report, My requests, FAQ and Contact office. These open in steps 2b and 2d; until then they answer "opens soon".
+- **(F) Keyboards.** Each queued message can carry a fixed keyboard code (language buttons, share phone, menu, or remove). The send job shows the buttons in the person's language.
+- **Open:** a Customer "Other name" for the name check is not built (the check uses the legal name only). The Khmer texts need a native-speaker check.
+- **Built:** migration `20270520_282` (DB-TG-002); `telegram_tenant_bot.py`; tenant texts and keyboards in `telegram_texts.py`.
+- **Links:** DL-125, DL-124.
+- **Decision date:** 2026-11-04.
+
+## DL-127 — Telegram bots: a tenant sends a Problem report from the Tenant bot (bots step 2b)
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `STEP 2B BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's Problem report Part B (3 Nov 2026 11:22, tenant mock-up v15), the voice note rule (3 Nov 2026 07:34) and the owner's OK of the Telegram bots tech and database plan (3 Nov 2026 08:36, Mini App forms). Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) The form.** A linked tenant taps Problem report, then Unit Problem or Building problem. Each opens one short form (a Telegram Mini App page served by the relay). The tenant taps the problem type first (pictures). The form needs what is wrong as text, a voice note (up to 1 minute), or both, and takes up to 5 photos (sent at most 1600 px). A Unit Problem also asks the place in the Unit (optional), if it is urgent, if staff may enter when the tenant is out, and the best time (morning, afternoon or any time). A Building problem asks where and the floor (optional).
+- **(B) Safety first.** Safety (fire, gas, smoke) is always urgent. For Water the form asks "Is water flooding the floor?" and for Electricity "Is there a risk of electric shock?"; Yes makes the report urgent. These show the safety steps and 118 (fire) and 117 (police) before the rest of the form.
+- **(C) Same problem.** A Building problem shows the open Building problems at that place (number, type and floor only). "Same problem" saves the report with its own number and joins it to that report at once (DL-124); it needs no text.
+- **(D) The report.** The report goes into the one Problem reports list with source TENANT_BOT, the tenant's Unit and current Lease, and "Name, Unit" as who reported it. A voice note without text is saved with the words "Voice note only". The photos and the voice note stay with the report. Each form makes one report only.
+- **(E) The answer.** The bot answers in the chat with the report number: for an urgent report "our team will contact you within 1 hour", otherwise "we will plan a visit within 1 working day" (both from the business rules TR_URGENT_HOURS and TR_PLAN_WORKDAYS). A tenant whose link has ended is asked to link again.
+- **(F) The relay.** The office sends the relay, only when they change, the access list with each linked person's Unit places (no name, phone or Unit number) and the form choices (problem types, shared places, open Building problems).
+- **Open:** short videos in the form, the urgent alert to the caretaker on shift, and messages on the report's later steps come in step 2d. The Khmer texts need a native-speaker check.
+- **Built:** migration `20270521_283` (DB-TG-003); `relay/src/tenant_app.ts`; `handle_tenant_form` in `telegram_tenant_bot.py`; `push_form_data` in `telegram_pull_job.py`.
+- **Links:** DL-124, DL-125, DL-126.
+- **Decision date:** 2026-11-04.
+
+## DL-128 — Telegram bots: the app pages Linked tenants and Telegram health (bots step 2c)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 2C BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** mock-up round 29 (Office > Telegram: 5 Linked tenants, 8 Telegram health), approved with the Telegram bots app screens (3 Nov 2026 10:45), and the owner's "T1 - T5: all recommended" (3 Nov 2026 08:36). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) The menu.** Office > Telegram with the tabs Linked tenants and Telegram health. For now only a person with "See Telegram health" (`telegram.read`, Owner and Manager) sees them. Contact office and FAQ come in a later step.
+- **(B) Linked tenants.** Linked now: the shared phone and Telegram account, Customer, Unit, Lease end and linked on. Link tries that did not match: each Telegram account with wrong tries in the last 24 hours, its last typed name and Unit, tries left or blocked until. Ended links: the last 90 days with why (the Lease ended, removed by the office, or a new link took its place) and the note.
+- **(C) Remove link.** Needs "Run Telegram jobs" (`telegram.operate`) and a reason (1 to 300 letters). The link ends at once and moves to Ended links; the bot shows only Link my Lease again. A link that has already ended is refused (409) and the list is read again.
+- **(D) Telegram health.** The last relay pull and its items, messages waiting to send, messages failing for 12 hours or more, items the relay deleted after 7 days, each bot's state and last message in and out, the messages not sent yet with their tries and last error, and the last 10 relay pulls. No bot key is ever read or shown.
+- **(E) Retry.** Only on a message the app gave up on (failing for 7 days) and only once (`telegram.operate`). It puts a copy of the message in the outbox; the send job sends it within a minute. A message still being tried, or one already sent again, is refused (409).
+- **Open:** Looks right and Add a new phone on Linked tenants; Staff access to Linked tenants (the design lets Staff link tenants). The Khmer texts marked new need a native-speaker check.
+- **Built:** migration `20270522_284` (DB-TG-004), API-TG-001, `frontend/src/telegram/`.
+- **Links:** DL-125, DL-126.
+- **Decision date:** 2026-11-04.
+
+## DL-129 — Telegram bots: the tenant hears each report step, checks the repair and sees My requests (bots step 2d part 1)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 2D PART 1 BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner-approved tenant mock-up v15 and the Tenant requests design round 29 ("the tenant gets a Telegram message at each step"), with the owner's "T1 - T5: all recommended" (3 Nov 2026 08:36). The message words are the mock-up's; technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Who hears.** Only reports the tenant made (by phone, at the desk, or in the Tenant bot). Each tenant linked now to that Lease hears, and the person who sent a Building problem from the bot while still linked. A report joined to another one follows the main report's steps. Reports staff saw or found at an inspection send nothing.
+- **(B) The messages,** in the person's language: received (a phone or desk report only; the bot already answers its own form), our team is on the way (contacted by visit), visit planned with the technician, day and time, checked, fixed at no cost to you, waiting for parts, parts arrived, done, a Building problem's repair planned, handled by cleaning or by the Manager, not a repair, closed, open again, and joined to another report.
+- **(C) Fixed or Not fixed.** A done Unit Problem shows the buttons Fixed and Not fixed. Fixed closes the newest done report on the person's Lease; Not fixed opens it again with the same number. With no answer it still closes by itself after TR_AUTO_CLOSE_DAYS (3 days).
+- **(D) My requests** lists the person's open reports and those closed in the last 30 days (at most 10), with the state, and the visit day, time and technician when a visit is planned.
+- **Open:** the tenant's Agree when the tenant pays (the office still records the answer), the urgent alert to the caretaker on shift (needs the Staff bot), short videos in the form, FAQ and Contact office. The Khmer texts need a native-speaker check.
+- **Built:** migration `20270523_285` (DB-TG-005); `_check_answer` and `_my_requests` in `telegram_tenant_bot.py`.
+- **Links:** DL-124, DL-126, DL-127.
+- **Decision date:** 2026-11-05.
+
 ## DL-130 — Problem reports: repair cost and its Expense report
 
 - **Type:** `OWNER BUSINESS DECISION`
@@ -2606,3 +2684,65 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270609_320` (DB-GL-008), API-GL-015, Ledger › Needs check (riel account per method) and Ledger › Bank and cash (riel in the bank, matching in riel).
 - **Links:** DL-117.
 - **Decision date:** 2026-11-04.
+
+## DL-170 — Telegram bots: Contact office and the FAQ (bots step 2d part 2)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 2D PART 2 BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** mock-up round 29 (Office > Telegram: 6 Contact office, 7 FAQ; rights group "Tenant requests and Telegram": Owner and Manager have all, Staff have Contact office), approved with the Telegram bots app screens (3 Nov 2026 10:45), and the tenant mock-up v15 (Contact office: "Please write your message. Our team replies Monday to Saturday, 07:00 to 17:00."). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Contact office in the bot.** A person taps Contact office, writes one message (text, at most 1000 letters) and gets a thank-you with the office hours. Back to menu leaves without writing. A photo or voice note asks for text. A person who is not linked can also write (the Link my Lease reject keyboard has Contact office), so a blocked person can reach the office.
+- **(B) Contact office in the app.** Office > Telegram > Contact office (`telegram.contact`: Owner, Manager and Staff). Waiting (oldest first) and Answered (the last 90 days). Each message shows the linked tenant's name and Unit (else the person's Telegram name), the shared phone and the bot. Each message is answered once: Reply (at most 600 letters; the same bot sends "Reply from the office" in the person's language) or Answered by phone (a note; nothing is sent). A message someone already answered is refused (409) and the list is read again. Messages and answers are append-only.
+- **(C) The FAQ.** Office > Telegram > FAQ. Each question has an English and a Khmer question (at most 160 letters) and answer (at most 800), and who sees it: Customers and tenants, Tenants, Customers, or Hidden (a question is never deleted; Hidden keeps it out of every bot). Each save is a new version. Edit the FAQ (`telegram.faq`) is for the Owner and the Manager. A Manager's save waits for the Owner; the Owner's save is used at once, and the Owner approves the version waiting (only the newest one; an older one is refused). Staff with Contact office read the FAQ but do not change it. The bots show only the newest approved version.
+- **(D) The FAQ in the Tenant bot.** FAQ shows the approved questions for tenants as buttons ("3. Question"); a tap answers with the question and answer in the person's language and keeps the buttons; Back to menu leaves. With no questions, the bot says so and offers Contact office.
+- **Open:** the Customer bot uses the same Contact office and FAQ in step 3. The FAQ starts empty: the 15 questions of the FAQ doc can be loaded as versions waiting for the Owner if the owner wants. The Khmer texts marked new need a native-speaker check.
+- **Built:** migration `20270524_286` (DB-TG-006), API-TG-002, `frontend/src/telegram/`, TEST-FE-1506 to 1509.
+- **Links:** DL-126, DL-128, DL-129.
+- **Decision date:** 2026-11-05.
+
+
+## DL-171 — Telegram bots: the Customer bot and Visit requests from it (bots step 3a)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 3A BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the CRM mock-up (customer bot view, 28 Oct to 2 Nov 2026; "Send an inquiry" wording 2 Nov), the owner's CRM rules (28 Oct 2026: first come, first served; a repeat joins the old request and keeps its place; the front desk, Managers and the Owner work the list), the owner's 2 Nov rule (the Customer bot books visits and shows fixed FAQ answers; no AI chat) and DESIGN rounds 9, 10 and 13 (Visit requests, contact methods). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) The Customer bot.** Start asks for Khmer or English, then the menu: Send an inquiry, FAQ, Contact office. Send an inquiry asks one question at a time: how to contact them (Telegram, Email, Phone call or SMS, WhatsApp), their own phone (Telegram's share button; not asked again once shared), the email when they chose Email, the name, the Unit Type (the Property's Unit Types from Settings), the visit day (the next six working days are buttons; a typed day such as 12/11 also works; 2 to 30 days ahead, Monday to Saturday; Skip is allowed) with Morning or Afternoon, the move-in month (three months from two weeks ahead, or Later) and a note (Skip allowed). The bot then shows the request to check; "Send an inquiry" saves it and answers with its number and "Staff will call you within 2 working hours". Back to menu leaves at any step. The bot never says which Units are free.
+- **(B) Visit requests.** Each inquiry is a row in `visit_requests` (append-only), numbered from Settings > Business > Numbers (VISIT_REQUEST, VRyy000n, as the Problem report numbers; the mock-up's "R-0142" was a sample). A new inquiry from a person or a phone that already has a request joins that request and keeps its place; the bot says so with both numbers. The database checks every answer again.
+- **(C) The app.** Bookings > Visit requests (`visit_requests.read`: Owner, Manager and Staff), oldest first, with the customer and phone, how to contact them (and the email), the Unit Type and move-in month, the preferred day and part, the note and the status (New), and the joined asks under each request.
+- **(D) Contact office and FAQ in the Customer bot.** Contact office asks for the phone first ("so our customer service team can reach you"), then one written message; the office's Reply comes back in the Customer bot with its menu. FAQ shows the approved questions for customers (DL-170).
+- **Next (step 3b):** Take, Record a call (3 no-answer days), Late after 2 working hours, Book and move a visit with the Telegram confirmation and the 08:00 reminder, the "Send by hand today" box, Visited and No-show, Close with a reason, Make Reservation, Spam and Block (Manager), the 12-month removal of name, phone and account, and the dashboard.
+- **Open:** the Khmer texts marked new need a native-speaker check.
+- **Built:** migration `20270525_287` (DB-TG-007), API-TG-003, `backend/src/property_rental/telegram_customer_bot.py`, `frontend/src/telegram/`, TEST-FE-1510 and 1511.
+- **Links:** DL-115, DL-124, DL-126, DL-170.
+- **Decision date:** 2026-11-05.
+
+## DL-172 — Telegram bots: working the Visit requests (bots step 3b)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 3B BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's CRM rules of 28 Oct 2026 (first come, first served; Take; a Manager gives a request to another person; Late after 2 working hours, Monday to Saturday 07:00 to 17:00; 3 no-answer days before "Could not reach"; Telegram confirmation and the 08:00 reminder the day before; "Send by hand today" for phone and WhatsApp; Spam by a Manager) and the CRM mock-up (request detail, closing reasons, Customer cancelled). Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Steps.** Every step is a row in `visit_request_events` (append-only, with who and when): Take, Give to (Manager), Record a call (Answered or No answer, with a note), Book a visit and Move it (day, time and who shows the Unit; Monday to Saturday, 07:00 to 17:00, from now), Visited and No-show (on or after the visit day), Close as Not interested with a reason (Price too high, Unit Type not free, Location, Found another place, Move-in date too far, Could not reach, Other with a note) or as Customer cancelled, Reopen (with a note), Spam (Manager, with a note; not while a visit is booked), Sent by hand. The status comes from the steps: New, Contacted, Visit booked, Visited, No-show, Closed, Spam.
+- **(B) Who.** Anyone with `visit_requests.work` (Owner, Manager, Staff) takes a request nobody has. After that only the person who has it, or a Manager (`visit_requests.manage`: Owner and Manager), records steps. Only a Manager reopens Spam.
+- **(C) Messages.** A Telegram customer gets "Your visit is booked" (or "has moved") from the Customer bot at once, and the reminder at 08:00 the day before (the Telegram jobs check every run). Other customers (phone, WhatsApp and, until the app sends email, email) are in "Send by hand today" with the words in the customer's language, Copy text and Mark sent.
+- **(D) Joining.** A new inquiry joins only an open request; after a request closed, the person starts a new one.
+- **(E) The app.** Bookings > Visit requests gets the cards Waiting now, Late, Visits booked and Mine, the Waited and Staff columns, the Send by hand today box and a request window with the buttons the person may use and the whole history.
+- **Changed by Claude:** the mock-up's 3-request cap was not built; the join rule of DL-171 covers repeats. The FAQ editor's question number is now read as text, so changing a saved FAQ question works (it was refused before).
+- **Next (step 3c):** Make Reservation from a request, Block a Telegram account, the 12-month removal of name, phone and account, the dashboard (this month, reasons, sources), and Units to show on Book visit.
+- **Open:** the Khmer texts marked new need a native-speaker check; email sending is not built, so email customers are sent by hand.
+- **Built:** migration `20270526_288` (DB-TG-008), API-TG-004, `telegram_texts.py` (customer.visit_booked, visit_moved, visit_reminder), `frontend/src/telegram/`, TEST-FE-1512 to 1514.
+- **Links:** DL-170, DL-171.
+- **Decision date:** 2026-11-05.
+
+## DL-173 — Telegram bots: Make Reservation, Block, the 12-month removal and this month (bots step 3c)
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `STEP 3C BUILT ON BRANCH claude/telegram-bots; WAITS FOR THE OWNER'S TEST`
+- **Source:** the owner's CRM rules of 28 Oct 2026 (Make Reservation from a request; Spam and Block by a Manager; the name, phone and account are removed after 12 months; this month, the reasons and the sources for Managers and the Owner) and the CRM mock-up. Technical choices by Claude under the owner's 2026-10-23 22:30 rule; no new business rule.
+- **(A) Make Reservation.** A request that is Contacted, Visit booked, Visited or No-show has Make Reservation. It opens the usual Make Reservation window (deposit first, DL-112) with the request's number, name and phone; the Customer with the same phone is chosen (phones written another way, such as "012 800 200" and "+85512800200", are the same), or New Customer starts with the name, phone and email. When the Reservation is saved, the request becomes "Became Reservation" with a link to it, and closes; one request per Reservation.
+- **(B) Block.** A Manager blocks the Telegram account of a request, with why, and can unblock it. A blocked account gets "We cannot take requests from this account. Please visit or call the office." for Send an inquiry and Contact office in the Customer bot. Every Block and Unblock is kept.
+- **(C) The 12-month removal.** When a request (with the asks that joined it) has had no step and no new ask for 12 months, the Telegram jobs empty its name, phone, email, note and Telegram account. The request, its number and its steps stay, so the counts stay right. A Customer bot account not seen for 12 months loses its shared phone; an account ever linked to a Lease keeps it. The removal is the only change a request allows.
+- **(D) This month.** Managers and the Owner see, under the list: new requests, asks that joined, visits booked, visited, no-show, became Reservation, closed and Spam this month, why requests closed and where they came from.
+- **Not built:** choosing which Units to show on Book visit (the Units are chosen at the visit); conversation steps the bot keeps for a chat are not part of the removal.
+- **Open:** the Khmer texts marked new need a native-speaker check.
+- **Built:** migration `20270527_289` (DB-TG-009), API-TG-005, `frontend/src/telegram/`, `frontend/src/reservations/`, TEST-FE-1515 and 1516.
+- **Links:** DL-112, DL-171, DL-172.
+- **Decision date:** 2026-11-05.

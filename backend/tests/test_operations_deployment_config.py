@@ -55,6 +55,15 @@ def test_the_committed_configuration_passes_and_loads() -> None:
     assert config.telegram.recipients == ("owner", "manager")
     assert config.log_retention.days == 90
     assert config.restore_test_interval.days == 92
+    assert config.telegram_bots is not None and config.telegram_bots.enabled is False
+
+
+def test_the_relay_is_allowed_out_when_the_bots_are_on() -> None:
+    module = validator()
+    document = copy.deepcopy(operations())
+    document["telegram_bots"]["enabled"] = True
+    document["egress_allowlist"] = ["api.telegram.org", "chetana-relay.example.workers.dev"]
+    module.check_operations(document, production())
 
 
 def _set(document: dict[str, Any], path: str, value: object) -> None:
@@ -94,6 +103,23 @@ def _set(document: dict[str, Any], path: str, value: object) -> None:
         ("alerts.telegram.bot_token", "x", "direct secret value"),
         ("logs.operational_retention_days", 30, "90 days"),
         ("property_time_zone", "UTC", "Asia/Phnom_Penh"),
+        # The Telegram bots (bots plan rule R1): the relay is allowed only when the bots are on.
+        ("telegram_bots.enabled", True, "allowed list"),
+        ("telegram_bots.enabled", "yes", "true or false"),
+        ("telegram_bots.relay_host", "relay.example.com", "workers.dev"),
+        ("telegram_bots.relay_pull_key_file", "/etc/pull", "/run/secrets/prm_production_"),
+        (
+            "telegram_bots.bots.TENANT.token_file",
+            "/run/secrets/prm_production_telegram_bot_token",
+            "its own file",
+        ),
+        (
+            "telegram_bots.bots.STAFF.token_file",
+            "/run/secrets/prm_production_customer_bot_token",
+            "its own file",
+        ),
+        ("telegram_bots.bots", {"TENANT": {}}, "Customer, Tenant and Staff"),
+        ("telegram_bots.media_directory", "/tmp/media", "/var/lib/prm"),
     ],
 )
 def test_a_configuration_that_breaks_dl_071_is_refused(

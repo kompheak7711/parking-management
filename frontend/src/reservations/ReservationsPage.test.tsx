@@ -18,6 +18,9 @@ import {
 } from "../reservationClient";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import type { UnitApi, UnitResource } from "../unitClient";
+import type { CustomerCommandGate } from "../customers/commands";
+import type { TelegramApi } from "../telegram/telegramClient";
+import { samePhone } from "./MakeReservationDialog";
 import { ReservationsPage } from "./ReservationsPage";
 import { addDays } from "./reservationsData";
 
@@ -659,5 +662,100 @@ describe("Make Reservation on the list (V1-060 B7)", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+  it("TEST-FE-1515 Make Reservation from a Visit request names the request, chooses the Customer with the same phone, or starts New Customer with the name and phone", async () => {
+    expect(samePhone("012 800 200", "+85512800200")).toBe(true);
+    expect(samePhone("+855 12 800 200", "85512800200")).toBe(true);
+    expect(samePhone("012 800 201", "+85512800200")).toBe(false);
+    expect(samePhone(null, "+85512800200")).toBe(false);
+    const visitRequest = vi.fn(() =>
+      Promise.resolve({
+        id: "vr-1",
+        number: "VR260001",
+        name: "Sokha Chan",
+        phone: "+85512800200",
+        email: "sokha@example.com",
+      } as unknown as Awaited<ReturnType<TelegramApi["visitRequest"]>>),
+    );
+    const visitApi = { visitRequest, visitStep: vi.fn() };
+    const customers = (phone: string) =>
+      ({
+        list: vi.fn().mockResolvedValue({
+          items: [
+            {
+              customer_id: "customer-sokha",
+              legal_name: "Sokha Chan",
+              phone_number: phone,
+              active: true,
+              relationship_indicators: [],
+            },
+          ],
+          next_cursor: null,
+        }),
+      }) as unknown as CustomerApi;
+    const page = (customerApi: CustomerApi) => (
+      <ReservationsPage
+        active
+        api={api()}
+        capabilities={
+          new Set([
+            "reservations.read",
+            "reservations.create",
+            "payments.record",
+            "customers.manage",
+          ])
+        }
+        customerApi={customerApi}
+        customerGate={{} as CustomerCommandGate}
+        language="en"
+        paymentsApi={
+          {
+            methods: vi.fn().mockResolvedValue([]),
+            confirm: vi.fn(),
+          } as unknown as PaymentsApi
+        }
+        propertyId="property-1"
+        unitApi={
+          {
+            list: vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
+          } as unknown as Pick<UnitApi, "list">
+        }
+        visitApi={visitApi}
+      />
+    );
+    window.location.hash = "#/reservations/visit:vr-1";
+    render(page(customers("012 800 200")));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    expect(
+      await within(dialog).findByText(
+        /From Visit request VR260001: Sokha Chan · \+85512800200/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/The Customer with this phone is chosen./),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Customer")).toHaveValue(
+      "customer-sokha",
+    );
+    expect(visitRequest).toHaveBeenCalledWith("property-1", "vr-1");
+    cleanup();
+
+    window.location.hash = "#/reservations/visit:vr-1";
+    render(page(customers("099 000 000")));
+    const other = await screen.findByRole("dialog", {
+      name: "Make Reservation",
+    });
+    expect(
+      await within(other).findByText(/No Customer has this phone yet./),
+    ).toBeInTheDocument();
+    expect(within(other).getByLabelText("Customer")).toHaveValue("");
+    fireEvent.click(
+      within(other).getByRole("button", { name: "New Customer" }),
+    );
+    expect(await screen.findByDisplayValue("Sokha Chan")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("+85512800200")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("sokha@example.com")).toBeInTheDocument();
   });
 });

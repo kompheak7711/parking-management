@@ -71,6 +71,8 @@ const PATHS: Record<ShellIcon, string[]> = {
     "M4 7h10M18 7h2M4 17h4M12 17h8",
     "M16 5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM10 15a2 2 0 1 1 0 4 2 2 0 0 1 0-4z",
   ],
+  // Telegram bots step 2c: a paper plane for Office › Telegram.
+  send: ["M21 3 10.5 13.5", "M21 3l-6.5 18-4-7.5-7.5-4z"],
   menu: ["M4 7h16M4 12h16M4 17h16"],
   search: ["M11 4.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z", "m20 20-4.2-4.2"],
   signout: [

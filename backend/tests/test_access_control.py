@@ -30,6 +30,9 @@ from property_rental.access_control import (
     capability_grant_path,
 )
 from property_rental.identity import CapabilityGrant
+from property_rental.telegram_customer_bot import CUSTOMER_STEPS
+from property_rental.telegram_tenant_bot import TENANT_STEPS
+from property_rental.telegram_texts import CHOICE_KEYBOARDS, KEYBOARDS, TEXTS
 
 SOURCE = Path(__file__).parents[1] / "src" / "property_rental"
 DOTTED = re.compile(r"^[a-z][a-z_]*(\.[a-z][a-z_]*)+$")
@@ -46,6 +49,8 @@ NON_CAPABILITY_LABELS = frozenset(
         "application.started",
         "application.stopping",
         "backup.config_invalid",
+        # Telegram bots step 1: the bots' configuration fields (their text codes, keyboards and
+        # chat steps are left out in application_constants).
         "backup.database_url_file",
         "backup.directory",
         "backup.encryption_key_file",
@@ -108,6 +113,10 @@ NON_CAPABILITY_LABELS = frozenset(
         "sign_in_prune.config_invalid",
         "sign_in_prune.failed",
         "sign_in_prune.usage",
+        "telegram_bots.bots",
+        "telegram_bots.bots.token_file",
+        "telegram_bots.media_directory",
+        "telegram_bots.relay_host",
         # A SQL column name in ledger_books_api.source_sql, not a capability.
         "entry.id",
     }
@@ -129,7 +138,10 @@ def application_constants() -> set[str]:
     for path in SOURCE.rglob("*.py"):
         if path.name != "access_control.py":
             found |= dotted_constants(path)
-    return found
+    # The Telegram bots' fixed text codes, keyboards and chat steps are names of their own.
+    return (
+        found - set(TEXTS) - set(KEYBOARDS) - set(CHOICE_KEYBOARDS) - TENANT_STEPS - CUSTOMER_STEPS
+    )
 
 
 def test_the_capability_catalog_names_every_capability_the_code_checks() -> None:
@@ -151,14 +163,18 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     # and `quotations.read` and `quotations.make` (V1.1 part 6, DL-123; the database alone checks
     # `quotations.lower_price`), and the 4 Problem report rights (V1.1 part 7, DL-124), and the
     # 5 short-stay rights (`short_stays.read`, `.desk`, `.housekeeping`, `.approve`, `.credit`),
-    # and `problem_reports.costs` (DL-130).
-    assert len(found - NON_CAPABILITY_LABELS) == 108
+    # and `problem_reports.costs` (DL-130), and
+    # `telegram.read` and `telegram.operate` of the Telegram app pages (bots step 2c, DL-128),
+    # and `telegram.contact` and `telegram.faq` of Contact office and FAQ (step 2d, DL-170),
+    # and `visit_requests.read` of the Visit requests list (step 3a, DL-171), and
+    # `visit_requests.work` and `visit_requests.manage` of the request steps (step 3b, DL-172).
+    assert len(found - NON_CAPABILITY_LABELS) == 115
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
-    assert len(CAPABILITY_CATALOG) == 119
+    assert len(CAPABILITY_CATALOG) == 126
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -194,7 +210,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 116
+    assert len(BUNDLE_CAPABILITIES) == 123
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -302,6 +318,11 @@ STAFF_APPROVED = frozenset(
         # V1.1 part 7 (DL-124): Staff see and add Problem reports.
         "problem_reports.read",
         "problem_reports.add",
+        # Telegram bots step 2d part 2 (DL-170): Staff answer Contact office.
+        "telegram.contact",
+        # Telegram bots step 3a (DL-171): Staff see Visit requests; 3b (DL-172): they work them.
+        "visit_requests.read",
+        "visit_requests.work",
         # Daily and weekly rent (migration 20270531_310): see, front desk and housekeeping.
         "short_stays.read",
         "short_stays.desk",
@@ -320,6 +341,13 @@ STAFF_NEVER = frozenset(
         "audit.export",
         "data.export",
         "operations.status.read",
+        # Telegram bots step 1: the bot jobs and their health are for the Owner and Manager.
+        "telegram.operate",
+        "telegram.read",
+        # Step 2d part 2: the FAQ is edited by the Owner and the Manager only (round 29).
+        "telegram.faq",
+        # Step 3b (DL-172): only the Owner and the Manager give Visit requests and mark Spam.
+        "visit_requests.manage",
         "leases.warn",
         "utility_readings.correct",
         "utility_meters.manage",
@@ -412,7 +440,7 @@ RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
 
 def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
     assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
-    assert len(STAFF_APPROVED) == 43
+    assert len(STAFF_APPROVED) == 46
     assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
     groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, STAFF_NOT_LEDGER, RATE_CAPABILITIES)
     # Every bundle capability is in exactly one group, so a new bundle capability must be

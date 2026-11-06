@@ -41,6 +41,8 @@ DOCUMENTS = {
     # V1.1 part 7 (DL-124): Problem reports, migration 20270426_276.
     "UNIT_PROBLEM": "UPyy000n",
     "BUILDING_PROBLEM": "BPyy000n",
+    # Telegram bots step 3a (DL-171): Visit requests, migration 20270525_287.
+    "VISIT_REQUEST": "VRyy000n",
     # Daily and weekly rent: bookings and price quotes, migration 20270531_310.
     "SHORT_STAY": "STyy000n",
     "SHORT_STAY_QUOTE": "SQyy000n",

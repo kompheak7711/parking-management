@@ -5771,3 +5771,85 @@ Added by DL-132 (migration `20270512_292`, forward-only).
 - `app.problem_report_inspection_links` (`report_id` primary key, `finding_id` unique, created at and by): append-only, no truncate. One report per finding.
 - `app.add_problem_report` takes the source `INSPECTION` only with a `finding_id`: a Unit Problem in the inspected Lease's Unit, from an inspection not replaced, and a finding with no report yet (22023 or 55000 otherwise). `app.problem_report_json` gains `finding` (inspection, Lease, day, number and text).
 - `app.problem_report_finding(property, actor, finding)` (`problem_reports.add`, runtime): what the form copies (Unit, text, day), whether the inspection was replaced, and the report the finding already has.
+
+## DB-TG-001 — Telegram bots shared base (bots step 1)
+
+Added by DL-125 (migration `20270430_281`, forward-only; it follows the daily and weekly rent head `20270611_351` since 6 Nov 2026).
+
+- `app.telegram_bots` (CUSTOMER, TENANT, STAFF; seeded, then fixed; no keys).
+- `app.telegram_accounts` (one row per Telegram account: `telegram_user_id`, language km or en, `phone_e164` when shared, first and last seen). Only the language, phone and last seen move forward; the account number never changes.
+- `app.telegram_inbound_events` (each relay item once by `relay_item_id`, each Telegram update once by bot and `telegram_update_id`; kind, received time, summary, raw payload). The only change allowed is removing the payload after 90 days (`payload_removed_at`).
+- `app.media_files` (each file once by `sha256`; content type from a fixed list, size up to 20 MB, `storage_path` `xx/<sha256>` under the media folder, width, height, duration, Telegram file id).
+- `app.telegram_outbox` (bot, chat, fixed `text_code`, language, details) and `app.telegram_outbox_attempts` (each try: SENT, FAILED or GAVE_UP; at most one final try per message). The status is the latest try.
+- `app.relay_pull_runs` (each pull: times, outcome, items received and saved, relay waiting and dropped counts).
+- All are append-only (updates and deletes refused, truncate refused). Functions (security definer, for the pull and send jobs; each checks the actor's right): `app.telegram_record_pulled_item`, `app.telegram_record_pull_run`, `app.telegram_queue_message`, `app.telegram_outbox_due`, `app.telegram_record_send_attempt`, `app.telegram_remove_old_payloads`, `app.telegram_health`. New rights `telegram.read` and `telegram.operate` (group Administration), for the Owner and Manager bundles.
+
+## DB-TG-002 — Tenant bot linking (bots step 2a)
+
+Added by DL-126 (migration `20270520_282`, forward-only).
+
+- `app.telegram_language_choices` (bot, Telegram account, km or en; the newest row counts).
+- `app.telegram_chat_steps` (bot, Telegram account, step name, small step data up to 4 KB; the newest row counts).
+- `app.tenant_link_attempts` (each try: typed name, typed Unit, shared phone, result LINKED, NO_MATCH, BLOCKED or NO_PHONE). Rows may be removed only after 90 days.
+- `app.tenant_telegram_links` (Telegram account, Customer, Lease, Unit) and `app.tenant_telegram_link_endings` (one ending per link: LEASE_ENDED, REMOVED with a note, or NEW_LINK).
+- `app.telegram_outbox` gains `keyboard` (a fixed keyboard code or `remove`).
+- All are append-only (updates refused, truncate refused). The runtime login cannot read these tables; only the functions can. Functions: `app.telegram_bot_state`, `app.telegram_bot_reply` (saves the next step and queues up to 5 messages in one call), `app.telegram_choose_language`, `app.telegram_tenant_link`, `app.telegram_tenant_end_finished_links`, `app.telegram_tenant_link_remove` (Owner and Manager), `app.telegram_tenant_links_read` (`telegram.read`), `app.telegram_tenant_access_list`, `app.telegram_remove_old_link_attempts`; `app.telegram_outbox_due` now returns the keyboard. Helpers `app.phone_e164`, `app.tenant_names_match`, `app.tenant_unit_key`.
+
+## DB-TG-003 — Tenant bot Problem reports (bots step 2b)
+
+Added by DL-127 (migration `20270521_283`, forward-only).
+
+- `app.problem_report_media` (report, file in `media_files`, kind PHOTO, VIDEO or VOICE, stage REPORTED, position). Append-only.
+- `app.tenant_problem_report_sources` (report, the pulled form in `telegram_inbound_events` (once), Telegram account, tenant link). Append-only. Each form makes one report.
+- `app.media_files` also takes `audio/webm` (voice notes recorded on Android).
+- The runtime login cannot read these tables. Functions (`telegram.operate`): `app.telegram_tenant_form_data` (choices and access list for the relay), `app.telegram_tenant_problem_report` (checks the link and the form, saves the report with source TENANT_BOT, its files and "Same problem" join; a wrong form gives a fixed reason and saves nothing).
+
+## DB-TG-004 — Telegram app pages (bots step 2c)
+
+Added by DL-128 (migration `20270522_284`, forward-only).
+
+- `app.telegram_outbox_retries` (the given-up message, its one copy in the outbox, when, by whom). Append-only; one Retry per message.
+- `app.telegram_tenant_link_remove` now says "the link does not exist" (22023) and "The link has already ended" (55000).
+- The runtime login cannot read the table. Functions: `app.telegram_links_page` and `app.telegram_health_page` (`telegram.read`), `app.telegram_outbox_retry` (`telegram.operate`; only a GAVE_UP message, only once). No bot key is stored or answered.
+
+## DB-TG-005 — Tenant report updates (bots step 2d part 1)
+
+Added by DL-129 (migration `20270523_285`, forward-only). No new table.
+
+- Trigger `problem_report_events_tenant_notice` (after each new report step): queues the Tenant bot message for each person `app.tenant_report_people` names (reports with source PHONE, WALKIN or TENANT_BOT only). A step the tenant took in the bot (`details.via = TELEGRAM`) queues nothing.
+- Functions (`telegram.operate`): `app.telegram_tenant_report_check` (Fixed closes, Not fixed opens again the newest done Unit Problem on the person's Lease; the step is saved as FIXED or NOT_FIXED with `via` TELEGRAM) and `app.telegram_tenant_my_reports` (open reports and those closed in the last 30 days, at most 10).
+
+## DB-TG-006 — Contact office and the FAQ (bots step 2d part 2)
+
+Added by DL-170 (migration `20270524_286`, forward-only).
+
+- `app.telegram_contact_messages` (Property, the pulled update in `telegram_inbound_events` (once), bot CUSTOMER or TENANT, Telegram account and chat, language, Telegram name, the tenant link if any, message 1 to 1000 letters, received). `app.telegram_contact_answers` (one per message: TELEGRAM with its outbox message, or PHONE; answer 1 to 600 letters; by whom, when). Append-only.
+- `app.telegram_faq_questions` (Property, number), `app.telegram_faq_versions` (who sees it BOTH, CUSTOMER, TENANT or HIDDEN; English and Khmer question (1 to 160) and answer (1 to 800); proposed by, when), `app.telegram_faq_approvals` (one per version, version number per question, approved by, when). Append-only. The newest approved version is shown; the newest version without an approval is the one waiting.
+- Rights (group Administration): `telegram.contact` "Answer Contact office" (Owner, Manager and Staff bundles) and `telegram.faq` "Edit the FAQ" (Owner and Manager). New Properties seed the same.
+- The runtime login cannot read the tables. Functions: `app.telegram_contact_add` and `app.telegram_faq_for_bot` (`telegram.operate`); `app.telegram_contact_page` and `app.telegram_contact_answer` (`telegram.contact`); `app.telegram_faq_page` (`telegram.faq` or `telegram.contact`); `app.telegram_faq_save` (`telegram.faq`; the Owner's save is approved at once); `app.telegram_faq_approve` (`telegram.faq` and the Owner account only).
+
+
+## DB-TG-007 — Visit requests from the Customer bot (bots step 3a)
+
+Added by DL-171 (migration `20270525_287`, forward-only).
+
+- `app.visit_requests` (Property, number VRyy000n from `app.number_rules` type VISIT_REQUEST, source TELEGRAM, the pulled update in `telegram_inbound_events` (once), Telegram account and chat, language, contact by TELEGRAM, EMAIL, PHONE or WHATSAPP, the shared phone (E.164), the email (only and always for EMAIL), name 1 to 120 letters, Unit Type code, visit day and part MORNING or AFTERNOON (both or neither), move-in month (the first day; empty is Later), note up to 500 letters, `joined_to` the first request of the same person or phone, received, by whom). Append-only; statuses, calls, visits, closing and the 12-month removal of personal data come in step 3b.
+- Rights (group Leasing): `visit_requests.read` "See Visit requests" (Owner, Manager and Staff bundles). New Properties seed the same.
+- The runtime login cannot read the table. Functions: `app.telegram_customer_choices` (today, the Unit Types, the person's shared phone) and `app.telegram_visit_request_add` (checks every answer: a visit day 2 to 30 days ahead and not a Sunday, a move-in month from this month; answers ADDED, JOINED, REPEATED or NO_PHONE) for `telegram.operate`; `app.visit_requests_page` (`visit_requests.read`, oldest first with the joined asks). `app.telegram_contact_answer` now gives the office's Reply in the Customer bot the Customer bot menu.
+
+## DB-TG-008 — Working the Visit requests (bots step 3b)
+
+Added by DL-172 (migration `20270526_288`, forward-only).
+
+- `app.visit_request_events` (append-only): the request, the kind (TAKEN, GIVEN, CALL, VISIT_BOOKED, VISITED, NO_SHOW, CLOSED, REOPENED, SPAM, SENT_BY_HAND, REMINDER_DUE), the person it is given to or who shows the visit, answered (calls), the visit time, the close reason (PRICE, TYPE_NOT_FREE, LOCATION, FOUND_OTHER, MOVE_IN_FAR, NO_REACH, OTHER with a note, CANCELLED), what was sent by hand (CONFIRMATION or REMINDER), a note up to 300 letters, the bot message (`telegram_outbox`) when the bot sent it, created, by whom. Checks keep each kind's fields together.
+- Rights (group Leasing): `visit_requests.work` "Work Visit requests" (Owner, Manager and Staff) and `visit_requests.manage` "Manage Visit requests" (Owner and Manager). New Properties seed the same.
+- Functions: `app.visit_request_act` (`visit_requests.work`; one step, with every rule of DL-172 checked; a Telegram booking queues `customer.visit_booked` or `customer.visit_moved`), `app.visit_request_reminders` (`telegram.operate`; from 08:00 local time, once per booking, the visits tomorrow: the bot reminder for Telegram, REMINDER_DUE for the rest), `app.visit_request_detail` (`visit_requests.read`; one request with its history). `app.visit_requests_page` now answers each request's status, who has it, waited working minutes, Late, calls and no-answer days, the visit, the close reason and what to send by hand, plus the address, the people who work requests, `me`, `can_work` and `can_manage`. `app.telegram_visit_request_add` joins a new inquiry only to an open request. Helpers (not callable by the runtime login): `visit_working_minutes`, `visit_request_state`, `visit_request_open`, `visit_request_holds`, `visit_day_words`, `visit_request_card`.
+
+## DB-TG-009 — Make Reservation, Block, the 12-month removal and this month (bots step 3c)
+
+Added by DL-173 (migration `20270527_289`, forward-only).
+
+- `app.visit_request_events` gets RESERVED with `reservation_id` (unique: one request per Reservation; the Reservation must be on a Unit of the Property). The status RESERVED ("Became Reservation") closes the request.
+- `app.telegram_account_blocks` (append-only): Property, Telegram account, blocked (Block or Unblock), the request, why (needed for Block), created, by whom. `app.telegram_user_blocked` reads the latest. `app.telegram_visit_request_add` and `app.telegram_contact_add` (Customer bot) answer BLOCKED for a blocked account.
+- `app.visit_requests` gets `removed_at`; name and phone may be empty only once removed, and a removed request has no name, phone, email, note or Telegram account. The trigger allows that one change and nothing else. `app.visit_requests_remove_old` (`telegram.operate`, the Telegram jobs) removes them 12 months after the last step or ask, and empties the shared phone of a Customer bot account not seen for 12 months and never linked to a Lease.
+- `app.visit_request_act` gets RESERVE (`visit_requests.work`, the person who has the request or a Manager) and BLOCK and UNBLOCK (`visit_requests.manage`). Each card adds `reservation_id`, `blocked` and `removed`. `app.visit_requests_page` adds `month` (`app.visit_requests_month`) for a person with `visit_requests.manage`, else null.

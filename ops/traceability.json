@@ -62497,6 +62497,938 @@
       "notes": "Owner test 04/11/2026 follow-up: every close list (adjusting entries, periods, bank lines and matches, write-offs, budgets and the rest) runs with the runtime login; the write-off list reads the Final Settlement through app.gl_write_off_settlement (migration 20270428_278)."
     },
     {
+      "test_id": "test_the_relay_is_allowed_out_when_the_bots_are_on",
+      "upstream_ids": [
+        "DEPLOY-016",
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_operations_deployment_config.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The relay address joins the outbound list only while the Telegram bots are on; each bot token is its own secret file."
+    },
+    {
+      "test_id": "test_rights_owner_and_manager_run_the_jobs_staff_cannot",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001",
+        "SEC-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Only an account with the Owner or Manager Telegram rights may run the bot job functions; Staff and no actor are refused."
+    },
+    {
+      "test_id": "test_an_item_is_saved_once_with_its_account_and_photos",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Each relay item and each Telegram update is saved once; a photo is saved once by its fingerprint; a later message keeps the shared phone."
+    },
+    {
+      "test_id": "test_history_is_never_changed_and_the_runtime_login_cannot_write",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Telegram history rows refuse update and delete, and the runtime login cannot write the tables directly."
+    },
+    {
+      "test_id": "test_outbox_tries_waits_and_finishes_once",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: A failed send waits before the next try, a sent message is final once, and a message failing for 7 days is given up."
+    },
+    {
+      "test_id": "test_pull_runs_and_health",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Each pull run is recorded and the Telegram health read shows the last outcome and the relay drop count."
+    },
+    {
+      "test_id": "test_raw_messages_are_removed_after_90_days_and_the_summary_stays",
+      "upstream_ids": [
+        "DL-125",
+        "DB-TG-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_base_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The raw Telegram message is removed after 90 days and the summary stays."
+    },
+    {
+      "test_id": "test_pull_saves_each_item_once_keeps_photos_and_confirms",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The pull job opens each sealed item, saves it once, stores its photos by fingerprint and confirms to the relay."
+    },
+    {
+      "test_id": "test_an_item_that_cannot_be_opened_or_whose_photo_changed_stays_in_the_relay",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: An item that cannot be opened, or whose photo does not match, is not confirmed and stays in the relay."
+    },
+    {
+      "test_id": "test_a_shared_phone_counts_only_when_it_is_the_persons_own",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: A shared phone is kept only when it is the sender's own contact."
+    },
+    {
+      "test_id": "test_a_failed_pull_or_confirm_is_recorded_with_a_fixed_code",
+      "upstream_ids": [
+        "DL-125",
+        "SEC-059"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: A failed pull or confirm is recorded with a fixed code and no secret or message text."
+    },
+    {
+      "test_id": "test_send_job_sends_records_and_reports_fixed_codes",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The send job sends each due outbox message, records each try and reports only fixed error codes."
+    },
+    {
+      "test_id": "test_bot_keys_are_read_only_when_they_look_like_keys",
+      "upstream_ids": [
+        "DL-125",
+        "DEPLOY-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Bot token and pull key files are read only when they have the expected shape."
+    },
+    {
+      "test_id": "test_phone_numbers_in_one_format",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Phone numbers written in different ways match in one +855 format."
+    },
+    {
+      "test_id": "test_texts_fill_only_their_own_fields",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Bot texts are fixed Khmer and English texts that fill only their own fields."
+    },
+    {
+      "test_id": "test_signed_calls_match_the_relay_format",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: Office calls to the relay are signed in the format the relay checks."
+    },
+    {
+      "test_id": "test_bot_warnings_show_only_when_the_bots_are_on",
+      "upstream_ids": [
+        "DL-125",
+        "DEPLOY-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The Telegram bot health warnings show only after the bot jobs have run."
+    },
+    {
+      "test_id": "test_a_sealed_item_opens_with_the_office_key_under_its_own_id",
+      "upstream_ids": [
+        "DL-125",
+        "SEC-059"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_seal.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: A sealed item opens only with the office key and only under its own item id; a changed or broken item is refused."
+    },
+    {
+      "test_id": "test_the_office_key_file_must_be_a_strong_rsa_key",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_seal.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: The office private key must be an RSA key of 3072 bits or more."
+    },
+    {
+      "test_id": "test_what_the_relay_code_seals_opens_here",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_seal.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 1: What the relay's TypeScript code seals opens with the Python office code (skipped without Node.js 22.6)."
+    },
+    {
+      "test_id": "test_a_tenant_links_with_phone_name_and_unit_in_any_order",
+      "upstream_ids": [
+        "DL-126",
+        "DB-TG-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_tenant_link_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: A tenant links with the shared phone, the name in any order and the Unit; the same link is kept on a second try, the person is on the access list, and Staff cannot read the Linked tenants list."
+    },
+    {
+      "test_id": "test_a_wrong_part_is_refused_and_five_wrong_tries_block_for_a_day",
+      "upstream_ids": [
+        "DL-126",
+        "DB-TG-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_tenant_link_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: A wrong phone, name or Unit is refused with the tries left; 5 wrong tries in 24 hours block linking."
+    },
+    {
+      "test_id": "test_links_end_with_the_lease_or_when_staff_remove_them",
+      "upstream_ids": [
+        "DL-126",
+        "DB-TG-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_tenant_link_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: A link stops when its Lease is over and the job records the end; staff remove a link with a reason, once."
+    },
+    {
+      "test_id": "test_the_bot_answer_saves_the_step_and_queues_the_messages",
+      "upstream_ids": [
+        "DL-126",
+        "DB-TG-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_tenant_link_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: A bot answer saves the person's step and queues its messages with their keyboard in one call; only the job account may call it."
+    },
+    {
+      "test_id": "test_typed_names_and_phones_stay_behind_the_functions",
+      "upstream_ids": [
+        "DL-126",
+        "DB-TG-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_telegram_tenant_link_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: The runtime login cannot read the link tables; link tries are never changed and are removed only after 90 days."
+    },
+    {
+      "test_id": "test_start_asks_for_the_language_then_offers_only_linking",
+      "upstream_ids": [
+        "DL-126"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: Start asks for Khmer or English; a person not linked is offered only Link my Lease."
+    },
+    {
+      "test_id": "test_linking_asks_for_the_own_phone_then_name_then_unit",
+      "upstream_ids": [
+        "DL-126"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: Linking asks for the person's own shared phone, then the name, then the Unit, and answers with the result."
+    },
+    {
+      "test_id": "test_the_fifth_wrong_try_says_linking_is_blocked",
+      "upstream_ids": [
+        "DL-126"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: The fifth wrong try says linking is blocked for 24 hours."
+    },
+    {
+      "test_id": "test_groups_other_bots_and_the_test_message_are_left_alone",
+      "upstream_ids": [
+        "DL-126"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: The Tenant bot answers only private chats of its own bot and leaves the test message to the shared base."
+    },
+    {
+      "test_id": "test_the_send_job_shows_the_keyboard_in_the_persons_language",
+      "upstream_ids": [
+        "DL-126",
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2a: The send job shows each message's keyboard in the person's language; an unknown keyboard is a fixed failure code."
+    },
+    {
+      "test_id": "test_a_unit_problem_with_photos_and_a_voice_note_is_saved_once",
+      "upstream_ids": [
+        "DL-127",
+        "DB-TG-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_problem_report_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: A Unit Problem from the Tenant bot form is saved once with source TENANT_BOT, its place, photos and voice note."
+    },
+    {
+      "test_id": "test_safety_and_danger_are_always_urgent_and_a_voice_note_alone_is_enough",
+      "upstream_ids": [
+        "DL-127",
+        "DB-TG-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_problem_report_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: Safety and a flooding or shock risk are always urgent; a voice note without text is enough."
+    },
+    {
+      "test_id": "test_a_form_that_is_not_complete_or_not_from_a_linked_tenant_is_refused",
+      "upstream_ids": [
+        "DL-127",
+        "DB-TG-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_problem_report_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: An incomplete form gets a fixed reason and a form from someone not linked is refused; nothing is saved."
+    },
+    {
+      "test_id": "test_a_building_problem_can_join_the_open_report_at_the_same_place",
+      "upstream_ids": [
+        "DL-127",
+        "DL-124",
+        "DB-TG-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_problem_report_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: A Building problem shows the open reports at its place and Same problem joins that report."
+    },
+    {
+      "test_id": "test_the_form_data_has_places_but_no_names_and_stays_behind_the_functions",
+      "upstream_ids": [
+        "DL-127",
+        "DB-TG-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_problem_report_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: The form data for the relay has the Unit places but no names or phones; the tables stay behind the functions."
+    },
+    {
+      "test_id": "test_a_saved_form_is_answered_with_its_number_in_the_persons_language",
+      "upstream_ids": [
+        "DL-127"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: A saved form is answered in the chat with its report number and the right promise; a repeated form is not answered twice."
+    },
+    {
+      "test_id": "test_the_report_buttons_open_the_form_on_the_relay",
+      "upstream_ids": [
+        "DL-127"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: The Unit Problem and Building problem buttons open the form page on the relay in the person's language."
+    },
+    {
+      "test_id": "test_the_access_list_and_choices_go_to_the_relay_only_when_they_change",
+      "upstream_ids": [
+        "DL-127",
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2b: The access list and form choices are sent to the relay only when they change, and again after a failed send."
+    },
+    {
+      "test_id": "test_linked_tenants_shows_links_wrong_tries_and_ended_links",
+      "upstream_ids": [
+        "DL-128",
+        "DB-TG-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_app_pages_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Linked tenants shows the links in force, the wrong link tries with tries left, the ended links, and Remove link with a reason; Staff are refused."
+    },
+    {
+      "test_id": "test_telegram_health_lists_messages_not_sent_and_retries_a_given_up_one_once",
+      "upstream_ids": [
+        "DL-128",
+        "DB-TG-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_app_pages_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Telegram health lists the bots and the messages not sent with their last error; Retry works only on a given-up message and only once."
+    },
+    {
+      "test_id": "test_the_telegram_pages_need_telegram_read",
+      "upstream_ids": [
+        "DL-128",
+        "API-TG-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Both pages need telegram.read for the Property and are never cached."
+    },
+    {
+      "test_id": "test_remove_link_needs_operate_a_reason_and_the_browser_checks",
+      "upstream_ids": [
+        "DL-128",
+        "API-TG-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Remove link needs telegram.operate, a reason and the browser mutation checks; an ended link is 409 and a missing one 404."
+    },
+    {
+      "test_id": "test_retry_sends_a_given_up_message_once",
+      "upstream_ids": [
+        "DL-128",
+        "API-TG-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Retry needs telegram.operate, answers 201 with the health page, and a second Retry is 409."
+    },
+    {
+      "test_id": "TEST-FE-1500",
+      "upstream_ids": [
+        "DL-128"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Linked tenants lists the links in force, the link tries that did not match with tries left or blocked until, and the ended links with why."
+    },
+    {
+      "test_id": "TEST-FE-1501",
+      "upstream_ids": [
+        "DL-128"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Remove link needs a reason and shows the list the server answers; an ended link reads the list again; no button without telegram.operate."
+    },
+    {
+      "test_id": "TEST-FE-1502",
+      "upstream_ids": [
+        "DL-128"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Telegram health shows the last pull, the counts, each bot's state, the messages not sent with their last error and the last pulls; no bot key is shown."
+    },
+    {
+      "test_id": "TEST-FE-1503",
+      "upstream_ids": [
+        "DL-128"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: Retry shows only on a given-up message to a person with telegram.operate, sends once and shows Sent again; a refused Retry reads the page again."
+    },
+    {
+      "test_id": "TEST-FE-1504",
+      "upstream_ids": [
+        "DL-128",
+        "API-TG-001"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: The client reads the pages, sends Remove link and Retry with the browser token, and refuses an answer of the wrong shape."
+    },
+    {
+      "test_id": "TEST-FE-1505",
+      "upstream_ids": [
+        "DL-128"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2c: The pages show in Khmer and ask for a Property first when none is chosen."
+    },
+    {
+      "test_id": "test_each_step_of_a_tenant_report_sends_the_tenant_a_message_and_fixed_closes_it",
+      "upstream_ids": [
+        "DL-129",
+        "DB-TG-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_report_updates_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 1: Each office step of a tenant's report queues the tenant's message in their language; Not fixed opens it again and Fixed closes it; My requests lists it."
+    },
+    {
+      "test_id": "test_a_phone_report_tells_the_linked_tenant_and_a_joined_report_follows_its_main",
+      "upstream_ids": [
+        "DL-129",
+        "DB-TG-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_report_updates_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 1: A phone report tells the linked tenant it was received; a joined report's person hears the main report's steps; Staff are refused."
+    },
+    {
+      "test_id": "test_fixed_and_not_fixed_answer_the_tenants_check_of_the_repair",
+      "upstream_ids": [
+        "DL-129"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 1: Fixed and Not fixed call the check and answer with the report number; the Done keyboard is in the person's language."
+    },
+    {
+      "test_id": "test_my_requests_lists_each_report_with_its_state_and_visit",
+      "upstream_ids": [
+        "DL-129"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 1: My requests shows each report with its state, the planned visit and joined reports, in Khmer or English."
+    },
+    {
+      "test_id": "test_contact_office_messages_are_answered_once_by_reply_or_by_phone",
+      "upstream_ids": [
+        "DL-170",
+        "DB-TG-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_contact_faq_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: A bot saves a Contact office message once; Staff see Waiting and Answered and answer each once by Reply (sent by the bot) or by phone."
+    },
+    {
+      "test_id": "test_a_managers_faq_change_waits_for_the_owner_and_the_bots_show_only_approved",
+      "upstream_ids": [
+        "DL-170",
+        "DB-TG-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_contact_faq_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: A Manager's FAQ save waits for the Owner, the Owner's save is used at once, Hidden questions are shown by no bot, Staff only read."
+    },
+    {
+      "test_id": "test_contact_office_takes_one_written_message_for_the_office",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: Contact office takes one written message, asks for text for a photo, and Back to menu leaves."
+    },
+    {
+      "test_id": "test_a_person_who_is_not_linked_can_still_contact_the_office",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: A person who is not linked can write to the office; the FAQ is for linked tenants."
+    },
+    {
+      "test_id": "test_faq_shows_the_approved_questions_as_buttons_and_answers_the_one_tapped",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: FAQ lists the approved questions as buttons in the person's language and answers the one tapped."
+    },
+    {
+      "test_id": "test_contact_office_needs_its_right_and_answers_once",
+      "upstream_ids": [
+        "DL-170",
+        "API-TG-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: Contact office needs telegram.contact and the browser checks; an answer is sent once."
+    },
+    {
+      "test_id": "test_the_faq_is_read_by_contact_staff_and_changed_with_its_right",
+      "upstream_ids": [
+        "DL-170",
+        "API-TG-002"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: The FAQ is read with telegram.contact, changed with telegram.faq, approved by the Owner only."
+    },
+    {
+      "test_id": "TEST-FE-1506",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: Contact office lists Waiting and Answered; Reply needs words and sends them; an answered message reads the list again."
+    },
+    {
+      "test_id": "TEST-FE-1507",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: The FAQ shows both languages, who sees it, the approved and the waiting version; a Manager's save goes to the Owner."
+    },
+    {
+      "test_id": "TEST-FE-1508",
+      "upstream_ids": [
+        "DL-170"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: The Owner approves and saves at once; Staff read the FAQ only."
+    },
+    {
+      "test_id": "TEST-FE-1509",
+      "upstream_ids": [
+        "DL-170",
+        "API-TG-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 2d part 2: The client reads and sends Contact office and FAQ with the browser token and refuses a wrong answer shape."
+    },
+    {
+      "test_id": "test_an_inquiry_is_saved_with_a_number_and_a_repeat_joins_it",
+      "upstream_ids": [
+        "DL-171",
+        "DB-TG-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_customer_bot_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: An inquiry needs the shared phone, is checked again, gets a VR number once, a repeat of the same person joins it, and Staff see the list oldest first."
+    },
+    {
+      "test_id": "test_the_offices_reply_to_a_customer_shows_the_customer_menu",
+      "upstream_ids": [
+        "DL-171",
+        "DB-TG-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_customer_bot_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: The office's Reply to a Customer bot message is sent by the Customer bot with its menu; the page shows the shared phone."
+    },
+    {
+      "test_id": "test_start_asks_for_the_language_then_shows_the_three_choices",
+      "upstream_ids": [
+        "DL-171"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: Start asks for Khmer or English, then shows Send an inquiry, FAQ and Contact office."
+    },
+    {
+      "test_id": "test_an_inquiry_asks_each_question_then_saves_the_request",
+      "upstream_ids": [
+        "DL-171"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: Send an inquiry asks each question in order, refuses answers that do not fit, shows the request to check and saves it with its number."
+    },
+    {
+      "test_id": "test_a_known_phone_is_not_asked_again_and_skips_are_allowed",
+      "upstream_ids": [
+        "DL-171"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: A shared phone is not asked again; the day, the move-in month and the note can be skipped; a joined request names both numbers."
+    },
+    {
+      "test_id": "test_back_to_menu_leaves_the_inquiry_and_a_lost_phone_asks_again",
+      "upstream_ids": [
+        "DL-171"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: Back to menu leaves the inquiry; with no phone on file the bot asks to share it."
+    },
+    {
+      "test_id": "test_contact_office_asks_for_the_phone_first_then_takes_one_message",
+      "upstream_ids": [
+        "DL-171",
+        "DL-170"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: Contact office in the Customer bot asks for the own phone first, then saves one written message."
+    },
+    {
+      "test_id": "test_the_faq_shows_the_customer_questions",
+      "upstream_ids": [
+        "DL-171",
+        "DL-170"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: FAQ in the Customer bot lists the customer questions as buttons and answers the one tapped."
+    },
+    {
+      "test_id": "test_the_visit_requests_list_needs_its_right",
+      "upstream_ids": [
+        "DL-171",
+        "API-TG-003"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: The Visit requests list needs visit_requests.read for that Property and is not cached."
+    },
+    {
+      "test_id": "TEST-FE-1510",
+      "upstream_ids": [
+        "DL-171"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: Visit requests lists the requests oldest first with customer, contact, wants, preferred day and note, and the joined asks under each."
+    },
+    {
+      "test_id": "TEST-FE-1511",
+      "upstream_ids": [
+        "DL-171",
+        "API-TG-003"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3a: The client reads Visit requests from the Bookings address and refuses a wrong shape."
+    },
+    {
+      "test_id": "test_take_call_book_visit_and_close",
+      "upstream_ids": [
+        "DL-172",
+        "DB-TG-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_visit_request_work_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: Take, Give to, calls, book and move a visit with the bot messages, Visited, Close with a reason, a closed request takes no new inquiry, Reopen and the history."
+    },
+    {
+      "test_id": "test_send_by_hand_reminders_spam_and_could_not_reach",
+      "upstream_ids": [
+        "DL-172",
+        "DB-TG-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_visit_request_work_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: Send by hand for non-Telegram customers, the 08:00 reminder once, Customer cancelled, Spam by a Manager with a note, and Could not reach after 3 no-answer days."
+    },
+    {
+      "test_id": "test_working_minutes_and_late",
+      "upstream_ids": [
+        "DL-172",
+        "DB-TG-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_visit_request_work_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: Working minutes count Monday to Saturday 07:00 to 17:00; a request nobody took for over 2 working hours is Late."
+    },
+    {
+      "test_id": "test_a_visit_request_step_needs_work_and_a_manager_gives_or_marks_spam",
+      "upstream_ids": [
+        "DL-172",
+        "API-TG-004"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: A request step needs visit_requests.work, Give to and Spam need visit_requests.manage, and a wrong body is refused."
+    },
+    {
+      "test_id": "test_the_visit_messages_from_the_app_have_their_words",
+      "upstream_ids": [
+        "DL-172"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: The visit booked, moved and reminder messages show the day, time, address and staff."
+    },
+    {
+      "test_id": "TEST-FE-1512",
+      "upstream_ids": [
+        "DL-172"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: Visit requests shows the Waiting, Late, Visits booked and Mine cards, and Send by hand today gives the words in the customer's language with Mark sent."
+    },
+    {
+      "test_id": "TEST-FE-1513",
+      "upstream_ids": [
+        "DL-172"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: A request opens with Take; the holder records calls, books a visit Monday to Saturday and closes it; a Manager gives it and marks Spam; others only read it."
+    },
+    {
+      "test_id": "TEST-FE-1514",
+      "upstream_ids": [
+        "DL-172",
+        "API-TG-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3b: The client reads one request and sends each step to its address with the browser token, and refuses a wrong shape."
+    },
+    {
+      "test_id": "test_make_reservation_block_and_the_month",
+      "upstream_ids": [
+        "DL-173",
+        "DB-TG-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_visit_request_close_out_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3c: A request becomes a Reservation once and closes, a Manager blocks and unblocks the Telegram account with why, a blocked account sends no inquiry or Contact office message, and this month is for Managers only."
+    },
+    {
+      "test_id": "test_name_phone_and_account_go_after_12_months",
+      "upstream_ids": [
+        "DL-173",
+        "DB-TG-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_visit_request_close_out_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3c: After 12 months with no activity a request and its joined asks lose name, phone, email, note and account, the steps stay, and nothing else can change."
+    },
+    {
+      "test_id": "test_a_blocked_account_is_told_to_visit_or_call_the_office",
+      "upstream_ids": [
+        "DL-173"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_customer_bot.py",
+      "status": "implemented",
+      "notes": "Telegram bots step 3c: A blocked account is told to visit or call the office for Send an inquiry and Contact office."
+    },
+    {
+      "test_id": "TEST-FE-1515",
+      "upstream_ids": [
+        "DL-173"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReservationsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3c: Make Reservation from a Visit request names it, chooses the Customer with the same phone, or starts New Customer with the name, phone and email."
+    },
+    {
+      "test_id": "TEST-FE-1516",
+      "upstream_ids": [
+        "DL-173",
+        "API-TG-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram bots step 3c: A request opens Make Reservation, shows the Reservation it became, a Manager blocks with a note, a removed request says so, and Managers see this month."
+    },
+    {
       "test_id": "test_the_chart_has_the_riel_bank_account",
       "upstream_ids": [
         "DL-160",

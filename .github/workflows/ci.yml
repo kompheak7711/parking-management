@@ -117,6 +117,12 @@ jobs:
       - name: Build frontend
         run: make frontend-build
 
+      - name: Type-check the Telegram relay
+        run: make relay-typecheck
+
+      - name: Run Telegram relay tests
+        run: make relay-test
+
       # V1-060 (owner 2026-10-25): when one job fails, stop the run's other jobs to save minutes.
       - name: Stop the other jobs after a failure
         if: failure()

@@ -23,7 +23,14 @@ from pathlib import Path
 from typing import Final, Literal
 
 StatusFileName = Literal[
-    "backup", "offhost-daily", "offhost-weekly", "restore-test", "migration", "checks"
+    "backup",
+    "offhost-daily",
+    "offhost-weekly",
+    "restore-test",
+    "migration",
+    "checks",
+    "telegram-pull",
+    "telegram-send",
 ]
 STATUS_FILE_NAMES: Final[tuple[StatusFileName, ...]] = (
     "backup",
@@ -32,6 +39,8 @@ STATUS_FILE_NAMES: Final[tuple[StatusFileName, ...]] = (
     "restore-test",
     "migration",
     "checks",
+    "telegram-pull",
+    "telegram-send",
 )
 STATUS_SCHEMA_VERSION: Final = 1
 
@@ -56,6 +65,17 @@ WARNING_MESSAGES: Final[dict[str, str]] = {
     "operations_check_stale": "The health checks have not run in the last 15 minutes.",
     "telegram_not_configured": "Telegram alerts are not set up yet.",
     "telegram_delivery_failed": "The last Telegram alert could not be sent.",
+    # The three bots (bots plan, 04/11/2026): only once the bots are turned on.
+    "telegram_bots_jobs_stale": "The Telegram bot jobs have not run in the last 15 minutes.",
+    "telegram_bots_not_pulled": (
+        "The office has not reached the Telegram relay in the last 15 minutes. "
+        "Bot messages are waiting there."
+    ),
+    "telegram_bots_relay_dropped": (
+        "Some bot messages waited 7 days in the Telegram relay and were removed."
+    ),
+    "telegram_bots_send_failing": "Some bot messages could not be sent for 12 hours.",
+    "telegram_bots_send_gave_up": "Some bot messages were not sent after 7 days of trying.",
 }
 # Warnings that are not sent by Telegram: they are about Telegram itself, or they mean the
 # check that sends the alerts is not running.
@@ -172,6 +192,10 @@ def _older_than(
     return moment is None or now - moment > limit
 
 
+def _positive(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
 def _failed(record: Mapping[str, object] | None) -> bool:
     return record is not None and record.get("last_outcome") == "failed"
 
@@ -189,6 +213,8 @@ def evaluate_warnings(
     restore = files.get("restore-test")
     migration = files.get("migration")
     checks = files.get("checks")
+    pull = files.get("telegram-pull")
+    send = files.get("telegram-send")
 
     codes: set[str] = set()
     if _failed(backup):
@@ -207,6 +233,19 @@ def evaluate_warnings(
         codes.add("restore_test_overdue")
     if _failed(migration):
         codes.add("migration_failed")
+    if pull is not None or send is not None:
+        if _older_than(pull, "last_run_at", limits.check_max_age, now) or _older_than(
+            send, "last_run_at", limits.check_max_age, now
+        ):
+            codes.add("telegram_bots_jobs_stale")
+        if _older_than(pull, "last_success_at", limits.check_max_age, now):
+            codes.add("telegram_bots_not_pulled")
+        if pull is not None and _positive(pull.get("relay_dropped")):
+            codes.add("telegram_bots_relay_dropped")
+        if send is not None and _positive(send.get("outbox_failing_12h")):
+            codes.add("telegram_bots_send_failing")
+        if send is not None and _positive(send.get("outbox_gave_up_7d")):
+            codes.add("telegram_bots_send_gave_up")
 
     if _older_than(checks, "checked_at", limits.check_max_age, now):
         codes.add("operations_check_stale")

@@ -1,0 +1,6 @@
+{
+  "name": "chetana-relay",
+  "private": true,
+  "type": "module",
+  "description": "The Telegram relay (Cloudflare Worker). No dependencies: tests use node:test and node:sqlite."
+}

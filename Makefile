@@ -16,7 +16,8 @@ FRONTEND_RUN := cd $(FRONTEND_DIR) && $(NPM) run
 	backend-install backend-dev backend-test backend-lint backend-format \
 	backend-format-check backend-typecheck backend-build backend-import-check \
 	frontend-install frontend-dev frontend-test frontend-lint frontend-format \
-	frontend-format-check frontend-typecheck frontend-build frontend-audit automation-test
+	frontend-format-check frontend-typecheck frontend-build frontend-audit automation-test \
+	relay-test relay-typecheck
 
 help:
 	@printf '%s\n' \
@@ -37,6 +38,8 @@ help:
 		"  make typecheck             Run backend and frontend strict typing" \
 		"  make build                 Build backend and frontend artifacts" \
 		"  make frontend-audit        Audit locked frontend dependencies" \
+		"  make relay-test            Test the Telegram relay (Node.js 22.6 or newer)" \
+		"  make relay-typecheck       Type-check the Telegram relay (after frontend-install)" \
 		"  make automation-test       Test model routing without real model calls"
 
 install: backend-install frontend-install
@@ -124,6 +127,15 @@ frontend-build:
 
 frontend-audit:
 	cd $(FRONTEND_DIR) && $(NPM) audit --audit-level=moderate
+
+# The Telegram relay (Cloudflare Worker) has no packages of its own: node:test runs its tests,
+# with node:sqlite standing in for D1, and the frontend's locked TypeScript checks its types.
+relay-test:
+	cd relay && node --experimental-strip-types --experimental-sqlite --no-warnings --test test/*.test.ts
+
+relay-typecheck:
+	$(FRONTEND_DIR)/node_modules/.bin/tsc -p relay/tsconfig.json
+	$(FRONTEND_DIR)/node_modules/.bin/prettier --check "relay/src/**/*.ts" "relay/test/**/*.ts"
 
 automation-test:
 	python3 scripts/validate-v1-roadmap.py

@@ -1033,6 +1033,8 @@ const TEXT = {
   nr_QUOTATION: ["Quotation", "សម្រង់តម្លៃ"],
   nr_UNIT_PROBLEM: ["Unit Problem", "បញ្ហាបន្ទប់"],
   nr_BUILDING_PROBLEM: ["Building problem", "បញ្ហាអគារ"],
+  // new: Telegram bots step 3a (DL-171).
+  nr_VISIT_REQUEST: ["Visit request", "សំណើមកមើលបន្ទប់"],
   // Daily and weekly rent.
   nr_SHORT_STAY: ["Short-stay booking", "ការកក់ស្នាក់នៅខ្លី"],
   nr_SHORT_STAY_QUOTE: ["Short-stay price quote", "សម្រង់តម្លៃស្នាក់នៅខ្លី"],

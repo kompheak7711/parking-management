@@ -182,6 +182,21 @@ container). The health screen itself is built in the screen rebuild (UI-093, DL-
 5. The office computer's firewall allows outbound HTTPS only to `api.telegram.org`
    (DEPLOY-016). No other outbound host is on the list in V1.
 
+**The Telegram bots (DL-125; off until the owner sets them up).** `prm-telegram-pull.timer` and
+`prm-telegram-send.timer` run every minute as `prm-ops`. They read
+`/etc/prm/telegram-jobs.env` (`APP_DATABASE_URL`, `PRM_PROPERTY_ID`, `PRM_TELEGRAM_ACTOR_ID`)
+and do nothing while `telegram_bots.enabled` is false. The relay setup steps are in
+`relay/README.md`. Each run writes `telegram-pull.json` or `telegram-send.json` to the status
+folder, and then the health page can show:
+
+| Check | Warning code |
+|---|---|
+| A bot job has not run in 15 minutes | `telegram_bots_jobs_stale` |
+| No good pull in 15 minutes | `telegram_bots_not_pulled` |
+| The relay removed items not pulled in 7 days | `telegram_bots_relay_dropped` |
+| A message could not be sent for 12 hours | `telegram_bots_send_failing` |
+| A message was given up after 7 days | `telegram_bots_send_gave_up` |
+
 **Recording a database update.** After `make migrate` in a release, run
 `property-rental-ops-check --config /etc/prm/production-operations.json record-migration --outcome succeeded --revision <the head revision>`,
 or `--outcome failed` if it failed. A failed update shows on the health page and is sent by

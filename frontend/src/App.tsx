@@ -162,6 +162,14 @@ import { ProductsPage } from "./products/ProductsPage";
 import { QuotationsPage } from "./quotations/QuotationsPage";
 import { ProblemReportsPage } from "./problems/ProblemReportsPage";
 import type { ProblemsApi } from "./problems/problemsClient";
+import {
+  ContactOfficePage,
+  FaqPageView,
+  LinkedTenantsPage,
+  TelegramHealthPage,
+  VisitRequestsPageView,
+} from "./telegram/TelegramPages";
+import type { TelegramApi } from "./telegram/telegramClient";
 import { ShortStaysPage } from "./shortstays/ShortStaysPage";
 import type { ShortStaysApi } from "./shortstays/shortStaysClient";
 import type { QuotationsApi } from "./quotations/quotationsClient";
@@ -192,6 +200,8 @@ export interface AppProps {
   quotationsApi?: QuotationsApi;
   /** V1.1 part 7: Building › Problem reports; the real server when not given. */
   problemsApi?: ProblemsApi;
+  /** Telegram bots step 2c: Office › Telegram; the real server when not given. */
+  telegramApi?: TelegramApi;
   /** Daily and weekly rent: Tenants › Short stays; the real server when not given. */
   shortStaysApi?: ShortStaysApi;
   propertyApi?: PropertyConfigurationApi;
@@ -679,6 +689,7 @@ export function App({
   openingApi,
   quotationsApi,
   problemsApi,
+  telegramApi,
   shortStaysApi,
   propertyApi = propertyConfigurationApi,
   unitApi,
@@ -1999,6 +2010,67 @@ export function App({
         <ProblemReportsPage
           active={shown("problems")}
           api={problemsApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="tglinks"
+        hidden={!shown("tglinks")}
+      >
+        <LinkedTenantsPage
+          active={shown("tglinks")}
+          api={telegramApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="tgcontact"
+        hidden={!shown("tgcontact")}
+      >
+        <ContactOfficePage
+          active={shown("tgcontact")}
+          api={telegramApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="visitreqs"
+        hidden={!shown("visitreqs")}
+      >
+        <VisitRequestsPageView
+          active={shown("visitreqs")}
+          api={telegramApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div className="shell-page" data-page="tgfaq" hidden={!shown("tgfaq")}>
+        <FaqPageView
+          active={shown("tgfaq")}
+          api={telegramApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="tghealth"
+        hidden={!shown("tghealth")}
+      >
+        <TelegramHealthPage
+          active={shown("tghealth")}
+          api={telegramApi}
           capabilities={capabilities}
           language={language}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
