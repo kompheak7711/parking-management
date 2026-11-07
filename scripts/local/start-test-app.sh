@@ -35,8 +35,16 @@ log="$PRM_LOCAL/screens.log"
 printf '3 of 4: starting the screens (log: .local/screens.log)...\n'
 (cd frontend && exec npm run dev:local) > "$log" 2>&1 &
 screens=$!
+bots=
+# The Telegram bot jobs, once "Set up Telegram test.command" has run (log: .local/telegram.log).
+if [ -s "$PRM_LOCAL/telegram/operations.json" ]; then
+  printf '   The Telegram bots run too (log: .local/telegram.log).\n'
+  sh scripts/local/telegram-jobs.sh >> "$PRM_LOCAL/telegram.log" 2>&1 &
+  bots=$!
+fi
 stop_screens() {
   kill "$screens" 2>/dev/null || true
+  [ -z "$bots" ] || kill "$bots" 2>/dev/null || true
 }
 trap stop_screens EXIT INT TERM HUP
 

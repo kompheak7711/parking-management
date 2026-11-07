@@ -64,3 +64,22 @@ Cloudflare, never into this repository or a chat.
 7. In `/etc/prm/production-operations.json`, set `telegram_bots.relay_host` to
    the relay address and `telegram_bots.enabled` to `true`, then start the
    timers `prm-telegram-pull.timer` and `prm-telegram-send.timer`.
+
+## On the Mac mini test run
+
+For testing before the office server, `Set up Telegram test.command` (repository folder,
+`scripts/local/telegram-setup.sh`) does steps 1 to 7 for the Mac mini, once:
+
+- the keys, webhook words and bot tokens stay in `.local/telegram` (mode 0700, never
+  committed); each token is pasted into Terminal with echo off and checked with Telegram;
+- Cloudflare is used through `npx wrangler@4.151.3` (Cloudflare's own command line; it is
+  downloaded when the setup runs and is not added to the repository); the browser asks you to
+  sign in once;
+- the photo bucket needs R2 turned on in the Cloudflare dashboard, which asks for a card even
+  for the free use;
+- the setup writes `.local/telegram/operations.json` and `jobs.env` (the Property, the Owner
+  account the jobs run as, and the Staff bot's service actor).
+
+After it, `Start test app.command` also runs the pull and send jobs every 10 seconds
+(`scripts/local/telegram-jobs.sh`, log `.local/telegram.log`). Send `ping` to a bot to check
+the connection. Running the setup again keeps what is there and redoes the rest.

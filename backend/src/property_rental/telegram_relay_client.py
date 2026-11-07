@@ -29,6 +29,9 @@ from typing import Final
 
 TIMEOUT_SECONDS: Final = 20
 MAX_MEDIA_BYTES: Final = 30 * 1024 * 1024
+# Cloudflare refuses Python's default "Python-urllib/3.x" name with 403 (error 1010, found on the
+# owner's Mac test run 07/11/2026), so the office names itself.
+USER_AGENT: Final = "CHETANA-Residence-office/1"
 HOST_PATTERN: Final = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9-]{1,63})+$")
 ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 
@@ -49,7 +52,10 @@ def _urllib_transport(
     method: str, url: str, headers: dict[str, str], body: bytes
 ) -> tuple[int, bytes]:
     request = urllib.request.Request(
-        url, data=body if method != "GET" else None, method=method, headers=headers
+        url,
+        data=body if method != "GET" else None,
+        method=method,
+        headers={**headers, "User-Agent": USER_AGENT},
     )
     context = ssl.create_default_context()
     try:

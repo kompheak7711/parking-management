@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
+from property_rental import telegram_relay_client
 from property_rental.operations_status import evaluate_warnings
 from property_rental.telegram_phone import normalize_phone
 from property_rental.telegram_pull_job import run_pull
@@ -616,3 +617,32 @@ def test_bot_warnings_show_only_when_the_bots_are_on() -> None:
         "telegram_bots_send_failing",
         "telegram_bots_send_gave_up",
     }
+
+
+def test_the_office_names_itself_to_the_relay(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Cloudflare refuses Python's default name with 403 (owner's Mac test run, 07/11/2026)."""
+    seen: dict[str, Any] = {}
+
+    class Answer:
+        status = 200
+
+        def __enter__(self) -> Answer:
+            return self
+
+        def __exit__(self, *_: object) -> None:
+            return None
+
+        def read(self, _limit: int) -> bytes:
+            return b"{}"
+
+    def urlopen(request: Any, **_: Any) -> Answer:
+        seen["agent"] = request.get_header("User-agent")
+        seen["signed"] = request.get_header("X-office-signature")
+        return Answer()
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    status, _ = telegram_relay_client._urllib_transport(
+        "GET", "https://relay.example/office/items", {"X-Office-Signature": "s"}, b""
+    )
+    assert status == 200
+    assert seen == {"agent": "CHETANA-Residence-office/1", "signed": "s"}

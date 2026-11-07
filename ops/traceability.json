@@ -65484,6 +65484,66 @@
       "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
       "status": "implemented",
       "notes": "Telegram FAQ starter: an empty FAQ offers the Owner and the Manager the 15 starter questions, which load waiting for the Owner; Staff do not see the button."
+    },
+    {
+      "test_id": "test_the_mac_operations_file_keeps_every_bot_path_in_its_folder",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_local_setup_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots on the Mac test run: the operations file turns the bots on and keeps the keys, tokens, photos and status in .local/telegram (mode 0600); the committed production file is not changed."
+    },
+    {
+      "test_id": "test_a_wrong_relay_address_or_folder_is_refused",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_local_setup_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots on the Mac test run: an empty or wrong relay address and a relative folder are refused."
+    },
+    {
+      "test_id": "test_the_database_steps_say_what_is_missing",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_local_setup_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots on the Mac test run: a missing database address is named, nothing secret is printed."
+    },
+    {
+      "test_id": "test_the_setup_finds_the_property_the_owner_and_the_service_actor",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_local_setup_migration.py",
+      "status": "implemented",
+      "notes": "Telegram bots on the Mac test run: the setup finds the one Property and the Owner, and reuses the active service actor the Staff bot's HR calls need."
+    },
+    {
+      "test_id": "test_the_telegram_setup_asks_tokens_hidden_and_keeps_them_off_command_lines",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_local_run_scripts.py",
+      "status": "implemented",
+      "notes": "Telegram bots on the Mac test run: tokens are typed with echo off and reach Telegram and Cloudflare only through standard input; the bot jobs read the database address from its file; the setup refuses to run without Terminal."
+    },
+    {
+      "test_id": "test_the_office_names_itself_to_the_relay",
+      "upstream_ids": [
+        "DL-125"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram relay: the office calls the relay with its own User-Agent, because Cloudflare refuses Python's default name with 403 (owner's Mac test run 07/11/2026)."
     }
   ]
 }

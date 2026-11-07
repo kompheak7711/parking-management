@@ -51,6 +51,8 @@ def test_every_local_script_parses_and_reads_secrets_only_from_files() -> None:
         "setup-property.sh",
         "start-api.sh",
         "start-test-app.sh",
+        "telegram-jobs.sh",
+        "telegram-setup.sh",
     }
     for script in scripts:
         assert subprocess.run(["sh", "-n", str(script)], check=False).returncode == 0
@@ -268,6 +270,31 @@ def test_the_owner_set_up_refuses_the_options_it_sets_itself(copied_repository: 
 def test_the_helper_is_python_3_9_syntax_for_macos() -> None:
     ast.parse(HELPER.read_text(encoding="utf-8"), feature_version=(3, 9))
     assert HELPER.read_text(encoding="utf-8").startswith("#!/usr/bin/python3 -I\n")
+
+
+def test_the_telegram_setup_asks_tokens_hidden_and_keeps_them_off_command_lines(
+    copied_repository: Path,
+) -> None:
+    """Owner ask 07/11/2026: the bots on the Mac test run. Tokens are typed into Terminal with
+    echo off and reach Telegram and Cloudflare only through standard input."""
+    setup = (LOCAL_SCRIPTS / "telegram-setup.sh").read_text(encoding="utf-8")
+    assert "stty -echo" in setup and "stty echo" in setup
+    assert "--config -" in setup
+    assert 'wrangler secret put "$1" --config "$CFG" < "$2"' in setup
+    assert "WRANGLER_VERSION=4.151.3" in setup
+    jobs = (LOCAL_SCRIPTS / "telegram-jobs.sh").read_text(encoding="utf-8")
+    assert 'IFS= read -r APP_DATABASE_URL < "$PRM_SECRETS/runtime_database_url"' in jobs
+    start = (LOCAL_SCRIPTS / "start-test-app.sh").read_text(encoding="utf-8")
+    assert 'if [ -s "$PRM_LOCAL/telegram/operations.json" ]; then' in start
+    result = subprocess.run(
+        ["sh", str(copied_repository / "scripts" / "local" / "telegram-setup.sh")],
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "Run it in Terminal" in result.stderr
 
 
 def test_the_owner_set_up_refuses_to_run_without_a_terminal(copied_repository: Path) -> None:
