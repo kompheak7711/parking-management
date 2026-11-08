@@ -601,6 +601,31 @@ const TEXT = {
   m_none: ["None yet.", "មិនទាន់មាន។"],
   m_count: ["Count", "ចំនួន"],
   src_TELEGRAM: ["Telegram bot", "បូត Telegram"],
+  // Invoices on Telegram (DL-211, owner 8 Nov 2026). All Khmer here is new and needs the
+  // native check.
+  inv_h: ["Invoices on Telegram", "វិក្កយបត្រតាមតេឡេក្រាម"],
+  inv_sub: [
+    "Each issued Invoice goes to the tenants linked to its Lease. A reminder goes {0} days before the due date while it is not fully paid. Invoices of the last {1} days.",
+    "វិក្កយបត្រដែលបានចេញនីមួយៗ ផ្ញើទៅអ្នកជួលដែលភ្ជាប់នឹងកិច្ចសន្យា។ ការរំលឹកផ្ញើ {0} ថ្ងៃមុនកាលកំណត់បង់ ប្រសិនបើមិនទាន់បង់គ្រប់។ វិក្កយបត្រ {1} ថ្ងៃចុងក្រោយ។",
+  ],
+  inv_paper_t: [
+    "Invoices that did not reach anyone on Telegram: {0}. Give these tenants a paper copy.",
+    "វិក្កយបត្រ {0} មិនបានទៅដល់នរណាម្នាក់តាមតេឡេក្រាមទេ។ សូមផ្តល់ច្បាប់ចម្លងក្រដាសដល់អ្នកជួលទាំងនេះ។",
+  ],
+  inv_none: [
+    "No Invoices were issued in this time.",
+    "មិនមានវិក្កយបត្រចេញក្នុងរយៈពេលនេះទេ។",
+  ],
+  c_invoice: ["Invoice", "វិក្កយបត្រ"],
+  c_due: ["Due date", "កាលកំណត់បង់"],
+  c_to_pay: ["To pay", "ត្រូវបង់"],
+  c_telegram: ["Telegram", "តេឡេក្រាម"],
+  c_reminder: ["Reminder", "ការរំលឹក"],
+  inv_sent: ["Sent to {0}", "បានផ្ញើទៅ {0}"],
+  inv_waiting: ["Waiting to send", "កំពុងរង់ចាំផ្ញើ"],
+  inv_failed: ["Not delivered", "មិនបានទៅដល់"],
+  inv_paper: ["Give a paper copy", "ផ្តល់ច្បាប់ចម្លងក្រដាស"],
+  inv_no_reminder: ["Not yet", "មិនទាន់"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type TelegramTextKey = keyof typeof TEXT;

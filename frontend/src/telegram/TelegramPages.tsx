@@ -16,7 +16,7 @@ import {
   useState,
 } from "react";
 
-import { dayText, momentText } from "../shell/format";
+import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { Chip, CountCard, Dialog, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -29,6 +29,8 @@ import {
   type FaqQuestion,
   type FaqWords,
   type HealthPage,
+  type InvoicesPage,
+  type TelegramInvoice,
   type LinkedTenant,
   type LinksPage,
   type TelegramApi,
@@ -403,6 +405,12 @@ export function LinkedTenantsPage({
           </div>
         )}
       </section>
+      <InvoicesOnTelegram
+        active={active}
+        api={api}
+        language={language}
+        propertyId={propertyId}
+      />
       {removing !== null && (
         <RemoveLinkDialog
           api={api}
@@ -431,6 +439,129 @@ export function LinkedTenantsPage({
         />
       )}
     </>
+  );
+}
+
+// Invoices on Telegram (DL-211): who got each issued Invoice, and who needs a paper copy.
+
+function invoiceReached(
+  invoice: TelegramInvoice,
+): "sent" | "waiting" | "failed" | "none" {
+  if (invoice.sent.length === 0) return "none";
+  if (invoice.sent.some((person) => person.state === "SENT")) return "sent";
+  if (invoice.sent.every((person) => person.state === "GAVE_UP"))
+    return "failed";
+  return "waiting";
+}
+
+function InvoicesOnTelegram({
+  language,
+  propertyId,
+  active,
+  api,
+}: {
+  language: Language;
+  propertyId: string;
+  active: boolean;
+  api: TelegramApi;
+}) {
+  const page = usePage<InvoicesPage>(propertyId, active, api.invoices);
+  const data = page.data;
+  const paper =
+    data === null
+      ? 0
+      : data.invoices.filter((invoice) => {
+          const reached = invoiceReached(invoice);
+          return reached === "none" || reached === "failed";
+        }).length;
+  return (
+    <section aria-labelledby="tg-invoices" className="ui-card pad0">
+      <div className="ui-listbar">
+        <h2 id="tg-invoices">{tt(language, "inv_h")}</h2>
+      </div>
+      {data === null ? (
+        <Waiting failed={page.failed} language={language} onRetry={page.load} />
+      ) : (
+        <>
+          {paper > 0 && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{tt(language, "inv_paper_t", paper)}</p>
+            </div>
+          )}
+          {data.invoices.length === 0 ? (
+            <p className="ui-empty">{tt(language, "inv_none")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table className="ui-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_invoice")}</th>
+                    <th scope="col">{tt(language, "c_unit")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_cust")}
+                    </th>
+                    <th scope="col">{tt(language, "c_due")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_to_pay")}
+                    </th>
+                    <th scope="col">{tt(language, "c_telegram")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_reminder")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.invoices.map((invoice) => {
+                    const reached = invoiceReached(invoice);
+                    const sentCount = invoice.sent.filter(
+                      (person) => person.state === "SENT",
+                    ).length;
+                    return (
+                      <tr key={invoice.id}>
+                        <td className="ui-num">{invoice.number}</td>
+                        <td>{invoice.unit_number ?? ""}</td>
+                        <td className="ui-wide">{invoice.customer}</td>
+                        <td className="ui-num">{dayText(invoice.due_date)}</td>
+                        <td className="ui-wide ui-num">
+                          {usdFromCents(invoice.to_pay_usd_cents)}
+                        </td>
+                        <td>
+                          {reached === "sent" && (
+                            <Chip tone="ok">
+                              {tt(language, "inv_sent", sentCount)}
+                            </Chip>
+                          )}
+                          {reached === "waiting" && (
+                            <Chip tone="warn">
+                              {tt(language, "inv_waiting")}
+                            </Chip>
+                          )}
+                          {reached === "failed" && (
+                            <Chip tone="err">{tt(language, "inv_failed")}</Chip>
+                          )}
+                          {reached === "none" && (
+                            <Chip tone="err">{tt(language, "inv_paper")}</Chip>
+                          )}
+                        </td>
+                        <td className="ui-wide ui-num">
+                          {invoice.reminded_at === null
+                            ? tt(language, "inv_no_reminder")
+                            : momentText(invoice.reminded_at)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="ui-tfoot">
+            {tt(language, "inv_sub", data.rules.remind_days, data.rules.days)}
+          </p>
+        </>
+      )}
+    </section>
   );
 }
 

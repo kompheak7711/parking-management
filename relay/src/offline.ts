@@ -104,7 +104,8 @@ export function unitKey(unit: string): string {
   return unit
     .replace(/\s+/g, "")
     .toUpperCase()
-    .replace(/^(UNIT|ROOM|NO\.?|#|បន្ទប់)/u, "");
+    .replace(/^(UNIT|ROOM|NO\.?|#|បន្ទប់)/u, "")
+    .replace(/^U(?=[0-9])/u, "");
 }
 
 // The two forms of a typed name the office compares: the words in any order, and the words

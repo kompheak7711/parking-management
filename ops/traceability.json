@@ -65796,6 +65796,93 @@
       "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
       "status": "implemented",
       "notes": "Telegram while the app is closed: Staff without telegram.operate cannot read the offline data."
+    },
+    {
+      "test_id": "test_an_issued_invoice_goes_to_the_linked_tenant_once",
+      "upstream_ids": [
+        "DL-211",
+        "DB-TG-018"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: an issued Invoice queues one Invoice message for the linked tenant in their language with the Unit, lines, total, amount to pay and due date; queued again it goes to nobody; the list shows it waiting."
+    },
+    {
+      "test_id": "test_a_draft_is_never_sent",
+      "upstream_ids": [
+        "DL-211",
+        "DB-TG-018"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: a draft Invoice queues nothing."
+    },
+    {
+      "test_id": "test_the_reminder_goes_once_3_days_before_the_due_date",
+      "upstream_ids": [
+        "DL-211",
+        "DB-TG-018"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: an unpaid Invoice due in 2 days, issued earlier, gets one reminder from 08:00 Property time, never a second; the list shows when it went."
+    },
+    {
+      "test_id": "test_a_reminder_waits_for_an_invoice_due_later",
+      "upstream_ids": [
+        "DL-211",
+        "DB-TG-018"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: an Invoice due more than 3 days away gets no reminder yet."
+    },
+    {
+      "test_id": "test_the_invoice_list_and_reminders_need_the_telegram_rights",
+      "upstream_ids": [
+        "DL-211",
+        "DB-TG-018"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: Staff without telegram.read and telegram.operate cannot read the list or queue reminders."
+    },
+    {
+      "test_id": "test_an_invoice_and_its_reminder_read_as_the_tenant_gets_them",
+      "upstream_ids": [
+        "DL-211"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: the send job puts the Invoice, the reminder and the paid Invoice texts together in English and Khmer from the queued fields."
+    },
+    {
+      "test_id": "TEST-FE-1950",
+      "upstream_ids": [
+        "DL-211",
+        "API-TG-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Invoices on Telegram: Linked tenants lists who got each issued Invoice and its reminder, and counts the Invoices that need a paper copy."
+    },
+    {
+      "test_id": "test_a_typed_unit_number_finds_a_unit_numbered_with_u",
+      "upstream_ids": [
+        "DL-212",
+        "DB-TG-019"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
+      "status": "implemented",
+      "notes": "Tenant bot linking: U302, 302, Room u302 and Unit 302 give the same Unit key; UB12 keeps its letters."
     }
   ]
 }

@@ -51,6 +51,33 @@ export interface LinksPage {
   rules: { tries: number; block_hours: number; keep_days: number };
 }
 
+/** One tenant an Invoice went to on Telegram (DL-211). */
+export interface InvoiceSent {
+  telegram_user_id: number;
+  queued_at: string;
+  /** WAITING, SENT or GAVE_UP. */
+  state: string;
+  sent_at: string | null;
+}
+
+export interface TelegramInvoice {
+  id: string;
+  number: string;
+  unit_number: string | null;
+  customer: string;
+  status: string;
+  issued_at: string;
+  due_date: string;
+  to_pay_usd_cents: number;
+  sent: InvoiceSent[];
+  reminded_at: string | null;
+}
+
+export interface InvoicesPage {
+  invoices: TelegramInvoice[];
+  rules: { remind_days: number; days: number };
+}
+
 export interface BotHealth {
   code: string;
   name: string;
@@ -311,6 +338,8 @@ export interface TelegramApi {
     reason: string,
   ) => Promise<LinksPage>;
   health: (propertyId: string) => Promise<HealthPage>;
+  /** The Invoices of the last weeks and who got them on Telegram (DL-211). */
+  invoices: (propertyId: string) => Promise<InvoicesPage>;
   /** Sends a message the app gave up on once more and answers the page again. */
   retry: (propertyId: string, messageId: string) => Promise<HealthPage>;
   contact: (propertyId: string) => Promise<ContactPage>;
@@ -421,6 +450,37 @@ function post(body?: unknown): RequestInit {
 
 function root(propertyId: string): string {
   return `/api/v1/properties/${encodeURIComponent(propertyId)}/telegram`;
+}
+
+export function invoicesPageOf(value: unknown): InvoicesPage {
+  const page = record(value);
+  const rules = record(page.rules);
+  return {
+    invoices: list(page.invoices).map((item) => {
+      const row = record(item);
+      return {
+        id: text(row.id),
+        number: text(row.number),
+        unit_number: maybeText(row.unit_number),
+        customer: text(row.customer),
+        status: text(row.status),
+        issued_at: text(row.issued_at),
+        due_date: text(row.due_date),
+        to_pay_usd_cents: whole(row.to_pay_usd_cents),
+        sent: list(row.sent).map((one) => {
+          const person = record(one);
+          return {
+            telegram_user_id: whole(person.telegram_user_id),
+            queued_at: text(person.queued_at),
+            state: text(person.state),
+            sent_at: maybeText(person.sent_at),
+          };
+        }),
+        reminded_at: maybeText(row.reminded_at),
+      };
+    }),
+    rules: { remind_days: whole(rules.remind_days), days: whole(rules.days) },
+  };
 }
 
 export function linksPageOf(value: unknown): LinksPage {
@@ -750,6 +810,9 @@ export const telegramApi: TelegramApi = {
   },
   async health(propertyId) {
     return healthPageOf(await request(`${root(propertyId)}/health`));
+  },
+  async invoices(propertyId) {
+    return invoicesPageOf(await request(`${root(propertyId)}/invoices`));
   },
   async retry(propertyId, messageId) {
     const answer = record(

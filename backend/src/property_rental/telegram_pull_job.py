@@ -422,6 +422,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         store.tenant_end_finished_links()
         store.remove_old_link_attempts()
         store.visit_reminders()
+        # The Invoice reminder 3 days before the due date (DL-211).
+        store.invoice_reminders()
         store.visit_requests_remove_old()
         # The 18:00 summary of the staff checklists for the Authorizers, once a day.
         store.staff_daily_summary()

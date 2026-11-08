@@ -146,3 +146,14 @@ def test_a_report_the_relay_already_alerted_is_not_alerted_again(
 def test_the_offline_data_is_behind_the_telegram_right(offline_database: HrDatabase) -> None:
     db = offline_database
     refused(db.runtime_url, "42501", OFFLINE, db.property_id, db.staff)
+
+
+def test_a_typed_unit_number_finds_a_unit_numbered_with_u(offline_database: HrDatabase) -> None:
+    """DL-212 (owner test, 8 Nov 2026): the Units are "U302"; a tenant types "302"."""
+    keys = run(
+        offline_database.owner_url,
+        "SELECT array[app.tenant_unit_key('U302'), app.tenant_unit_key('302'), "
+        "app.tenant_unit_key('Room u302'), app.tenant_unit_key('Unit 302'), "
+        "app.tenant_unit_key('UB12')]",
+    )
+    assert keys == ["302", "302", "302", "302", "UB12"]

@@ -204,6 +204,11 @@ test("phone numbers, Units and names are compared as the office does", () => {
   assert.equal(unitKey("Unit 305"), "305");
   assert.equal(unitKey(" room305 "), "305");
   assert.equal(unitKey("បន្ទប់ 305"), "305");
+  // DL-212: the owner's Units are "U302"; a tenant types "302".
+  assert.equal(unitKey("U302"), "302");
+  assert.equal(unitKey("room u302"), "302");
+  assert.equal(unitKey("UNIT 302"), "302");
+  assert.equal(unitKey("UB12"), "UB12");
   assert.deepEqual(typedNameForms("KIM  Dara"), ["s:dara kim", "c:kimdara"]);
   assert.deepEqual(typedNameForms("DaraKim"), ["s:darakim", "c:darakim"]);
   assert.deepEqual(typedNameForms("1234"), []);

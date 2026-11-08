@@ -132,6 +132,7 @@ class FakeStore:
         self.inquiries: list[tuple[str, int, int, str, dict[str, Any]]] = []
         self.inquiry_answers: list[dict[str, Any]] = []
         self.reminder_runs = 0
+        self.invoice_reminder_runs = 0
         self.blocked = False
         # The Staff bot (migration 20270620_331); None is a job given no service actor.
         self.staff_ready = True
@@ -217,6 +218,10 @@ class FakeStore:
 
     def visit_reminders(self) -> int:
         self.reminder_runs += 1
+        return 0
+
+    def invoice_reminders(self) -> int:
+        self.invoice_reminder_runs += 1
         return 0
 
     def visit_requests_remove_old(self) -> int:
@@ -554,6 +559,56 @@ def test_send_job_sends_records_and_reports_fixed_codes() -> None:
     ]
     assert posts[0][0] == f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     assert posts[0][1]["text"].startswith("✅ The office app got your message")
+
+
+def test_an_invoice_and_its_reminder_read_as_the_tenant_gets_them() -> None:
+    """DL-211: the Invoice message and the reminder, from what the database queues."""
+    details = {
+        "number": "INV-2026-0042",
+        "unit": "Unit 305",
+        "list": "• Monthly Rent: $350.00\n• Water: $4.50",
+        "total": "$354.50",
+        "to_pay": "$354.50",
+        "due": "05/12/2026",
+    }
+    store = FakeStore()
+    store.due = [
+        {
+            "id": f"i{number}",
+            "bot": "TENANT",
+            "chat_id": 777,
+            "text_code": code,
+            "language": language,
+            "details": details,
+            "buttons": None,
+        }
+        for number, (code, language) in enumerate(
+            [
+                ("tenant.invoice", "en"),
+                ("tenant.invoice_reminder", "en"),
+                ("tenant.invoice_paid", "en"),
+                ("tenant.invoice", "km"),
+            ]
+        )
+    ]
+    posts: list[dict[str, Any]] = []
+
+    def post(address: str, body: dict[str, Any]) -> tuple[int, bytes]:
+        posts.append(body)
+        return 200, json.dumps({"ok": True, "result": {"message_id": 9}}).encode()
+
+    result = run_send(
+        store=store, api_host="api.telegram.org", tokens={"TENANT": TOKEN}, post_json=post
+    )
+    assert result.sent == 4
+    invoice, reminder, paid, khmer = (body["text"] for body in posts)
+    assert invoice.startswith("🧾 New Invoice INV-2026-0042\nUnit 305")
+    assert "• Water: $4.50" in invoice and "To pay: $354.50" in invoice
+    assert "Due date: 05/12/2026" in invoice
+    assert reminder.startswith("⏰ Reminder: Invoice INV-2026-0042 for Unit 305 is due on 05/12")
+    assert "Already paid in full" in paid and "To pay" not in paid
+    assert "INV-2026-0042" in khmer and "$354.50" in khmer
+    assert all("reply_markup" not in body for body in posts)
 
 
 def test_bot_keys_are_read_only_when_they_look_like_keys(tmp_path: Path) -> None:

@@ -4,7 +4,8 @@ DL-171).
 Reading the Linked tenants and Telegram health pages needs `telegram.read`; Remove link and Retry
 need `telegram.operate` and the browser mutation checks. Contact office needs `telegram.contact`;
 the FAQ is read with `telegram.faq` or `telegram.contact` and changed with `telegram.faq`. The
-database refusals map to 403, 404 and 409. The Visit requests list (step 3a, DL-171) needs
+database refusals map to 403, 404 and 409. The Invoices on Telegram list (DL-211, API-TG-008)
+also needs `telegram.read`. The Visit requests list (step 3a, DL-171) needs
 `visit_requests.read`.
 """
 
@@ -65,6 +66,10 @@ class InMemoryTelegram:
     def health(self, property_id: UUID, *, actor_id: str) -> Json:
         self._check(property_id)
         return {"outbox_waiting": 0, "bots": [], "outbox": [], "pulls": []}
+
+    def invoices(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        return {"invoices": [{"number": "INV-26-0001", "sent": []}], "rules": {"remind_days": 3}}
 
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID:
         self._check(property_id)
@@ -145,7 +150,7 @@ def base(flow: InMemoryTelegram) -> str:
 
 def test_the_telegram_pages_need_telegram_read() -> None:
     flow = InMemoryTelegram()
-    for url in (f"{base(flow)}/links", f"{base(flow)}/health"):
+    for url in (f"{base(flow)}/links", f"{base(flow)}/health", f"{base(flow)}/invoices"):
         assert client(flow).get(url).status_code == 403
         answer = client(flow, "telegram.read").get(url)
         assert answer.status_code == 200

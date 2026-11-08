@@ -99,6 +99,8 @@ class TelegramPageFlow(Protocol):
 
     def health(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
+    def invoices(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID: ...
 
     def contact(self, property_id: UUID, *, actor_id: str) -> Json: ...
@@ -132,6 +134,9 @@ class UnavailableTelegramPageFlow:
         raise ProductUnavailable
 
     def health(self, property_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def invoices(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
     def retry(self, property_id: UUID, message_id: UUID, **_: object) -> UUID:
@@ -199,6 +204,11 @@ class PostgresTelegramPageFlow:
     def health(self, property_id: UUID, *, actor_id: str) -> Json:
         return _json(
             self._one("SELECT app.telegram_health_page(%s, %s)", (property_id, UUID(actor_id)))
+        )
+
+    def invoices(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one("SELECT app.telegram_invoices_page(%s, %s)", (property_id, UUID(actor_id)))
         )
 
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID:
@@ -375,6 +385,15 @@ def create_telegram_router(
         response.headers["Cache-Control"] = "private, no-store"
         try:
             return envelope(request, flow.health(property_id, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @pages.get("/telegram/invoices")
+    def telegram_invoices(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, TELEGRAM_READ, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.invoices(property_id, actor_id=actor.actor_id))
         except REFUSED as exc:
             raise _http(exc) from exc
 

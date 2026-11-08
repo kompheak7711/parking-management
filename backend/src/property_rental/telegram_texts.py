@@ -141,6 +141,39 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Fire or danger: call 118 or 117 first."
         ),
     },
+    # Invoices on Telegram (DL-211, owner 8 Nov 2026): each issued Invoice and one reminder 3 days
+    # before the due date while it is not fully paid. The Khmer waits for the native check.
+    "tenant.invoice": {
+        "km": (
+            "🧾 វិក្កយបត្រថ្មី {number}\n{unit}\n\n{list}\n\n"
+            "សរុប៖ {total}\nត្រូវបង់៖ {to_pay}\nកាលបរិច្ឆេទកំណត់បង់៖ {due}\n\n"
+            "សូមបង់ប្រាក់មុនកាលបរិច្ឆេទកំណត់។ សូមអរគុណ។"
+        ),
+        "en": (
+            "🧾 New Invoice {number}\n{unit}\n\n{list}\n\n"
+            "Total: {total}\nTo pay: {to_pay}\nDue date: {due}\n\n"
+            "Please pay by the due date. Thank you."
+        ),
+    },
+    "tenant.invoice_paid": {
+        "km": ("🧾 វិក្កយបត្រ {number}\n{unit}\n\n{list}\n\nសរុប៖ {total}\nបានបង់រួចរាល់ហើយ។ សូមអរគុណ។"),
+        "en": (
+            "🧾 Invoice {number}\n{unit}\n\n{list}\n\n"
+            "Total: {total}\nAlready paid in full. Thank you."
+        ),
+    },
+    "tenant.invoice_reminder": {
+        "km": (
+            "⏰ សូមរំលឹក៖ វិក្កយបត្រ {number} សម្រាប់ {unit} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
+            "នៅត្រូវបង់៖ {to_pay}\n\n"
+            "ប្រសិនបើលោកអ្នកបានបង់រួចហើយ សូមអរគុណ ហើយមិនបាច់ខ្វល់នឹងសារនេះទេ។"
+        ),
+        "en": (
+            "⏰ Reminder: Invoice {number} for {unit} is due on {due}.\n"
+            "Still to pay: {to_pay}\n\n"
+            "If you have already paid, thank you, and please ignore this message."
+        ),
+    },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
         "en": "How can we help you?",

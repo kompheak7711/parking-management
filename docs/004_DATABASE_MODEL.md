@@ -5950,3 +5950,17 @@ Added by DL-210 (migration `20270708_380`, forward-only). No new table.
 - `app.telegram_tenant_offline_data(property, actor)` (`telegram.operate`): each person a Lease link may name today with their phones (one format) and name forms (`s:` words in any order, `c:` written together, and written together backwards), each Unit's number, Unit key and places, the problem types and shared places by id, and who gets an urgent alert (the Authorizers, and each caretaker's shift times from yesterday to the day after tomorrow). The pull job hashes names and phones before anything leaves the office.
 - `app.telegram_tenant_form_data` now also gives each linked tenant's Unit number (`data.unit`).
 - `app.telegram_staff_urgent_alert` (trigger) queues nothing when `prm.relay_alerted` is `on` for the change (a report the relay already alerted).
+
+## DB-TG-018 — Invoices and a reminder to linked tenants (DL-211)
+
+Added by DL-211 (migration `20270709_381`, forward-only).
+
+- `app.telegram_invoice_notices` (never changed or emptied): one row per Invoice, kind (`ISSUED` or `REMINDER`) and Telegram account, with its outbox message (unique). Unique on (Invoice, kind, account), so nobody gets an Invoice or its reminder twice.
+- `app.telegram_invoice_issued` (deferred constraint trigger on `app.invoices`, after insert or a change of `issued_at`): when an Invoice is issued, queues `tenant.invoice` (or `tenant.invoice_paid` when nothing is left to pay) for each live link of its Lease, or of its Customer when it has no Lease, in the language chosen in the Tenant bot. An error is a warning only; the Invoice is issued.
+- `app.telegram_invoice_reminders(property, actor)` (`telegram.operate`, run by the pull job): queues `tenant.invoice_reminder` once per tenant for each Unpaid or Partly paid Invoice due in 1 to 3 days, issued on an earlier day, from 08:00 Property time.
+- `app.telegram_invoices_page(property, actor)` (`telegram.read`): the Invoices issued in the last 45 days with their Unit, Customer, due date, amount still to pay, each tenant it was queued for with the send state, and when the reminder was queued; `rules` gives `remind_days` 3 and `days` 45.
+- Internal, not granted: `app.telegram_usd`, `app.telegram_invoice_details`, `app.telegram_invoice_to_pay`, `app.telegram_invoice_people`, `app.telegram_queue_invoice`.
+
+## DB-TG-019 — The Unit key drops a "U" before the number (DL-212)
+
+Added by DL-212 (migration `20270710_382`, forward-only). No new table. `app.tenant_unit_key(text)` also drops a leading "U" before a digit, after "Unit", "Room", "No.", "#" and "បន្ទប់": "U302" and "302" give the same key "302".

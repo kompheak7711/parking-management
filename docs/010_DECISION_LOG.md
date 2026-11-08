@@ -2902,3 +2902,29 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** `relay/src/offline.ts`, migration `20270708_380` (DB-TG-017), `backend/src/property_rental/telegram_offline.py`, `scripts/local/telegram-setup.sh` (the key and the secret).
 - **Links:** DL-125, DL-126, DL-127, DL-175.
 - **Decision date:** 2026-11-07.
+
+## DL-211 — Telegram bots: Invoices and a reminder go to linked tenants
+
+- **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/telegram-invoices; WAITS FOR THE OWNER'S TEST AND OK TO MERGE`
+- **Source:** the owner on 8 Nov 2026 asked "how telegram bot send invoice to all tenant telegram?"; on the card "Build sending Invoices to tenants on Telegram?" the owner chose "Invoice + reminder": each issued Invoice goes to the linked tenants, plus one reminder 3 days before the due date if it is not fully paid.
+- **(A) Who gets an Invoice.** Every Telegram account with a live link (DL-126) to the Invoice's Lease; an Invoice without a Lease goes to each live link of its Customer. A tenant who is not linked gets nothing; the app lists such Invoices so staff give a paper copy. Each tenant gets the message in the language they chose in the Tenant bot (Khmer when they never chose).
+- **(B) When.** At the moment an Invoice is issued, whichever way: the Issue button, the billing run or a settlement. A deferred database trigger queues the message when the change is saved, so the Invoice number and lines are final. Drafts and void Invoices are never sent. A Telegram problem never stops an Invoice from being issued: the Invoice is issued and the list shows it reached nobody. Each tenant gets each Invoice at most once.
+- **(C) What it says.** The Invoice number, the Unit, each line with its amount, the total, what is still to pay and the due date, then "Please pay by the due date". An Invoice already paid in full when issued says "Already paid in full". Fixed texts in `telegram_texts` (`tenant.invoice`, `tenant.invoice_paid`, `tenant.invoice_reminder`); the Khmer waits for the native check.
+- **(D) The reminder (owner rule: 3 days).** Once per tenant and Invoice, while the Invoice is Unpaid or Partly paid, when its due date is 1 to 3 days away, the Invoice was issued on an earlier day, and it is 08:00 or later Property time. The office makes it when it runs (the pull job, every 10 seconds on the Mac, every minute on the office server): if the app is closed for all of those days, no reminder goes. A tenant who linked after the Invoice was issued still gets the reminder.
+- **(E) In the app.** Office › Telegram › Linked tenants shows "Invoices on Telegram": the Invoices issued in the last 45 days, who got each one (sent, waiting, not delivered) and when the reminder went, and how many reached nobody ("Give a paper copy").
+- **(F) Not in this step.** The Invoice as a PDF: the PDF library on the office computer does not join Khmer letters correctly, so a PDF with Khmer names would be wrong. It comes with the ABA KHQR step, which redesigns the printed Invoice. No new package.
+- **Open:** the native Khmer check of the new texts; the PDF with the ABA KHQR.
+- **Built:** migration `20270709_381` (DB-TG-018), API-TG-008, `frontend/src/telegram/TelegramPages.tsx`.
+- **Links:** DL-125, DL-126, DL-210.
+- **Decision date:** 2026-11-08.
+
+## DL-212 — Telegram bots: "302" finds Unit "U302" when a tenant links
+
+- **Type:** `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/telegram-invoices; WAITS FOR THE OWNER'S OK TO MERGE`
+- **Source:** the owner's test on 8 Nov 2026: the Units are numbered "U302", and linking with "302" was refused. Tenants will type the number they know.
+- **Decision:** when the Tenant bot compares the Unit a tenant typed with the Lease's Unit, a "U" right before a digit is dropped, after the words already dropped ("Unit", "Room", "No.", "#", "បន្ទប់"). "U302", "u 302", "302", "Unit 302" and "Room U302" are the same Unit; "UB12" stays "UB12". The office (`app.tenant_unit_key`) and the relay (`unitKey` in `relay/src/offline.ts`) use the same rule. The name and phone checks do not change, and the bot still never says which part was wrong.
+- **Built:** migration `20270710_382` (DB-TG-019), `relay/src/offline.ts`.
+- **Links:** DL-126, DL-210.
+- **Decision date:** 2026-11-08.

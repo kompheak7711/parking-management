@@ -2292,3 +2292,7 @@ Added by DL-176 (Telegram bots step 4c; migration `20270622_333`, DB-TG-012). `G
 ### API-TG-007 Load the starter FAQ — 2026-11-06
 
 Added by DL-179 (migration `20270625_336`, DB-TG-015). `POST /api/v1/properties/{property_id}/telegram/faq/starter` (`telegram.faq`, browser mutation checks, no body) loads the 15 starter questions into an empty FAQ, each waiting for the Owner's approval, and answers `loaded` and `faq` (the FAQ page again). Refusals: 403 (no right, or the browser checks fail), 409 (the FAQ already has questions).
+
+### API-TG-008 Invoices on Telegram — 2026-11-08
+
+Added by DL-211 (migration `20270709_381`, DB-TG-017). `GET /api/v1/properties/{property_id}/telegram/invoices` (`telegram.read`, `Cache-Control: private, no-store`) answers `invoices` (the Invoices issued in the last 45 days, each with `number`, `unit_number`, `customer`, `status`, `issued_at`, `due_date`, `to_pay_usd_cents`, `sent` (each tenant: `telegram_user_id`, `queued_at`, `state` `WAITING`, `SENT` or `GAVE_UP`, `sent_at`) and `reminded_at`) and `rules` (`remind_days`, `days`). Refusals: 403 (no right).
