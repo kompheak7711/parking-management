@@ -65486,6 +65486,134 @@
       "notes": "Telegram FAQ starter: an empty FAQ offers the Owner and the Manager the 15 starter questions, which load waiting for the Owner; Staff do not see the button."
     },
     {
+      "test_id": "test_two_payroll_clicks_at_once_make_one_run",
+      "upstream_ids": [
+        "DL-202"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_payroll_one_run_check.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (A): two payroll clicks at the same moment make one REGULAR run; the other gets 'already made' (23505)."
+    },
+    {
+      "test_id": "test_the_database_refuses_a_second_regular_run_even_from_the_owner_login",
+      "upstream_ids": [
+        "DL-202"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_payroll_one_run_check.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (A): the unique index of migration 301 refuses a second REGULAR run of the month even from the owner login; a CORRECTION run is allowed on top."
+    },
+    {
+      "test_id": "test_migrations_370_and_371_follow_in_order_and_are_forward_only",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_telegram_outbox_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026: migrations 370 and 371 follow 20270612_321 in order and are forward-only."
+    },
+    {
+      "test_id": "test_a_message_with_a_dedupe_key_waits_once",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_telegram_outbox_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (B): the same dedupe key for one bot and chat queues one message and answers its id; another chat or no key is a new message; a blank or long key is refused (22023)."
+    },
+    {
+      "test_id": "test_a_given_up_message_with_a_key_can_still_be_sent_again",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_telegram_outbox_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (B): a message sent again after Gave up is due and carries no key; the key still names the first message."
+    },
+    {
+      "test_id": "test_bot_replies_to_one_inbound_item_wait_once",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_telegram_outbox_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (B): a bot's answer to one inbound message is queued once (the second call queues 0); another item or no item is new."
+    },
+    {
+      "test_id": "test_a_chat_that_blocked_the_bot_waits_until_the_person_writes_again",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_telegram_outbox_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (C): Telegram's 403 notes the chat BLOCKED once, its messages are not due and health counts it; an inbound message from the chat clears it; nobody writes or changes the record by hand."
+    },
+    {
+      "test_id": "test_migration_372_follows_371_and_is_forward_only",
+      "upstream_ids": [
+        "DL-202"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_short_stay_early_check_out_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026: migration 372 follows 371 and is forward-only."
+    },
+    {
+      "test_id": "test_an_early_check_out_frees_the_nights_but_keeps_the_money",
+      "upstream_ids": [
+        "DL-202",
+        "DL-200"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_short_stay_early_check_out_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (D): after an early check-out the week report counts only the nights slept, keeps the whole paid amount (DL-200), and a night sold again counts once."
+    },
+    {
+      "test_id": "test_each_answer_names_the_message_it_answers_so_the_outbox_keeps_it_once",
+      "upstream_ids": [
+        "DL-202",
+        "DB-TG-016"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (B): the Tenant bot passes the inbound message it answers (updates and forms), so the outbox keeps each answer once. The Staff and Customer bot tests of the same name do the same."
+    },
+    {
+      "test_id": "test_migration_373_follows_372_and_is_forward_only",
+      "upstream_ids": [
+        "DL-202"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_gl_method_account_right_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (E): migration 373 follows 372 and is forward-only."
+    },
+    {
+      "test_id": "test_only_a_person_with_the_accounts_right_sets_a_method_account",
+      "upstream_ids": [
+        "DL-202",
+        "DB-GL-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_v12_gl_method_account_right_migration.py",
+      "status": "implemented",
+      "notes": "Database review 7 Nov 2026 (E), owner 8 Nov 2026: the database refuses to set a method's ledger account to a Manager, a Staff person or no actor (42501, ledger.accounts.manage) and writes nothing; the Owner's call writes the mapping and its audit event."
+    },
+    {
       "test_id": "test_the_mac_operations_file_keeps_every_bot_path_in_its_folder",
       "upstream_ids": [
         "DL-125"

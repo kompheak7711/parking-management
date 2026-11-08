@@ -105,6 +105,7 @@ class FakeStore:
         self.languages: dict[int, str] = {}
         self.steps: dict[int, tuple[str, dict[str, Any]]] = {}
         self.replies: list[dict[str, Any]] = []
+        self.reply_to: list[str | None] = []
         self.phones: set[int] = set()
         self.links: dict[int, dict[str, Any]] = {}
         self.link_answers: list[dict[str, Any]] = []
@@ -141,7 +142,7 @@ class FakeStore:
         if item["relay_item_id"] in self.items:
             return {"saved": False}
         self.items[item["relay_item_id"]] = item
-        return {"saved": True}
+        return {"saved": True, "inbound_id": item["relay_item_id"]}
 
     def record_run(self, run: dict[str, Any]) -> None:
         self.runs.append(run)
@@ -184,7 +185,9 @@ class FakeStore:
         data: dict[str, Any] | None,
         language: str,
         messages: list[dict[str, Any]],
+        reply_to: str | None = None,
     ) -> None:
+        self.reply_to.append(reply_to)
         if step is not None:
             self.steps[user] = (step, data or {})
         for message in messages:
@@ -398,6 +401,8 @@ def test_pull_saves_each_item_once_keeps_photos_and_confirms(
             "text_code": "base.ping_reply",
             "language": "km",
             "details": {"bot": "CHETANA Residence support"},
+            # The answer names the message it answers, so the outbox keeps it once (DL-202 (B)).
+            "dedupe_key": "ping:item-0002",
         }
     ]
     run = store.runs[-1]

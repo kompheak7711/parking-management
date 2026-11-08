@@ -13,7 +13,7 @@ import uuid
 import psycopg
 
 from test_move_in_migration import migrated_database_url as migrated_database_url
-from test_telegram_base_migration import ATTEMPT, DUE, TelegramDatabase, refused, run
+from test_telegram_base_migration import ATTEMPT, DUE, RECORD, TelegramDatabase, item, refused, run
 from test_telegram_base_migration import telegram_database as telegram_database
 from test_telegram_tenant_link_migration import LINK, add_lease, share_phone
 
@@ -119,6 +119,17 @@ def test_telegram_health_lists_messages_not_sent_and_retries_a_given_up_one_once
     assert rows[str(old)]["tries"] == 1
     refused(db.runtime_url, "55000", RETRY, db.property_id, waiting, db.owner)
     again = run(db.runtime_url, RETRY, db.property_id, old, db.manager)
+    # Telegram said the person blocked the bot, so the copy waits until the person writes
+    # again (DL-202 (C)); then it goes out with the same keyboard.
+    due = run(db.runtime_url, DUE, db.property_id, 200, db.owner)
+    assert str(again) not in {row["id"] for row in due}
+    run(
+        db.runtime_url,
+        RECORD,
+        db.property_id,
+        item("item-page-unblock-01", 920004, telegram_user_id=920004, chat_id=920004),
+        db.owner,
+    )
     due = run(db.runtime_url, DUE, db.property_id, 200, db.owner)
     copy = [row for row in due if row["id"] == str(again)]
     assert copy and copy[0]["chat_id"] == 920004 and copy[0]["keyboard"] == "tenant.menu"

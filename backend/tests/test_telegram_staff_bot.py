@@ -451,3 +451,12 @@ def test_unit_checks_and_maintenance_checks_answer_in_the_chat() -> None:
     assert answers[0]["details"] == {"number": "UP000103"}
     for reply in store.replies:
         assert render(reply["text_code"], "km", reply["details"])
+
+
+def test_each_answer_names_the_message_it_answers_so_the_outbox_keeps_it_once() -> None:
+    # DL-202 (B): the database queues the answer to one inbound message once.
+    store = FakeStore()
+    say(store, "/start")
+    store.staff_ready = False
+    send(store, {"type": "CHECK", "mode": "IN", "qr": "x"})
+    assert store.reply_to == ["in-1", "in-2"]

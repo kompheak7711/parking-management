@@ -139,7 +139,16 @@ def handle_customer_update(
         data: dict[str, Any] | None = None,
         chosen: str | None = None,
     ) -> None:
-        store.bot_reply(BOT, user, chat, step, data, chosen or speak, list(messages))
+        store.bot_reply(
+            BOT,
+            user,
+            chat,
+            step,
+            data,
+            chosen or speak,
+            list(messages),
+            reply_to=saved.get("inbound_id"),
+        )
 
     if typed.startswith("/start") or (language is None and tapped not in LANGUAGE_BUTTONS):
         reply("language", _say("customer.welcome", "tenant.language"))

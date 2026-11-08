@@ -265,3 +265,10 @@ def test_a_blocked_account_is_told_to_visit_or_call_the_office() -> None:
     store.inquiry_answers.append({"result": "BLOCKED"})
     assert codes(say(store, "Send an inquiry")) == [("customer.blocked", "customer.menu")]
     assert store.steps[USER] == ("menu", {})
+
+
+def test_each_answer_names_the_message_it_answers_so_the_outbox_keeps_it_once() -> None:
+    # DL-202 (B): the database queues the answer to one inbound message once.
+    store = FakeStore()
+    say(store, "/start")
+    assert store.reply_to == ["in-9"]

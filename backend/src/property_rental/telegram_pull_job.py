@@ -93,15 +93,18 @@ def _ping(bot: str, plain: dict[str, Any], saved: dict[str, Any], store: Telegra
         and text.strip().lower() in {"ping", "/ping"}
         and isinstance(chat, int)
     ):
-        store.queue(
-            {
-                "bot": bot,
-                "chat_id": chat,
-                "text_code": "base.ping_reply",
-                "language": "km" if plain.get("language_code") == "km" else "en",
-                "details": {"bot": BOT_NAMES[bot]},
-            }
-        )
+        answer: dict[str, Any] = {
+            "bot": bot,
+            "chat_id": chat,
+            "text_code": "base.ping_reply",
+            "language": "km" if plain.get("language_code") == "km" else "en",
+            "details": {"bot": BOT_NAMES[bot]},
+        }
+        inbound = saved.get("inbound_id")
+        if isinstance(inbound, str) and inbound:
+            # One answer per saved message, kept by the outbox itself (DL-202 (B)).
+            answer["dedupe_key"] = f"ping:{inbound}"
+        store.queue(answer)
 
 
 HANDLERS: Final[dict[str, list[Handler]]] = {

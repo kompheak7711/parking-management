@@ -98,9 +98,11 @@ def test_the_week_counts_paid_nights_money_and_costs(stay_database: BookingDatab
     assert (report["from"], report["to"]) == (str(db.today), str(db.today + timedelta(days=6)))
     assert report["base_occupancy_points"] == 4000
     studio = row(report, "U501")
-    # The change-over after the walk-in: $5 cleaning + $2 linen.
+    # The desk's check-out stamps the real time, so this walk-in left on the arrival day: the
+    # nights after the guest left count as empty, while the whole payment stays (DL-202 (D),
+    # DL-200). The change-over after the walk-in: $5 cleaning + $2 linen.
     assert (studio["nights"], studio["income_usd_cents"], studio["site_fees_usd_cents"]) == (
-        2,
+        0,
         walk_total,
         0,
     )
@@ -112,9 +114,9 @@ def test_the_week_counts_paid_nights_money_and_costs(stay_database: BookingDatab
     assert one["site_fees_usd_cents"] == 0
     assert row(report, "U505")["nights"] == 0
     totals = report["totals"]
-    assert totals["nights"] == 4
+    assert totals["nights"] == 2
     assert totals["unit_nights"] == totals["units"] * 7
-    assert totals["occupancy_points"] == 4 * 10000 // (totals["units"] * 7)
+    assert totals["occupancy_points"] == 2 * 10000 // (totals["units"] * 7)
     assert totals["net_usd_cents"] == sum(unit["net_usd_cents"] for unit in report["units"])
     sources = {(entry["source"], entry["site_name"]): entry["stays"] for entry in report["sources"]}
     assert sources == {("WALK_IN", None): 1, ("BOOKING_SITE", "Agoda"): 1}

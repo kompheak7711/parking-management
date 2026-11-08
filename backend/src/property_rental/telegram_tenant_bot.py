@@ -94,7 +94,16 @@ def handle_tenant_update(
         data: dict[str, Any] | None = None,
         speak: str | None = None,
     ) -> None:
-        store.bot_reply(BOT, user, chat, step, data, speak or language or "km", list(messages))
+        store.bot_reply(
+            BOT,
+            user,
+            chat,
+            step,
+            data,
+            speak or language or "km",
+            list(messages),
+            reply_to=saved.get("inbound_id"),
+        )
 
     if typed.startswith("/start") or (language is None and tapped not in LANGUAGE_BUTTONS):
         reply("language", _say("tenant.welcome", "tenant.language"))
@@ -253,7 +262,9 @@ def handle_tenant_form(
     if result.get("repeated") is True:
         return
     language = store.bot_state(BOT, user).get("language") or "km"
-    store.bot_reply(BOT, user, chat, "menu", None, language, [_report_answer(result)])
+    store.bot_reply(
+        BOT, user, chat, "menu", None, language, [_report_answer(result)], reply_to=inbound
+    )
 
 
 def _report_answer(result: dict[str, Any]) -> dict[str, Any]:

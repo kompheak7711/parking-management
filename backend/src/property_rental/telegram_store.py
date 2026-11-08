@@ -42,6 +42,7 @@ class TelegramStore(Protocol):
         data: dict[str, Any] | None,
         language: str,
         messages: list[dict[str, Any]],
+        reply_to: str | None = None,
     ) -> None: ...
 
     def choose_language(self, bot: str, user: int, language: str) -> None: ...
@@ -234,9 +235,12 @@ class PostgresTelegramStore:
         data: dict[str, Any] | None,
         language: str,
         messages: list[dict[str, Any]],
+        reply_to: str | None = None,
     ) -> None:
+        # reply_to names the inbound message answered: the database keeps each answer to it
+        # once (DL-202 (B)).
         self._one(
-            "SELECT app.telegram_bot_reply(%s, %s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s)",
+            "SELECT app.telegram_bot_reply(%s, %s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s, %s)",
             self._property,
             bot,
             user,
@@ -246,6 +250,7 @@ class PostgresTelegramStore:
             language,
             json.dumps(messages),
             self._actor,
+            reply_to,
         )
 
     def choose_language(self, bot: str, user: int, language: str) -> None:

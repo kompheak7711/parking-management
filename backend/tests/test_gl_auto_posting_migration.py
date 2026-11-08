@@ -54,9 +54,43 @@ def script_down_revision() -> str | None:
     return cast(str | None, found.down_revision)
 
 
+def accounts_right(connection: Connection, prop: UUID, human: UUID) -> None:
+    """Give the test person the Owner's right ``ledger.accounts.manage`` for the Property.
+
+    Since migration 20270708_373 (DL-202 (E)) ``gl_set_method_account`` checks the right inside
+    the database, so the person who opens the books here holds it, as the Owner does.
+    """
+    bundle = uuid4()
+    connection.execute(
+        "INSERT INTO app.user_account_classes(actor_id, account_class, provenance) "
+        "VALUES (%s, 'staff', 'gl-auto-posting-test') ON CONFLICT (actor_id) DO NOTHING",
+        (human,),
+    )
+    connection.execute(
+        "INSERT INTO app.role_bundles(role_bundle_id, property_id, name, version, provenance) "
+        "VALUES (%s, %s, %s, 1, 'gl-auto-posting-test')",
+        (bundle, prop, f"GL accounts {bundle.hex}"),
+    )
+    connection.execute(
+        "INSERT INTO app.role_bundle_capabilities(role_bundle_id, version, capability_id, "
+        "grant_path) VALUES (%s, 1, 'ledger.accounts.manage', 'bundle')",
+        (bundle,),
+    )
+    connection.execute(
+        "INSERT INTO app.user_role_assignments(assignment_id, actor_id, role_bundle_id, "
+        "property_id, provenance) VALUES (%s, %s, %s, %s, 'gl-auto-posting-test')",
+        (uuid4(), human, bundle, prop),
+    )
+
+
 def open_2026(connection: Connection, prop: UUID, human: UUID) -> None:
-    """The real ledger starts on 01/01/2027; the records made today need 2026 open."""
+    """The real ledger starts on 01/01/2027; the records made today need 2026 open.
+
+    The person opens the books as the Owner, so they also get the Owner's right to set a
+    method's ledger account (``accounts_right``).
+    """
     connection.execute("SELECT app.gl_start_ledger(%s, 2026::smallint, %s)", (prop, human))
+    accounts_right(connection, prop, human)
 
 
 def post(connection: Connection, prop: UUID, human: UUID) -> tuple[int, int]:

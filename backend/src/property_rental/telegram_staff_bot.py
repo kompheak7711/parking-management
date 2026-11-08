@@ -122,7 +122,16 @@ def handle_staff_update(
         return  # the shared base answers the test message
 
     def reply(*messages: dict[str, Any]) -> None:
-        store.bot_reply(BOT, user, chat, "menu", None, LANGUAGE, list(messages))
+        store.bot_reply(
+            BOT,
+            user,
+            chat,
+            "menu",
+            None,
+            LANGUAGE,
+            list(messages),
+            reply_to=saved.get("inbound_id"),
+        )
 
     try:
         who = store.staff_who(user)
@@ -218,7 +227,9 @@ def handle_staff_form(
     at = str(office.get("received_at") or "")
 
     def reply(message: dict[str, Any]) -> None:
-        store.bot_reply(BOT, user, chat, None, None, LANGUAGE, [message])
+        store.bot_reply(
+            BOT, user, chat, None, None, LANGUAGE, [message], reply_to=saved.get("inbound_id")
+        )
 
     if form["type"] in SAVED_FORMS:
         inbound = saved.get("inbound_id")

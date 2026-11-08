@@ -425,3 +425,21 @@ def test_faq_shows_the_approved_questions_as_buttons_and_answers_the_one_tapped(
         keyboard_markup("tenant.faq", "en", None, {})
     reply = render("contact.reply", "en", {"text": "We will call you at 10:00."})
     assert reply == "Reply from the office:\n\nWe will call you at 10:00."
+
+
+def test_each_answer_names_the_message_it_answers_so_the_outbox_keeps_it_once() -> None:
+    # DL-202 (B): the database queues the answer to one inbound message once.
+    store = FakeStore()
+    say(store, "/start")
+    store.languages[USER] = "en"
+    send_form(
+        store,
+        {
+            "result": "ADDED",
+            "report_number": "UP260231",
+            "kind": "UNIT",
+            "urgent": False,
+            "plan_workdays": 1,
+        },
+    )
+    assert store.reply_to == ["in-1", "in-1"]

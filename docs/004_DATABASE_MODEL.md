@@ -5616,7 +5616,7 @@ Owner plan of 03/11/2026 (L3, L4) and the automatic posting table of PRD v2 (PR-
 - `app.gl_app_record_events(property, from, until)` builds one candidate entry per money record, each with a posting key so it posts once: Invoice issued (`invoice:<id>:issue`: DR 1100; CR 4010 Rent, or 2050 Rent billed in advance when the Rent month starts after the billing month, 4020 Services, 4030 Electricity, 4040 Water, 4060 cleaning, 4070 damage, 4080 other), the first day of an advance Rent month (`invoice_line:<id>:rent_to_income`, DR 2050, CR 4010), Invoice voided, Invoice adjustment and its reversal, late-payment charge (DR 1110, CR 4050) and its corrections, Payment and its reversal (DR the method's cash or bank account, riel cash to 1011; CR 2210 Money not used yet), allocation, Deposit receipt, Deposit applied, Deposit kept (CR 4090), Customer Credit recognized and applied, each with its reversal, and Refund (DR 2100, 2110, 2200 or 2210; CR the Refund method's account). A Refund correction always waits for an adjusting entry from the Owner.
 - `app.gl_rent_account(rent_month, on)` gives 2050 or 4010.
 - `app.gl_post_app_records(property, actor, until, limit)` (money login only) posts what is not posted yet, from the ledger's first day (L3). A record dated in a closed month posts on the first day of the first open month with a note (L4). A record that cannot post is kept in `app.gl_posting_problems` ("Needs check", runtime may read) with the reason and is tried again on every pass; it leaves the list when it posts. Records already in the list go last, so they never hold back new ones.
-- `app.gl_set_method_account(property, payment_method, refund_method, account, from, actor, correlation)` (runtime) sets the cash or bank account of one Payment Method or Refund method from a date, with the audit event `ledger.method_account.set`.
+- `app.gl_set_method_account(property, payment_method, refund_method, account, from, actor, correlation)` (runtime) sets the cash or bank account of one Payment Method or Refund method from a date, with the audit event `ledger.method_account.set`. Since migration `20270708_373` it checks the right `ledger.accounts.manage` inside the database (DB-GL-010).
 - The billing worker runs the posting after the day's billing and late-payment charges, under its lock (`property_rental.ledger_posting_job`). The downgrade is refused once an automatic entry exists.
 
 ## DB-GL-003 — Money records: expenses, supplier bills, petty cash, moves, owner money, cash counts (General Ledger phase 6 step 3)
@@ -5698,6 +5698,13 @@ Owner message of 05/11/2026 07:25. Migration `20270612_321` (forward-only; chang
 - A Refund method's account may be `BANK_KHR` (`gl_check_method_account`, `gl_set_method_account`); a Payment Method's still may not.
 - Posting (`gl_app_record_events`): a Refund whose method account is `CASH_KHR` or `BANK_KHR` waits with "Type the riel paid for this Refund" until its riel is typed; then the credit line carries `KHR` and the riel. A Refund correction (not recovered by a charge) on such an account waits with "A Refund correction on a riel account cannot post yet".
 - `app.gl_waiting_records` shows each kept record's problem as it is now; a record that waited for a method account or its riel and has it now says "Ready: it posts at the next run".
+
+## DB-GL-010 — The right to set a method's ledger account is checked inside the database (DL-202 (E))
+
+Owner message of 08/11/2026 04:39. Migration `20270708_373` (forward-only; replaces one GL function).
+
+- `app.gl_set_method_account(property, payment_method, refund_method, account, from, actor, correlation, riel_account)` now starts with `app.gl_require(actor, property, 'ledger.accounts.manage')`, like the other ledger changes. A call without the right is refused with SQLSTATE 42501 ("This needs the right ledger.accounts.manage") and writes no `gl_method_accounts` row and no audit event. The arguments, the checks that follow, the audit event `ledger.method_account.set` and the grants (EXECUTE to the runtime login only) do not change.
+- The API (`PUT .../ledger/method-accounts`) still checks the right first, so a person without it never reaches the database; the database check is the second lock.
 
 ## DB-BS-001 — Settings › Business: numbering, Invoice types, Property fields (V1.1 part 2)
 
@@ -5926,3 +5933,11 @@ Added by DL-179 (migration `20270625_336`, forward-only). No new table.
 
 - `app.telegram_faq_starter()` (internal, not granted): the 15 starter questions as JSON (bots, question and answer in English and Khmer).
 - `app.telegram_faq_load_starter(property, actor)` (`telegram.faq`): locks the Property, refuses with 55000 when its FAQ already has a question, then adds the 15 questions numbered 1 to 15, each with one proposed version and no approval, and answers `{"loaded": 15}`. No bot shows a question until the Owner approves it.
+
+## DB-TG-016 — Messages queued once and blocked chats (DL-202 (B) and (C))
+
+Added by DL-202 (migrations `20270705_370` and `20270706_371`, forward-only; they follow the ledger head `20270612_321`).
+
+- `app.telegram_outbox` gains `dedupe_key` (optional; 1 to 120 letters, digits, dots, colons, dashes and underscores). The unique index `telegram_outbox_dedupe_idx` keeps one message per bot, chat and key. `app.telegram_queue_once` (internal) is the one way in with a key: it inserts, or answers the id of the message already waiting and says nothing new was queued. `app.telegram_queue_message` reads `dedupe_key` from the message JSON (the pull job keys the ping answer `ping:<inbound id>`); `app.telegram_bot_reply` gains a 10th argument, the inbound message a bot answers, and keys each answer `reply:<inbound>:<n>`, answering the number of messages newly queued. The 9-argument `telegram_bot_reply` and the 8-argument `telegram_queue` stay and pass no key. `telegram_outbox_retry` copies no key.
+- `app.telegram_bot_blocks` (append-only; `seq` keeps the order): one row each time a bot's chat is BLOCKED (the send job recorded `telegram_blocked_by_person`, Telegram's 403; `outbox_id` is the refused message) or CLEARED (an inbound message from the chat was saved; `inbound_event_id`). Two triggers write it: `note_telegram_block` after an insert into `telegram_outbox_attempts`, `clear_telegram_block` after an insert into `telegram_inbound_events` (not for Telegram's own `my_chat_member` kicked or left report). Nobody writes it by hand; the runtime login reads it only. `app.telegram_chat_blocked(bot, chat)` (internal) answers the newest row.
+- `app.telegram_outbox_due` leaves out the messages of a blocked chat; they wait and go out again after the clear. `app.telegram_health` adds `chats_blocked` and no longer counts a blocked chat's messages in `outbox_failing_12h`.
