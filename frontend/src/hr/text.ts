@@ -230,6 +230,11 @@ const TEXT = {
     // new
     "ជួលម្តងទៀត៖ បុគ្គលនេះធ្លាប់ធ្វើការនៅទីនេះ",
   ],
+  e_nssf: [
+    "NSSF number",
+    // new
+    "លេខ ប.ស.ស",
+  ],
   e_birth_place: [
     "Place of birth",
     // new

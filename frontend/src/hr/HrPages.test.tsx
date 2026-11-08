@@ -882,6 +882,63 @@ describe("HRIS phase 6 screens", () => {
     );
   });
 
+  it("TEST-FE-1403 the NSSF number is optional: Add employee sends it only when typed, and the employee page shows it", async () => {
+    const api = fakeApi();
+    render(
+      <EmployeesPage
+        active
+        api={api}
+        capabilities={null}
+        language="en"
+        propertyId={PROPERTY}
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add employee" }),
+    );
+    const box = dialog();
+    fireEvent.change(within(box).getByLabelText(/Name in English/), {
+      target: { value: "Keo Sophea" },
+    });
+    fireEvent.change(within(box).getByLabelText(/Name in Khmer/), {
+      target: { value: "កែវ សុភា" },
+    });
+    fillId(box);
+    fireEvent.change(within(box).getByLabelText(/NSSF number/), {
+      target: { value: " 123456789 " },
+    });
+    fireEvent.click(within(box).getByRole("button", { name: "Add employee" }));
+    await screen.findByText("Employee Keo Sophea added.");
+    expect(api.addEmployee).toHaveBeenLastCalledWith(
+      PROPERTY,
+      expect.objectContaining({
+        identity: { ...ID_DETAILS, nssf_number: "123456789" },
+      }),
+    );
+    cleanup();
+
+    window.history.replaceState(null, "", "#/employees/emp-1");
+    const page = fakeApi({
+      employee: vi.fn(() =>
+        Promise.resolve({
+          ...DETAIL,
+          identity: { ...ID_DETAILS, nssf_number: "987654321" },
+        }),
+      ),
+    });
+    render(
+      <EmployeesPage
+        active
+        api={page}
+        capabilities={null}
+        language="en"
+        propertyId={PROPERTY}
+      />,
+    );
+    expect(await screen.findByText("987654321")).toBeVisible();
+    expect(screen.getByText("NSSF number")).toBeVisible();
+  });
+
   it("TEST-FE-1401 the weekly plan counts the caretaker's days off a month; office staff plan office hours only", async () => {
     const [first] = WEEK.people;
     if (first === undefined) throw new Error("The sample week has a person");

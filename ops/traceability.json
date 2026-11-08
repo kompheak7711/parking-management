@@ -65883,6 +65883,26 @@
       "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
       "status": "implemented",
       "notes": "Tenant bot linking: U302, 302, Room u302 and Unit 302 give the same Unit key; UB12 keeps its letters."
+    },
+    {
+      "test_id": "test_the_nssf_number_is_optional",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_hr_office_hours_migration.py",
+      "status": "implemented",
+      "notes": "HRIS: an optional NSSF number with the ID details, seen only with See salaries, at most 30 letters (owner 07/11 17:59, migration 306)."
+    },
+    {
+      "test_id": "TEST-FE-1403",
+      "upstream_ids": [
+        "PR-HR-011"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "HRIS: the NSSF number is optional at Add employee and shows on the employee page (owner 07/11 17:59)."
     }
   ]
 }

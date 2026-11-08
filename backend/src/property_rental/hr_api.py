@@ -240,6 +240,7 @@ class Identity(_Body):
     date_of_birth: Day | None = None
     home_address: Text | None = None
     place_of_birth: Text | None = None
+    nssf_number: Short | None = None
 
 
 class NewIdentity(_Body):
@@ -250,6 +251,7 @@ class NewIdentity(_Body):
     date_of_birth: Day
     home_address: Text
     place_of_birth: Text
+    nssf_number: Short | None = None
 
 
 class IdPhoto(_Body):
@@ -306,6 +308,7 @@ class EmployeeStep(_Body):
     date_of_birth: Day | None = None
     home_address: Text | None = None
     place_of_birth: Text | None = None
+    nssf_number: Short | None = None
     telegram_user_id: Annotated[int, Field(ge=1)] | None = None
     report_role: ReportRole | None = None
     link_id: Id | None = None

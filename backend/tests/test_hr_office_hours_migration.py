@@ -258,3 +258,38 @@ def test_add_employee_checks_the_same_id_number(hr_database: HrDatabase) -> None
         db.runtime_url, ADD, db.property_id, form(db, identity=same, hire_again=True), db.manager
     )
     assert read(db, uuid.UUID(str(again)))["identity"]["id_number"] == "SAME 0505"
+
+
+def test_the_nssf_number_is_optional(hr_database: HrDatabase) -> None:
+    """Migration 20270626_306 (owner 07/11): an optional NSSF number with the ID details."""
+    db = hr_database
+    without = add_employee(db, db.manager, job_title_id=job_id(db, "CLEANER"))
+    assert read(db, without)["identity"]["nssf_number"] is None
+    number = f"N{uuid.uuid4().hex[:9].upper()}"
+    person = add_employee(
+        db,
+        db.manager,
+        job_title_id=job_id(db, "CLEANER"),
+        identity=IDENTITY | {"id_number": number, "nssf_number": "123456789"},
+    )
+    assert read(db, person)["identity"]["nssf_number"] == "123456789"
+    # Only people with See salaries see the ID details, the NSSF number with them.
+    assert read(db, person, db.manager)["identity"] is None
+    step(
+        db,
+        person,
+        "IDENTITY",
+        id_type="NATIONAL_ID",
+        id_number=number,
+        nssf_number="987654321",
+        reason="New NSSF card",
+    )
+    assert read(db, person)["identity"]["nssf_number"] == "987654321"
+    assert "30 letters" in refused(
+        db.runtime_url,
+        "22023",
+        ADD,
+        db.property_id,
+        form(db, identity=IDENTITY | {"id_number": "LONG1", "nssf_number": "9" * 31}),
+        db.manager,
+    )
