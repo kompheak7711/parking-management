@@ -2846,3 +2846,28 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270625_336` (DB-TG-015), API-TG-007, `frontend/src/telegram/TelegramPages.tsx`.
 - **Links:** DL-170.
 - **Decision date:** 2026-11-06.
+
+## DL-200 — Short stays: a guest who checks out early
+
+- **Type:** `BUSINESS RULE`
+- **Status:** `AGREED BY THE OWNER; THE APP SHOWS IT IN THE DESIGN V81 WORK (BRANCH ui-v81)`
+- **Source:** the owner's choice on a decision card on 7 Nov 2026 10:04 (thread "Database v1.2 review"), for the design v81 warning "Not the check-out date" (Keep the stay / Check out early).
+- **(A) Unused nights stay paid.** When a short-stay guest checks out before the booked check-out day, the money for the nights not used is kept. Nothing comes back by itself.
+- **(B) Credit only by hand.** Only the Owner, a Manager or a person with the credit right may turn some or all of the unused nights into the guest's Credit, and must give a reason. This is the same as a late cancel (the short-stay rules of DL-150 and later): the Credit can be used for a later stay or the first month of a Lease, and it ends after the same number of months.
+- **(C) Early check-out itself.** The stay is checked out on the day the guest leaves (`checked_out_at`); the booked dates and the paid Invoice do not change.
+- **Links:** the short-stay rules of DL-150 to DL-159 and DL-190 to DL-199; design v81 (docs/ui-audit/02_DESIGN_V81_CHANGES.md, item 8); open question 7 of docs/ui-audit/01_UI_AUDIT_REPORT.md (branch ui-v81).
+- **Decision date:** 2026-11-07.
+
+## DL-201 — Unit Check and Joint Inspection: places, many problems in one check, checks made in the app
+
+- **Type:** `BUSINESS RULE`
+- **Status:** `AGREED BY THE OWNER; NOT BUILT. Built in V1.2 after the design v81 work (owner 7 Nov 2026 10:06); needs a database change.`
+- **Source:** the owner's messages of 7 Nov 2026 08:56 to 10:55 (thread "Database v1.2 review"). Technical shape suggested by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) Places come from the Unit.** A check lists the places of that Unit only, from its Unit features and their count: for a Studio or One Bedroom the kitchen, bathroom, living room or zone, bedroom or sleeping zone and balcony; for a Two Bedroom the kitchen, Bathroom 1 and 2, living room, Bedroom 1 and 2 and balcony. The air conditioner, keys, key cards and remotes are not places: they are Unit inventory items, checked in the place where they are. Once built, this replaces the seven fixed areas of DL-178 (B), and the Telegram Unit Check uses the same places.
+- **(B) Many problems in one check.** Staff choose the Unit once and add as many problems as needed, without a new check and without typing the Unit again. A place can have more than one problem. Each problem has its own number (a Unit problem report, UP...), linked to the check (UC...), so each one is planned, fixed and closed on its own.
+- **(C) Three jobs, three records (owner 7 Nov 2026 10:55).** The **Unit Check** only reports problems; it does not mark every place or item. The **Unit inventory** only records which furniture and appliances a Unit has, where and how many; it holds no condition. The **Joint Inspection** has its own table and is the only record of condition (quality). It is done at move-in and again at move-out, belongs to the Lease, marks each place of the Unit and each inventory item (Good, Broken or Missing, with a note and photos), keeps a copy of the item name, place and count as they were that day (the inventory may change later), records keys and meter readings, and is signed by the tenant and the staff member. The move-out is compared with the move-in record. The V1 move-out inspection records stay as history. An inspection never makes a charge by itself (DL-115).
+- **(D) Checks made in the app.** Unit Checks and Joint Inspections can be made in the app on a tablet or computer, not only from Telegram.
+- **(E) Forms.** The Joint Inspection and Unit Check forms of 17 Oct 2026 are samples; the owner will redesign them for each Unit type.
+- **Open:** the native Khmer words; the owner's new paper forms.
+- **Links:** DL-115, DL-178.
+- **Decision date:** 2026-11-07.
