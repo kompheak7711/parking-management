@@ -83,3 +83,19 @@ For testing before the office server, `Set up Telegram test.command` (repository
 After it, `Start test app.command` also runs the pull and send jobs every 10 seconds
 (`scripts/local/telegram-jobs.sh`, log `.local/telegram.log`). Send `ping` to a bot to check
 the connection. Running the setup again keeps what is there and redoes the rest.
+
+## While the app is closed (DL-210)
+
+When the office has not pulled for 150 seconds, the relay answers the Tenant bot itself, with
+the texts, buttons and scrambled Lease check codes the office sent (`relay/src/offline.ts`):
+
+- Start, the language, Link my Lease (own phone, name and Unit, checked against keyed hashes;
+  5 wrong tries block for 24 hours), Contact office and the Problem report buttons;
+- a sent report gets "We got your report. Our office will check it." at once, and an urgent one
+  goes first to the Authorizers and the caretaker on shift on the Staff bot;
+- My requests, FAQ, Fixed and Not fixed get "Our office is closed now" and wait for the office.
+
+Each item tells the office what the relay said; the app saves it without answering twice. The
+relay needs the `LINK_CHECK_KEY` secret (the office's `link-check.key`) to link anyone; the Mac
+setup makes both. After pulling a new version, run the setup again (it keeps the bot tokens) so
+the relay gets the new tables and code.

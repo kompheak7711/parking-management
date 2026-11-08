@@ -10,7 +10,8 @@ removes it and the health page shows a warning.
 After an item is saved, the handler for its bot and kind runs: "ping" to any bot answers that the
 connection works (the owner's setup test); the Tenant bot answers chat messages and saves Problem
 report forms (steps 2a and 2b). After each pull the job sends the relay the Tenant bot access list
-and form choices when they changed. The Staff bot (step 4a) joins staff and records check-in and
+and form choices when they changed, and what it needs to answer the Tenant bot while the office
+is away (DL-210, telegram_offline.py). The Staff bot (step 4a) joins staff and records check-in and
 card scans with the HR service actor; a card scan's photo goes to the HR files folder, not with
 the Telegram photos, so the HR rule can remove it after 90 days.
 """
@@ -36,6 +37,7 @@ from property_rental.operations_config import (
 )
 from property_rental.operations_status import format_time, utc_now, write_status
 from property_rental.telegram_customer_bot import handle_customer_update
+from property_rental.telegram_offline import push_offline
 from property_rental.telegram_phone import normalize_phone
 from property_rental.telegram_relay_client import RelayClient, RelayError, RelayItem, read_pull_key
 from property_rental.telegram_seal import SealError, load_office_private_key, open_sealed
@@ -426,6 +428,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         if service_actor is not None:
             remove_old_card_photos(store, hr_files)
         push_form_data(client=client, store=store, status_directory=config.status_directory)
+        push_offline(
+            client=client,
+            store=store,
+            relay_host=bots.relay_host,
+            link_key_file=bots.link_check_key_file,
+            status_directory=config.status_directory,
+        )
     except (RelayError, SealError) as error:
         code = error.code if isinstance(error, RelayError) else "office_key_unreadable"
         print(f"telegram_pull:failed:{code}", file=sys.stderr, flush=True)

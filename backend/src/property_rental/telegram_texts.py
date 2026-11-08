@@ -103,6 +103,44 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។",
         "en": "Please link your Lease first.",
     },
+    # DL-210: what the relay says while the office app is closed (owner 07/11/2026). The relay
+    # cannot say the person's name, so "linked" names only the Unit.
+    "tenant.linked_offline": {
+        "km": ("សូមអរគុណ។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit} ហើយ។ ប្រសិនបើមានបញ្ហា សូមចុច «រាយការណ៍បញ្ហា»។"),
+        "en": (
+            "Thank you. You are linked to Unit {unit}. If you have a problem, tap Problem report."
+        ),
+    },
+    "tenant.office_away": {
+        "km": (
+            "ការិយាល័យរបស់យើងបិទនៅពេលនេះ។ យើងនឹងឆ្លើយតបលោកអ្នកនៅពេលការិយាល័យបើក។ "
+            "ប្រសិនបើមានបញ្ហា សូមចុច «រាយការណ៍បញ្ហា» ឥឡូវនេះបាន។"
+        ),
+        "en": (
+            "Our office is closed now. We will answer you when the office opens. "
+            "If you have a problem, you can tap Problem report now."
+        ),
+    },
+    "tenant.report_sent_offline": {
+        "km": (
+            "យើងបានទទួលរបាយការណ៍របស់លោកអ្នកហើយ។ ការិយាល័យរបស់យើងនឹងពិនិត្យមើល។ "
+            "លោកអ្នកនឹងទទួលបានលេខរបាយការណ៍ឆាប់ៗនេះ។"
+        ),
+        "en": (
+            "We got your report. Our office will check it. You will get the report number soon."
+        ),
+    },
+    "tenant.report_sent_offline_urgent": {
+        "km": (
+            "យើងបានទទួលរបាយការណ៍បន្ទាន់របស់លោកអ្នកហើយ។ "
+            "យើងបានប្រាប់អ្នកថែទាំដែលកំពុងប្រចាំការភ្លាមៗ។ "
+            "ភ្លើងឆេះ ឬគ្រោះថ្នាក់៖ សូមទូរស័ព្ទ 118 ឬ 117 ជាមុនសិន។"
+        ),
+        "en": (
+            "We got your urgent report. We told the caretaker on shift at once. "
+            "Fire or danger: call 118 or 117 first."
+        ),
+    },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
         "en": "How can we help you?",
@@ -801,6 +839,11 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "staff.urgent": {
         "km": "🚨 បន្ទាន់ {number}៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។",
         "en": "🚨 បន្ទាន់ {number}៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។",
+    },
+    # DL-210: the same alert sent by the relay while the office app is closed (no number yet).
+    "staff.urgent_offline": {
+        "km": "🚨 បន្ទាន់៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។ លេខរបាយការណ៍នឹងមកពេលក្រោយ។",
+        "en": "🚨 បន្ទាន់៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។ លេខរបាយការណ៍នឹងមកពេលក្រោយ។",
     },
     # Report states as the tenant sees them (the app's words, Building > Problem reports).
     "status.RECEIVED": {"km": "បានទទួល", "en": "Received"},

@@ -65672,6 +65672,130 @@
       "test_path": "backend/tests/test_telegram_jobs.py",
       "status": "implemented",
       "notes": "Telegram relay: the office calls the relay with its own User-Agent, because Cloudflare refuses Python's default name with 403 (owner's Mac test run 07/11/2026)."
+    },
+    {
+      "test_id": "test_the_hash_is_the_relays",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the office's scrambled Lease check code is the same as the relay's for the same phone, Unit and name."
+    },
+    {
+      "test_id": "test_the_check_list_holds_hashes_and_units_but_no_name_or_phone",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the check list sent to the relay holds keyed hashes and Unit numbers and places, never a name or a phone number."
+    },
+    {
+      "test_id": "test_the_relay_texts_are_the_bots_own_in_both_languages",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the relay answers with the Tenant bot's own texts and keyboards in Khmer and English, including the share-phone and Problem report form buttons."
+    },
+    {
+      "test_id": "test_the_offline_body_is_sent_once_and_again_only_when_it_changes",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the pull job sends the relay's offline body only when it changes; without the link check key the relay links nobody."
+    },
+    {
+      "test_id": "test_what_the_relay_answered_is_saved_without_answering_again",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the language, the next step, the Contact office message and the Lease link the relay answered are saved when the app opens, without a second answer."
+    },
+    {
+      "test_id": "test_when_the_database_disagrees_with_the_relay_the_tenant_hears_the_database",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: when the database's link answer differs from the relay's, the tenant gets the database's answer."
+    },
+    {
+      "test_id": "test_a_message_the_relay_only_held_is_answered_by_the_office",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: a message the relay only held (My requests, FAQ) is answered by the office when it opens."
+    },
+    {
+      "test_id": "test_a_report_the_relay_alerted_is_saved_without_a_second_alert",
+      "upstream_ids": [
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: a Problem report the relay already sent to the caretaker is saved without a second alert, and the tenant still gets its number."
+    },
+    {
+      "test_id": "test_the_relay_gets_name_forms_phones_units_and_who_gets_an_alert",
+      "upstream_ids": [
+        "DL-210",
+        "DB-TG-017"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: the database gives the name forms, phones, Unit keys and places, the problem types and places, the Authorizers and the caretakers' shift times, behind telegram.operate."
+    },
+    {
+      "test_id": "test_a_linked_tenants_form_data_says_their_unit",
+      "upstream_ids": [
+        "DL-210",
+        "DB-TG-017"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: a linked tenant's form data gives their Unit number for the relay's urgent alert."
+    },
+    {
+      "test_id": "test_a_report_the_relay_already_alerted_is_not_alerted_again",
+      "upstream_ids": [
+        "DL-210",
+        "DB-TG-017"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: an urgent report saved with the relay's alert flag queues no second alert; the next report alerts as before."
+    },
+    {
+      "test_id": "test_the_offline_data_is_behind_the_telegram_right",
+      "upstream_ids": [
+        "DL-210",
+        "DB-TG-017"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_offline_migration.py",
+      "status": "implemented",
+      "notes": "Telegram while the app is closed: Staff without telegram.operate cannot read the offline data."
     }
   ]
 }

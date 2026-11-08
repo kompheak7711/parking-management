@@ -41,6 +41,9 @@ class TelegramBotsConfig:
     office_private_key_file: Path
     bot_token_files: dict[str, Path]
     media_directory: Path
+    # The key of the scrambled Lease check codes the relay links tenants with while the office
+    # is away (DL-210). Without it the relay does not link anyone on its own.
+    link_check_key_file: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +119,11 @@ def _telegram_bots(value: object, api_host: str) -> TelegramBotsConfig | None:
             for code in BOT_CODES
         },
         media_directory=_path(bots.get("media_directory"), "telegram_bots.media_directory"),
+        link_check_key_file=(
+            _path(bots.get("link_check_key_file"), "link_check_key_file")
+            if bots.get("link_check_key_file") is not None
+            else None
+        ),
     )
 
 

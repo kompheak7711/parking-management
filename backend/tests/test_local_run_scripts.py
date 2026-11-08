@@ -281,6 +281,7 @@ def test_the_telegram_setup_asks_tokens_hidden_and_keeps_them_off_command_lines(
     assert "stty -echo" in setup and "stty echo" in setup
     assert "--config -" in setup
     assert 'wrangler secret put "$1" --config "$CFG" < "$2"' in setup
+    assert 'put_secret LINK_CHECK_KEY "$TG/link-check.key"' in setup
     assert "WRANGLER_VERSION=4.151.3" in setup
     jobs = (LOCAL_SCRIPTS / "telegram-jobs.sh").read_text(encoding="utf-8")
     assert 'IFS= read -r APP_DATABASE_URL < "$PRM_SECRETS/runtime_database_url"' in jobs

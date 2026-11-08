@@ -81,7 +81,10 @@ class FakeRelay:
             return 200, json.dumps(answer).encode()
         if path.startswith("/office/media/"):
             return 200, self.media[path.rsplit("/", 1)[1]]
-        if path.startswith(("/office/access/", "/office/choices/")) and method == "PUT":
+        if (
+            path.startswith(("/office/access/", "/office/choices/", "/office/offline/"))
+            and method == "PUT"
+        ):
             self.pushed.append((path, json.loads(body)))
             return 200, b'{"count": 1}'
         if path == "/office/confirm":
@@ -114,6 +117,9 @@ class FakeStore:
         self.form_data: dict[str, Any] = {"choices": {"types": []}, "users": []}
         self.report_answers: list[dict[str, Any]] = []
         self.reports: list[tuple[str, dict[str, Any], list[str]]] = []
+        # The Tenant bot while the office is away (migration 20270708_380, DL-210).
+        self.offline_data: dict[str, Any] = {"people": [], "units": {}, "alert": {}}
+        self.relay_alerted: list[bool] = []
         # The tenant's check and My requests (migration 20270523_285).
         self.check_answers: list[dict[str, Any]] = []
         self.checks: list[tuple[int, bool]] = []
@@ -219,10 +225,18 @@ class FakeStore:
     def tenant_form_data(self) -> dict[str, Any]:
         return self.form_data
 
+    def tenant_offline_data(self) -> dict[str, Any]:
+        return self.offline_data
+
     def tenant_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
     ) -> dict[str, Any]:
         self.reports.append((inbound_id, form, media_ids))
+        self.relay_alerted.append(relay_alerted)
         return self.report_answers.pop(0)
 
     def tenant_report_check(self, user: int, fixed: bool) -> dict[str, Any]:

@@ -43,6 +43,7 @@ def test_the_mac_operations_file_keeps_every_bot_path_in_its_folder(tmp_path: Pa
     ]
     assert all(path.is_relative_to(tmp_path) for path in paths)
     assert bots.bot_token_files["STAFF"] == tmp_path / "staff_bot_token"
+    assert bots.link_check_key_file == tmp_path / "link-check.key"
     # The committed production file is not changed.
     assert json.loads(TEMPLATE.read_text())["telegram_bots"]["enabled"] is False
 

@@ -5,9 +5,12 @@
 //      serve the Mini App form pages (the Tenant bot's Problem report);
 //   3. seal every message and photo with the office's public key;
 //   4. hand over to the office (signed pull, then delete after the office confirms);
-//   5. (step 2) the urgent ping to the caretaker group.
-// It never decides money, never stores the record, never reads the office database, and never
-// answers in place of staff.
+//   5. while the office is away (DL-210, offline.ts): answer the Tenant bot itself, with the texts
+//      and the scrambled Lease check codes the office sent, and send an urgent report to the
+//      caretaker on shift.
+// It never decides money, never stores the record and never reads the office database. Before
+// DL-210 it never answered in place of the office; now it answers the Tenant bot only while the
+// office has not pulled for 2.5 minutes, and tells the office what it said.
 
 import { importOfficeKey, seal, sha256Hex, toBase64 } from "./seal.ts";
 import {
@@ -17,6 +20,18 @@ import {
   MAX_MEDIA_PER_ITEM,
   readUpdate,
 } from "./telegram.ts";
+import {
+  CHAT_STEP_SECONDS,
+  formAnswers,
+  LINK_BLOCK_SECONDS,
+  noteLanguage,
+  noteOfficePull,
+  officeAway,
+  offlineTexts,
+  send,
+  tenantAnswer,
+  type RelayFacts,
+} from "./offline.ts";
 import { tenantAppPage } from "./tenant_app.ts";
 import { staffAppPage } from "./staff_app.ts";
 import { BOTS, type BotCode, type Bytes, type Env } from "./types.ts";
@@ -234,6 +249,19 @@ async function webhook(
       }
     }
   }
+  // The Tenant bot while the office is away (DL-210): the relay answers and tells the office.
+  let relay: RelayFacts | undefined;
+  let outgoing: Awaited<ReturnType<typeof tenantAnswer>>["out"] = [];
+  if (bot === "TENANT") {
+    const texts = await offlineTexts(env, "TENANT");
+    if (texts && (await officeAway(env, now))) {
+      const answered = await tenantAnswer(env, texts, update, now);
+      relay = answered.facts;
+      outgoing = answered.out;
+    } else {
+      await noteLanguage(env, texts, update, now);
+    }
+  }
   await keepItem(
     env,
     officeKey,
@@ -249,9 +277,13 @@ async function webhook(
       refused: facts.refused,
       payload: update,
       media,
+      ...(relay ? { relay } : {}),
     },
     now,
   );
+  for (const message of outgoing) {
+    await send(env, message, fetcher);
+  }
   return new Response("ok");
 }
 
@@ -353,7 +385,13 @@ async function formStart(
   );
 }
 
-async function form(request: Request, env: Env, bot: BotCode, now: number) {
+async function form(
+  request: Request,
+  env: Env,
+  bot: BotCode,
+  now: number,
+  fetcher: typeof fetch,
+) {
   const cors = corsHeaders(request);
   const caller = await formCaller(request, env, bot, now, cors);
   if (caller instanceof Response) {
@@ -404,6 +442,36 @@ async function form(request: Request, env: Env, bot: BotCode, now: number) {
       }),
     );
   }
+  // A Problem report while the office is away (DL-210): the urgent alert goes out first, then
+  // the item says whether it went, so the office does not send it again.
+  let relay: RelayFacts | undefined;
+  let tenantReply: ReturnType<typeof formAnswers>["tenant"] = null;
+  if (bot === "TENANT") {
+    const texts = await offlineTexts(env, "TENANT");
+    if (texts && (await officeAway(env, now))) {
+      const chat = await env.DB.prepare(
+        "SELECT language FROM chats WHERE bot = 'TENANT' AND user_id = ?",
+      )
+        .bind(caller.userId)
+        .first<{ language: string | null }>();
+      const answers = formAnswers(
+        texts,
+        caller.userId,
+        chat?.language ?? "km",
+        fields as Record<string, unknown>,
+        caller.data
+          ? (JSON.parse(caller.data) as Record<string, unknown>)
+          : null,
+        now,
+      );
+      let alerted = false;
+      for (const alert of answers.alerts) {
+        alerted = (await send(env, alert, fetcher)) || alerted;
+      }
+      tenantReply = answers.tenant;
+      relay = { answered: true, alerted };
+    }
+  }
   await keepItem(
     env,
     officeKey,
@@ -417,9 +485,13 @@ async function form(request: Request, env: Env, bot: BotCode, now: number) {
       language_code: caller.languageCode,
       payload: { form: fields, role: caller.role },
       media,
+      ...(relay ? { relay } : {}),
     },
     now,
   );
+  if (tenantReply) {
+    await send(env, tenantReply, fetcher);
+  }
   return json({ ok: true }, 200, cors);
 }
 
@@ -430,6 +502,7 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
   }
   const [what, which] = path;
   if (what === "items" && request.method === "GET") {
+    await noteOfficePull(env, now);
     const limit = Math.max(
       1,
       Math.min(
@@ -448,15 +521,19 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
         received_at: string;
         sealed: string;
       }>();
-    const items = [];
-    for (const row of rows.results) {
-      const media = await env.DB.prepare(
-        "SELECT id FROM media WHERE item_id = ? ORDER BY position",
-      )
-        .bind(row.id)
-        .all<{ id: string }>();
-      items.push({ ...row, media: media.results.map((m) => m.id) });
-    }
+    // One query for all the photos (Cloudflare's free plan allows 50 queries per call).
+    const photos = await env.DB.prepare(
+      "SELECT item_id, id FROM media WHERE item_id IN (SELECT value FROM json_each(?)) " +
+        "ORDER BY item_id, position",
+    )
+      .bind(JSON.stringify(rows.results.map((row) => row.id)))
+      .all<{ item_id: string; id: string }>();
+    const items = rows.results.map((row) => ({
+      ...row,
+      media: photos.results
+        .filter((photo) => photo.item_id === row.id)
+        .map((photo) => photo.id),
+    }));
     const waiting = await env.DB.prepare(
       "SELECT count(*) AS waiting, min(received_at) AS oldest FROM items",
     ).first<{ waiting: number; oldest: string | null }>();
@@ -504,11 +581,34 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
     ) {
       return json({ error: "ids" }, 400);
     }
-    let deleted = 0;
-    for (const id of ids as string[]) {
-      deleted += await removeItem(env, id);
+    return json({ deleted: await removeItems(env, ids as string[]) });
+  }
+  if (what === "offline" && request.method === "PUT") {
+    // What the relay needs to answer while the office is away (DL-210): one body for the
+    // bot's texts and alerts, and one for the scrambled Lease check codes.
+    const bot = botFromPath(which);
+    let parsed: { texts?: unknown; links?: unknown };
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(body)) as typeof parsed;
+    } catch {
+      return json({ error: "not_json" }, 400);
     }
-    return json({ deleted });
+    const texts = parsed?.texts;
+    const links = parsed?.links;
+    const valid = (value: unknown) =>
+      typeof value === "object" && value !== null && !Array.isArray(value);
+    if (bot !== "TENANT" || !valid(texts) || !valid(links)) {
+      return json({ error: "offline" }, 400);
+    }
+    const at = new Date(now * 1000).toISOString();
+    const upsert =
+      "INSERT INTO offline (bot, body, updated_at) VALUES (?, ?, ?) " +
+      "ON CONFLICT (bot) DO UPDATE SET body = excluded.body, updated_at = excluded.updated_at";
+    await env.DB.batch([
+      env.DB.prepare(upsert).bind(bot, JSON.stringify(texts), at),
+      env.DB.prepare(upsert).bind(`${bot}:LINKS`, JSON.stringify(links), at),
+    ]);
+    return json({ saved: true });
   }
   if (what === "access" && request.method === "PUT") {
     const bot = botFromPath(which);
@@ -592,32 +692,48 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
   return json({ error: "not_found" }, 404);
 }
 
-async function removeItem(env: Env, id: string): Promise<number> {
-  const media = await env.DB.prepare("SELECT id FROM media WHERE item_id = ?")
-    .bind(id)
+// Removes items and their photos in a few queries, whatever the number of items.
+async function removeItems(env: Env, ids: string[]): Promise<number> {
+  if (ids.length === 0) {
+    return 0;
+  }
+  const list = JSON.stringify(ids);
+  const media = await env.DB.prepare(
+    "SELECT id FROM media WHERE item_id IN (SELECT value FROM json_each(?))",
+  )
+    .bind(list)
     .all<{ id: string }>();
   if (media.results.length > 0) {
     await env.MEDIA.delete(media.results.map((m) => `m/${m.id}`));
   }
-  await env.DB.prepare("DELETE FROM media WHERE item_id = ?").bind(id).run();
   const before = await env.DB.prepare(
-    "SELECT count(*) AS n FROM items WHERE id = ?",
+    "SELECT count(*) AS n FROM items WHERE id IN (SELECT value FROM json_each(?))",
   )
-    .bind(id)
+    .bind(list)
     .first<{ n: number }>();
-  await env.DB.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
+  await env.DB.batch([
+    env.DB.prepare(
+      "DELETE FROM media WHERE item_id IN (SELECT value FROM json_each(?))",
+    ).bind(list),
+    env.DB.prepare(
+      "DELETE FROM items WHERE id IN (SELECT value FROM json_each(?))",
+    ).bind(list),
+  ]);
   return before?.n ?? 0;
 }
 
 // Every hour: anything not pulled in 7 days is removed and counted for the health page.
 export async function cleanUp(env: Env, now: number): Promise<number> {
   const limit = new Date((now - KEEP_DAYS * 86400) * 1000).toISOString();
-  const old = await env.DB.prepare("SELECT id FROM items WHERE received_at < ?")
+  const old = await env.DB.prepare(
+    "SELECT id FROM items WHERE received_at < ? ORDER BY received_at LIMIT 500",
+  )
     .bind(limit)
     .all<{ id: string }>();
-  for (const row of old.results) {
-    await removeItem(env, row.id);
-  }
+  await removeItems(
+    env,
+    old.results.map((row) => row.id),
+  );
   if (old.results.length > 0) {
     await env.DB.prepare(
       "INSERT INTO dropped (day, count) VALUES (?, ?) " +
@@ -628,6 +744,17 @@ export async function cleanUp(env: Env, now: number): Promise<number> {
   }
   await env.DB.prepare("DELETE FROM rate WHERE minute < ?")
     .bind(Math.floor(now / 60) - 60)
+    .run();
+  // The relay's own chat steps (DL-210): a typed name or phone is not kept past 30 minutes,
+  // and old link tries go after a day.
+  await env.DB.prepare(
+    "UPDATE chats SET step = NULL, name = NULL, phone = NULL WHERE updated_at < ? AND " +
+      "(name IS NOT NULL OR phone IS NOT NULL OR step IS NOT NULL)",
+  )
+    .bind(now - CHAT_STEP_SECONDS)
+    .run();
+  await env.DB.prepare("DELETE FROM link_tries WHERE at < ?")
+    .bind(now - LINK_BLOCK_SECONDS)
     .run();
   return old.results.length;
 }
@@ -659,7 +786,7 @@ export async function handle(
       return formStart(request, env, bot, now);
     }
     return path.length === 2
-      ? form(request, env, bot, now)
+      ? form(request, env, bot, now, fetcher)
       : new Response("not found", { status: 404 });
   }
   // The Mini App pages (the Tenant bot's Problem report form, the Staff forms). They hold no

@@ -15,6 +15,12 @@ button, and answers the one tapped.
 
 Each answer is one database call that saves the person's next step and queues the messages
 together, so a reply is never sent for a step that was not saved.
+
+DL-210 (owner 7 Nov 2026, "Bot answers by itself"): while the office app is closed, the relay
+answers the chat and says in the item what it did. Such a message is saved the same way (the
+language, the Contact office message, the Lease link try, the next step) but not answered again;
+only when the database's link answer differs from the relay's does the tenant get the database's.
+A Problem report the relay already sent to the caretaker is saved without a second alert.
 """
 
 from __future__ import annotations
@@ -84,6 +90,10 @@ def handle_tenant_update(
     typed = text.strip() if isinstance(text, str) else ""
     if typed.lower() in {"ping", "/ping"}:
         return  # the shared base answers the test message
+    relay = plain.get("relay")
+    if isinstance(relay, dict) and relay.get("answered") is True:
+        _after_relay(relay, user, chat, message, typed, saved, store)
+        return
     tapped = button_tapped(typed) if typed else None
     state = store.bot_state(BOT, user)
     language = state.get("language")
@@ -173,6 +183,51 @@ def handle_tenant_update(
     reply("menu", _say("tenant.menu", "tenant.menu"))
 
 
+def _after_relay(
+    relay: dict[str, Any],
+    user: int,
+    chat: int,
+    message: dict[str, Any],
+    typed: str,
+    saved: dict[str, Any],
+    store: TelegramStore,
+) -> None:
+    """Save what the relay answered while the office was away (DL-210), without answering."""
+    chosen = relay.get("language")
+    if chosen in LANGUAGE_BUTTONS.values():
+        store.choose_language(BOT, user, str(chosen))
+    language = str(chosen or store.bot_state(BOT, user).get("language") or "km")
+    link = relay.get("link")
+    if isinstance(link, dict):
+        name = str(link.get("name") or "").strip()[:MAX_NAME]
+        unit = str(link.get("unit") or "").strip()[:MAX_UNIT]
+        if name and unit:
+            result = store.tenant_link(user, name, unit)
+            linked = result.get("result") == "LINKED"
+            if linked == (link.get("outcome") == "LINKED"):
+                store.bot_reply(BOT, user, chat, "menu", None, language, [])
+            else:
+                store.bot_reply(BOT, user, chat, "menu", None, language, _link_answer(result))
+            return
+    if relay.get("contact") is True:
+        inbound = saved.get("inbound_id")
+        if typed and isinstance(inbound, str):
+            store.contact_add(
+                BOT, inbound, user, chat, language, _sender_name(message), typed[:MAX_CONTACT]
+            )
+    step = relay.get("step")
+    name = str(relay.get("name") or "")[:MAX_NAME]
+    store.bot_reply(
+        BOT,
+        user,
+        chat,
+        step if step in TENANT_STEPS else None,
+        {"name": name} if step == "link.unit" and name else None,
+        language,
+        [],
+    )
+
+
 def _sender_name(message: dict[str, Any]) -> str | None:
     """The person's Telegram name, for the office to see who wrote."""
     sender = message.get("from")
@@ -254,10 +309,12 @@ def handle_tenant_form(
         return
     form = payload.get("form")
     media = saved.get("media_ids")
+    relay = plain.get("relay")
     result = store.tenant_problem_report(
         inbound,
         form if isinstance(form, dict) else {},
         [str(media_id) for media_id in media] if isinstance(media, list) else [],
+        relay_alerted=isinstance(relay, dict) and relay.get("alerted") is True,
     )
     if result.get("repeated") is True:
         return

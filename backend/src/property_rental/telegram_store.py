@@ -59,8 +59,14 @@ class TelegramStore(Protocol):
 
     def tenant_form_data(self) -> dict[str, Any]: ...
 
+    def tenant_offline_data(self) -> dict[str, Any]: ...
+
     def tenant_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
     ) -> dict[str, Any]: ...
 
     def tenant_report_check(self, user: int, fixed: bool) -> dict[str, Any]: ...
@@ -310,11 +316,29 @@ class PostgresTelegramStore:
         assert isinstance(result, dict)
         return result
 
-    def tenant_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
-    ) -> dict[str, Any]:
+    def tenant_offline_data(self) -> dict[str, Any]:
         result = self._one(
-            "SELECT app.telegram_tenant_problem_report(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            "SELECT app.telegram_tenant_offline_data(%s, %s)", self._property, self._actor
+        )
+        assert isinstance(result, dict)
+        return result
+
+    def tenant_problem_report(
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
+    ) -> dict[str, Any]:
+        # A report the relay already sent to the caretaker is saved without a second alert
+        # (DL-210): the flag lasts only for this one change.
+        flag = (
+            " FROM (SELECT set_config('prm.relay_alerted', 'on', true)) AS flag"
+            if relay_alerted
+            else ""
+        )
+        result = self._one(
+            "SELECT app.telegram_tenant_problem_report(%s, %s, %s::jsonb, %s::jsonb, %s)" + flag,
             self._property,
             inbound_id,
             json.dumps(form),

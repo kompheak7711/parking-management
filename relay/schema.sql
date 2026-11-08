@@ -50,3 +50,40 @@ CREATE TABLE IF NOT EXISTS rate (
   count INTEGER NOT NULL,
   PRIMARY KEY (user_id, minute)
 );
+
+-- When the office last pulled (DL-210). The relay answers a Tenant bot chat itself only while
+-- the office has not pulled for a while (the app on the office computer is closed).
+CREATE TABLE IF NOT EXISTS office_seen (
+  what TEXT PRIMARY KEY,
+  at INTEGER NOT NULL
+);
+
+-- What the relay needs to answer while the office is away (DL-210), sent by the office app as
+-- one body per bot: the bot's texts and buttons, the scrambled Lease check codes (keyed hashes,
+-- never a name or a phone number) with each Unit's number and places, and who gets an urgent
+-- alert (Telegram account numbers and shift times only).
+CREATE TABLE IF NOT EXISTS offline (
+  bot TEXT PRIMARY KEY,
+  body TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- The relay's own chat step while it answers for the office (DL-210). The typed name and the
+-- shared phone are kept only between the link steps and wiped after 30 minutes.
+CREATE TABLE IF NOT EXISTS chats (
+  bot TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  language TEXT,
+  step TEXT,
+  name TEXT,
+  phone TEXT,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (bot, user_id)
+);
+
+-- Lease link tries that did not match while the relay answered (5 in 24 hours = 24 h block).
+CREATE TABLE IF NOT EXISTS link_tries (
+  user_id INTEGER NOT NULL,
+  at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS link_tries_user ON link_tries (user_id, at);

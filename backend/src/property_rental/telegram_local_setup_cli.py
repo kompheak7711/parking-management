@@ -93,6 +93,7 @@ def mac_test_config(
         "relay_host": host,
         "relay_pull_key_file": str(folder / "relay-pull.key"),
         "office_private_key_file": str(folder / OFFICE_KEY),
+        "link_check_key_file": str(folder / "link-check.key"),
         "bots": {
             code: {"token_file": str(folder / f"{code.lower()}_bot_token")} for code in BOT_CODES
         },

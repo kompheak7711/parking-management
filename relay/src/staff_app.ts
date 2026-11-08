@@ -40,6 +40,13 @@ const PAGE = String.raw`<!doctype html>
 <style>
   :root { --bg: #ffffff; --fg: #1d2330; --muted: #5f6b7a; --line: #d8dee6; --accent: #2a6fdb;
     --accent-fg: #ffffff; --soft: #f2f5f9; --warn: #b42318; --ok: #157347; }
+  /* Telegram dark mode: tiles and lines follow the Telegram colours, so text stays readable. */
+  :root { --soft: var(--tg-theme-secondary-bg-color, #f2f5f9);
+    --line: var(--tg-theme-section-separator-color, #d8dee6); }
+  @supports (background: color-mix(in srgb, red 50%, blue)) {
+    :root { --soft: color-mix(in srgb, var(--tg-theme-text-color, #1d2330) 8%, var(--tg-theme-bg-color, #ffffff));
+      --line: color-mix(in srgb, var(--tg-theme-text-color, #1d2330) 24%, var(--tg-theme-bg-color, #ffffff)); }
+  }
   body { margin: 0; font: 16px/1.5 -apple-system, "Segoe UI", Roboto, "Noto Sans Khmer", sans-serif;
     background: var(--tg-theme-bg-color, var(--bg)); color: var(--tg-theme-text-color, var(--fg)); }
   main { padding: 16px; max-width: 560px; margin: 0 auto; }
@@ -87,7 +94,7 @@ const PAGE = String.raw`<!doctype html>
   table.util th { font-size: 13px; text-align: left; padding: 4px; color: var(--tg-theme-hint-color, var(--muted)); }
   table.util td { padding: 4px; vertical-align: top; }
   table.util input.text { padding: 8px; }
-  table.util tr.warn td { background: #fff4e5; }
+  table.util tr.warn td { background: rgba(255, 166, 0, 0.18); }
   .small-line { font-size: 12px; margin: 2px 0 0; }
   td.flagline { font-size: 13px; padding-top: 0; }
   [hidden] { display: none !important; }

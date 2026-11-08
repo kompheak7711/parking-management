@@ -206,3 +206,7 @@ class RelayClient:
 
     def set_choices(self, bot: str, choices: dict[str, object]) -> None:
         self._json("PUT", f"/office/choices/{bot.lower()}", {"choices": choices})
+
+    def set_offline(self, bot: str, texts: dict[str, object], links: dict[str, object]) -> None:
+        """What the relay answers with while the office is away (DL-210)."""
+        self._json("PUT", f"/office/offline/{bot.lower()}", {"texts": texts, "links": links})

@@ -20,6 +20,13 @@ const PAGE = String.raw`<!doctype html>
 <style>
   :root { --bg: #ffffff; --fg: #1d2330; --muted: #5f6b7a; --line: #d8dee6; --accent: #2a6fdb;
     --accent-fg: #ffffff; --soft: #f2f5f9; --warn: #b42318; --warn-soft: #fdecea; }
+  /* Telegram dark mode: tiles and lines follow the Telegram colours, so text stays readable. */
+  :root { --soft: var(--tg-theme-secondary-bg-color, #f2f5f9);
+    --line: var(--tg-theme-section-separator-color, #d8dee6); }
+  @supports (background: color-mix(in srgb, red 50%, blue)) {
+    :root { --soft: color-mix(in srgb, var(--tg-theme-text-color, #1d2330) 8%, var(--tg-theme-bg-color, #ffffff));
+      --line: color-mix(in srgb, var(--tg-theme-text-color, #1d2330) 24%, var(--tg-theme-bg-color, #ffffff)); }
+  }
   body { margin: 0; font: 16px/1.45 -apple-system, "Segoe UI", Roboto, "Noto Sans Khmer", sans-serif;
     background: var(--tg-theme-bg-color, var(--bg)); color: var(--tg-theme-text-color, var(--fg)); }
   main { padding: 16px; max-width: 560px; margin: 0 auto; }

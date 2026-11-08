@@ -5,14 +5,16 @@
 #   sh scripts/local/telegram-setup.sh
 #
 # It does relay/README.md "Setting it up" steps 1 to 7 for this Mac:
-#   1. makes the office keys and the webhook words in .local/telegram (only you can open it);
+#   1. makes the office keys, the Lease check key and the webhook words in .local/telegram (only
+#      you can open it);
 #   2. asks for each bot's token in a hidden box and checks it with Telegram;
 #   3. signs in to Cloudflare in the browser, makes the relay database and photo bucket, puts the
 #      relay online and gives it the keys;
 #   4. points each bot at the relay;
 #   5. finds the Property, the Owner account and the Staff bot's service actor, and writes the
 #      operations file the bot jobs read.
-# After it, "Start test app.command" also runs the bot jobs every 10 seconds.
+# After it, "Start test app.command" also runs the bot jobs every 10 seconds. While the test app
+# is closed, the relay answers the Tenant bot itself (DL-210).
 #
 # No key, token or password is printed, passed as a command argument or written outside
 # .local/telegram. Running it again keeps what is already there and only redoes the rest.
@@ -76,6 +78,9 @@ if [ ! -s "$TG/office.pem" ]; then
 fi
 openssl pkey -in "$TG/office.pem" -pubout -out "$TG/office.pub.pem"
 [ -s "$TG/relay-pull.key" ] || openssl rand -hex 32 > "$TG/relay-pull.key"
+# The key of the scrambled Lease check list the relay links tenants with while the app is
+# closed (DL-210).
+[ -s "$TG/link-check.key" ] || openssl rand -hex 32 > "$TG/link-check.key"
 for bot in $BOTS; do
   [ -s "$TG/${bot}_webhook_secret" ] || openssl rand -hex 24 > "$TG/${bot}_webhook_secret"
 done
@@ -168,6 +173,7 @@ put_secret() {
 }
 put_secret OFFICE_PUBLIC_KEY "$TG/office.pub.pem"
 put_secret OFFICE_PULL_KEY "$TG/relay-pull.key"
+put_secret LINK_CHECK_KEY "$TG/link-check.key"
 for bot in $BOTS; do
   upper=$(printf '%s' "$bot" | tr '[:lower:]' '[:upper:]')
   put_secret "${upper}_BOT_TOKEN" "$TG/${bot}_bot_token"

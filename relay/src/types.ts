@@ -39,6 +39,9 @@ export interface Env {
   MEDIA: R2Bucket;
   OFFICE_PUBLIC_KEY: string;
   OFFICE_PULL_KEY: string;
+  // The key of the scrambled Lease check codes (DL-210), the same as the office's
+  // link-check.key; without it the relay does not link anyone while the office is away.
+  LINK_CHECK_KEY?: string;
   CUSTOMER_BOT_TOKEN?: string;
   TENANT_BOT_TOKEN?: string;
   STAFF_BOT_TOKEN?: string;
