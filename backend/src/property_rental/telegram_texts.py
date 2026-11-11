@@ -525,6 +525,19 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Working hours: Monday to Saturday, 07:00 to 17:00."
         ),
     },
+    # DL-213: what the relay says while the office app is closed.
+    "customer.inquiry_offline": {
+        "km": (
+            "សូមអរគុណ។ យើងបានទទួលសំណើរបស់អ្នក។ ការិយាល័យរបស់យើងបិទនៅពេលនេះ។ "
+            "យើងនឹងផ្ញើលេខសំណើទៅអ្នក ហើយហៅទៅអ្នកនៅពេលការិយាល័យបើក។\n"
+            "ម៉ោងធ្វើការ៖ ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។"
+        ),
+        "en": (
+            "Thank you. We received your request. Our office is closed now. "
+            "We will send you the request number and call you when the office opens.\n"
+            "Working hours: Monday to Saturday, 07:00 to 17:00."
+        ),
+    },
     "customer.blocked": {
         "km": "យើងមិនអាចទទួលសំណើពីគណនីនេះបានទេ។ សូមមកការិយាល័យ ឬទូរស័ព្ទមកយើង។",
         "en": "We cannot take requests from this account. Please visit or call the office.",
@@ -686,6 +699,31 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "staff.check_refused_need_reason": {"km": "❌ សូមជ្រើសរើសមូលហេតុ។", "en": "❌ សូមជ្រើសរើសមូលហេតុ។"},
     "staff.check_refused_need_photo": {"km": "❌ សូមថតរូបបុគ្គលិក។", "en": "❌ សូមថតរូបបុគ្គលិក។"},
+    # DL-213: what the relay says while the office app is closed.
+    "staff.check_offline": {
+        "km": (
+            "✅ បានទទួលការស្កេនរបស់អ្នក។ ការិយាល័យបិទនៅពេលនេះ។ "
+            "ម៉ោងស្កេនត្រូវបានរក្សាទុក ហើយលទ្ធផលនឹងមកនៅពេលការិយាល័យបើក។"
+        ),
+        "en": (
+            "✅ បានទទួលការស្កេនរបស់អ្នក។ ការិយាល័យបិទនៅពេលនេះ។ "
+            "ម៉ោងស្កេនត្រូវបានរក្សាទុក ហើយលទ្ធផលនឹងមកនៅពេលការិយាល័យបើក។"
+        ),
+    },
+    "staff.form_offline": {
+        "km": ("✅ បានទទួល។ ការិយាល័យបិទនៅពេលនេះ។ ទម្រង់របស់អ្នកត្រូវបានរក្សាទុក ហើយលេខនឹងមកនៅពេលការិយាល័យបើក។"),
+        "en": ("✅ បានទទួល។ ការិយាល័យបិទនៅពេលនេះ។ ទម្រង់របស់អ្នកត្រូវបានរក្សាទុក ហើយលេខនឹងមកនៅពេលការិយាល័យបើក។"),
+    },
+    "staff.report_offline_urgent": {
+        "km": (
+            "🚨 បានទទួលរបាយការណ៍បន្ទាន់។ អ្នកថែរក្សាអគារវេន និងអ្នកគ្រប់គ្រងបានទទួលដំណឹងភ្លាមៗ។ "
+            "លេខរបាយការណ៍នឹងមកពេលក្រោយ។ ភ្លើងឆេះ 118 · ប៉ូលិស 117"
+        ),
+        "en": (
+            "🚨 បានទទួលរបាយការណ៍បន្ទាន់។ អ្នកថែរក្សាអគារវេន និងអ្នកគ្រប់គ្រងបានទទួលដំណឹងភ្លាមៗ។ "
+            "លេខរបាយការណ៍នឹងមកពេលក្រោយ។ ភ្លើងឆេះ 118 · ប៉ូលិស 117"
+        ),
+    },
     # Step 4b (DL-175): Report a problem, Close job and the urgent alert.
     "staff.report_saved": {
         "km": ("✅ បានទទួល {number}។ បានរក្សាទុកក្នុង «របាយការណ៍បញ្ហា»។ អ្នកគ្រប់គ្រងនឹងរៀបចំការងារ។"),

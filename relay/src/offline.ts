@@ -181,13 +181,13 @@ async function offlineLinks(env: Env): Promise<OfflineLinks | null> {
   return row ? (JSON.parse(row.body) as OfflineLinks) : null;
 }
 
-function object(value: unknown): Json | undefined {
+export function object(value: unknown): Json | undefined {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Json)
     : undefined;
 }
 
-function fill(said: Said, details: Record<string, string>): Said {
+export function fill(said: Said, details: Record<string, string>): Said {
   return {
     ...said,
     text: said.text.replace(/\{([a-z_]+)\}/g, (whole, name: string) =>
@@ -207,7 +207,10 @@ function say(
   return said ? fill(said, details) : null;
 }
 
-function tappedButton(texts: OfflineTexts, typed: string): string | null {
+export function tappedButton(
+  texts: Pick<OfflineTexts, "buttons">,
+  typed: string,
+): string | null {
   for (const [code, labels] of Object.entries(texts.buttons)) {
     if (labels.includes(typed)) {
       return code;
@@ -216,7 +219,7 @@ function tappedButton(texts: OfflineTexts, typed: string): string | null {
   return null;
 }
 
-interface Chat {
+export interface Chat {
   language: string | null;
   step: string | null;
   name: string | null;
@@ -224,19 +227,21 @@ interface Chat {
   updated_at: number;
 }
 
-async function saveChat(
+export async function saveChat(
   env: Env,
   user: number,
   chat: Partial<Chat>,
   now: number,
+  bot: BotCode = "TENANT",
 ): Promise<void> {
   await env.DB.prepare(
     "INSERT INTO chats (bot, user_id, language, step, name, phone, updated_at) " +
-      "VALUES ('TENANT', ?, ?, ?, ?, ?, ?) ON CONFLICT (bot, user_id) DO UPDATE SET " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (bot, user_id) DO UPDATE SET " +
       "language = COALESCE(excluded.language, chats.language), step = excluded.step, " +
       "name = excluded.name, phone = excluded.phone, updated_at = excluded.updated_at",
   )
     .bind(
+      bot,
       user,
       chat.language ?? null,
       chat.step ?? null,
@@ -251,9 +256,10 @@ async function saveChat(
 // for each language tap), so it can answer them in their language later.
 export async function noteLanguage(
   env: Env,
-  texts: OfflineTexts | null,
+  texts: Pick<OfflineTexts, "buttons"> | null,
   update: Json,
   now: number,
+  bot: BotCode = "TENANT",
 ): Promise<void> {
   const message = object(update.message);
   const user = object(message?.from)?.id;
@@ -270,10 +276,10 @@ export async function noteLanguage(
         : null;
   if (language) {
     await env.DB.prepare(
-      "INSERT INTO chats (bot, user_id, language, updated_at) VALUES ('TENANT', ?, ?, ?) " +
+      "INSERT INTO chats (bot, user_id, language, updated_at) VALUES (?, ?, ?, ?) " +
         "ON CONFLICT (bot, user_id) DO UPDATE SET language = excluded.language",
     )
-      .bind(user, language, now)
+      .bind(bot, user, language, now)
       .run();
   }
 }

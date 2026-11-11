@@ -9,8 +9,9 @@
 //      and the scrambled Lease check codes the office sent, and send an urgent report to the
 //      caretaker on shift.
 // It never decides money, never stores the record and never reads the office database. Before
-// DL-210 it never answered in place of the office; now it answers the Tenant bot only while the
-// office has not pulled for 2.5 minutes, and tells the office what it said.
+// DL-210 it never answered in place of the office; now it answers the Tenant bot, and since
+// DL-213 the Customer and Staff bots (offline_bots.ts), only while the office has not pulled for
+// 2.5 minutes, and tells the office what it said.
 
 import { importOfficeKey, seal, sha256Hex, toBase64 } from "./seal.ts";
 import {
@@ -32,6 +33,15 @@ import {
   tenantAnswer,
   type RelayFacts,
 } from "./offline.ts";
+import {
+  customerAnswer,
+  offlineBody,
+  staffAnswer,
+  staffFormAnswers,
+  type BotFacts,
+  type CustomerTexts,
+  type StaffTexts,
+} from "./offline_bots.ts";
 import { tenantAppPage } from "./tenant_app.ts";
 import { staffAppPage } from "./staff_app.ts";
 import { BOTS, type BotCode, type Bytes, type Env } from "./types.ts";
@@ -250,7 +260,7 @@ async function webhook(
     }
   }
   // The Tenant bot while the office is away (DL-210): the relay answers and tells the office.
-  let relay: RelayFacts | undefined;
+  let relay: RelayFacts | BotFacts | undefined;
   let outgoing: Awaited<ReturnType<typeof tenantAnswer>>["out"] = [];
   if (bot === "TENANT") {
     const texts = await offlineTexts(env, "TENANT");
@@ -260,6 +270,24 @@ async function webhook(
       outgoing = answered.out;
     } else {
       await noteLanguage(env, texts, update, now);
+    }
+  } else if (bot === "CUSTOMER") {
+    // The Customer bot while the office is away (DL-213).
+    const texts = await offlineBody<CustomerTexts>(env, "CUSTOMER");
+    if (texts && (await officeAway(env, now))) {
+      const answered = await customerAnswer(env, texts, update, now);
+      relay = answered.facts;
+      outgoing = answered.out;
+    } else {
+      await noteLanguage(env, texts, update, now, "CUSTOMER");
+    }
+  } else if (bot === "STAFF") {
+    // The Staff bot while the office is away (DL-213).
+    const texts = await offlineBody<StaffTexts>(env, "STAFF");
+    if (texts && (await officeAway(env, now))) {
+      const answered = await staffAnswer(env, texts, update);
+      relay = answered.facts;
+      outgoing = answered.out;
     }
   }
   await keepItem(
@@ -445,7 +473,30 @@ async function form(
   // A Problem report while the office is away (DL-210): the urgent alert goes out first, then
   // the item says whether it went, so the office does not send it again.
   let relay: RelayFacts | undefined;
-  let tenantReply: ReturnType<typeof formAnswers>["tenant"] = null;
+  let personReply: ReturnType<typeof formAnswers>["tenant"] = null;
+  if (bot === "STAFF") {
+    // A Staff form while the office is away (DL-213): the urgent alert first, then the item
+    // says whether it went, so the office does not send it again.
+    const texts = await offlineBody<StaffTexts>(env, "STAFF");
+    if (texts && (await officeAway(env, now))) {
+      const choices = await env.DB.prepare(
+        "SELECT body FROM choices WHERE bot = 'STAFF'",
+      ).first<{ body: string }>();
+      const answers = staffFormAnswers(
+        texts,
+        caller.userId,
+        fields as Record<string, unknown>,
+        choices ? (JSON.parse(choices.body) as Record<string, unknown>) : null,
+        now,
+      );
+      let alerted = false;
+      for (const alert of answers.alerts) {
+        alerted = (await send(env, alert, fetcher)) || alerted;
+      }
+      personReply = answers.person;
+      relay = { answered: true, alerted };
+    }
+  }
   if (bot === "TENANT") {
     const texts = await offlineTexts(env, "TENANT");
     if (texts && (await officeAway(env, now))) {
@@ -468,7 +519,7 @@ async function form(
       for (const alert of answers.alerts) {
         alerted = (await send(env, alert, fetcher)) || alerted;
       }
-      tenantReply = answers.tenant;
+      personReply = answers.tenant;
       relay = { answered: true, alerted };
     }
   }
@@ -489,8 +540,8 @@ async function form(
     },
     now,
   );
-  if (tenantReply) {
-    await send(env, tenantReply, fetcher);
+  if (personReply) {
+    await send(env, personReply, fetcher);
   }
   return json({ ok: true }, 200, cors);
 }
@@ -584,8 +635,8 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
     return json({ deleted: await removeItems(env, ids as string[]) });
   }
   if (what === "offline" && request.method === "PUT") {
-    // What the relay needs to answer while the office is away (DL-210): one body for the
-    // bot's texts and alerts, and one for the scrambled Lease check codes.
+    // What the relay needs to answer while the office is away (DL-210, DL-213): one body for
+    // the bot's texts and alerts, and for the Tenant bot one for the scrambled Lease check codes.
     const bot = botFromPath(which);
     let parsed: { texts?: unknown; links?: unknown };
     try {
@@ -597,7 +648,7 @@ async function office(request: Request, env: Env, now: number, path: string[]) {
     const links = parsed?.links;
     const valid = (value: unknown) =>
       typeof value === "object" && value !== null && !Array.isArray(value);
-    if (bot !== "TENANT" || !valid(texts) || !valid(links)) {
+    if (bot === undefined || !valid(texts) || !valid(links)) {
       return json({ error: "offline" }, 400);
     }
     const at = new Date(now * 1000).toISOString();

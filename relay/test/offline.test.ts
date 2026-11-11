@@ -412,15 +412,15 @@ test("the office's offline body is checked, and the office counts as away after 
     () => NOW,
   );
   assert.equal(bad.status, 400);
-  const staff = await handle(
-    await officeRequest("PUT", "/office/offline/staff", NOW, {
+  const nobody = await handle(
+    await officeRequest("PUT", "/office/offline/nobody", NOW, {
       texts: {},
       links: {},
     }),
     env,
     () => NOW,
   );
-  assert.equal(staff.status, 400);
+  assert.equal(nobody.status, 400);
   await handle(
     await officeRequest("GET", "/office/items", NOW),
     env,

@@ -65798,6 +65798,88 @@
       "notes": "Telegram while the app is closed: Staff without telegram.operate cannot read the offline data."
     },
     {
+      "test_id": "test_the_customer_body_has_every_step_the_unit_types_the_faq_and_the_clock",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Customer bot while the app is closed: the relay gets every step's text and keyboard in Khmer and English, the Unit Types, the Customer FAQ and the Property's UTC offset, and no person's data."
+    },
+    {
+      "test_id": "test_the_staff_body_is_khmer_with_the_alert_list",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Staff bot while the app is closed: Khmer texts only, with the Authorizers and caretaker shifts for an urgent alert."
+    },
+    {
+      "test_id": "test_a_customer_inquiry_the_relay_took_is_saved_and_only_the_number_is_sent",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Customer bot while the app is closed: the language and steps are saved without an answer; the inquiry becomes a Visit request and only its number is sent."
+    },
+    {
+      "test_id": "test_a_customer_contact_message_the_relay_took_is_saved_without_an_answer",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Customer bot while the app is closed: a Contact office message is saved without an answer; an inquiry the database refuses gets the office's answer."
+    },
+    {
+      "test_id": "test_a_staff_join_the_relay_took_is_saved_and_hello_only_when_approved_at_once",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Staff bot while the app is closed: a shared phone becomes a join request; the hello is sent only when the database links the person at once."
+    },
+    {
+      "test_id": "test_a_staff_report_the_relay_alerted_is_saved_without_a_second_alert",
+      "upstream_ids": [
+        "DL-213"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Staff bot while the app is closed: an urgent report the relay already alerted is saved without a second alert, and the number is still sent."
+    },
+    {
+      "test_id": "test_the_clock_is_the_propertys_time_zone_and_offset",
+      "upstream_ids": [
+        "DL-213",
+        "DB-TG-020"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_offline_clock_migration.py",
+      "status": "implemented",
+      "notes": "The relay's clock: the Property's time zone and UTC offset in minutes."
+    },
+    {
+      "test_id": "test_the_clock_is_behind_the_telegram_right",
+      "upstream_ids": [
+        "DL-213",
+        "DB-TG-020"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_offline_clock_migration.py",
+      "status": "implemented",
+      "notes": "The relay's clock: Staff without telegram.operate are refused; an unknown Property is refused."
+    },
+    {
       "test_id": "test_an_issued_invoice_goes_to_the_linked_tenant_once",
       "upstream_ids": [
         "DL-211",

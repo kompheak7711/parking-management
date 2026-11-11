@@ -14,6 +14,11 @@ phone first, then takes one written message for the office.
 
 Each answer is one database call that saves the person's next step and queues the messages
 together, as in the Tenant bot.
+
+DL-213 (owner 11 Nov 2026): while the office app is closed, the relay answers by itself (Start,
+language, FAQ, Contact office and every step of Send an inquiry) and says the request was
+received. When the office is back it saves what the relay did without answering again; only
+the request's number is new, so only that is sent.
 """
 
 from __future__ import annotations
@@ -128,6 +133,10 @@ def handle_customer_update(
     typed = text.strip() if isinstance(text, str) else ""
     if typed.lower() in {"ping", "/ping"}:
         return  # the shared base answers the test message
+    relay = plain.get("relay")
+    if isinstance(relay, dict) and relay.get("answered") is True:
+        _after_relay(relay, user, chat, message, typed, saved, store)
+        return
     tapped = button_tapped(typed) if typed else None
     state = store.bot_state(BOT, user)
     language = state.get("language")
@@ -209,6 +218,68 @@ def handle_customer_update(
         reply(next_step, *messages, data=request)
         return
     reply("menu", _say("customer.menu", "customer.menu"))
+
+
+def _after_relay(
+    relay: dict[str, Any],
+    user: int,
+    chat: int,
+    message: dict[str, Any],
+    typed: str,
+    saved: dict[str, Any],
+    store: TelegramStore,
+) -> None:
+    """Save what the relay answered while the office was away (DL-213). Only a sent inquiry gets
+    an answer, with the request's number."""
+    chosen = relay.get("language")
+    if chosen in LANGUAGE_BUTTONS.values():
+        store.choose_language(BOT, user, str(chosen))
+    language = str(chosen or store.bot_state(BOT, user).get("language") or "km")
+    inbound = saved.get("inbound_id")
+    if relay.get("contact") is True and typed and isinstance(inbound, str):
+        store.contact_add(
+            BOT, inbound, user, chat, language, _sender_name(message), typed[:MAX_CONTACT]
+        )
+    inquiry = relay.get("inquiry")
+    if isinstance(inquiry, dict) and isinstance(inbound, str):
+        after, messages, _ = _send(_relay_request(inquiry), saved, user, chat, language, store)
+        store.bot_reply(BOT, user, chat, after, None, language, messages, reply_to=inbound)
+        return
+    step = relay.get("step")
+    request = relay.get("request")
+    store.bot_reply(
+        BOT,
+        user,
+        chat,
+        step if step in CUSTOMER_STEPS else None,
+        _relay_request(request)
+        if isinstance(step, str) and step.startswith("ask.") and isinstance(request, dict)
+        else None,
+        language,
+        [],
+    )
+
+
+def _relay_request(request: dict[str, Any]) -> dict[str, Any]:
+    """Only the inquiry fields, cut to the bot's own limits."""
+    limits = {"name": MAX_NAME, "email": MAX_EMAIL, "note": MAX_NOTE}
+    kept: dict[str, Any] = {}
+    for field in (
+        "contact_by",
+        "email",
+        "name",
+        "unit_type",
+        "visit_on",
+        "visit_part",
+        "move_in",
+        "note",
+    ):
+        value = request.get(field)
+        if value is None and field in request:
+            kept[field] = None
+        elif isinstance(value, str):
+            kept[field] = value[: limits.get(field, 40)]
+    return kept
 
 
 def _inquiry(

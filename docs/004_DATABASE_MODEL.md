@@ -5964,3 +5964,7 @@ Added by DL-211 (migration `20270709_381`, forward-only).
 ## DB-TG-019 — The Unit key drops a "U" before the number (DL-212)
 
 Added by DL-212 (migration `20270710_382`, forward-only). No new table. `app.tenant_unit_key(text)` also drops a leading "U" before a digit, after "Unit", "Room", "No.", "#" and "បន្ទប់": "U302" and "302" give the same key "302".
+
+## DB-TG-020 — The Property's clock for the relay (DL-213)
+
+Added by DL-213 (migration `20270711_383`, forward-only). No new table. `app.telegram_offline_clock(property, actor)` (`telegram.operate`, granted to `prm_runtime`) gives the Property's `timezone_name` and its `utc_offset_minutes` now, so the relay offers the Customer bot's visit days and move-in months from the Property's own date while the office is away. An unknown Property is refused (`22023`).

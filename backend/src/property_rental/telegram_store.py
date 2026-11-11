@@ -63,6 +63,8 @@ class TelegramStore(Protocol):
 
     def tenant_offline_data(self) -> dict[str, Any]: ...
 
+    def offline_clock(self) -> dict[str, Any]: ...
+
     def tenant_problem_report(
         self,
         inbound_id: str,
@@ -109,7 +111,11 @@ class TelegramStore(Protocol):
     def staff_form_data(self) -> dict[str, Any]: ...
 
     def staff_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
     ) -> dict[str, Any]: ...
 
     def staff_close_job(
@@ -331,6 +337,11 @@ class PostgresTelegramStore:
         assert isinstance(result, dict)
         return result
 
+    def offline_clock(self) -> dict[str, Any]:
+        result = self._one("SELECT app.telegram_offline_clock(%s, %s)", self._property, self._actor)
+        assert isinstance(result, dict)
+        return result
+
     def tenant_problem_report(
         self,
         inbound_id: str,
@@ -509,10 +520,21 @@ class PostgresTelegramStore:
         )
 
     def staff_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
     ) -> dict[str, Any]:
+        # An urgent report the relay already sent to the caretaker is saved without a second
+        # alert (DL-213, as DL-210 for the Tenant bot).
+        flag = (
+            " FROM (SELECT set_config('prm.relay_alerted', 'on', true)) AS flag"
+            if relay_alerted
+            else ""
+        )
         return self._staff_dict(
-            "SELECT app.telegram_staff_problem_report(%s, %s, %s::jsonb, %s::jsonb, %s)",
+            "SELECT app.telegram_staff_problem_report(%s, %s, %s::jsonb, %s::jsonb, %s)" + flag,
             self._property,
             inbound_id,
             json.dumps(form),

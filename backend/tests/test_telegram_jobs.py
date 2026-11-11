@@ -144,6 +144,9 @@ class FakeStore:
         self.staff_data: dict[str, Any] = {"choices": {}, "users": []}
         self.photos_due: list[dict[str, Any]] = []
         self.photos_removed: list[str] = []
+        # The Customer and Staff bots while the office is away (migration 20270711_383, DL-213).
+        self.clock: dict[str, Any] = {"timezone_name": "Asia/Phnom_Penh", "utc_offset_minutes": 420}
+        self.staff_join_state = "WAITING"
 
     def record_item(self, item: dict[str, Any]) -> dict[str, Any]:
         if item["relay_item_id"] in self.items:
@@ -233,6 +236,9 @@ class FakeStore:
     def tenant_offline_data(self) -> dict[str, Any]:
         return self.offline_data
 
+    def offline_clock(self) -> dict[str, Any]:
+        return self.clock
+
     def tenant_problem_report(
         self,
         inbound_id: str,
@@ -289,6 +295,9 @@ class FakeStore:
     def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]:
         self._staff_ready()
         self.staff_joins.append((user, name, phone))
+        if self.staff_join_state == "LINKED":
+            self.staff[user] = {"name_km": name}
+            return {"ok": True, "state": "LINKED"}
         self.staff_waiting.add(user)
         return {"ok": True, "state": "WAITING", "request_id": "r1"}
 
@@ -312,8 +321,13 @@ class FakeStore:
         return self.staff_data
 
     def staff_problem_report(
-        self, inbound_id: str, form: dict[str, Any], media_ids: list[str]
+        self,
+        inbound_id: str,
+        form: dict[str, Any],
+        media_ids: list[str],
+        relay_alerted: bool = False,
     ) -> dict[str, Any]:
+        self.relay_alerted.append(relay_alerted)
         self.staff_scans.append(("REPORT", 0, {"form": form, "media": media_ids}, inbound_id))
         return self.staff_answers.pop(0)
 

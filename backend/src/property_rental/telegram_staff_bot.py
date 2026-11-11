@@ -33,12 +33,19 @@ which moves the report to Checked. Who pays is decided by the Manager in the app
 
 The forms reach the office through the relay and the pull job, so the answer comes in the chat
 within about a minute.
+
+DL-213 (owner 11 Nov 2026): while the office app is closed, the relay answers the chat (hello,
+share your phone, waiting for approval) and says a form was received; an urgent problem goes from
+the relay to the caretaker on shift and the Owner and Managers at once. When the office is back
+it saves everything without a second hello or a second alert, and sends only what is new: the
+check-in result and the form numbers, and the hello when a join was approved at once.
 """
 
 from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
@@ -133,6 +140,10 @@ def handle_staff_update(
             reply_to=saved.get("inbound_id"),
         )
 
+    relay = plain.get("relay")
+    if isinstance(relay, dict) and relay.get("answered") is True:
+        _after_relay(message, user, store, reply)
+        return
     try:
         who = store.staff_who(user)
         if who.get("linked") is True:
@@ -153,6 +164,27 @@ def handle_staff_update(
         reply(_say("staff.waiting", "remove"))
         return
     reply(_say("staff.ask_phone", "staff.share_phone"))
+
+
+def _after_relay(
+    message: dict[str, Any],
+    user: int,
+    store: TelegramStore,
+    reply: Callable[..., None],
+) -> None:
+    """The relay answered while the office was away (DL-213): save a join, and say hello only
+    when the join is approved at once (the relay could only say "waiting")."""
+    phone = _own_phone(message)
+    if phone is None:
+        return
+    try:
+        if store.staff_who(user).get("linked") is True:
+            return
+        asked = store.staff_join(user, _sender_name(message) or str(user), phone)
+        if asked.get("state") == "LINKED":
+            reply(_say("staff.hello", "staff.open", name=_name(store.staff_who(user))))
+    except StaffBotUnavailable:
+        return
 
 
 def _name(who: dict[str, Any]) -> str:
@@ -238,7 +270,13 @@ def handle_staff_form(
             return
         files = [str(media_id) for media_id in media] if isinstance(media, list) else []
         if form["type"] == "REPORT":
-            result = store.staff_problem_report(inbound, form, files)
+            relay = plain.get("relay")
+            result = store.staff_problem_report(
+                inbound,
+                form,
+                files,
+                relay_alerted=isinstance(relay, dict) and relay.get("alerted") is True,
+            )
             message = _report_answer(result)
         elif form["type"] == "CLOSE":
             result = store.staff_close_job(inbound, form, files)

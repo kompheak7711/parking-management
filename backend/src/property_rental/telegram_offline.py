@@ -16,6 +16,11 @@ After each pull the job sends the relay, when anything changed:
 
 The relay compares the same hash of what the tenant shares and types (relay/src/offline.ts uses
 the same phone, name and Unit rules as ``app.telegram_tenant_link``).
+
+DL-213 (owner 11 Nov 2026): the Customer bot and the Staff bot answer by themselves too. The
+Customer bot's body has its texts, the Unit Types, the FAQ the Owner approved for it and the
+Property's distance from UTC (for the visit days); the Staff bot's body has its texts, the problem
+types and shared places, and who gets an urgent alert. Neither holds a name or a phone number.
 """
 
 from __future__ import annotations
@@ -28,12 +33,36 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
+from property_rental.telegram_customer_bot import (
+    DAYS_SHOWN,
+    FIRST_DAY,
+    LAST_DAY,
+    MAX_EMAIL,
+    MAX_NAME,
+    MAX_NOTE,
+    MONTH_AHEAD_DAYS,
+    MONTH_NAMES,
+    MONTHS_SHOWN,
+    WEEKDAYS,
+)
 from property_rental.telegram_relay_client import RelayClient, RelayError
 from property_rental.telegram_store import TelegramStore
-from property_rental.telegram_texts import TEXTS, keyboard_markup, text_fields
+from property_rental.telegram_texts import (
+    CHOICE_KEYBOARDS,
+    MAX_CHOICE_CHARACTERS,
+    MAX_CHOICES,
+    TEXTS,
+    keyboard_markup,
+    text_fields,
+)
 
 CODE_CHARS: Final = 32
 FINGERPRINT_FILE: Final = "telegram-offline.sha256"
+FINGERPRINT_FILES: Final = {
+    "TENANT": FINGERPRINT_FILE,
+    "CUSTOMER": "telegram-offline-customer.sha256",
+    "STAFF": "telegram-offline-staff.sha256",
+}
 # The relay's message names, each with the office's text and keyboard (telegram_tenant_bot).
 MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
     "welcome": ("tenant.welcome", "tenant.language"),
@@ -58,6 +87,76 @@ MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
 }
 # The fields the relay fills in itself.
 RELAY_FIELDS: Final = frozenset({"unit", "tries_left"})
+# The Customer bot's messages while the office is away (DL-213), as telegram_customer_bot says
+# them. A message whose keyboard starts with choices (FAQ questions, Unit Types, days, months)
+# carries "choices": true; the relay puts those buttons above the fixed rows.
+CUSTOMER_MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
+    "welcome": ("customer.welcome", "tenant.language"),
+    "menu": ("customer.menu", "customer.menu"),
+    "contact_phone": ("customer.contact_phone", "customer.share_phone"),
+    "contact_ask": ("customer.contact_ask", "tenant.back"),
+    "contact_text_only": ("tenant.contact_text_only", "tenant.back"),
+    "contact_saved": ("customer.contact_saved", "customer.menu"),
+    "faq_none": ("tenant.faq_none", "customer.menu"),
+    "faq_list": ("tenant.faq_list", "customer.faq"),
+    "faq_answer": ("tenant.faq_answer", "customer.faq"),
+    "ask_how": ("customer.ask_how", "customer.how"),
+    "ask_phone": ("customer.ask_phone", "customer.share_phone"),
+    "phone_again": ("customer.phone_again", "customer.share_phone"),
+    "ask_email": ("customer.ask_email", "tenant.back"),
+    "email_again": ("customer.email_again", "tenant.back"),
+    "ask_name": ("customer.ask_name", "tenant.back"),
+    "ask_type": ("customer.ask_type", "customer.types"),
+    "type_again": ("customer.type_again", "customer.types"),
+    "ask_day": ("customer.ask_day", "customer.days"),
+    "day_again": ("customer.day_again", "customer.days"),
+    "ask_part": ("customer.ask_part", "customer.part"),
+    "ask_move": ("customer.ask_move", "customer.months"),
+    "ask_note": ("customer.ask_note", "customer.skip"),
+    "check": ("customer.check", "customer.send"),
+    "received": ("customer.inquiry_offline", "customer.menu"),
+}
+CUSTOMER_FIELDS: Final = frozenset(
+    {"question", "answer", "name", "phone", "contact", "type", "visit", "move", "note"}
+)
+CUSTOMER_BUTTONS: Final = (
+    "button.khmer",
+    "button.english",
+    "button.back_menu",
+    "button.contact",
+    "button.faq",
+    "button.inquiry",
+    "button.share_phone",
+    "button.by_telegram",
+    "button.by_email",
+    "button.by_phone",
+    "button.by_whatsapp",
+    "button.morning",
+    "button.afternoon",
+    "button.skip",
+    "button.later",
+)
+# Words the relay puts in the request to check, in each language.
+CUSTOMER_WORDS: Final = (
+    "button.by_telegram",
+    "button.by_email",
+    "button.by_phone",
+    "button.by_whatsapp",
+    "button.morning",
+    "button.afternoon",
+    "button.later",
+    "customer.no_day",
+)
+# The Staff bot's messages while the office is away (DL-213; staff read Khmer only).
+STAFF_MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
+    "hello": ("staff.hello", "staff.open"),
+    "ask_phone": ("staff.ask_phone", "staff.share_phone"),
+    "waiting": ("staff.waiting", "remove"),
+    "check": ("staff.check_offline", None),
+    "form": ("staff.form_offline", None),
+    "urgent": ("staff.report_offline_urgent", None),
+}
+STAFF_FIELDS: Final = frozenset({"name"})
 BUTTONS: Final = (
     "button.khmer",
     "button.english",
@@ -95,27 +194,106 @@ def link_code(key: str, phone: str, unit_key: str, name_form: str) -> str:
     return hmac.new(bytes.fromhex(key), message, hashlib.sha256).hexdigest()[:CODE_CHARS]
 
 
-def offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]:
-    """The texts, buttons, types, places and alert list the relay answers with."""
+def _messages(
+    table: dict[str, tuple[str, str | None]], fields: frozenset[str], relay_host: str
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """Each message's text and keyboard in both languages, as the office would send them."""
     messages: dict[str, dict[str, dict[str, Any]]] = {}
-    for name, (code, keyboard) in MESSAGES.items():
-        extra = text_fields(code) - RELAY_FIELDS
+    for name, (code, keyboard) in table.items():
+        extra = text_fields(code) - fields
         if extra:
             raise KeyError(f"{code} needs {sorted(extra)}")
         messages[name] = {}
         for language in LANGUAGES:
             said: dict[str, Any] = {"text": TEXTS[code][language]}
-            markup = keyboard_markup(keyboard, language, relay_host)
+            choices = keyboard in CHOICE_KEYBOARDS
+            markup = keyboard_markup(
+                keyboard, language, relay_host, {"choices": []} if choices else None
+            )
             if markup is not None:
                 said["markup"] = markup
+            if choices:
+                said["choices"] = True
             messages[name][language] = said
+    return messages
+
+
+def _alert(data: dict[str, Any]) -> dict[str, Any]:
     alert = data.get("alert") or {}
+    return {"always": alert.get("always") or [], "shifts": alert.get("shifts") or []}
+
+
+def offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]:
+    """The texts, buttons, types, places and alert list the relay answers with."""
     return {
-        "messages": messages,
+        "messages": _messages(MESSAGES, RELAY_FIELDS, relay_host),
         "buttons": {code: sorted(set(TEXTS[code].values())) for code in BUTTONS},
         "types": data.get("types") or {},
         "places": data.get("places") or {},
-        "alert": {"always": alert.get("always") or [], "shifts": alert.get("shifts") or []},
+        "alert": _alert(data),
+        "staff_urgent": TEXTS[STAFF_ALERT]["km"],
+    }
+
+
+def customer_offline_texts(
+    unit_types: list[dict[str, Any]],
+    faq: list[dict[str, Any]],
+    clock: dict[str, Any],
+    relay_host: str,
+) -> dict[str, Any]:
+    """The Customer bot's body (DL-213): texts, buttons, words, Unit Types, FAQ and the clock."""
+    offset = clock.get("utc_offset_minutes")
+    return {
+        "messages": _messages(CUSTOMER_MESSAGES, CUSTOMER_FIELDS, relay_host),
+        "buttons": {code: sorted(set(TEXTS[code].values())) for code in CUSTOMER_BUTTONS},
+        "words": {code: {lang: TEXTS[code][lang] for lang in LANGUAGES} for code in CUSTOMER_WORDS},
+        "unit_types": [
+            {
+                "code": str(item.get("code") or ""),
+                "name_en": str(item.get("name_en") or item.get("code") or ""),
+                "name_km": str(item.get("name_km") or item.get("name_en") or ""),
+            }
+            for item in unit_types
+            if isinstance(item, dict) and item.get("code")
+        ],
+        "faq": [
+            {
+                "number": entry.get("number"),
+                **{
+                    f"{part}_{lang}": str(entry.get(f"{part}_{lang}") or "")
+                    for part in ("question", "answer")
+                    for lang in LANGUAGES
+                },
+            }
+            for entry in faq
+            if isinstance(entry, dict) and isinstance(entry.get("number"), int)
+        ],
+        "weekdays": {lang: list(WEEKDAYS[lang]) for lang in LANGUAGES},
+        "months": {lang: list(MONTH_NAMES[lang]) for lang in LANGUAGES},
+        "utc_offset_minutes": offset if isinstance(offset, int) else 0,
+        "rules": {
+            "first_day": FIRST_DAY,
+            "last_day": LAST_DAY,
+            "days_shown": DAYS_SHOWN,
+            "months_shown": MONTHS_SHOWN,
+            "month_ahead_days": MONTH_AHEAD_DAYS,
+            "max_name": MAX_NAME,
+            "max_email": MAX_EMAIL,
+            "max_note": MAX_NOTE,
+            "max_choices": MAX_CHOICES,
+            "max_choice_chars": MAX_CHOICE_CHARACTERS,
+        },
+    }
+
+
+def staff_offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]:
+    """The Staff bot's body (DL-213): texts, the problem types and places, the alert list."""
+    return {
+        "messages": _messages(STAFF_MESSAGES, STAFF_FIELDS, relay_host),
+        "buttons": {"button.share_phone": sorted(set(TEXTS["button.share_phone"].values()))},
+        "types": data.get("types") or {},
+        "places": data.get("places") or {},
+        "alert": _alert(data),
         "staff_urgent": TEXTS[STAFF_ALERT]["km"],
     }
 
@@ -141,6 +319,33 @@ def offline_links(data: dict[str, Any], key: str) -> dict[str, Any]:
     return {"units": units, "codes": codes}
 
 
+def _send_when_changed(
+    client: RelayClient,
+    bot: str,
+    texts: dict[str, Any],
+    links: dict[str, Any],
+    status_directory: Path,
+    log: Callable[[str], None],
+) -> bool:
+    fingerprint = hashlib.sha256(
+        json.dumps([texts, links], sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    marker = status_directory / FINGERPRINT_FILES[bot]
+    try:
+        if marker.read_text(encoding="utf-8").strip() == fingerprint:
+            return False
+    except OSError:
+        pass
+    try:
+        client.set_offline(bot, texts, links)
+    except RelayError as error:
+        log(f"telegram_pull:offline_not_sent:{bot.lower()}:{error.code}")
+        return False
+    status_directory.mkdir(parents=True, exist_ok=True)
+    marker.write_text(fingerprint + "\n", encoding="utf-8")
+    return True
+
+
 def push_offline(
     *,
     client: RelayClient,
@@ -150,7 +355,7 @@ def push_offline(
     status_directory: Path,
     log: Callable[[str], None] = lambda line: print(line, flush=True),
 ) -> bool:
-    """Send the relay the Tenant bot's offline body when it changed; True when sent. Without a
+    """Send the relay each bot's offline body when it changed; True when any was sent. Without a
     link check key the relay still answers, but links nobody on its own."""
     key: str | None = None
     if link_key_file is not None:
@@ -159,22 +364,16 @@ def push_offline(
         except LinkKeyError as error:
             log(f"telegram_pull:offline_{error}")
     data = store.tenant_offline_data()
-    texts = offline_texts(data, relay_host)
     links = offline_links(data, key) if key else {"units": [], "codes": {}}
-    fingerprint = hashlib.sha256(
-        json.dumps([texts, links], sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-    marker = status_directory / FINGERPRINT_FILE
-    try:
-        if marker.read_text(encoding="utf-8").strip() == fingerprint:
-            return False
-    except OSError:
-        pass
-    try:
-        client.set_offline("TENANT", texts, links)
-    except RelayError as error:
-        log(f"telegram_pull:offline_not_sent:{error.code}")
-        return False
-    status_directory.mkdir(parents=True, exist_ok=True)
-    marker.write_text(fingerprint + "\n", encoding="utf-8")
-    return True
+    sent = _send_when_changed(
+        client, "TENANT", offline_texts(data, relay_host), links, status_directory, log
+    )
+    customer = customer_offline_texts(
+        store.customer_choices(0).get("unit_types") or [],
+        store.faq_for_bot("CUSTOMER"),
+        store.offline_clock(),
+        relay_host,
+    )
+    sent = _send_when_changed(client, "CUSTOMER", customer, {}, status_directory, log) or sent
+    staff = staff_offline_texts(data, relay_host)
+    return _send_when_changed(client, "STAFF", staff, {}, status_directory, log) or sent

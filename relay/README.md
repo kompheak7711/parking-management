@@ -99,3 +99,16 @@ Each item tells the office what the relay said; the app saves it without answeri
 relay needs the `LINK_CHECK_KEY` secret (the office's `link-check.key`) to link anyone; the Mac
 setup makes both. After pulling a new version, run the setup again (it keeps the bot tokens) so
 the relay gets the new tables and code.
+
+## The Customer bot and the Staff bot while the app is closed (DL-213)
+
+The same 150 seconds rule. The office sends one body per bot (`PUT /office/offline/<bot>`):
+
+- Customer bot (`relay/src/offline_bots.ts`): Start, the language, FAQ, Contact office and every
+  step of Send an inquiry, then "We received your request"; the request number comes from the
+  office when it opens. The inquiry in progress is kept for 30 minutes in `chat_requests`.
+- Staff bot (Khmer only): Start, share your phone, the hello for people on the access list; a
+  sent form gets "received" at once, and an urgent Problem report goes at once to the caretaker
+  on shift and the Authorizers.
+
+Each item carries what the relay did, so the app saves it without answering twice.
