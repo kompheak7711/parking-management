@@ -34,6 +34,9 @@ import {
   type TelegramReceipt,
   type LinkedTenant,
   type LinksPage,
+  type NoticeBody,
+  type NoticesPage,
+  type TelegramNotice,
   type TelegramApi,
   TelegramError,
   telegramApi as defaultTelegramApi,
@@ -170,6 +173,316 @@ function when(value: string | null, language: Language): string {
 
 function person(name: string | null, fallback: string): string {
   return name === null || name === "" ? fallback : name;
+}
+
+// ---------------------------------------------------------------- Notices (DL-216)
+
+function noticeFor(language: Language, notice: TelegramNotice): string {
+  if (notice.audience === "FLOORS")
+    return notice.floors
+      .map((floor) => tt(language, "nt_floor", floor))
+      .join(", ");
+  if (notice.audience === "UNITS") return notice.units.join(", ");
+  return tt(language, "nt_ALL");
+}
+
+export function NoticesPageView({
+  language,
+  propertyId,
+  active,
+  capabilities,
+  api = defaultTelegramApi,
+}: TelegramPageProps) {
+  const page = usePage<NoticesPage>(propertyId, active, api.notices);
+  const operate = mayOperate(capabilities);
+  const [english, setEnglish] = useState("");
+  const [khmer, setKhmer] = useState("");
+  const [audience, setAudience] = useState<NoticeBody["audience"]>("ALL");
+  const [floors, setFloors] = useState<string[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
+  const [shown, setShown] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<TelegramTextKey | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  if (propertyId === "") return <NoProperty language={language} />;
+  const data = page.data;
+  const max = data?.rules.max ?? 1500;
+  const noWords = english.trim() === "" && khmer.trim() === "";
+  const noOne =
+    (audience === "FLOORS" && floors.length === 0) ||
+    (audience === "UNITS" && units.length === 0);
+
+  const toggle = (
+    list: string[],
+    set: (next: string[]) => void,
+    value: string,
+  ) => {
+    set(
+      list.includes(value)
+        ? list.filter((item) => item !== value)
+        : [...list, value],
+    );
+  };
+
+  const ask = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setShown(true);
+    setDone(null);
+    if (noWords || noOne || busy) return;
+    setAsking(true);
+  };
+
+  const send = () => {
+    setBusy(true);
+    setFailure(null);
+    api
+      .sendNotice(propertyId, {
+        text_en: english.trim(),
+        text_km: khmer.trim(),
+        audience,
+        floors: audience === "FLOORS" ? floors : [],
+        unit_ids: audience === "UNITS" ? units : [],
+      })
+      .then(
+        (answer) => {
+          setBusy(false);
+          setAsking(false);
+          setShown(false);
+          setEnglish("");
+          setKhmer("");
+          setFloors([]);
+          setUnits([]);
+          setAudience("ALL");
+          setDone(tt(language, "nt_done", answer.queued));
+          page.set(answer.page);
+        },
+        (error: unknown) => {
+          setBusy(false);
+          setAsking(false);
+          setFailure(
+            error instanceof TelegramError && error.status === 403
+              ? "e_403"
+              : error instanceof TelegramError && error.status === 422
+                ? "nt_e_422"
+                : "e_save",
+          );
+        },
+      );
+  };
+
+  return (
+    <>
+      <p className="ui-muted">{tt(language, "nt_sub")}</p>
+      <Done text={done} />
+      {operate && data !== null && (
+        <form
+          aria-labelledby="tg-nt-new"
+          className="ui-card"
+          noValidate
+          onSubmit={ask}
+        >
+          <h2 id="tg-nt-new">{tt(language, "nt_new")}</h2>
+          <p className="ui-small ui-muted" id="tg-nt-hint">
+            {tt(language, "nt_hint", max)}
+          </p>
+          <div className="ui-field">
+            <label htmlFor="tg-nt-en">{tt(language, "nt_en")}</label>
+            <textarea
+              aria-describedby="tg-nt-hint"
+              disabled={busy || asking}
+              id="tg-nt-en"
+              maxLength={max}
+              onChange={(event) => {
+                setEnglish(event.currentTarget.value);
+              }}
+              rows={4}
+              value={english}
+            />
+          </div>
+          <div className="ui-field">
+            <label htmlFor="tg-nt-km">{tt(language, "nt_km")}</label>
+            <textarea
+              aria-describedby="tg-nt-hint"
+              disabled={busy || asking}
+              id="tg-nt-km"
+              lang="km"
+              maxLength={max}
+              onChange={(event) => {
+                setKhmer(event.currentTarget.value);
+              }}
+              rows={4}
+              value={khmer}
+            />
+          </div>
+          {shown && noWords && (
+            <p className="ui-error" role="alert">
+              {tt(language, "nt_e_words")}
+            </p>
+          )}
+          <fieldset className="ui-radios">
+            <legend>{tt(language, "nt_who")}</legend>
+            {(["ALL", "FLOORS", "UNITS"] as const).map((value) => (
+              <label className="ui-chk" key={value}>
+                <input
+                  checked={audience === value}
+                  disabled={busy || asking}
+                  name="tg-nt-who"
+                  onChange={() => {
+                    setAudience(value);
+                  }}
+                  type="radio"
+                />
+                {tt(language, `nt_${value}`)}
+              </label>
+            ))}
+          </fieldset>
+          {audience === "FLOORS" && (
+            <fieldset className="ui-radios">
+              <legend className="ui-sr">{tt(language, "nt_FLOORS")}</legend>
+              {data.floors.map((floor) => (
+                <label className="ui-chk" key={floor}>
+                  <input
+                    checked={floors.includes(floor)}
+                    disabled={busy || asking}
+                    onChange={() => {
+                      toggle(floors, setFloors, floor);
+                    }}
+                    type="checkbox"
+                  />
+                  {tt(language, "nt_floor", floor)}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {audience === "UNITS" && (
+            <fieldset className="ui-radios">
+              <legend className="ui-sr">{tt(language, "nt_UNITS")}</legend>
+              {data.units.map((unit) => (
+                <label className="ui-chk" key={unit.id}>
+                  <input
+                    checked={units.includes(unit.id)}
+                    disabled={busy || asking}
+                    onChange={() => {
+                      toggle(units, setUnits, unit.id);
+                    }}
+                    type="checkbox"
+                  />
+                  {unit.unit_number}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {shown && noOne && (
+            <p className="ui-error" role="alert">
+              {tt(language, "nt_e_who")}
+            </p>
+          )}
+          {failure !== null && (
+            <div className="ui-notice warn" role="alert">
+              <Icon name="alert" />
+              <p>{tt(language, failure)}</p>
+            </div>
+          )}
+          {asking ? (
+            <div className="ui-notice warn" role="alertdialog">
+              <p>{tt(language, "nt_confirm")}</p>
+              <div className="ui-actions">
+                <button
+                  className="ui-btn primary"
+                  disabled={busy}
+                  onClick={send}
+                  type="button"
+                >
+                  {tt(language, busy ? "loading" : "nt_yes")}
+                </button>
+                <button
+                  className="ui-btn"
+                  disabled={busy}
+                  onClick={() => {
+                    setAsking(false);
+                  }}
+                  type="button"
+                >
+                  {tt(language, "nt_back")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="ui-actions">
+              <button className="ui-btn primary" type="submit">
+                <Icon name="send" small />
+                {tt(language, "nt_send")}
+              </button>
+            </div>
+          )}
+        </form>
+      )}
+      <section aria-labelledby="tg-nt-list" className="ui-card pad0">
+        <div className="ui-listbar">
+          <h2 id="tg-nt-list">{tt(language, "nt_list")}</h2>
+        </div>
+        {data === null ? (
+          <Waiting
+            failed={page.failed}
+            language={language}
+            onRetry={page.load}
+          />
+        ) : data.notices.length === 0 ? (
+          <p className="ui-empty">{tt(language, "nt_none")}</p>
+        ) : (
+          <div className="ui-tablewrap">
+            <table className="ui-table">
+              <thead>
+                <tr>
+                  <th scope="col">{tt(language, "c_notice")}</th>
+                  <th scope="col">{tt(language, "c_for")}</th>
+                  <th className="ui-wide" scope="col">
+                    {tt(language, "c_sent_by")}
+                  </th>
+                  <th scope="col">{tt(language, "c_got")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.notices.map((notice) => {
+                  const words =
+                    language === "km"
+                      ? (notice.text_km ?? notice.text_en)
+                      : (notice.text_en ?? notice.text_km);
+                  return (
+                    <tr key={notice.id}>
+                      <td className="note">
+                        {words ?? ""}
+                        <span className="ui-sub2 ui-num">
+                          {momentText(notice.created_at)}
+                        </span>
+                      </td>
+                      <td>{noticeFor(language, notice)}</td>
+                      <td className="ui-wide">{notice.sent_by}</td>
+                      <td className="ui-num">
+                        {tt(language, "nt_got", notice.sent, notice.people)}
+                        {notice.failed > 0 && (
+                          <span className="ui-sub2">
+                            {tt(language, "nt_failed", notice.failed)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {data !== null && (
+          <p className="ui-tfoot">
+            {tt(language, "nt_list_sub", data.rules.days)}
+          </p>
+        )}
+      </section>
+    </>
+  );
 }
 
 // ---------------------------------------------------------------- Linked tenants

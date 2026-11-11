@@ -2311,3 +2311,12 @@ Refusals: 400 (not exactly one stay), 403 (no right), 409 (the bot's user name i
 ### API-TG-010 Receipts on Telegram — 2026-11-11
 
 Added by DL-215 (migration `20270713_385`, DB-TG-022). `GET /api/v1/properties/{property_id}/telegram/receipts` (`telegram.read`, `Cache-Control: private, no-store`) answers `receipts` (the Receipts of the last 45 days, each with `id`, `number`, `customer`, `status` (`RECEIVED` or `REVERSED`), `issued_at`, `amount_usd_cents` and `sent`, as API-TG-008) and `rules` (`days`). Refusals: 403 (no right).
+
+### API-TG-011 Notices from the office — 2026-11-11
+
+Added by DL-216 (migration `20270714_386`, DB-TG-023). Both answer `Cache-Control: private, no-store`.
+
+- `GET /api/v1/properties/{property_id}/telegram/notices` (`telegram.read`) answers `notices` (each `id`, `text_en`, `text_km`, `audience`, `floors`, `units`, `sent_by`, `created_at`, `people`, `sent`, `failed`), `floors`, `units` (each `id`, `unit_number`, `floor`) and `rules` (`days`, `max`).
+- `POST /api/v1/properties/{property_id}/telegram/notices` (`telegram.operate`, browser mutation check; body `text_en`, `text_km`, `audience` `ALL`, `FLOORS` or `UNITS`, `floors`, `unit_ids`) answers 201 with `sent` (`notice_id`, `queued`) and `page`.
+
+Refusals: 403 (no right), 422 (no words, words too long, an unknown audience, or a floor or Unit not of the Property).

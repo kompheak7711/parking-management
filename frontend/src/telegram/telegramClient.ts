@@ -98,6 +98,44 @@ export interface ReceiptsPage {
   rules: { days: number };
 }
 
+/** A notice from the office as it was sent (DL-216). */
+export interface TelegramNotice {
+  id: string;
+  text_en: string | null;
+  text_km: string | null;
+  /** ALL, FLOORS or UNITS. */
+  audience: string;
+  floors: string[];
+  units: string[];
+  sent_by: string;
+  created_at: string;
+  /** How many people it was queued for, sent to, and gave up on. */
+  people: number;
+  sent: number;
+  failed: number;
+}
+
+export interface NoticeUnit {
+  id: string;
+  unit_number: string;
+  floor: string | null;
+}
+
+export interface NoticesPage {
+  notices: TelegramNotice[];
+  floors: string[];
+  units: NoticeUnit[];
+  rules: { days: number; max: number };
+}
+
+export interface NoticeBody {
+  text_en: string;
+  text_km: string;
+  audience: "ALL" | "FLOORS" | "UNITS";
+  floors: string[];
+  unit_ids: string[];
+}
+
 export interface BotHealth {
   code: string;
   name: string;
@@ -362,6 +400,13 @@ export interface TelegramApi {
   invoices: (propertyId: string) => Promise<InvoicesPage>;
   /** The Receipts of the last weeks and who got them on Telegram (DL-215). */
   receipts: (propertyId: string) => Promise<ReceiptsPage>;
+  /** The notices of the last weeks (DL-216). */
+  notices: (propertyId: string) => Promise<NoticesPage>;
+  /** Sends a notice and answers how many people it went to and the page again. */
+  sendNotice: (
+    propertyId: string,
+    body: NoticeBody,
+  ) => Promise<{ queued: number; page: NoticesPage }>;
   /** Sends a message the app gave up on once more and answers the page again. */
   retry: (propertyId: string, messageId: string) => Promise<HealthPage>;
   contact: (propertyId: string) => Promise<ContactPage>;
@@ -533,6 +578,43 @@ export function receiptsPageOf(value: unknown): ReceiptsPage {
       };
     }),
     rules: { days: whole(record(page.rules).days) },
+  };
+}
+
+function texts(value: unknown): string[] {
+  return list(value).map(text);
+}
+
+export function noticesPageOf(value: unknown): NoticesPage {
+  const page = record(value);
+  const rules = record(page.rules);
+  return {
+    notices: list(page.notices).map((item) => {
+      const row = record(item);
+      return {
+        id: text(row.id),
+        text_en: maybeText(row.text_en),
+        text_km: maybeText(row.text_km),
+        audience: text(row.audience),
+        floors: texts(row.floors),
+        units: texts(row.units),
+        sent_by: text(row.sent_by),
+        created_at: text(row.created_at),
+        people: whole(row.people),
+        sent: whole(row.sent),
+        failed: whole(row.failed),
+      };
+    }),
+    floors: texts(page.floors),
+    units: list(page.units).map((item) => {
+      const row = record(item);
+      return {
+        id: text(row.id),
+        unit_number: text(row.unit_number),
+        floor: maybeText(row.floor),
+      };
+    }),
+    rules: { days: whole(rules.days), max: whole(rules.max) },
   };
 }
 
@@ -871,6 +953,18 @@ export const telegramApi: TelegramApi = {
   },
   async receipts(propertyId) {
     return receiptsPageOf(await request(`${root(propertyId)}/receipts`));
+  },
+  async notices(propertyId) {
+    return noticesPageOf(await request(`${root(propertyId)}/notices`));
+  },
+  async sendNotice(propertyId, body) {
+    const answer = record(
+      await request(`${root(propertyId)}/notices`, post(body)),
+    );
+    return {
+      queued: whole(record(answer.sent).queued),
+      page: noticesPageOf(answer.page),
+    };
   },
   async retry(propertyId, messageId) {
     const answer = record(

@@ -13,7 +13,7 @@ from typing import Final
 MAX_FIELD_CHARACTERS: Final = 300
 # A field the bot builds itself from fixed texts (My requests), or a long answer or note, may
 # be longer.
-LONG_FIELDS: Final = {"list": 3000, "text": 600, "answer": 800, "note": 500}
+LONG_FIELDS: Final = {"list": 3000, "text": 600, "answer": 800, "note": 500, "notice": 1500}
 # A keyboard whose buttons the bot builds (FAQ questions, Unit Types, days, months): at most
 # this many, each this long.
 MAX_CHOICES: Final = 30
@@ -199,6 +199,11 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Date: {date}\nReceived: {amount} ({method})\n\n{list}\n\n"
             "Thank you for your payment."
         ),
+    },
+    # DL-216: a notice from the office (water cut, building work). Khmer is new: native check.
+    "tenant.notice": {
+        "km": "📢 សេចក្តីជូនដំណឹងពីការិយាល័យ\n\n{notice}",
+        "en": "📢 Notice from the office\n\n{notice}",
     },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",

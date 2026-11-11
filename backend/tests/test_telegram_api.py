@@ -48,6 +48,7 @@ class InMemoryTelegram:
     starter_loaded: bool = False
     customer_id: UUID = field(default_factory=uuid4)
     codes: list[tuple[UUID | None, UUID | None, UUID]] = field(default_factory=list)
+    notices_sent: list[Json] = field(default_factory=list)
     bot_ready: bool = True
 
     def _check(self, property_id: UUID) -> None:
@@ -78,6 +79,17 @@ class InMemoryTelegram:
     def receipts(self, property_id: UUID, *, actor_id: str) -> Json:
         self._check(property_id)
         return {"receipts": [{"number": "R26-0001", "sent": []}], "rules": {"days": 45}}
+
+    def notices(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        return {"notices": list(self.notices_sent), "floors": ["3"], "units": []}
+
+    def send_notice(self, property_id: UUID, body: Json, *, actor_id: str) -> Json:
+        self._check(property_id)
+        if body["audience"] == "FLOORS" and body["floors"] == ["99"]:
+            raise ProductRefused("Choose floors of this Property")
+        self.notices_sent.append(body)
+        return {"notice_id": "n-1", "queued": 2}
 
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID:
         self._check(property_id)
@@ -188,7 +200,7 @@ def base(flow: InMemoryTelegram) -> str:
 
 def test_the_telegram_pages_need_telegram_read() -> None:
     flow = InMemoryTelegram()
-    for page in ("links", "health", "invoices", "receipts"):
+    for page in ("links", "health", "invoices", "receipts", "notices"):
         url = f"{base(flow)}/{page}"
         assert client(flow).get(url).status_code == 403
         answer = client(flow, "telegram.read").get(url)
@@ -216,6 +228,39 @@ def test_remove_link_needs_operate_a_reason_and_the_browser_checks() -> None:
     assert manager.post(url, json=body, headers=HEADERS).status_code == 409
     missing = manager.post(f"{base(flow)}/links/{uuid4()}/remove", json=body, headers=HEADERS)
     assert missing.status_code == 404
+
+
+def test_a_notice_needs_operate_words_and_the_browser_checks() -> None:
+    flow = InMemoryTelegram()
+    url = f"{base(flow)}/notices"
+    body = {"audience": "ALL", "text_en": "  No water 9-11 tomorrow. ", "text_km": ""}
+    reader = client(flow, "telegram.read")
+    assert reader.post(url, json=body, headers=HEADERS).status_code == 403
+    manager = client(flow, "telegram.read", "telegram.operate")
+    assert manager.post(url, json=body).status_code == 403  # no browser mutation checks
+    for wrong in (
+        {"audience": "ALL"},
+        {"audience": "ALL", "text_en": "   "},
+        {"audience": "SOME", "text_en": "Hi"},
+        {"audience": "ALL", "text_en": "x" * 1501},
+        {"audience": "ALL", "text_en": "Hi", "extra": 1},
+    ):
+        assert manager.post(url, json=wrong, headers=HEADERS).status_code == 422
+    floors = {"audience": "FLOORS", "floors": ["99"], "text_en": "Hi"}
+    assert manager.post(url, json=floors, headers=HEADERS).status_code == 422
+    done = manager.post(url, json=body, headers=HEADERS)
+    assert done.status_code == 201 and done.headers["Cache-Control"] == "private, no-store"
+    assert done.json()["data"]["sent"] == {"notice_id": "n-1", "queued": 2}
+    assert flow.notices_sent == [
+        {
+            "text_en": "No water 9-11 tomorrow.",
+            "text_km": None,
+            "audience": "ALL",
+            "floors": [],
+            "unit_ids": [],
+        }
+    ]
+    assert done.json()["data"]["page"]["notices"] == flow.notices_sent
 
 
 def test_retry_sends_a_given_up_message_once() -> None:

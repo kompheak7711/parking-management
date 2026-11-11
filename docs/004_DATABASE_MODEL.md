@@ -5987,3 +5987,11 @@ Added by DL-215 (migration `20270713_385`, forward-only).
 - `app.telegram_receipts_queue(property, actor)` (`telegram.operate`, granted to `prm_runtime`, run by the pull job) queues `tenant.receipt` for the Receipts of the last 3 days whose Payment is RECEIVED, for each live link of the Payment's Lease, the Leases of the Invoices and late-payment charges it paid, the stays whose Invoice it paid, and the payer, not yet sent to that account and issued no earlier than a day before the link.
 - `app.telegram_receipt_details(receipt, language)` (internal) builds the fields: `number` (`payments.payment_number`), `unit`, `date`, `amount` (riel with its US dollar value), `method`, `list` (Invoices, late-payment charges, Security Deposit, money not used yet).
 - `app.telegram_receipts_page(property, actor)` (`telegram.read`) lists the Receipts of the last 45 days with who got them.
+
+## DB-TG-023 — Notices from the office (DL-216)
+
+Added by DL-216 (migration `20270714_386`, forward-only).
+
+- New append-only tables (`app.reject_telegram_change()`, no runtime grant): `app.telegram_notices` (the words in English and/or Khmer, at most 1,500 characters each and at least one; the audience `ALL`, `FLOORS` with `floors`, or `UNITS` with `unit_ids`; `created_by`, `created_at`) and `app.telegram_notice_deliveries` (one row per notice and Telegram account, with its outbox message).
+- `app.telegram_notice_send(property, body, actor)` (`telegram.operate`) checks the words and that each floor or Unit is the Property's (`22023` otherwise), saves the notice and queues `tenant.notice` (field `notice`) for each live link of the chosen Units, tenants and guests, in each person's language.
+- `app.telegram_notices_page(property, actor)` (`telegram.read`) answers the notices of the last 90 days (words, audience, floors, Unit numbers, sender, queued, sent and given-up counts), the Property's floors and Units, and the rules.

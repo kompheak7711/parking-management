@@ -652,6 +652,61 @@ const TEXT = {
   c_amount: ["Amount", "ចំនួនទឹកប្រាក់"],
   c_made: ["Made on", "ធ្វើនៅ"],
   rec_reversed: ["Reversed", "បានបញ្ច្រាស"],
+  // Notices (DL-216, owner 11 Nov 2026). All Khmer here is new and needs the native check.
+  nt_sub: [
+    "Send news from the office to the people linked on Telegram, tenants and guests: a water or power cut, building work, a holiday. Not for money or Lease letters.",
+    "ផ្ញើព័ត៌មានពីការិយាល័យទៅអ្នកដែលភ្ជាប់តាមតេឡេក្រាម ទាំងអ្នកជួល និងភ្ញៀវ៖ ការផ្តាច់ទឹក ឬភ្លើង ការងារជួសជុលអគារ ថ្ងៃឈប់សម្រាក។ មិនមែនសម្រាប់ប្រាក់ ឬលិខិតកិច្ចសន្យាទេ។",
+  ],
+  nt_new: ["New notice", "សេចក្តីជូនដំណឹងថ្មី"],
+  nt_en: ["In English", "ជាភាសាអង់គ្លេស"],
+  nt_km: ["In Khmer", "ជាភាសាខ្មែរ"],
+  nt_hint: [
+    "Write it in one language or both. Each person gets their own language; a notice in one language goes to everyone in that language. At most {0} characters.",
+    "សរសេរជាភាសាមួយ ឬទាំងពីរ។ ម្នាក់ៗទទួលជាភាសារបស់ខ្លួន។ សេចក្តីជូនដំណឹងជាភាសាតែមួយ ផ្ញើទៅគ្រប់គ្នាជាភាសានោះ។ យ៉ាងច្រើន {0} តួអក្សរ។",
+  ],
+  nt_who: ["Who gets it", "អ្នកណាទទួល"],
+  nt_ALL: ["Everyone linked", "អ្នកភ្ជាប់ទាំងអស់"],
+  nt_FLOORS: ["Some floors", "ជាន់ខ្លះ"],
+  nt_UNITS: ["Some Units", "បន្ទប់ខ្លះ"],
+  nt_floor: ["Floor {0}", "ជាន់ {0}"],
+  nt_send: ["Send notice", "ផ្ញើសេចក្តីជូនដំណឹង"],
+  nt_confirm: [
+    "Send this notice now? It cannot be taken back.",
+    "ផ្ញើសេចក្តីជូនដំណឹងនេះឥឡូវ? មិនអាចដកវិញបានទេ។",
+  ],
+  nt_yes: ["Yes, send it", "បាទ/ចាស ផ្ញើ"],
+  nt_back: ["Back", "ត្រឡប់"],
+  nt_e_words: [
+    "Write the notice in English or Khmer.",
+    "សូមសរសេរសេចក្តីជូនដំណឹងជាភាសាអង់គ្លេស ឬខ្មែរ។",
+  ],
+  nt_e_who: [
+    "Choose at least one floor or Unit.",
+    "សូមជ្រើសយ៉ាងហោចណាស់ជាន់ ឬបន្ទប់មួយ។",
+  ],
+  nt_e_422: [
+    "The notice was not sent. Check the words and who it is for.",
+    "សេចក្តីជូនដំណឹងមិនបានផ្ញើទេ។ សូមពិនិត្យពាក្យ និងអ្នកទទួល។",
+  ],
+  nt_done: [
+    "The notice is on its way to {0} people.",
+    "សេចក្តីជូនដំណឹងកំពុងផ្ញើទៅ {0} នាក់។",
+  ],
+  nt_list: ["Sent notices", "សេចក្តីជូនដំណឹងបានផ្ញើ"],
+  nt_none: [
+    "No notices were sent in this time.",
+    "មិនមានសេចក្តីជូនដំណឹងបានផ្ញើក្នុងរយៈពេលនេះទេ។",
+  ],
+  nt_list_sub: [
+    "Notices of the last {0} days.",
+    "សេចក្តីជូនដំណឹង {0} ថ្ងៃចុងក្រោយ។",
+  ],
+  c_notice: ["Notice", "សេចក្តីជូនដំណឹង"],
+  c_for: ["For", "សម្រាប់"],
+  c_sent_by: ["Sent by", "ផ្ញើដោយ"],
+  c_got: ["Got it", "បានទទួល"],
+  nt_got: ["{0} of {1}", "{0} ក្នុងចំណោម {1}"],
+  nt_failed: ["{0} not delivered", "{0} មិនបានទៅដល់"],
   // The one-time Telegram QR (DL-214, owner 11 Nov 2026 "Yes, QR for tenants and guests"). All
   // Khmer here is new and needs the native check.
   qr_h: ["Telegram", "តេឡេក្រាម"],

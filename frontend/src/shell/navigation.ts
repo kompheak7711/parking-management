@@ -43,6 +43,7 @@ export type PageId =
   | "tglinks"
   | "tgcontact"
   | "tgfaq"
+  | "tgnotices"
   | "tghealth"
   | "account";
 
@@ -171,7 +172,7 @@ export const MENU: readonly MenuGroup[] = [
         page: "tglinks",
         icon: "send",
         label: ["Telegram", "តេឡេក្រាម"],
-        tabs: ["tglinks", "tgcontact", "tgfaq", "tghealth"],
+        tabs: ["tglinks", "tgcontact", "tgfaq", "tgnotices", "tghealth"],
       },
       { page: "reports", icon: "reports" },
       { page: "history", icon: "history" },
@@ -226,6 +227,8 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   tglinks: ["Linked tenants", "អ្នកជួលដែលបានភ្ជាប់"],
   tgcontact: ["Contact office", "ទាក់ទងការិយាល័យ"],
   tgfaq: ["FAQ", "សំណួរញឹកញាប់"],
+  // DL-216; Khmer new.
+  tgnotices: ["Notices", "សេចក្តីជូនដំណឹង"],
   tghealth: ["Telegram health", "ស្ថានភាពតេឡេក្រាម"],
   // new
   account: ["My account", "គណនីរបស់ខ្ញុំ"],
@@ -296,6 +299,7 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   tglinks: ["telegram.read"],
   tgcontact: ["telegram.contact"],
   tgfaq: ["telegram.faq", "telegram.contact"],
+  tgnotices: ["telegram.read"],
   tghealth: ["telegram.read"],
   account: null,
 };

@@ -175,6 +175,7 @@ import {
   ContactOfficePage,
   FaqPageView,
   LinkedTenantsPage,
+  NoticesPageView,
   TelegramHealthPage,
   VisitRequestsPageView,
 } from "./telegram/TelegramPages";
@@ -2118,6 +2119,19 @@ export function App({
       <div className="shell-page" data-page="tgfaq" hidden={!shown("tgfaq")}>
         <FaqPageView
           active={shown("tgfaq")}
+          api={telegramApi}
+          capabilities={capabilities}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
+      </div>
+      <div
+        className="shell-page"
+        data-page="tgnotices"
+        hidden={!shown("tgnotices")}
+      >
+        <NoticesPageView
+          active={shown("tgnotices")}
           api={telegramApi}
           capabilities={capabilities}
           language={language}

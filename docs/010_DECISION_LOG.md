@@ -2971,3 +2971,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Built:** migration `20270713_385` (DB-TG-022), API-TG-010, `telegram_texts.py` (`tenant.receipt`), `telegram_store.py`, `telegram_pull_job.py`, `frontend/src/telegram/TelegramPages.tsx`.
 - **Links:** DL-211, DL-214.
 - **Decision date:** 2026-11-11.
+
+## DL-216 — Telegram bots: the office sends notices to linked tenants and guests
+
+- **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/telegram-notices (on DL-215); WAITS FOR THE OWNER'S TEST AND OK TO MERGE`
+- **Source:** the owner on 11 Nov 2026: CHETANA Residence support sends "any notice or warning", and on the card "Which should CHETANA Residence support send next, after the QR?": "All three, in that order" (Receipts, then notices, then warnings). What a notice is, who may send one and who gets it are technical choices by Claude under the owner's 2026-10-23 22:30 rule: no money or Lease rule is involved.
+- **(A) What a notice is.** News from the office: a water or power cut, building work, a holiday. Not money and not a Lease letter: the warnings (late rent, Lease letters) are the next step and follow the owner's rules.
+- **(B) Who sends.** The Owner and Managers (`telegram.operate`) on the new tab Office › Telegram › Notices. They write it in English, Khmer or both, choose everyone linked, some floors or some Units, and confirm "Send this notice now?". A sent notice is kept as it was and cannot be changed or taken back.
+- **(C) Who gets it.** Each live link of the chosen Units, tenants and guests, once, in the language the person chose; a notice written in one language goes in that language to all. At most 1,500 characters.
+- **(D) The office list.** The notices of the last 90 days, who they were for, who sent them, and how many people got each one or were not reached.
+- **Open:** the native Khmer check of the new texts.
+- **Built:** migration `20270714_386` (DB-TG-023), API-TG-011, `telegram_texts.py` (`tenant.notice`), `telegram_api.py`, `frontend/src/telegram/TelegramPages.tsx` (`NoticesPageView`), `shell/navigation.ts`.
+- **Links:** DL-128, DL-214, DL-215.
+- **Decision date:** 2026-11-11.
