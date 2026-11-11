@@ -80,6 +80,10 @@ class InMemoryTelegram:
         self._check(property_id)
         return {"receipts": [{"number": "R26-0001", "sent": []}], "rules": {"days": 45}}
 
+    def warnings(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        return {"warnings": [{"kind": "RENT_20", "sent": []}], "rules": {"days": 90}}
+
     def notices(self, property_id: UUID, *, actor_id: str) -> Json:
         self._check(property_id)
         return {"notices": list(self.notices_sent), "floors": ["3"], "units": []}
@@ -200,7 +204,7 @@ def base(flow: InMemoryTelegram) -> str:
 
 def test_the_telegram_pages_need_telegram_read() -> None:
     flow = InMemoryTelegram()
-    for page in ("links", "health", "invoices", "receipts", "notices"):
+    for page in ("links", "health", "invoices", "receipts", "notices", "warnings"):
         url = f"{base(flow)}/{page}"
         assert client(flow).get(url).status_code == 403
         answer = client(flow, "telegram.read").get(url)

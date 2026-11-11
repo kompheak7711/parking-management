@@ -1,5 +1,5 @@
 # Telegram bots step 1 (bots plan, shared base): the office job that sends the waiting Telegram messages, one try per message per run.
-# Started every minute by prm-telegram-send.timer. It does nothing while telegram_bots.enabled is false.
+# Started every 10 seconds by prm-telegram-send.timer (DL-218). It does nothing while telegram_bots.enabled is false.
 [Unit]
 Description=CHETANA Residence Management Telegram send job
 After=network-online.target

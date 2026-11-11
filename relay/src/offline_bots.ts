@@ -1,8 +1,9 @@
-// The Customer bot and the Staff bot while the office is away (DL-213, owner 11/11/2026: "let's
+// The Customer bot and the Staff bot answered by the relay (DL-213, owner 11/11/2026: "let's
 // make CHETANA Residence and CHETANA Staff work without rely on Property rental management app
-// open"). As for the Tenant bot (DL-210, offline.ts), the relay answers only while the office
-// has not pulled for a while, with the texts and buttons the office sent, and tells the office
-// what it answered (inside the sealed item) so the app saves the same steps when it opens.
+// open"; DL-219: "all telegram bot has to reply immediately even app open or close"). As for the
+// Tenant bot (offline.ts), the relay answers every message at once with the texts and buttons
+// the office sent, and tells the office what it answered (inside the sealed item) so the app
+// saves the same steps when it collects the items (every 150 seconds).
 //
 // Customer bot: Start and language, FAQ (the questions the Owner approved), Contact office and
 // every Send an inquiry question, as telegram_customer_bot.py asks them. The relay never gives a
@@ -17,11 +18,14 @@
 
 import {
   CHAT_STEP_SECONDS,
+  FAQ_NUMBER,
   fill,
+  message,
   object,
   saveChat,
   tappedButton,
   type Chat,
+  type FaqEntry,
   type Outgoing,
   type Said,
 } from "./offline.ts";
@@ -29,22 +33,12 @@ import type { Env } from "./types.ts";
 
 type Json = Record<string, unknown>;
 
-interface Message extends Said {
-  choices?: boolean;
-}
-
 export interface CustomerTexts {
-  messages: Record<string, Record<string, Message>>;
+  messages: Record<string, Record<string, Said>>;
   buttons: Record<string, string[]>;
   words: Record<string, Record<string, string>>;
   unit_types: { code: string; name_en: string; name_km: string }[];
-  faq: {
-    number: number;
-    question_en: string;
-    question_km: string;
-    answer_en: string;
-    answer_km: string;
-  }[];
+  faq: FaqEntry[];
   weekdays: Record<string, string[]>;
   months: Record<string, string[]>;
   utc_offset_minutes: number;
@@ -63,7 +57,7 @@ export interface CustomerTexts {
 }
 
 export interface StaffTexts {
-  messages: Record<string, Record<string, Message>>;
+  messages: Record<string, Record<string, Said>>;
   buttons: Record<string, string[]>;
   types: Record<string, { name_kh: string; always_urgent: boolean }>;
   places: Record<string, string>;
@@ -89,7 +83,6 @@ export async function offlineBody<T>(env: Env, bot: string): Promise<T | null> {
   return row ? (JSON.parse(row.body) as T) : null;
 }
 
-const FAQ_NUMBER = /^\s*(\d{1,3})(?:[.)]|\s*$)/;
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const TYPED_DAY = /(\d{1,2})\s*\/\s*(\d{1,2})/;
 const HOW: Record<string, string> = {
@@ -102,35 +95,6 @@ const PART: Record<string, string> = {
   "button.morning": "MORNING",
   "button.afternoon": "AFTERNOON",
 };
-
-function message(
-  texts: { messages: Record<string, Record<string, Message>> },
-  name: string,
-  language: string,
-  details: Record<string, string> = {},
-  choices: string[] = [],
-  limits: { max_choices: number; max_choice_chars: number } = {
-    max_choices: 30,
-    max_choice_chars: 60,
-  },
-): Said | null {
-  const found = texts.messages[name];
-  const said = found?.[language] ?? found?.km;
-  if (!said) {
-    return null;
-  }
-  const filled = fill({ text: said.text, markup: said.markup }, details);
-  if (said.choices) {
-    const markup = object(said.markup) ?? {};
-    const fixed = Array.isArray(markup.keyboard) ? markup.keyboard : [];
-    const rows = choices
-      .slice(0, limits.max_choices)
-      .filter((choice) => choice.trim() !== "")
-      .map((choice) => [{ text: choice.slice(0, limits.max_choice_chars) }]);
-    filled.markup = { ...markup, keyboard: [...rows, ...fixed] };
-  }
-  return filled;
-}
 
 function privateMessage(update: Json): { message: Json; user: number } | null {
   const found = object(update.message);
@@ -637,7 +601,7 @@ export async function staffAnswer(
     : { facts: { answered: false }, out: [] };
 }
 
-// A Staff form sent while the office is away: "received" to the person and, for an urgent
+// A Staff form (DL-213, DL-219): "received" to the person and, for an urgent
 // Problem report, the alert to the caretaker on shift and the Authorizers.
 export function staffFormAnswers(
   texts: StaffTexts,

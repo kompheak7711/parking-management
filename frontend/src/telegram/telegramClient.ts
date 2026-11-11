@@ -98,6 +98,22 @@ export interface ReceiptsPage {
   rules: { days: number };
 }
 
+/** A late Rent letter or Lease warning and who got it on Telegram (DL-217). */
+export interface TelegramWarning {
+  id: string;
+  /** LEASE_WARNING, RENT_20 or RENT_30. */
+  kind: string;
+  unit_number: string;
+  customer: string;
+  recorded_at: string;
+  sent: InvoiceSent[];
+}
+
+export interface WarningsPage {
+  warnings: TelegramWarning[];
+  rules: { days: number };
+}
+
 /** A notice from the office as it was sent (DL-216). */
 export interface TelegramNotice {
   id: string;
@@ -400,6 +416,8 @@ export interface TelegramApi {
   invoices: (propertyId: string) => Promise<InvoicesPage>;
   /** The Receipts of the last weeks and who got them on Telegram (DL-215). */
   receipts: (propertyId: string) => Promise<ReceiptsPage>;
+  /** The late Rent letters and Lease warnings and who got them on Telegram (DL-217). */
+  warnings: (propertyId: string) => Promise<WarningsPage>;
   /** The notices of the last weeks (DL-216). */
   notices: (propertyId: string) => Promise<NoticesPage>;
   /** Sends a notice and answers how many people it went to and the page again. */
@@ -615,6 +633,24 @@ export function noticesPageOf(value: unknown): NoticesPage {
       };
     }),
     rules: { days: whole(rules.days), max: whole(rules.max) },
+  };
+}
+
+export function warningsPageOf(value: unknown): WarningsPage {
+  const page = record(value);
+  return {
+    warnings: list(page.warnings).map((item) => {
+      const row = record(item);
+      return {
+        id: text(row.id),
+        kind: text(row.kind),
+        unit_number: text(row.unit_number),
+        customer: text(row.customer),
+        recorded_at: text(row.recorded_at),
+        sent: sentOf(row.sent),
+      };
+    }),
+    rules: { days: whole(record(page.rules).days) },
   };
 }
 
@@ -953,6 +989,9 @@ export const telegramApi: TelegramApi = {
   },
   async receipts(propertyId) {
     return receiptsPageOf(await request(`${root(propertyId)}/receipts`));
+  },
+  async warnings(propertyId) {
+    return warningsPageOf(await request(`${root(propertyId)}/warnings`));
   },
   async notices(propertyId) {
     return noticesPageOf(await request(`${root(propertyId)}/notices`));

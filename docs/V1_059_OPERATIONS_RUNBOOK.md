@@ -183,7 +183,8 @@ container). The health screen itself is built in the screen rebuild (UI-093, DL-
    (DEPLOY-016). No other outbound host is on the list in V1.
 
 **The Telegram bots (DL-125; off until the owner sets them up).** `prm-telegram-pull.timer` and
-`prm-telegram-send.timer` run every minute as `prm-ops`. They read
+`prm-telegram-send.timer` run every 10 seconds as `prm-ops` (DL-218); the pull job collects
+the relay's items every 150 seconds (DL-219: the relay answers every message at once). They read
 `/etc/prm/telegram-jobs.env` (`APP_DATABASE_URL`, `PRM_PROPERTY_ID`, `PRM_TELEGRAM_ACTOR_ID`)
 and do nothing while `telegram_bots.enabled` is false. The Staff bot (DL-174) also needs
 `PRM_TELEGRAM_SERVICE_ACTOR_ID` (a service actor, for the HR staff functions) and

@@ -124,16 +124,6 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Thank you. You are linked to Unit {unit}. If you have a problem, tap Problem report."
         ),
     },
-    "tenant.office_away": {
-        "km": (
-            "ការិយាល័យរបស់យើងបិទនៅពេលនេះ។ យើងនឹងឆ្លើយតបលោកអ្នកនៅពេលការិយាល័យបើក។ "
-            "ប្រសិនបើមានបញ្ហា សូមចុច «រាយការណ៍បញ្ហា» ឥឡូវនេះបាន។"
-        ),
-        "en": (
-            "Our office is closed now. We will answer you when the office opens. "
-            "If you have a problem, you can tap Problem report now."
-        ),
-    },
     "tenant.report_sent_offline": {
         "km": (
             "យើងបានទទួលរបាយការណ៍របស់លោកអ្នកហើយ។ ការិយាល័យរបស់យើងនឹងពិនិត្យមើល។ "
@@ -204,6 +194,60 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "tenant.notice": {
         "km": "📢 សេចក្តីជូនដំណឹងពីការិយាល័យ\n\n{notice}",
         "en": "📢 Notice from the office\n\n{notice}",
+    },
+    # DL-217 (owner card 11 Nov 2026 "When staff record it"): the late Rent letters and the Lease
+    # warning, sent when staff record them. Khmer is new and needs the native check.
+    "tenant.rent_warning": {
+        "km": (
+            "⚠️ មិនទាន់បង់ថ្លៃឈ្នួល៖ ២០ ថ្ងៃ\n{unit}\n"
+            "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
+            "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
+            "សូមបង់ឱ្យបានឆាប់តាមដែលអាចធ្វើបាន ឬទាក់ទងការិយាល័យ ប្រសិនបើមានបញ្ហា។\n"
+            "លិខិតក្រដាសពីការិយាល័យ ថ្ងៃ {date} គឺជាច្បាប់ផ្លូវការ។"
+        ),
+        "en": (
+            "⚠️ Rent not paid: 20 days\n{unit}\n"
+            "Invoice {invoice} was due on {due}.\n"
+            "Rent still to pay: {amount}\n\n"
+            "Please pay as soon as you can, or contact the office if there is a problem.\n"
+            "The office's paper letter of {date} is the official copy."
+        ),
+    },
+    "tenant.rent_default": {
+        "km": (
+            "🔴 មិនទាន់បង់ថ្លៃឈ្នួល៖ ៣០ ថ្ងៃ\n{unit}\n"
+            "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
+            "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
+            "យោងតាមកិច្ចសន្យាជួលរបស់លោកអ្នក នេះជាការមិនបង់ថ្លៃឈ្នួលធ្ងន់ធ្ងរ។ "
+            "សូមបង់ ឬទាក់ទងការិយាល័យនៅថ្ងៃនេះ។\n"
+            "លិខិតក្រដាសពីការិយាល័យ ថ្ងៃ {date} គឺជាច្បាប់ផ្លូវការ។"
+        ),
+        "en": (
+            "🔴 Rent not paid: 30 days\n{unit}\n"
+            "Invoice {invoice} was due on {due}.\n"
+            "Rent still to pay: {amount}\n\n"
+            "Under your Lease this is now a serious nonpayment. "
+            "Please pay or contact the office today.\n"
+            "The office's paper letter of {date} is the official copy."
+        ),
+    },
+    "tenant.lease_warning": {
+        "km": (
+            "⚠️ ការព្រមានតាមកិច្ចសន្យាជួល លើកទី {sequence}\n{unit}\n"
+            "កាលបរិច្ឆេទ៖ {date}\n\n"
+            "អ្វីដែលបានកើតឡើង ({when})៖ {text}\n"
+            "ប្រការក្នុងកិច្ចសន្យា៖ {rule}\n\n"
+            "សូមទាក់ទងការិយាល័យ ប្រសិនបើលោកអ្នកមានសំណួរ។\n"
+            "លិខិតក្រដាសពីការិយាល័យ គឺជាច្បាប់ផ្លូវការ។"
+        ),
+        "en": (
+            "⚠️ Lease warning {sequence}\n{unit}\n"
+            "Date: {date}\n\n"
+            "What happened ({when}): {text}\n"
+            "Lease rule: {rule}\n\n"
+            "Please contact the office if you have a question.\n"
+            "The office's paper letter is the official copy."
+        ),
     },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",

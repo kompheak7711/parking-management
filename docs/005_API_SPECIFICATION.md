@@ -2320,3 +2320,7 @@ Added by DL-216 (migration `20270714_386`, DB-TG-023). Both answer `Cache-Contro
 - `POST /api/v1/properties/{property_id}/telegram/notices` (`telegram.operate`, browser mutation check; body `text_en`, `text_km`, `audience` `ALL`, `FLOORS` or `UNITS`, `floors`, `unit_ids`) answers 201 with `sent` (`notice_id`, `queued`) and `page`.
 
 Refusals: 403 (no right), 422 (no words, words too long, an unknown audience, or a floor or Unit not of the Property).
+
+### API-TG-012 Warnings on Telegram — 2026-11-11
+
+Added by DL-217 (migration `20270715_387`, DB-TG-024). `GET /api/v1/properties/{property_id}/telegram/warnings` (`telegram.read`, `Cache-Control: private, no-store`) answers `warnings` (the late Rent letters and Lease warnings of the last 90 days, each with `id`, `kind` (`RENT_20`, `RENT_30` or `LEASE_WARNING`), `unit_number`, `customer` (the Lease's primary tenant), `recorded_at` and `sent`, as API-TG-008) and `rules` (`days`). Refusals: 403 (no right).

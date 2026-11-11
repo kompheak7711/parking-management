@@ -5995,3 +5995,12 @@ Added by DL-216 (migration `20270714_386`, forward-only).
 - New append-only tables (`app.reject_telegram_change()`, no runtime grant): `app.telegram_notices` (the words in English and/or Khmer, at most 1,500 characters each and at least one; the audience `ALL`, `FLOORS` with `floors`, or `UNITS` with `unit_ids`; `created_by`, `created_at`) and `app.telegram_notice_deliveries` (one row per notice and Telegram account, with its outbox message).
 - `app.telegram_notice_send(property, body, actor)` (`telegram.operate`) checks the words and that each floor or Unit is the Property's (`22023` otherwise), saves the notice and queues `tenant.notice` (field `notice`) for each live link of the chosen Units, tenants and guests, in each person's language.
 - `app.telegram_notices_page(property, actor)` (`telegram.read`) answers the notices of the last 90 days (words, audience, floors, Unit numbers, sender, queued, sent and given-up counts), the Property's floors and Units, and the rules.
+
+## DB-TG-024 — Warnings on Telegram (DL-217)
+
+Added by DL-217 (migration `20270715_387`, forward-only).
+
+- New append-only table `app.telegram_warning_notices` (one row per warning and Telegram account, with its outbox message; `warning_kind` `LEASE_WARNING`, `RENT_20` or `RENT_30` with `lease_warning_id` or `rent_event_id`; unique per warning and account; `app.reject_telegram_change()`; no runtime grant).
+- `app.telegram_warnings_queue(property, actor)` (`telegram.operate`, granted to `prm_runtime`, run by the pull job) queues `tenant.rent_warning`, `tenant.rent_default` or `tenant.lease_warning` for the Lease warnings and day-20 and day-30 Rent events recorded in the last 3 days, for each live link of their Lease not yet sent that warning and linked no later than a day after it was recorded.
+- `app.telegram_warnings_since(property, since)` and `app.telegram_warning_details(kind, source)` (internal) list the warnings and build the fields (`unit`, `invoice`, `due`, `amount`, `date` for Rent; `sequence`, `unit`, `date`, `when`, `text`, `rule` for a Lease warning).
+- `app.telegram_warnings_page(property, actor)` (`telegram.read`) lists the warnings of the last 90 days with who got them.

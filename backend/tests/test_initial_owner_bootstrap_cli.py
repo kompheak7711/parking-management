@@ -1095,6 +1095,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/telegram/receipts": {"get"},
         # DL-216: notices from the office.
         "/api/v1/properties/{property_id}/telegram/notices": {"get", "post"},
+        # DL-217: warnings on Telegram.
+        "/api/v1/properties/{property_id}/telegram/warnings": {"get"},
         # Telegram bots step 2d part 2 (DL-170) and steps 3a to 3c (DL-171 to DL-173).
         "/api/v1/properties/{property_id}/telegram/contact": {"get"},
         "/api/v1/properties/{property_id}/telegram/contact/{message_id}/answer": {"post"},

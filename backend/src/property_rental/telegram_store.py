@@ -59,6 +59,8 @@ class TelegramStore(Protocol):
 
     def receipts_queue(self) -> int: ...
 
+    def warnings_queue(self) -> int: ...
+
     def visit_requests_remove_old(self) -> int: ...
 
     def tenant_form_data(self) -> dict[str, Any]: ...
@@ -330,6 +332,12 @@ class PostgresTelegramStore:
         """Queue the Receipts of the last days not yet sent to someone linked (DL-215)."""
         return int(
             self._one("SELECT app.telegram_receipts_queue(%s, %s)", self._property, self._actor)
+        )
+
+    def warnings_queue(self) -> int:
+        """Queue the warnings staff recorded in the last days, once per linked tenant (DL-217)."""
+        return int(
+            self._one("SELECT app.telegram_warnings_queue(%s, %s)", self._property, self._actor)
         )
 
     def visit_requests_remove_old(self) -> int:

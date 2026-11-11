@@ -13,7 +13,11 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from property_rental.telegram_pull_job import push_form_data
 from property_rental.telegram_relay_client import RelayClient
 from property_rental.telegram_send_job import run_send
-from property_rental.telegram_tenant_bot import handle_tenant_form, handle_tenant_update
+from property_rental.telegram_tenant_bot import (
+    handle_tenant_form,
+    handle_tenant_update,
+    relay_person,
+)
 from property_rental.telegram_texts import TextError, keyboard_markup, render
 from test_telegram_jobs import NOW, PULL_KEY, FakeRelay, FakeStore, _client
 from test_telegram_jobs import office_key as office_key
@@ -242,7 +246,9 @@ def test_the_access_list_and_choices_go_to_the_relay_only_when_they_change(
         "/office/access/staff",
         "/office/choices/staff",
     ]
-    assert relay.pushed[0][1] == {"users": store.form_data["users"]}
+    # DL-219: with each person's My requests and the repair to check, for the relay's answers.
+    person: dict[str, Any] = {"places": [], "requests": {"km": "", "en": ""}, "check": None}
+    assert relay.pushed[0][1] == {"users": [{"id": USER, "role": "TENANT", "data": person}]}
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is False
     store.form_data = store.form_data | {"users": []}
     assert push_form_data(client=client, store=store, status_directory=tmp_path) is True
@@ -336,6 +342,24 @@ def test_my_requests_lists_each_report_with_its_state_and_visit() -> None:
     assert khmer[0]["details"]["list"].startswith("UP260009 · ទឹក៖ បានរៀបចំការមកពិនិត្យ")
     store.my_reports = {"result": "OK", "unit_number": "305", "reports": []}
     assert codes(say(store, "My requests")) == [("tenant.my_none", "tenant.menu")]
+
+
+def test_the_relay_gets_my_requests_in_both_languages_and_the_repair_to_check() -> None:
+    # DL-219: the relay answers My requests and Fixed or Not fixed at once.
+    reports = [
+        {"report_number": "BP260004", "kind": "BUILDING", "state": "DONE", "type_en": "Lift"},
+        {"report_number": "UP260011", "kind": "UNIT", "state": "DONE", "type_en": "Water"},
+        {"report_number": "UP260002", "kind": "UNIT", "state": "CLOSED", "type_en": "Door"},
+    ]
+    person = relay_person({"result": "OK", "unit_number": "305", "reports": reports})
+    assert person["check"] == "UP260011"
+    assert person["requests"]["en"].splitlines()[1] == "UP260011 · Water: Done, please check"
+    assert person["requests"]["km"].startswith("BP260004")
+    assert relay_person({"result": "OK", "reports": []}) == {
+        "requests": {"km": "", "en": ""},
+        "check": None,
+    }
+    assert relay_person({"result": "NOT_LINKED"}) == {}
 
 
 def test_contact_office_takes_one_written_message_for_the_office() -> None:

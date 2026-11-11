@@ -1,4 +1,4 @@
-"""What the relay needs to answer the Tenant bot while the office app is closed (DL-210).
+"""What the relay needs to answer the bots (DL-210; DL-219: every message, app open or closed).
 
 Owner (7 Nov 2026, card "Bot answers by itself"): the relay links a new tenant at night with the
 scrambled check list, opens the Problem report form, answers a sent report at once and sends an
@@ -21,6 +21,11 @@ DL-213 (owner 11 Nov 2026): the Customer bot and the Staff bot answer by themsel
 Customer bot's body has its texts, the Unit Types, the FAQ the Owner approved for it and the
 Property's distance from UTC (for the visit days); the Staff bot's body has its texts, the problem
 types and shared places, and who gets an urgent alert. Neither holds a name or a phone number.
+
+DL-219 (owner 11 Nov 2026: "all telegram bot has to reply immediately even app open or close"):
+the relay answers every message, so the Tenant bot's body also has the FAQ the Owner approved,
+and the access list (telegram_pull_job.push_form_data) has each linked person's My requests and
+the repair waiting for Fixed or Not fixed. The job sends these every 10 seconds when they changed.
 """
 
 from __future__ import annotations
@@ -82,13 +87,21 @@ MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
     "contact_saved": ("tenant.contact_saved", "tenant.start"),
     "contact_saved_linked": ("tenant.contact_saved", "tenant.menu"),
     "report_kind": ("tenant.report_kind", "tenant.report_kind"),
-    "office_away": ("tenant.office_away", "tenant.menu"),
+    # DL-219: FAQ, Fixed or Not fixed and My requests, answered by the relay too.
+    "faq_none": ("tenant.faq_none", "tenant.menu"),
+    "faq_list": ("tenant.faq_list", "tenant.faq"),
+    "faq_answer": ("tenant.faq_answer", "tenant.faq"),
+    "check_fixed": ("tenant.check_fixed", "tenant.menu"),
+    "check_not_fixed": ("tenant.check_not_fixed", "tenant.menu"),
+    "check_nothing": ("tenant.check_nothing", "tenant.menu"),
+    "my_requests": ("tenant.my_requests", "tenant.menu"),
+    "my_none": ("tenant.my_none", "tenant.menu"),
     "report_sent": ("tenant.report_sent_offline", None),
     "report_sent_urgent": ("tenant.report_sent_offline_urgent", None),
 }
 # The fields the relay fills in itself.
-RELAY_FIELDS: Final = frozenset({"unit", "tries_left"})
-# The Customer bot's messages while the office is away (DL-213), as telegram_customer_bot says
+RELAY_FIELDS: Final = frozenset({"unit", "tries_left", "question", "answer", "number", "list"})
+# The Customer bot's messages the relay answers with (DL-213), as telegram_customer_bot says
 # them. A message whose keyboard starts with choices (FAQ questions, Unit Types, days, months)
 # carries "choices": true; the relay puts those buttons above the fixed rows.
 CUSTOMER_MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
@@ -148,7 +161,7 @@ CUSTOMER_WORDS: Final = (
     "button.later",
     "customer.no_day",
 )
-# The Staff bot's messages while the office is away (DL-213; staff read Khmer only).
+# The Staff bot's messages the relay answers with (DL-213; staff read Khmer only).
 STAFF_MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
     "hello": ("staff.hello", "staff.open"),
     "ask_phone": ("staff.ask_phone", "staff.share_phone"),
@@ -224,8 +237,10 @@ def _alert(data: dict[str, Any]) -> dict[str, Any]:
     return {"always": alert.get("always") or [], "shifts": alert.get("shifts") or []}
 
 
-def offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]:
-    """The texts, buttons, types, places and alert list the relay answers with."""
+def offline_texts(
+    data: dict[str, Any], relay_host: str, faq: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """The texts, buttons, types, places, alert list and FAQ (DL-219) the relay answers with."""
     return {
         "messages": _messages(MESSAGES, RELAY_FIELDS, relay_host),
         "buttons": {code: sorted(set(TEXTS[code].values())) for code in BUTTONS},
@@ -233,7 +248,24 @@ def offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]:
         "places": data.get("places") or {},
         "alert": _alert(data),
         "staff_urgent": TEXTS[STAFF_ALERT]["km"],
+        "faq": _faq(faq or []),
     }
+
+
+def _faq(faq: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The FAQ the Owner approved for a bot, as the relay shows it (both languages)."""
+    return [
+        {
+            "number": entry.get("number"),
+            **{
+                f"{part}_{lang}": str(entry.get(f"{part}_{lang}") or "")
+                for part in ("question", "answer")
+                for lang in LANGUAGES
+            },
+        }
+        for entry in faq
+        if isinstance(entry, dict) and isinstance(entry.get("number"), int)
+    ]
 
 
 def customer_offline_texts(
@@ -257,18 +289,7 @@ def customer_offline_texts(
             for item in unit_types
             if isinstance(item, dict) and item.get("code")
         ],
-        "faq": [
-            {
-                "number": entry.get("number"),
-                **{
-                    f"{part}_{lang}": str(entry.get(f"{part}_{lang}") or "")
-                    for part in ("question", "answer")
-                    for lang in LANGUAGES
-                },
-            }
-            for entry in faq
-            if isinstance(entry, dict) and isinstance(entry.get("number"), int)
-        ],
+        "faq": _faq(faq),
         "weekdays": {lang: list(WEEKDAYS[lang]) for lang in LANGUAGES},
         "months": {lang: list(MONTH_NAMES[lang]) for lang in LANGUAGES},
         "utc_offset_minutes": offset if isinstance(offset, int) else 0,
@@ -386,9 +407,8 @@ def push_offline(
             log(f"telegram_pull:offline_{error}")
     data = store.tenant_offline_data()
     links = offline_links(data, key, store.link_codes_offline())
-    sent = _send_when_changed(
-        client, "TENANT", offline_texts(data, relay_host), links, status_directory, log
-    )
+    texts = offline_texts(data, relay_host, store.faq_for_bot("TENANT"))
+    sent = _send_when_changed(client, "TENANT", texts, links, status_directory, log)
     customer = customer_offline_texts(
         store.customer_choices(0).get("unit_types") or [],
         store.faq_for_bot("CUSTOMER"),

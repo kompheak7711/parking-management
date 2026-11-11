@@ -65714,6 +65714,36 @@
       "notes": "Telegram while the app is closed: the pull job sends the relay's offline body only when it changes; without the link check key the relay links nobody."
     },
     {
+      "test_id": "test_fixed_or_not_fixed_the_relay_answered_is_decided_by_the_database",
+      "upstream_ids": [
+        "DL-219"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_offline.py",
+      "status": "implemented",
+      "notes": "Telegram, the relay answers every message: when the app collects a Fixed or Not fixed the relay answered, the database decides and the tenant hears it only when the answer differs."
+    },
+    {
+      "test_id": "test_the_relay_gets_my_requests_in_both_languages_and_the_repair_to_check",
+      "upstream_ids": [
+        "DL-219"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_tenant_bot.py",
+      "status": "implemented",
+      "notes": "Telegram, the relay answers every message: each linked person's My requests in Khmer and English and the newest Unit repair marked done go to the relay with the access list."
+    },
+    {
+      "test_id": "test_the_items_are_collected_every_150_seconds",
+      "upstream_ids": [
+        "DL-219"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "Telegram, the relay answers every message: the pull job runs every 10 seconds but collects the relay's items every 150 seconds."
+    },
+    {
       "test_id": "test_what_the_relay_answered_is_saved_without_answering_again",
       "upstream_ids": [
         "DL-210"
@@ -66179,6 +66209,70 @@
       "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
       "status": "implemented",
       "notes": "Notices tab: a reader gets no form; a refused notice says so and keeps the words; a wrong page answer is refused."
+    },
+    {
+      "test_id": "test_the_late_rent_letters_go_to_the_linked_tenant_once",
+      "upstream_ids": [
+        "DL-217",
+        "DB-TG-024"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_warnings_migration.py",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: opening a Rent case sends nothing; the day-20 and day-30 events each go once to the linked tenant in the tenant's language with the Invoice, Due Date and Rent still to pay; the office page lists who got them."
+    },
+    {
+      "test_id": "test_a_lease_warning_goes_with_the_words_staff_wrote",
+      "upstream_ids": [
+        "DL-217",
+        "DB-TG-024"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_warnings_migration.py",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: a Lease warning goes with its number, what happened and the Lease rule; a warning recorded days ago is not sent."
+    },
+    {
+      "test_id": "test_warnings_need_the_telegram_rights_and_stay_as_sent",
+      "upstream_ids": [
+        "DL-217",
+        "DB-TG-024"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_warnings_migration.py",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: queueing needs telegram.operate and the page telegram.read; the notices are append-only and not readable by the runtime role."
+    },
+    {
+      "test_id": "test_the_late_rent_letters_read_as_the_tenant_gets_them",
+      "upstream_ids": [
+        "DL-217"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_warnings.py",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: the day-20 and day-30 Rent messages in English and Khmer, with the paper letter as the official copy."
+    },
+    {
+      "test_id": "test_a_lease_warning_reads_with_the_words_staff_wrote",
+      "upstream_ids": [
+        "DL-217"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_warnings.py",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: the Lease warning message in English and Khmer keeps the words staff wrote."
+    },
+    {
+      "test_id": "TEST-FE-1957",
+      "upstream_ids": [
+        "DL-217",
+        "API-TG-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Warnings on Telegram: Linked tenants lists who got each late Rent letter and Lease warning and counts the warnings that reached nobody."
     },
     {
       "test_id": "test_an_issued_invoice_goes_to_the_linked_tenant_once",

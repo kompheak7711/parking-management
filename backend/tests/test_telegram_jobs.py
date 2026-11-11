@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from property_rental import telegram_relay_client
 from property_rental.operations_status import evaluate_warnings
 from property_rental.telegram_phone import normalize_phone
-from property_rental.telegram_pull_job import run_pull
+from property_rental.telegram_pull_job import ITEMS_EVERY_SECONDS, items_due, note_items, run_pull
 from property_rental.telegram_relay_client import RelayClient, RelayError, signature
 from property_rental.telegram_seal import seal_for_tests
 from property_rental.telegram_send_job import load_bot_tokens, run_send
@@ -134,6 +134,7 @@ class FakeStore:
         self.reminder_runs = 0
         self.invoice_reminder_runs = 0
         self.receipt_runs = 0
+        self.warning_runs = 0
         self.blocked = False
         # The Staff bot (migration 20270620_331); None is a job given no service actor.
         self.staff_ready = True
@@ -235,6 +236,10 @@ class FakeStore:
 
     def receipts_queue(self) -> int:
         self.receipt_runs += 1
+        return 0
+
+    def warnings_queue(self) -> int:
+        self.warning_runs += 1
         return 0
 
     def visit_requests_remove_old(self) -> int:
@@ -759,3 +764,17 @@ def test_the_office_names_itself_to_the_relay(monkeypatch: pytest.MonkeyPatch) -
     )
     assert status == 200
     assert seen == {"agent": "CHETANA-Residence-office/1", "signed": "s"}
+
+
+def test_the_items_are_collected_every_150_seconds(tmp_path: Path) -> None:
+    # DL-219: the relay answers at once; the job runs every 10 seconds but collects every 150.
+    start = datetime(2026, 11, 11, 7, 0, tzinfo=UTC)
+    assert ITEMS_EVERY_SECONDS == 150
+    assert items_due(tmp_path, start, 150) is True
+    note_items(tmp_path, start)
+    assert items_due(tmp_path, start + timedelta(seconds=10), 150) is False
+    assert items_due(tmp_path, start + timedelta(seconds=149), 150) is False
+    assert items_due(tmp_path, start + timedelta(seconds=150), 150) is True
+    # A clock set back, or 0 seconds, collects at once.
+    assert items_due(tmp_path, start - timedelta(seconds=5), 150) is True
+    assert items_due(tmp_path, start + timedelta(seconds=10), 0) is True

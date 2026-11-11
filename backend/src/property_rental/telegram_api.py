@@ -36,6 +36,9 @@ Booking).
 DL-215: `GET .../telegram/receipts` lists the Receipts of the last 45 days and who got them on
 Telegram (`telegram.read`).
 
+DL-217: `GET .../telegram/warnings` lists the late Rent letters and Lease warnings of the last 90
+days and who got them on Telegram (`telegram.read`).
+
 DL-216: `GET .../telegram/notices` lists the notices of the last 90 days, the floors and the
 Units (`telegram.read`); `POST .../telegram/notices` sends a notice to the people linked to
 everyone, some floors or some Units (`telegram.operate`).
@@ -117,6 +120,8 @@ class TelegramPageFlow(Protocol):
 
     def receipts(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
+    def warnings(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
     def notices(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
     def send_notice(self, property_id: UUID, body: Json, *, actor_id: str) -> Json: ...
@@ -174,6 +179,9 @@ class UnavailableTelegramPageFlow:
         raise ProductUnavailable
 
     def receipts(self, property_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def warnings(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
     def notices(self, property_id: UUID, **_: object) -> Json:
@@ -272,6 +280,11 @@ class PostgresTelegramPageFlow:
     def receipts(self, property_id: UUID, *, actor_id: str) -> Json:
         return _json(
             self._one("SELECT app.telegram_receipts_page(%s, %s)", (property_id, UUID(actor_id)))
+        )
+
+    def warnings(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one("SELECT app.telegram_warnings_page(%s, %s)", (property_id, UUID(actor_id)))
         )
 
     def notices(self, property_id: UUID, *, actor_id: str) -> Json:
@@ -528,6 +541,15 @@ def create_telegram_router(
         response.headers["Cache-Control"] = "private, no-store"
         try:
             return envelope(request, flow.receipts(property_id, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @pages.get("/telegram/warnings")
+    def telegram_warnings(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, TELEGRAM_READ, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.warnings(property_id, actor_id=actor.actor_id))
         except REFUSED as exc:
             raise _http(exc) from exc
 

@@ -24,6 +24,7 @@ import {
   type LinksPage,
   type NoticesPage,
   type ReceiptsPage,
+  type WarningsPage,
   type TelegramApi,
   TelegramError,
   type VisitRequest,
@@ -32,6 +33,7 @@ import {
   contactPageOf,
   noticesPageOf,
   receiptsPageOf,
+  warningsPageOf,
   faqPageOf,
   healthPageOf,
   linksPageOf,
@@ -405,6 +407,35 @@ const NOTICES: NoticesPage = {
   rules: { days: 90, max: 1500 },
 };
 
+const WARNINGS: WarningsPage = {
+  warnings: [
+    {
+      id: "warn-1",
+      kind: "RENT_20",
+      unit_number: "U512",
+      customer: "Heng Dara",
+      recorded_at: "2026-11-11T05:00:00Z",
+      sent: [
+        {
+          telegram_user_id: 9001,
+          queued_at: "2026-11-11T05:01:00Z",
+          state: "SENT",
+          sent_at: "2026-11-11T05:01:05Z",
+        },
+      ],
+    },
+    {
+      id: "warn-2",
+      kind: "LEASE_WARNING",
+      unit_number: "U301",
+      customer: "Sok Vanna",
+      recorded_at: "2026-11-10T09:00:00Z",
+      sent: [],
+    },
+  ],
+  rules: { days: 90 },
+};
+
 function fakeApi(extra: Partial<TelegramApi> = {}): TelegramApi {
   return {
     contact: vi.fn(() => Promise.resolve(CONTACT)),
@@ -442,6 +473,7 @@ function fakeApi(extra: Partial<TelegramApi> = {}): TelegramApi {
     health: vi.fn(() => Promise.resolve(HEALTH)),
     invoices: vi.fn(() => Promise.resolve(INVOICES)),
     receipts: vi.fn(() => Promise.resolve(RECEIPTS)),
+    warnings: vi.fn(() => Promise.resolve(WARNINGS)),
     notices: vi.fn(() => Promise.resolve(NOTICES)),
     sendNotice: vi.fn(() => Promise.resolve({ queued: 2, page: NOTICES })),
     retry: vi.fn(() =>
@@ -648,6 +680,41 @@ describe("Office › Telegram", () => {
 
     expect(noticesPageOf(JSON.parse(JSON.stringify(NOTICES)))).toEqual(NOTICES);
     expect(() => noticesPageOf({ ...NOTICES, rules: {} })).toThrow(
+      TelegramError,
+    );
+  });
+
+  it("TEST-FE-1957 Warnings on Telegram shows who got each late Rent letter and Lease warning, and which tenants need the letter by hand", async () => {
+    const api = fakeApi();
+    render(
+      <LinkedTenantsPage
+        active
+        api={api}
+        capabilities={READER}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    const warnings = await screen.findByRole("region", {
+      name: "Warnings on Telegram",
+    });
+    const rent = await within(warnings).findByRole("row", { name: /U512/ });
+    expect(rent.textContent).toContain("Rent not paid: day 20");
+    expect(rent.textContent).toContain("Sent to 1");
+    const lease = within(warnings).getByRole("row", { name: /U301/ });
+    expect(lease.textContent).toContain("Lease warning");
+    expect(lease.textContent).toContain("Give the letter");
+    expect(
+      within(warnings).getByText(
+        "Warnings that did not reach anyone on Telegram: 1. Make sure these tenants got the paper letter.",
+      ),
+    ).toBeTruthy();
+    expect(warnings.textContent).toContain("Warnings of the last 90 days.");
+    expect(api.warnings).toHaveBeenCalledWith("prop-1");
+    expect(warningsPageOf(JSON.parse(JSON.stringify(WARNINGS)))).toEqual(
+      WARNINGS,
+    );
+    expect(() => warningsPageOf({ warnings: [], rules: {} })).toThrow(
       TelegramError,
     );
   });

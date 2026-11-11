@@ -1,6 +1,6 @@
-"""The bots while the office app is closed (DL-210, owner 7 Nov 2026 "Bot answers by itself";
-DL-213, owner 11 Nov 2026, the Customer and Staff bots too): what the office sends the relay, and
-how the app saves what the relay answered without answering twice."""
+"""The bots answered by the relay (DL-210, owner 7 Nov 2026 "Bot answers by itself"; DL-213, owner
+11 Nov 2026, the Customer and Staff bots too; DL-219, every message, app open or closed): what the
+office sends the relay, and how the app saves what the relay answered without answering twice."""
 
 from __future__ import annotations
 
@@ -75,6 +75,21 @@ def test_the_relay_texts_are_the_bots_own_in_both_languages() -> None:
     assert texts["buttons"]["button.english"] == ["English"]
     assert "{type}" in texts["staff_urgent"] and "{where}" in texts["staff_urgent"]
     assert texts["alert"] == {"always": [9001], "shifts": [[9002, 100, 200]]}
+    # DL-219: FAQ, Fixed or Not fixed and My requests too; the FAQ questions are buttons.
+    assert texts["messages"]["faq_list"]["en"]["choices"] is True
+    assert "{list}" in texts["messages"]["my_requests"]["en"]["text"]
+    assert "{number}" in texts["messages"]["check_fixed"]["km"]["text"]
+    assert texts["buttons"]["button.fixed"] and texts["faq"] == []
+    faq = [{"number": 2, "question_en": "Wi-Fi?", "answer_en": "Ask the desk.", "question_km": "?"}]
+    assert offline_texts(DATA, RELAY, faq)["faq"] == [
+        {
+            "number": 2,
+            "question_km": "?",
+            "question_en": "Wi-Fi?",
+            "answer_km": "",
+            "answer_en": "Ask the desk.",
+        }
+    ]
 
 
 def test_the_offline_body_is_sent_once_and_again_only_when_it_changes(
@@ -101,10 +116,13 @@ def test_the_offline_body_is_sent_once_and_again_only_when_it_changes(
     ]
     path, body = relay.pushed[0]
     assert path == "/office/offline/tenant" and len(body["links"]["codes"]) == 6
-    # A new FAQ answer sends only the Customer bot's body again.
+    # A new FAQ answer sends the Tenant and Customer bots' bodies again (DL-219), not the Staff's.
     store.faq = [{"number": 1, "question_en": "Parking?", "answer_en": "Yes"}]
     assert push_offline(**kwargs) is True
-    assert [path for path, _ in relay.pushed[3:]] == ["/office/offline/customer"]
+    assert [path for path, _ in relay.pushed[3:]] == [
+        "/office/offline/tenant",
+        "/office/offline/customer",
+    ]
     store.offline_data = DATA | {"alert": {"always": [9001, 9005], "shifts": []}}
     assert push_offline(**kwargs) is True
     # Without the key the relay still answers but links nobody.
@@ -162,6 +180,27 @@ def test_when_the_database_disagrees_with_the_relay_the_tenant_hears_the_databas
     link = {"outcome": "NO_MATCH", "name": "Dara Kim", "unit": "305"}
     relay_said(store, {"answered": True, "step": "menu", "link": link}, "305")
     assert store.replies[-1]["text_code"] == "tenant.linked"
+
+
+def test_fixed_or_not_fixed_the_relay_answered_is_decided_by_the_database() -> None:
+    # DL-219: the relay said "report UP260009 is closed"; the database agrees: no second answer.
+    store = FakeStore()
+    store.languages[USER] = "en"
+    store.check_answers.append({"result": "CLOSED", "report_number": "UP260009"})
+    check = {"fixed": True, "number": "UP260009"}
+    relay_said(store, {"answered": True, "step": "menu", "check": check}, "Fixed")
+    assert store.checks == [(USER, True)] and store.replies == []
+    # The relay knew of no repair, but the database finds one: the tenant hears the database.
+    store.check_answers.append({"result": "REOPENED", "report_number": "UP260010"})
+    check = {"fixed": False, "number": None}
+    relay_said(store, {"answered": True, "step": "menu", "check": check}, "Not fixed")
+    assert [reply["text_code"] for reply in store.replies] == ["tenant.check_not_fixed"]
+    assert store.replies[-1]["details"] == {"number": "UP260010"}
+    # Both say there is nothing to check: no second answer.
+    store.check_answers.append({"result": "NOTHING"})
+    check = {"fixed": True, "number": None}
+    relay_said(store, {"answered": True, "step": "menu", "check": check}, "Fixed")
+    assert len(store.replies) == 1 and store.steps[USER][0] == "menu"
 
 
 def test_a_message_the_relay_only_held_is_answered_by_the_office() -> None:

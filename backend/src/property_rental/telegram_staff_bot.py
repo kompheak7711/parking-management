@@ -32,7 +32,7 @@ photos), and checks a planned visit (how staff entered, the cause, fixed at once
 which moves the report to Checked. Who pays is decided by the Manager in the app.
 
 The forms reach the office through the relay and the pull job, so the answer comes in the chat
-within about a minute.
+within 150 seconds (DL-219: the relay says "received" at once).
 
 DL-213 (owner 11 Nov 2026): while the office app is closed, the relay answers the chat (hello,
 share your phone, waiting for approval) and says a form was received; an urgent problem goes from

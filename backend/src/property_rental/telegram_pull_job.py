@@ -1,5 +1,7 @@
-"""The pull job (bots plan, "The office app side"): every minute, ask the relay for what waits,
-open each item with the office key, save it once, then confirm so the relay deletes it.
+"""The pull job (bots plan, "The office app side"): ask the relay for what waits, open each item
+with the office key, save it once, then confirm so the relay deletes it. Since DL-219 (owner 11
+Nov 2026) the relay answers every message at once and the job collects the items every 150
+seconds; it runs every 10 seconds for the rest (what the relay needs, Receipts, warnings).
 
 Photos and voice notes come with their item: each is fetched, opened, checked against the
 fingerprint the relay took before sealing, and kept once on the office disk by that
@@ -47,7 +49,11 @@ from property_rental.telegram_staff_bot import (
     remove_old_card_photos,
 )
 from property_rental.telegram_store import PostgresTelegramStore, TelegramStore
-from property_rental.telegram_tenant_bot import handle_tenant_form, handle_tenant_update
+from property_rental.telegram_tenant_bot import (
+    handle_tenant_form,
+    handle_tenant_update,
+    relay_person,
+)
 
 MEDIA_TYPES: Final = frozenset(
     {
@@ -66,6 +72,13 @@ FORM_DATA_FILES: Final = {
     "STAFF": "telegram-staff-form-data.sha256",
 }
 MAX_MEDIA_BYTES: Final = 20 * 1024 * 1024
+# DL-219 (owner 11 Nov 2026): the relay answers every message at once, and the app collects the
+# messages every 150 seconds. The job itself runs every 10 seconds, so a new QR code, an access
+# list change or a new Receipt still reaches the relay or the tenant within seconds.
+ITEMS_EVERY_SECONDS: Final = 150
+ITEMS_FILE: Final = "telegram-items-pulled.at"
+# My requests in one language, at most (the relay keeps 8192 characters for one person).
+MAX_REQUESTS_CHARS: Final = 3000
 BOT_NAMES: Final = {
     "CUSTOMER": "CHETANA Residence",
     "TENANT": "CHETANA Residence support",
@@ -128,6 +141,8 @@ def push_form_data(
     sent = False
     for bot, read in (("TENANT", store.tenant_form_data), ("STAFF", store.staff_form_data)):
         data = read()
+        if bot == "TENANT":
+            data = _with_requests(data, store)
         fingerprint = hashlib.sha256(
             json.dumps(data, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
@@ -152,6 +167,44 @@ def push_form_data(
         marker.write_text(fingerprint + "\n", encoding="utf-8")
         sent = True
     return sent
+
+
+def _with_requests(data: dict[str, Any], store: TelegramStore) -> dict[str, Any]:
+    """DL-219: each linked person's My requests and the repair waiting for Fixed or Not fixed,
+    so the relay answers those at once too."""
+    users = data.get("users")
+    if not isinstance(users, list):
+        return data
+    people: list[Any] = []
+    for user in users:
+        person = user.get("data") if isinstance(user, dict) else None
+        if isinstance(user, dict) and isinstance(user.get("id"), int) and isinstance(person, dict):
+            extra = relay_person(store.tenant_my_reports(user["id"]))
+            requests = extra.get("requests")
+            if isinstance(requests, dict):
+                extra["requests"] = {
+                    language: str(lines)[:MAX_REQUESTS_CHARS]
+                    for language, lines in requests.items()
+                }
+            user = user | {"data": person | extra}
+        people.append(user)
+    return data | {"users": people}
+
+
+def items_due(status_directory: Path, now: datetime, every: int) -> bool:
+    """True when the last collection of the relay's items is `every` seconds old or more."""
+    if every <= 0:
+        return True
+    try:
+        last = float((status_directory / ITEMS_FILE).read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return True
+    return not 0 <= now.timestamp() - last < every
+
+
+def note_items(status_directory: Path, now: datetime) -> None:
+    status_directory.mkdir(parents=True, exist_ok=True)
+    (status_directory / ITEMS_FILE).write_text(f"{now.timestamp():.0f}\n", encoding="utf-8")
 
 
 def store_media(directory: Path, sha256: str, data: bytes) -> str:
@@ -381,6 +434,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--actor-id", required=True, type=UUID)
     # The HR service actor the Staff bot calls the HR functions with; empty while not set up.
     parser.add_argument("--service-actor-id", default="", type=str)
+    # DL-219: collect the relay's items every 150 seconds; 0 collects them on every run.
+    parser.add_argument("--items-every", default=ITEMS_EVERY_SECONDS, type=int)
     args = parser.parse_args(argv)
     try:
         service_actor = UUID(args.service_actor_id) if args.service_actor_id else None
@@ -411,13 +466,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         client = RelayClient(bots.relay_host, read_pull_key(bots.relay_pull_key_file))
         key = load_office_private_key(bots.office_private_key_file)
-        result = run_pull(
-            client=client,
-            key=key,
-            store=store,
-            media_directory=bots.media_directory,
-            hr_files_directory=hr_files,
-        )
+        result = PullResult()
+        if items_due(config.status_directory, started, args.items_every):
+            result = run_pull(
+                client=client,
+                key=key,
+                store=store,
+                media_directory=bots.media_directory,
+                hr_files_directory=hr_files,
+            )
+            note_items(config.status_directory, started)
         store.remove_old_payloads()
         store.tenant_end_finished_links()
         store.remove_old_link_attempts()
@@ -426,6 +484,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         store.invoice_reminders()
         # Each new Receipt to the people linked to its Lease or stay (DL-215).
         store.receipts_queue()
+        # Each late Rent letter and Lease warning staff record, to the Lease's links (DL-217).
+        store.warnings_queue()
         store.visit_requests_remove_old()
         # The 18:00 summary of the staff checklists for the Authorizers, once a day.
         store.staff_daily_summary()

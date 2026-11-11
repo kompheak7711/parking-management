@@ -3,7 +3,7 @@ Description=CHETANA Residence Management Telegram pull timer
 
 [Timer]
 OnBootSec=1min
-OnUnitActiveSec=1min
+OnUnitActiveSec=10s
 AccuracySec=5s
 
 [Install]

@@ -31,6 +31,7 @@ import {
   type HealthPage,
   type InvoicesPage,
   type ReceiptsPage,
+  type WarningsPage,
   type TelegramReceipt,
   type LinkedTenant,
   type LinksPage,
@@ -734,6 +735,12 @@ export function LinkedTenantsPage({
         language={language}
         propertyId={propertyId}
       />
+      <WarningsOnTelegram
+        active={active}
+        api={api}
+        language={language}
+        propertyId={propertyId}
+      />
       {removing !== null && (
         <RemoveLinkDialog
           api={api}
@@ -988,6 +995,120 @@ function ReceiptsOnTelegram({
             </div>
           )}
           <p className="ui-tfoot">{tt(language, "rec_sub", data.rules.days)}</p>
+        </>
+      )}
+    </section>
+  );
+}
+
+// Warnings on Telegram (DL-217): who got each late Rent letter and Lease warning.
+
+const WARNING_KINDS = {
+  RENT_20: "warn_RENT_20",
+  RENT_30: "warn_RENT_30",
+  LEASE_WARNING: "warn_LEASE_WARNING",
+} as const;
+
+function warningKindText(language: Language, kind: string): string {
+  return kind in WARNING_KINDS
+    ? tt(language, WARNING_KINDS[kind as keyof typeof WARNING_KINDS])
+    : kind;
+}
+
+function WarningsOnTelegram({
+  language,
+  propertyId,
+  active,
+  api,
+}: {
+  language: Language;
+  propertyId: string;
+  active: boolean;
+  api: TelegramApi;
+}) {
+  const page = usePage<WarningsPage>(propertyId, active, api.warnings);
+  const data = page.data;
+  const paper =
+    data === null
+      ? 0
+      : data.warnings.filter((warning) => {
+          const reached = invoiceReached(warning);
+          return reached === "none" || reached === "failed";
+        }).length;
+  return (
+    <section aria-labelledby="tg-warnings" className="ui-card pad0">
+      <div className="ui-listbar">
+        <h2 id="tg-warnings">{tt(language, "warn_h")}</h2>
+      </div>
+      {data === null ? (
+        <Waiting failed={page.failed} language={language} onRetry={page.load} />
+      ) : (
+        <>
+          {paper > 0 && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{tt(language, "warn_paper_t", paper)}</p>
+            </div>
+          )}
+          {data.warnings.length === 0 ? (
+            <p className="ui-empty">{tt(language, "warn_none")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table className="ui-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_warning")}</th>
+                    <th scope="col">{tt(language, "c_unit")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_cust")}
+                    </th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_recorded")}
+                    </th>
+                    <th scope="col">{tt(language, "c_telegram")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.warnings.map((warning) => {
+                    const reached = invoiceReached(warning);
+                    const sentCount = warning.sent.filter(
+                      (person) => person.state === "SENT",
+                    ).length;
+                    return (
+                      <tr key={warning.id}>
+                        <td>{warningKindText(language, warning.kind)}</td>
+                        <td className="ui-num">{warning.unit_number}</td>
+                        <td className="ui-wide">{warning.customer}</td>
+                        <td className="ui-wide ui-num">
+                          {momentText(warning.recorded_at)}
+                        </td>
+                        <td>
+                          {reached === "sent" ? (
+                            <Chip tone="ok">
+                              {tt(language, "inv_sent", sentCount)}
+                            </Chip>
+                          ) : reached === "waiting" ? (
+                            <Chip tone="warn">
+                              {tt(language, "inv_waiting")}
+                            </Chip>
+                          ) : reached === "failed" ? (
+                            <Chip tone="err">{tt(language, "inv_failed")}</Chip>
+                          ) : (
+                            <Chip tone="err">
+                              {tt(language, "warn_letter")}
+                            </Chip>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="ui-tfoot">
+            {tt(language, "warn_sub", data.rules.days)}
+          </p>
         </>
       )}
     </section>

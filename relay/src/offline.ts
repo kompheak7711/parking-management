@@ -1,32 +1,45 @@
-// The Tenant bot while the office is away (DL-210, owner 07/11/2026: "I want tenant report 24/7"
-// and "I don't want to open application 24/7"). When the office has not pulled for a while, the
-// relay answers the Tenant bot itself:
-//   1. links a tenant to their Lease with the scrambled check codes the office sent;
+// The Tenant bot answered by the relay (DL-210, owner 07/11/2026: "I want tenant report 24/7";
+// DL-219, owner 11/11/2026: "all telegram bot has to reply immediately even app open or close").
+// The relay answers every Tenant bot message at once, app open or closed:
+//   1. Start and language, and links a tenant to their Lease with the scrambled check codes or
+//      the one-time QR codes the office sent;
 //   2. opens the Problem report form (it already works without the office);
 //   3. answers a sent report at once: "We got your report. Our office will check it.";
 //   4. sends an urgent report to the caretaker on shift and the Authorizers on the Staff bot;
-//   5. tells the office what it answered (inside the sealed item), so the app saves the same
-//      steps when it opens, without answering twice.
-// Everything the relay says comes from the office (texts, buttons, codes); nothing here decides
-// money or keeps a record. Other questions (My requests, FAQ, Fixed or Not fixed) get "our office
-// is closed now" and the office answers them when it opens.
+//   5. FAQ (the questions the Owner approved), My requests and Fixed or Not fixed, from what the
+//      office sent for each linked person, and Contact office;
+//   6. tells the office what it answered (inside the sealed item), so the app saves the same
+//      steps when it collects the items (every 150 seconds), without answering twice.
+// Everything the relay says comes from the office (texts, buttons, codes, each tenant's
+// requests); nothing here decides money or keeps a record.
 
 import { sha256Hex } from "./seal.ts";
 import type { BotCode, Env } from "./types.ts";
 
-export const OFFICE_AWAY_SECONDS = 150; // the office pulls every 10 s (Mac) or 60 s (server)
 export const CHAT_STEP_SECONDS = 30 * 60; // a link step left for 30 minutes starts again
 export const LINK_TRIES = 5; // owner rule (2 Nov 2026): 5 wrong tries = 24 hours blocked
 export const LINK_BLOCK_SECONDS = 24 * 60 * 60;
 // The Start of a QR scan (DL-214): 40 lower-case hex letters made by the office's database.
 const START_CODE = /^\/start\s+([0-9a-f]{40})$/;
 const CODE_CHARS = 32;
+// A FAQ button reads "3. Question...": the number before the dot names the question.
+export const FAQ_NUMBER = /^\s*(\d{1,3})(?:[.)]|\s*$)/;
 
 type Json = Record<string, unknown>;
 
 export interface Said {
   text: string;
   markup?: unknown;
+  // The keyboard starts with choices (FAQ questions, ...): the relay puts them above its rows.
+  choices?: boolean;
+}
+
+export interface FaqEntry {
+  number: number;
+  question_en: string;
+  question_km: string;
+  answer_en: string;
+  answer_km: string;
 }
 
 // One offline body per bot, as sent by the office (backend telegram_offline.py).
@@ -37,6 +50,8 @@ export interface OfflineTexts {
   places: Record<string, string>;
   alert: { always: number[]; shifts: [number, number, number][] };
   staff_urgent: string;
+  // DL-219: the FAQ the Owner approved for the Tenant bot.
+  faq?: FaqEntry[];
 }
 
 export interface OfflineLinks {
@@ -60,6 +75,8 @@ export interface RelayFacts {
   contact?: boolean;
   alerted?: boolean;
   code?: { outcome: "LINKED" | "BAD" };
+  // DL-219: Fixed or Not fixed, and the report the relay named (null: nothing to check).
+  check?: { fixed: boolean; number: string | null };
 }
 
 export interface Outgoing {
@@ -163,13 +180,6 @@ export async function noteOfficePull(env: Env, now: number): Promise<void> {
     .run();
 }
 
-export async function officeAway(env: Env, now: number): Promise<boolean> {
-  const row = await env.DB.prepare(
-    "SELECT at FROM office_seen WHERE what = 'pull'",
-  ).first<{ at: number }>();
-  return row === null || now - row.at > OFFICE_AWAY_SECONDS;
-}
-
 export async function offlineTexts(
   env: Env,
   bot: BotCode,
@@ -202,15 +212,43 @@ export function fill(said: Said, details: Record<string, string>): Said {
   };
 }
 
+export function message(
+  texts: { messages: Record<string, Record<string, Said>> },
+  name: string,
+  language: string,
+  details: Record<string, string> = {},
+  choices: string[] = [],
+  limits: { max_choices: number; max_choice_chars: number } = {
+    max_choices: 30,
+    max_choice_chars: 60,
+  },
+): Said | null {
+  const found = texts.messages[name];
+  const said = found?.[language] ?? found?.km;
+  if (!said) {
+    return null;
+  }
+  const filled = fill({ text: said.text, markup: said.markup }, details);
+  if (said.choices) {
+    const markup = object(said.markup) ?? {};
+    const fixed = Array.isArray(markup.keyboard) ? markup.keyboard : [];
+    const rows = choices
+      .slice(0, limits.max_choices)
+      .filter((choice) => choice.trim() !== "")
+      .map((choice) => [{ text: choice.slice(0, limits.max_choice_chars) }]);
+    filled.markup = { ...markup, keyboard: [...rows, ...fixed] };
+  }
+  return filled;
+}
+
 function say(
   texts: OfflineTexts,
   name: string,
   language: string,
   details: Record<string, string> = {},
+  choices: string[] = [],
 ): Said | null {
-  const message = texts.messages[name];
-  const said = message?.[language] ?? message?.km;
-  return said ? fill(said, details) : null;
+  return message(texts, name, language, details, choices);
 }
 
 export function tappedButton(
@@ -299,8 +337,8 @@ async function failedTries(env: Env, user: number, now: number) {
   return row?.n ?? 0;
 }
 
-// One Tenant bot chat message while the office is away: what to answer and what to tell the
-// office. Only private chats; anything else is left for the office.
+// One Tenant bot chat message (DL-219: every one, app open or closed): what to answer and what
+// to tell the office. Only private chats; anything else is left for the office.
 export async function tenantAnswer(
   env: Env,
   texts: OfflineTexts,
@@ -332,20 +370,21 @@ export async function tenantAnswer(
   const fresh = saved !== null && now - saved.updated_at <= CHAT_STEP_SECONDS;
   const step = fresh ? saved.step : null;
   let language = saved?.language ?? null;
-  const linked =
-    (await env.DB.prepare(
-      "SELECT 1 AS yes FROM access WHERE bot = 'TENANT' AND user_id = ?",
-    )
-      .bind(user)
-      .first()) !== null;
+  const access = await env.DB.prepare(
+    "SELECT data FROM access WHERE bot = 'TENANT' AND user_id = ?",
+  )
+    .bind(user)
+    .first<{ data: string | null }>();
+  const linked = access !== null;
   const out: Outgoing[] = [];
   const answer = async (
     name: string,
     next: Partial<Chat> & { step: string },
     facts: Omit<RelayFacts, "answered" | "step"> = {},
     details: Record<string, string> = {},
+    choices: string[] = [],
   ): Promise<{ facts: RelayFacts; out: Outgoing[] }> => {
-    const said = say(texts, name, language ?? "km", details);
+    const said = say(texts, name, language ?? "km", details, choices);
     if (!said) {
       return { facts: { answered: false }, out: [] };
     }
@@ -433,15 +472,86 @@ export async function tenantAnswer(
   if (tapped === "button.back_menu") {
     return answer("menu", { step: "menu" });
   }
+  const person = personData(access?.data ?? null);
+  const faq = texts.faq ?? [];
+  if (tapped === "button.faq" || (step === "faq" && tapped === null && typed)) {
+    if (faq.length === 0) {
+      return answer("faq_none", { step: "menu" });
+    }
+    const km = (language ?? "km") === "km";
+    const choices = faq.map(
+      (entry) =>
+        `${entry.number}. ${km ? entry.question_km : entry.question_en}`,
+    );
+    const asked = tapped === null ? FAQ_NUMBER.exec(typed) : null;
+    const entry = asked
+      ? faq.find((item) => item.number === Number(asked[1]))
+      : undefined;
+    if (entry) {
+      return answer(
+        "faq_answer",
+        { step: "faq" },
+        {},
+        {
+          question: km ? entry.question_km : entry.question_en,
+          answer: km ? entry.answer_km : entry.answer_en,
+        },
+        choices,
+      );
+    }
+    return answer("faq_list", { step: "faq" }, {}, {}, choices);
+  }
   if (tapped === "button.problem") {
     return answer("report_kind", { step: "menu" });
   }
-  // FAQ, My requests, Fixed or Not fixed, or a typed message: the office answers when it opens.
-  const said = say(texts, "office_away", language ?? "km");
-  return {
-    facts: { answered: false },
-    out: said ? [{ bot: "TENANT", chatId: user, said }] : [],
-  };
+  if (tapped === "button.fixed" || tapped === "button.not_fixed") {
+    // The newest repair marked done on the person's Lease, as the office sent it. The relay says
+    // it once; the office closes or reopens the report when it collects the message.
+    const fixed = tapped === "button.fixed";
+    const number = typeof person.check === "string" ? person.check : null;
+    if (number !== null) {
+      await env.DB.prepare(
+        "UPDATE access SET data = json_set(data, '$.check', NULL) " +
+          "WHERE bot = 'TENANT' AND user_id = ? AND json_valid(data)",
+      )
+        .bind(user)
+        .run();
+    }
+    return number === null
+      ? answer("check_nothing", { step: "menu" }, { check: { fixed, number } })
+      : answer(
+          fixed ? "check_fixed" : "check_not_fixed",
+          { step: "menu" },
+          { check: { fixed, number } },
+          { number },
+        );
+  }
+  if (tapped === "button.my_requests") {
+    const lines = object(person.requests)?.[language ?? "km"];
+    return typeof lines === "string" && lines !== ""
+      ? answer(
+          "my_requests",
+          { step: "menu" },
+          {},
+          { unit: String(person.unit ?? ""), list: lines },
+        )
+      : answer("my_none", { step: "menu" });
+  }
+  // Anything else a linked person types: the menu again, as the office answers.
+  return answer("menu", { step: "menu" });
+}
+
+// What the office sent for one linked person (the access list): the Unit, the places, and since
+// DL-219 My requests in both languages and the number of a repair waiting for Fixed or Not fixed.
+function personData(data: string | null): Json {
+  if (data === null) {
+    return {};
+  }
+  try {
+    return object(JSON.parse(data)) ?? {};
+  } catch {
+    return {};
+  }
 }
 
 type Answer = (
@@ -449,6 +559,7 @@ type Answer = (
   next: Partial<Chat> & { step: string },
   facts?: Omit<RelayFacts, "answered" | "step">,
   details?: Record<string, string>,
+  choices?: string[],
 ) => Promise<{ facts: RelayFacts; out: Outgoing[] }>;
 
 async function linkTry(
@@ -470,8 +581,13 @@ async function linkTry(
     );
   }
   const links = await offlineLinks(env);
+  if (!links || !env.LINK_CHECK_KEY) {
+    // Without the check list or its key the relay cannot tell: the office answers this one.
+    await saveChat(env, user, { step: "menu" }, now);
+    return { facts: { answered: false }, out: [] };
+  }
   let found: { unit: string; places: unknown } | undefined;
-  if (links && env.LINK_CHECK_KEY && unitKey(unit) !== "") {
+  if (unitKey(unit) !== "") {
     for (const form of typedNameForms(name)) {
       const code = await linkCode(env.LINK_CHECK_KEY, phone, unit, form);
       const index = code === null ? undefined : links.codes[code];
@@ -514,8 +630,8 @@ async function linkTry(
       );
 }
 
-// A QR scan while the office is away (DL-214): an unused, unexpired code the office sent links the
-// person at once; the office links them again from the same code when it opens.
+// A QR scan (DL-214): an unused, unexpired code the office sent links the person at once; the
+// office links them again from the same code when it collects the message.
 async function codeTry(
   env: Env,
   user: number,
@@ -554,7 +670,7 @@ async function codeTry(
   );
 }
 
-// A Problem report form sent while the office is away: the answer to the tenant and, when it is
+// A Problem report form (DL-210, DL-219): the answer to the tenant and, when it is
 // urgent, the alert to the caretaker on shift and the Authorizers.
 export function formAnswers(
   texts: OfflineTexts,

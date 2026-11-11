@@ -40,7 +40,7 @@ export interface Env {
   OFFICE_PUBLIC_KEY: string;
   OFFICE_PULL_KEY: string;
   // The key of the scrambled Lease check codes (DL-210), the same as the office's
-  // link-check.key; without it the relay does not link anyone while the office is away.
+  // link-check.key; without it the relay links nobody by name (the office does).
   LINK_CHECK_KEY?: string;
   CUSTOMER_BOT_TOKEN?: string;
   TENANT_BOT_TOKEN?: string;

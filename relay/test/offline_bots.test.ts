@@ -1,13 +1,12 @@
-// The Customer bot and the Staff bot while the office is away (DL-213): the relay asks every
-// Send an inquiry question, answers FAQ and Contact office, says "received" to a staff form,
-// alerts the caretaker on shift for an urgent staff report, and tells the office what it did.
-// While the office pulls, the relay answers nothing.
+// The Customer bot and the Staff bot answered by the relay (DL-213; DL-219: every message at
+// once, app open or closed): the relay asks every Send an inquiry question, answers FAQ and
+// Contact office, says "received" to a staff form, alerts the caretaker on shift for an urgent
+// staff report, and tells the office what it did.
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { handle } from "../src/index.ts";
-import { OFFICE_AWAY_SECONDS } from "../src/offline.ts";
 import {
   moveMonths,
   propertyToday,
@@ -515,7 +514,7 @@ test("staff forms at night: 'received' at once, and an urgent report reaches the
       { answered: true, alerted: false },
     ],
   );
-  // With the office back, the forms and chats are only kept for it.
+  // DL-219: with the office open (it pulled a moment ago), the relay still answers at once.
   sent.length = 0;
   await handle(
     await officeRequest("GET", "/office/items", NOW + 10),
@@ -540,19 +539,9 @@ test("staff forms at night: 'received' at once, and an urgent report reaches the
     fetcher,
     NOW + 20,
   );
-  assert.equal(sent.length, 0);
-  const later = await sealedItems(env);
-  assert.equal(later.at(-1).relay, undefined);
-  // And when it has been away again for 150 seconds, the relay answers again.
-  await sendUpdate(
-    env,
-    "customer",
-    message(CUSTOMER, { text: "/start" }),
-    fetcher,
-    NOW + 10 + OFFICE_AWAY_SECONDS + 1,
-  );
   assert.deepEqual(
-    sent.map((m) => m.text),
-    ["km welcome"],
+    sent.map((m) => m.chat_id),
+    [AUTHORIZER, CARETAKER_ON, STAFF, STAFF, CUSTOMER],
   );
+  assert.equal((await sealedItems(env)).at(-1).relay.answered, true);
 });

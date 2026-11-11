@@ -211,4 +211,4 @@ chmod 600 "$TG/jobs.env" "$TG/wrangler.toml"
 
 printf '\nAll done. Next:\n'
 printf '  1. Close the test app if it is open, then double-click Start test app.command.\n'
-printf '  2. In Telegram, send the word ping to each bot. Within a minute each one answers.\n'
+printf '  2. In Telegram, send the word ping to each bot. Within 3 minutes each one answers.\n'

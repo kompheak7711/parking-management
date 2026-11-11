@@ -1,4 +1,4 @@
-"""The send job (bots plan, "The office app side"): every minute, send each message waiting in
+"""The send job (bots plan, "The office app side"): every 10 seconds, send each message waiting in
 the outbox to Telegram and record the try. A failed try is tried again after a growing wait
 (the database decides when); after 7 days of failures the message is given up. Messages failing
 for 12 hours show on the health page.

@@ -460,7 +460,16 @@ test("the Tenant bot form: the page, its choices and the person's places, then t
   const places = {
     places: [{ item_id: "i-1", number: 2, name_en: "Bedroom" }],
   };
-  const list = { users: [{ id: 5151, role: "TENANT", data: places }] };
+  // DL-219: My requests and the repair to check are for the chat, not the form.
+  const list = {
+    users: [
+      {
+        id: 5151,
+        role: "TENANT",
+        data: { ...places, requests: { en: "UP1" }, check: "UP1" },
+      },
+    ],
+  };
   assert.equal(
     (
       await handle(
