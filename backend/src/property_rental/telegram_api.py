@@ -33,6 +33,9 @@ can get a one-time Telegram QR, and `POST .../telegram/link-codes` makes one for
 t.me link and its QR picture, shown once (`leases.sign` for a Lease, `short_stays.desk` for a
 Booking).
 
+DL-215: `GET .../telegram/receipts` lists the Receipts of the last 45 days and who got them on
+Telegram (`telegram.read`).
+
 The database functions check the rights again.
 """
 
@@ -108,6 +111,8 @@ class TelegramPageFlow(Protocol):
 
     def invoices(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
+    def receipts(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID: ...
 
     def contact(self, property_id: UUID, *, actor_id: str) -> Json: ...
@@ -158,6 +163,9 @@ class UnavailableTelegramPageFlow:
         raise ProductUnavailable
 
     def invoices(self, property_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def receipts(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
     def retry(self, property_id: UUID, message_id: UUID, **_: object) -> UUID:
@@ -245,6 +253,11 @@ class PostgresTelegramPageFlow:
     def invoices(self, property_id: UUID, *, actor_id: str) -> Json:
         return _json(
             self._one("SELECT app.telegram_invoices_page(%s, %s)", (property_id, UUID(actor_id)))
+        )
+
+    def receipts(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one("SELECT app.telegram_receipts_page(%s, %s)", (property_id, UUID(actor_id)))
         )
 
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID:
@@ -464,6 +477,15 @@ def create_telegram_router(
         response.headers["Cache-Control"] = "private, no-store"
         try:
             return envelope(request, flow.invoices(property_id, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @pages.get("/telegram/receipts")
+    def telegram_receipts(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, TELEGRAM_READ, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.receipts(property_id, actor_id=actor.actor_id))
         except REFUSED as exc:
             raise _http(exc) from exc
 

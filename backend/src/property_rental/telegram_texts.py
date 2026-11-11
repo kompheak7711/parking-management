@@ -187,6 +187,19 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "If you have already paid, thank you, and please ignore this message."
         ),
     },
+    # DL-215: the Receipt of a Payment. Khmer is new and needs the native check.
+    "tenant.receipt": {
+        "km": (
+            "✅ បង្កាន់ដៃ {number}\n{unit}\n"
+            "កាលបរិច្ឆេទ៖ {date}\nបានទទួល៖ {amount} ({method})\n\n{list}\n\n"
+            "សូមអរគុណសម្រាប់ការបង់ប្រាក់។"
+        ),
+        "en": (
+            "✅ Receipt {number}\n{unit}\n"
+            "Date: {date}\nReceived: {amount} ({method})\n\n{list}\n\n"
+            "Thank you for your payment."
+        ),
+    },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
         "en": "How can we help you?",

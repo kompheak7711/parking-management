@@ -81,6 +81,23 @@ export interface InvoicesPage {
   rules: { remind_days: number; days: number };
 }
 
+/** One Receipt and who got it on Telegram (DL-215). */
+export interface TelegramReceipt {
+  id: string;
+  number: string;
+  customer: string;
+  /** RECEIVED or REVERSED. */
+  status: string;
+  issued_at: string;
+  amount_usd_cents: number;
+  sent: InvoiceSent[];
+}
+
+export interface ReceiptsPage {
+  receipts: TelegramReceipt[];
+  rules: { days: number };
+}
+
 export interface BotHealth {
   code: string;
   name: string;
@@ -343,6 +360,8 @@ export interface TelegramApi {
   health: (propertyId: string) => Promise<HealthPage>;
   /** The Invoices of the last weeks and who got them on Telegram (DL-211). */
   invoices: (propertyId: string) => Promise<InvoicesPage>;
+  /** The Receipts of the last weeks and who got them on Telegram (DL-215). */
+  receipts: (propertyId: string) => Promise<ReceiptsPage>;
   /** Sends a message the app gave up on once more and answers the page again. */
   retry: (propertyId: string, messageId: string) => Promise<HealthPage>;
   contact: (propertyId: string) => Promise<ContactPage>;
@@ -483,6 +502,37 @@ export function invoicesPageOf(value: unknown): InvoicesPage {
       };
     }),
     rules: { remind_days: whole(rules.remind_days), days: whole(rules.days) },
+  };
+}
+
+function sentOf(value: unknown): InvoiceSent[] {
+  return list(value).map((one) => {
+    const person = record(one);
+    return {
+      telegram_user_id: whole(person.telegram_user_id),
+      queued_at: text(person.queued_at),
+      state: text(person.state),
+      sent_at: maybeText(person.sent_at),
+    };
+  });
+}
+
+export function receiptsPageOf(value: unknown): ReceiptsPage {
+  const page = record(value);
+  return {
+    receipts: list(page.receipts).map((item) => {
+      const row = record(item);
+      return {
+        id: text(row.id),
+        number: text(row.number),
+        customer: text(row.customer),
+        status: text(row.status),
+        issued_at: text(row.issued_at),
+        amount_usd_cents: whole(row.amount_usd_cents),
+        sent: sentOf(row.sent),
+      };
+    }),
+    rules: { days: whole(record(page.rules).days) },
   };
 }
 
@@ -818,6 +868,9 @@ export const telegramApi: TelegramApi = {
   },
   async invoices(propertyId) {
     return invoicesPageOf(await request(`${root(propertyId)}/invoices`));
+  },
+  async receipts(propertyId) {
+    return receiptsPageOf(await request(`${root(propertyId)}/receipts`));
   },
   async retry(propertyId, messageId) {
     const answer = record(

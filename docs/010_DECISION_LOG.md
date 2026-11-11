@@ -2957,3 +2957,17 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Next (owner card of 11 Nov 2026, "All three, in that order"):** the support bot also sends Receipts, then notices, then warnings, one at a time with an owner test after each.
 - **Links:** DL-128, DL-210, DL-211, DL-213.
 - **Decision date:** 2026-11-11.
+
+## DL-215 — Telegram bots: Receipts go to the people linked to the Lease or stay
+
+- **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/telegram-receipts (on DL-214) WITH THE RECOMMENDED ANSWER; WAITS FOR THE OWNER'S CARD, TEST AND OK TO MERGE`
+- **Source:** the owner on 11 Nov 2026: "CHETANA Residence support bot is also responsible for sending invoice, reminder, receipt, and any notice or warning", and on the card "Which should CHETANA Residence support send next, after the QR?": "All three, in that order" (Receipts, then notices, then warnings). Who gets a Receipt is the owner's card "Who should get Receipts on Telegram, and for which money?" (recommended: "Tenants and guests, with deposits"). Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) Which Receipts.** Every Payment makes one Receipt (migration 40). Each Receipt goes on Telegram once, to each live link of the Lease the Payment names, of the Leases of the Invoices and late-payment charges it paid, of the stay whose Invoice it paid, and of the payer. Money for a Security Deposit is a Payment too, so its Receipt goes the same way. A short-stay cash deposit or card hold is not a Payment and makes no Receipt. A reversed Payment is not sent.
+- **(B) What it says.** The Receipt number (the Payment's document number), the Unit, the date, the amount received and the method (riel also shows its US dollar value), what it paid (each Invoice, each late-payment charge, the Security Deposit) and money not used yet. Labels are in the language the person chose.
+- **(C) When.** The pull job (about once a minute) queues the Receipts of the last 3 days that a linked person has not had yet, so what the money paid is final when the message is made. A person who links later (a guest who paid before the QR at check-in) also gets the Receipts of the day before the link.
+- **(D) The office.** Office › Telegram › Linked tenants shows "Receipts on Telegram": each Receipt of the last 45 days, who got it, and how many reached nobody.
+- **Open:** the native Khmer check of the new texts; whether a reversed Payment should send a message; the owner's card answer (guests and deposits are one switch each in the migration).
+- **Built:** migration `20270713_385` (DB-TG-022), API-TG-010, `telegram_texts.py` (`tenant.receipt`), `telegram_store.py`, `telegram_pull_job.py`, `frontend/src/telegram/TelegramPages.tsx`.
+- **Links:** DL-211, DL-214.
+- **Decision date:** 2026-11-11.

@@ -133,6 +133,7 @@ class FakeStore:
         self.inquiry_answers: list[dict[str, Any]] = []
         self.reminder_runs = 0
         self.invoice_reminder_runs = 0
+        self.receipt_runs = 0
         self.blocked = False
         # The Staff bot (migration 20270620_331); None is a job given no service actor.
         self.staff_ready = True
@@ -230,6 +231,10 @@ class FakeStore:
 
     def invoice_reminders(self) -> int:
         self.invoice_reminder_runs += 1
+        return 0
+
+    def receipts_queue(self) -> int:
+        self.receipt_runs += 1
         return 0
 
     def visit_requests_remove_old(self) -> int:

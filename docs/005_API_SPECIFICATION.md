@@ -2307,3 +2307,7 @@ Added by DL-214 (migration `20270712_384`, DB-TG-021). Both need `leases.sign` (
 Refusals: 400 (not exactly one stay), 403 (no right), 409 (the bot's user name is not known yet), 422 (the person is not on a live Lease or stay), 503 (the link is not a valid one-time Telegram link).
 
 `GET …/telegram/links` (API-TG-001) also answers `booking_id`, `booking_number` and `stay_end_date` for each link; a guest's link ends with `STAY_ENDED`.
+
+### API-TG-010 Receipts on Telegram — 2026-11-11
+
+Added by DL-215 (migration `20270713_385`, DB-TG-022). `GET /api/v1/properties/{property_id}/telegram/receipts` (`telegram.read`, `Cache-Control: private, no-store`) answers `receipts` (the Receipts of the last 45 days, each with `id`, `number`, `customer`, `status` (`RECEIVED` or `REVERSED`), `issued_at`, `amount_usd_cents` and `sent`, as API-TG-008) and `rules` (`days`). Refusals: 403 (no right).

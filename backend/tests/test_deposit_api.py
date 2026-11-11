@@ -377,7 +377,8 @@ def test_scope_correction_exposes_no_provisional_receipt_or_final_settlement_com
     api = client(InMemoryDepositFlow(snapshot(property_id)), actor(property_id, "deposits.read"))
     routes = cast(FastAPI, api.app).openapi()["paths"]
     shapes = {re.sub(r"\{[^}]+\}", "{}", path) for path in routes}
-    assert [path for path in routes if path.endswith("/receipts")] == [
+    # The only receipts command (POST); GET /telegram/receipts (DL-215) only lists what was sent.
+    assert [path for path in routes if path.endswith("/receipts") and "post" in routes[path]] == [
         "/api/v1/deposits/{deposit_id}/receipts"
     ]
     assert set(routes["/api/v1/deposits/{deposit_id}/receipts"]) == {"post"}

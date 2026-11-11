@@ -57,6 +57,8 @@ class TelegramStore(Protocol):
 
     def invoice_reminders(self) -> int: ...
 
+    def receipts_queue(self) -> int: ...
+
     def visit_requests_remove_old(self) -> int: ...
 
     def tenant_form_data(self) -> dict[str, Any]: ...
@@ -322,6 +324,12 @@ class PostgresTelegramStore:
         """Queue the reminder for Invoices due in 1 to 3 days (DL-211)."""
         return int(
             self._one("SELECT app.telegram_invoice_reminders(%s, %s)", self._property, self._actor)
+        )
+
+    def receipts_queue(self) -> int:
+        """Queue the Receipts of the last days not yet sent to someone linked (DL-215)."""
+        return int(
+            self._one("SELECT app.telegram_receipts_queue(%s, %s)", self._property, self._actor)
         )
 
     def visit_requests_remove_old(self) -> int:

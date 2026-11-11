@@ -633,6 +633,25 @@ const TEXT = {
   inv_failed: ["Not delivered", "មិនបានទៅដល់"],
   inv_paper: ["Give a paper copy", "ផ្តល់ច្បាប់ចម្លងក្រដាស"],
   inv_no_reminder: ["Not yet", "មិនទាន់"],
+  // Receipts on Telegram (DL-215, owner 11 Nov 2026). All Khmer here is new and needs the native
+  // check.
+  rec_h: ["Receipts on Telegram", "បង្កាន់ដៃតាមតេឡេក្រាម"],
+  rec_sub: [
+    "Each Receipt goes to the people linked to the Lease or stay it paid, about a minute after it is saved. Receipts of the last {0} days.",
+    "បង្កាន់ដៃនីមួយៗ ផ្ញើទៅអ្នកដែលភ្ជាប់នឹងកិច្ចសន្យា ឬការស្នាក់នៅដែលវាបានបង់ ប្រហែលមួយនាទីបន្ទាប់ពីរក្សាទុក។ បង្កាន់ដៃ {0} ថ្ងៃចុងក្រោយ។",
+  ],
+  rec_paper_t: [
+    "Receipts that did not reach anyone on Telegram: {0}. Give these people a paper copy if they need one.",
+    "បង្កាន់ដៃ {0} មិនបានទៅដល់នរណាម្នាក់តាមតេឡេក្រាមទេ។ សូមផ្តល់ច្បាប់ចម្លងក្រដាស ប្រសិនបើពួកគេត្រូវការ។",
+  ],
+  rec_none: [
+    "No Receipts were made in this time.",
+    "មិនមានបង្កាន់ដៃក្នុងរយៈពេលនេះទេ។",
+  ],
+  c_receipt: ["Receipt", "បង្កាន់ដៃ"],
+  c_amount: ["Amount", "ចំនួនទឹកប្រាក់"],
+  c_made: ["Made on", "ធ្វើនៅ"],
+  rec_reversed: ["Reversed", "បានបញ្ច្រាស"],
   // The one-time Telegram QR (DL-214, owner 11 Nov 2026 "Yes, QR for tenants and guests"). All
   // Khmer here is new and needs the native check.
   qr_h: ["Telegram", "តេឡេក្រាម"],

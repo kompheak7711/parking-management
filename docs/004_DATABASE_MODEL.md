@@ -5978,3 +5978,12 @@ Added by DL-214 (migration `20270712_384`, forward-only).
 - `app.tenant_link_stay_live(lease, booking, day)`: a Lease is live while SIGNED and not past its End Date; a stay while not past check-out and CHECKED_IN, or BOOKED from its check-in day. The link, access, form and links-page functions use it, and `telegram_tenant_end_finished_links` ends a link with `LEASE_ENDED` or `STAY_ENDED`.
 - Functions (granted to `prm_runtime`): `telegram_link_people` and `telegram_link_code_create` (`leases.sign` for a Lease, `short_stays.desk` for a Booking; `55000` when no bot name is known, `22023` when the person is not on a live stay); `telegram_tenant_link_code(property, user, code, actor)` (`telegram.operate`; answers `LINKED` (with `repeated` and `guest`), `USED`, `EXPIRED`, `ENDED` or `NOT_FOUND`; ends the account's earlier link with `NEW_LINK`); `telegram_link_codes_offline` (`telegram.operate`; the unused live codes' hashes, Units and expiry for the relay); `telegram_bot_name_set` (`telegram.operate`; a valid Telegram user name only).
 - `telegram_invoice_people` and `telegram_invoice_reminders` skip guest links (`link.booking_id IS NULL`): guests get no Invoices on Telegram.
+
+## DB-TG-022 — Receipts on Telegram (DL-215)
+
+Added by DL-215 (migration `20270713_385`, forward-only).
+
+- New append-only table `app.telegram_receipt_notices` (one row per Receipt and Telegram account, with its outbox message; unique per Receipt and account; `app.reject_telegram_change()`; no runtime grant).
+- `app.telegram_receipts_queue(property, actor)` (`telegram.operate`, granted to `prm_runtime`, run by the pull job) queues `tenant.receipt` for the Receipts of the last 3 days whose Payment is RECEIVED, for each live link of the Payment's Lease, the Leases of the Invoices and late-payment charges it paid, the stays whose Invoice it paid, and the payer, not yet sent to that account and issued no earlier than a day before the link.
+- `app.telegram_receipt_details(receipt, language)` (internal) builds the fields: `number` (`payments.payment_number`), `unit`, `date`, `amount` (riel with its US dollar value), `method`, `list` (Invoices, late-payment charges, Security Deposit, money not used yet).
+- `app.telegram_receipts_page(property, actor)` (`telegram.read`) lists the Receipts of the last 45 days with who got them.

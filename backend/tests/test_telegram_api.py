@@ -75,6 +75,10 @@ class InMemoryTelegram:
         self._check(property_id)
         return {"invoices": [{"number": "INV-26-0001", "sent": []}], "rules": {"remind_days": 3}}
 
+    def receipts(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        return {"receipts": [{"number": "R26-0001", "sent": []}], "rules": {"days": 45}}
+
     def retry(self, property_id: UUID, message_id: UUID, *, actor_id: str) -> UUID:
         self._check(property_id)
         if message_id in self.retried:
@@ -184,7 +188,8 @@ def base(flow: InMemoryTelegram) -> str:
 
 def test_the_telegram_pages_need_telegram_read() -> None:
     flow = InMemoryTelegram()
-    for url in (f"{base(flow)}/links", f"{base(flow)}/health", f"{base(flow)}/invoices"):
+    for page in ("links", "health", "invoices", "receipts"):
+        url = f"{base(flow)}/{page}"
         assert client(flow).get(url).status_code == 403
         answer = client(flow, "telegram.read").get(url)
         assert answer.status_code == 200

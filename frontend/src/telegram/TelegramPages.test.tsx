@@ -21,12 +21,14 @@ import {
   type HealthPage,
   type InvoicesPage,
   type LinksPage,
+  type ReceiptsPage,
   type TelegramApi,
   TelegramError,
   type VisitRequest,
   type VisitRequestDetail,
   type VisitRequestsPage,
   contactPageOf,
+  receiptsPageOf,
   faqPageOf,
   healthPageOf,
   linksPageOf,
@@ -336,6 +338,46 @@ const INVOICES: InvoicesPage = {
   rules: { remind_days: 3, days: 45 },
 };
 
+const RECEIPTS: ReceiptsPage = {
+  receipts: [
+    {
+      id: "rec-1",
+      number: "R2611-0007",
+      customer: "Sao Rina",
+      status: "RECEIVED",
+      issued_at: "2026-11-11T03:00:00Z",
+      amount_usd_cents: 90000,
+      sent: [
+        {
+          telegram_user_id: 9001,
+          queued_at: "2026-11-11T03:01:00Z",
+          state: "SENT",
+          sent_at: "2026-11-11T03:01:05Z",
+        },
+      ],
+    },
+    {
+      id: "rec-2",
+      number: "R2611-0008",
+      customer: "Kim Dara",
+      status: "RECEIVED",
+      issued_at: "2026-11-11T03:10:00Z",
+      amount_usd_cents: 5000,
+      sent: [],
+    },
+    {
+      id: "rec-3",
+      number: "R2611-0009",
+      customer: "Lim Bora",
+      status: "REVERSED",
+      issued_at: "2026-11-11T03:20:00Z",
+      amount_usd_cents: 7000,
+      sent: [],
+    },
+  ],
+  rules: { days: 45 },
+};
+
 function fakeApi(extra: Partial<TelegramApi> = {}): TelegramApi {
   return {
     contact: vi.fn(() => Promise.resolve(CONTACT)),
@@ -372,6 +414,7 @@ function fakeApi(extra: Partial<TelegramApi> = {}): TelegramApi {
     removeLink: vi.fn(() => Promise.resolve({ ...LINKS, linked: [] })),
     health: vi.fn(() => Promise.resolve(HEALTH)),
     invoices: vi.fn(() => Promise.resolve(INVOICES)),
+    receipts: vi.fn(() => Promise.resolve(RECEIPTS)),
     retry: vi.fn(() =>
       Promise.resolve({
         ...HEALTH,
@@ -453,6 +496,44 @@ describe("Office › Telegram", () => {
       "A reminder goes 3 days before the due date",
     );
     expect(api.invoices).toHaveBeenCalledWith("prop-1");
+  });
+
+  it("TEST-FE-1954 Receipts on Telegram shows who got each Receipt, a Receipt that reached nobody, and a reversed one", async () => {
+    const api = fakeApi();
+    render(
+      <LinkedTenantsPage
+        active
+        api={api}
+        capabilities={READER}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    const receipts = await screen.findByRole("region", {
+      name: "Receipts on Telegram",
+    });
+    const sent = await within(receipts).findByRole("row", {
+      name: /R2611-0007/,
+    });
+    expect(sent.textContent).toContain("Sent to 1");
+    expect(sent.textContent).toContain("$900.00");
+    const paper = within(receipts).getByRole("row", { name: /R2611-0008/ });
+    expect(paper.textContent).toContain("Give a paper copy");
+    const reversed = within(receipts).getByRole("row", { name: /R2611-0009/ });
+    expect(reversed.textContent).toContain("Reversed");
+    expect(
+      within(receipts).getByText(
+        "Receipts that did not reach anyone on Telegram: 1. Give these people a paper copy if they need one.",
+      ),
+    ).toBeTruthy();
+    expect(receipts.textContent).toContain("Receipts of the last 45 days.");
+    expect(api.receipts).toHaveBeenCalledWith("prop-1");
+    expect(receiptsPageOf(JSON.parse(JSON.stringify(RECEIPTS)))).toEqual(
+      RECEIPTS,
+    );
+    expect(() => receiptsPageOf({ receipts: [], rules: {} })).toThrow(
+      TelegramError,
+    );
   });
 
   it("TEST-FE-1501 Remove link needs a reason, sends it and shows the list the server answers; an ended link reads the list again; a person without telegram.operate gets no button", async () => {

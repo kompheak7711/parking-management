@@ -66051,6 +66051,60 @@
       "notes": "Telegram QR client: reads the people, makes a code with the CSRF token, refuses a bad answer, reads a guest's stay on Linked tenants."
     },
     {
+      "test_id": "test_a_payment_sends_its_receipt_with_what_it_paid_once",
+      "upstream_ids": [
+        "DL-215",
+        "DB-TG-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_receipts_migration.py",
+      "status": "implemented",
+      "notes": "Receipts on Telegram: Receive payment's Receipt goes to the linked tenant once, after the pull job runs, with the Invoice it paid and money not used yet, in the tenant's language; the office page lists who got it."
+    },
+    {
+      "test_id": "test_a_receipt_of_someone_not_linked_is_not_sent",
+      "upstream_ids": [
+        "DL-215",
+        "DB-TG-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_receipts_migration.py",
+      "status": "implemented",
+      "notes": "Receipts on Telegram: a Receipt of a payer with no link goes to nobody."
+    },
+    {
+      "test_id": "test_receipts_need_the_telegram_rights_and_stay_as_sent",
+      "upstream_ids": [
+        "DL-215",
+        "DB-TG-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_receipts_migration.py",
+      "status": "implemented",
+      "notes": "Receipts on Telegram: queueing needs telegram.operate; the notices are append-only and not readable by the runtime role."
+    },
+    {
+      "test_id": "test_a_receipt_reads_as_the_tenant_gets_it_in_english_and_khmer",
+      "upstream_ids": [
+        "DL-215"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_receipts.py",
+      "status": "implemented",
+      "notes": "Receipts on Telegram: the send job puts the Receipt text together in English and Khmer from the queued fields."
+    },
+    {
+      "test_id": "TEST-FE-1954",
+      "upstream_ids": [
+        "DL-215",
+        "API-TG-010"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Receipts on Telegram: Linked tenants lists who got each Receipt, counts the Receipts that reached nobody, and marks a reversed one."
+    },
+    {
       "test_id": "test_an_issued_invoice_goes_to_the_linked_tenant_once",
       "upstream_ids": [
         "DL-211",

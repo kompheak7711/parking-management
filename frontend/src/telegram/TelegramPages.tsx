@@ -30,7 +30,8 @@ import {
   type FaqWords,
   type HealthPage,
   type InvoicesPage,
-  type TelegramInvoice,
+  type ReceiptsPage,
+  type TelegramReceipt,
   type LinkedTenant,
   type LinksPage,
   type TelegramApi,
@@ -414,6 +415,12 @@ export function LinkedTenantsPage({
         language={language}
         propertyId={propertyId}
       />
+      <ReceiptsOnTelegram
+        active={active}
+        api={api}
+        language={language}
+        propertyId={propertyId}
+      />
       {removing !== null && (
         <RemoveLinkDialog
           api={api}
@@ -447,9 +454,9 @@ export function LinkedTenantsPage({
 
 // Invoices on Telegram (DL-211): who got each issued Invoice, and who needs a paper copy.
 
-function invoiceReached(
-  invoice: TelegramInvoice,
-): "sent" | "waiting" | "failed" | "none" {
+function invoiceReached(invoice: {
+  sent: readonly { state: string }[];
+}): "sent" | "waiting" | "failed" | "none" {
   if (invoice.sent.length === 0) return "none";
   if (invoice.sent.some((person) => person.state === "SENT")) return "sent";
   if (invoice.sent.every((person) => person.state === "GAVE_UP"))
@@ -562,6 +569,112 @@ function InvoicesOnTelegram({
           <p className="ui-tfoot">
             {tt(language, "inv_sub", data.rules.remind_days, data.rules.days)}
           </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+// Receipts on Telegram (DL-215): who got each Receipt, and who may need a paper copy.
+
+function ReceiptsOnTelegram({
+  language,
+  propertyId,
+  active,
+  api,
+}: {
+  language: Language;
+  propertyId: string;
+  active: boolean;
+  api: TelegramApi;
+}) {
+  const page = usePage<ReceiptsPage>(propertyId, active, api.receipts);
+  const data = page.data;
+  const reachedOf = (receipt: TelegramReceipt) => invoiceReached(receipt);
+  const paper =
+    data === null
+      ? 0
+      : data.receipts.filter((receipt) => {
+          if (receipt.status !== "RECEIVED") return false;
+          const reached = reachedOf(receipt);
+          return reached === "none" || reached === "failed";
+        }).length;
+  return (
+    <section aria-labelledby="tg-receipts" className="ui-card pad0">
+      <div className="ui-listbar">
+        <h2 id="tg-receipts">{tt(language, "rec_h")}</h2>
+      </div>
+      {data === null ? (
+        <Waiting failed={page.failed} language={language} onRetry={page.load} />
+      ) : (
+        <>
+          {paper > 0 && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{tt(language, "rec_paper_t", paper)}</p>
+            </div>
+          )}
+          {data.receipts.length === 0 ? (
+            <p className="ui-empty">{tt(language, "rec_none")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table className="ui-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_receipt")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_cust")}
+                    </th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_made")}
+                    </th>
+                    <th scope="col">{tt(language, "c_amount")}</th>
+                    <th scope="col">{tt(language, "c_telegram")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.receipts.map((receipt) => {
+                    const reached = reachedOf(receipt);
+                    const sentCount = receipt.sent.filter(
+                      (person) => person.state === "SENT",
+                    ).length;
+                    return (
+                      <tr key={receipt.id}>
+                        <td className="ui-num">{receipt.number}</td>
+                        <td className="ui-wide">{receipt.customer}</td>
+                        <td className="ui-wide ui-num">
+                          {momentText(receipt.issued_at)}
+                        </td>
+                        <td className="ui-num">
+                          {usdFromCents(receipt.amount_usd_cents)}
+                        </td>
+                        <td>
+                          {receipt.status !== "RECEIVED" ? (
+                            <Chip tone="warn">
+                              {tt(language, "rec_reversed")}
+                            </Chip>
+                          ) : reached === "sent" ? (
+                            <Chip tone="ok">
+                              {tt(language, "inv_sent", sentCount)}
+                            </Chip>
+                          ) : reached === "waiting" ? (
+                            <Chip tone="warn">
+                              {tt(language, "inv_waiting")}
+                            </Chip>
+                          ) : reached === "failed" ? (
+                            <Chip tone="err">{tt(language, "inv_failed")}</Chip>
+                          ) : (
+                            <Chip tone="err">{tt(language, "inv_paper")}</Chip>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="ui-tfoot">{tt(language, "rec_sub", data.rules.days)}</p>
         </>
       )}
     </section>
