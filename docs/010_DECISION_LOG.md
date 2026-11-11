@@ -3026,3 +3026,16 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-210, DL-213, DL-214, DL-218.
 - **Decision date:** 2026-11-11.
 
+## DL-220 — Lease number: the Unit number, "L" and a running number (U101L0026)
+
+- **Type:** `OWNER BUSINESS DECISION` for (A) to (D); `TECHNICAL DECISION UNDER THE OWNER'S RULE` for (E) and the database shape.
+- **Status:** `AGREED BY THE OWNER 8 NOV 2026 08:14; BEING BUILT ON BRANCH ui-v81 (DESIGN V81, PULL REQUEST #14, NOT MERGED); WAITS FOR THE OWNER'S TEST AND OK`
+- **Source:** the owner's answer of 8 Nov 2026 08:14 in the thread "Design V1.2". Recorded here by the thread "Database v1.2 review" at the coordinator's request, because the design v81 pull request does not edit the docs/ spec files.
+- **(A) Format.** Every Lease has a Lease number: the Unit number, then "L", then a running number of at least 4 digits, for example U101L0026. After 9999 the number simply grows (U101L10000), as for the document numbers of DL-118 (A).
+- **(B) The Leases already recorded.** They get their number in order of Start Date. Nothing else about them changes.
+- **(C) Where it shows.** In the Lease title, in the Leases list, on Notices and on Invoices.
+- **(D) The database change.** A new migration adds the number. No existing data is changed other than adding the number. This replaces DL-080 (1) ("a Lease has no number").
+- **(E) Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** One running number per Property, so the Leases of one building count up together (U101L0026, then U205L0027). A new Lease takes the next number when it is drafted. Leases with the same Start Date are ordered by the day they were drafted; a draft without a Start Date comes last. The number is written once and never changes, even if the Unit is renamed later. A cancelled draft keeps its number, so the numbers may have gaps. The Lease number is not a `number_rules` document (DL-118 (A)): it has no letters the Owner can change and no year part.
+- **Database:** migration `20270712_363` (UI v81 range, on branch ui-v81 after `20270711_362`): the tables `app.lease_numbers` (one row per Lease, append-only: no update, delete or truncate) and `app.lease_number_counters` (one row per Property; moves up by one only). Only the AFTER INSERT trigger on `app.leases` writes them; `app.leases` itself is not changed. The database model doc gets its entry when the design v81 work is documented.
+- **Links:** DL-080, DL-118.
+- **Decision date:** 2026-11-08.
