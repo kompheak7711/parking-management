@@ -804,9 +804,14 @@ export async function cleanUp(env: Env, now: number): Promise<number> {
   )
     .bind(now - CHAT_STEP_SECONDS)
     .run();
-  await env.DB.prepare("DELETE FROM link_tries WHERE at < ?")
-    .bind(now - LINK_BLOCK_SECONDS)
-    .run();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM link_tries WHERE at < ?").bind(
+      now - LINK_BLOCK_SECONDS,
+    ),
+    env.DB.prepare("DELETE FROM start_codes_used WHERE used_at < ?").bind(
+      now - LINK_BLOCK_SECONDS,
+    ),
+  ]);
   return old.results.length;
 }
 

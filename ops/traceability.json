@@ -65880,6 +65880,177 @@
       "notes": "The relay's clock: Staff without telegram.operate are refused; an unknown Property is refused."
     },
     {
+      "test_id": "test_a_scan_links_a_new_person_at_once_then_asks_the_language",
+      "upstream_ids": [
+        "DL-214"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: a scan links a new person at once, then the bot asks the language."
+    },
+    {
+      "test_id": "test_a_scan_by_a_person_who_chose_a_language_shows_the_menu",
+      "upstream_ids": [
+        "DL-214"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: a person who chose a language gets the linked text with the menu."
+    },
+    {
+      "test_id": "test_a_code_that_does_not_work_says_why",
+      "upstream_ids": [
+        "DL-214"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: a used, old or unknown code asks for a new QR; an ended Lease or stay says to contact the office."
+    },
+    {
+      "test_id": "test_a_plain_start_or_a_wrong_code_is_not_a_scan",
+      "upstream_ids": [
+        "DL-214"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: Start without a well-formed code is the normal welcome and tries no code."
+    },
+    {
+      "test_id": "test_a_scan_the_relay_answered_is_linked_again_without_a_second_answer",
+      "upstream_ids": [
+        "DL-214",
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR while the app is closed: the app saves the link without answering again, and answers only when the database disagrees with the relay."
+    },
+    {
+      "test_id": "test_the_relay_gets_each_unused_codes_hash_and_unit_even_without_the_link_key",
+      "upstream_ids": [
+        "DL-214",
+        "DL-210"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR while the app is closed: the relay gets only the hash, Unit and expiry of each unused code."
+    },
+    {
+      "test_id": "test_the_send_job_learns_the_bot_names_once_a_day",
+      "upstream_ids": [
+        "DL-214"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: the send job learns each bot's user name with getMe once a day and tries again after a refusal."
+    },
+    {
+      "test_id": "test_the_qr_picture_is_only_for_a_one_time_telegram_link",
+      "upstream_ids": [
+        "DL-214",
+        "API-TG-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_link_qr.py",
+      "status": "implemented",
+      "notes": "Telegram QR: the server draws a QR only for a t.me link with a one-time code."
+    },
+    {
+      "test_id": "test_no_qr_before_the_send_job_knows_the_bot_name",
+      "upstream_ids": [
+        "DL-214",
+        "DB-TG-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_link_qr_migration.py",
+      "status": "implemented",
+      "notes": "Telegram QR: no QR until the bot's user name is known; a bad user name is refused."
+    },
+    {
+      "test_id": "test_a_tenant_scans_once_and_is_linked_to_the_lease",
+      "upstream_ids": [
+        "DL-214",
+        "DB-TG-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_link_qr_migration.py",
+      "status": "implemented",
+      "notes": "Telegram QR: only the code's hash is kept; one scan links the tenant to the Lease; a second account is refused."
+    },
+    {
+      "test_id": "test_a_guest_is_linked_until_the_stay_is_over_and_gets_no_invoice",
+      "upstream_ids": [
+        "DL-214",
+        "DB-TG-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_link_qr_migration.py",
+      "status": "implemented",
+      "notes": "Telegram QR: a guest is linked to the Booking, gets no Invoices, and the link ends with STAY_ENDED."
+    },
+    {
+      "test_id": "test_the_qr_rights_and_the_one_stay_rule",
+      "upstream_ids": [
+        "DL-214",
+        "DB-TG-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_link_qr_migration.py",
+      "status": "implemented",
+      "notes": "Telegram QR: exactly one Lease or Booking; scanning and the relay codes need telegram.operate; codes are append-only."
+    },
+    {
+      "test_id": "test_a_telegram_qr_needs_the_lease_or_desk_right_and_shows_once",
+      "upstream_ids": [
+        "DL-214",
+        "API-TG-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_api.py",
+      "status": "implemented",
+      "notes": "Telegram QR API: Sign Lease or the front desk; exactly one stay; the answer has the QR picture and is not cached."
+    },
+    {
+      "test_id": "TEST-FE-1951",
+      "upstream_ids": [
+        "DL-214",
+        "API-TG-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramQrCard.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram QR on a Lease: pick a person, the QR is shown once with the name, Unit and expiry, then closed."
+    },
+    {
+      "test_id": "TEST-FE-1952",
+      "upstream_ids": [
+        "DL-214",
+        "API-TG-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramQrCard.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram QR on a Booking: guest words; the bot not ready, nobody, and each refusal say so."
+    },
+    {
+      "test_id": "TEST-FE-1953",
+      "upstream_ids": [
+        "DL-214",
+        "API-TG-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramQrCard.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram QR client: reads the people, makes a code with the CSRF token, refuses a bad answer, reads a guest's stay on Linked tenants."
+    },
+    {
       "test_id": "test_an_issued_invoice_goes_to_the_linked_tenant_once",
       "upstream_ids": [
         "DL-211",

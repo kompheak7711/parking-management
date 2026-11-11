@@ -23,6 +23,7 @@ from property_rental.products_api import (
     ProductConflict,
     ProductForbidden,
     ProductNotFound,
+    ProductRefused,
 )
 
 HEADERS = {
@@ -45,6 +46,9 @@ class InMemoryTelegram:
     steps: list[tuple[str, Json]] = field(default_factory=list)
     owner: bool = False
     starter_loaded: bool = False
+    customer_id: UUID = field(default_factory=uuid4)
+    codes: list[tuple[UUID | None, UUID | None, UUID]] = field(default_factory=list)
+    bot_ready: bool = True
 
     def _check(self, property_id: UUID) -> None:
         if property_id != self.property_id:
@@ -115,6 +119,36 @@ class InMemoryTelegram:
             raise ProductConflict("The FAQ already has questions")
         self.starter_loaded = True
         return {"loaded": 15}
+
+    def link_people(
+        self, property_id: UUID, lease_id: UUID | None, booking_id: UUID | None, *, actor_id: str
+    ) -> Json:
+        self._check(property_id)
+        person = {"customer_id": str(self.customer_id), "name": "Sao Rina", "unit_number": "U302"}
+        return {"people": [person], "bot_ready": self.bot_ready, "hours": 24}
+
+    def link_code(
+        self,
+        property_id: UUID,
+        lease_id: UUID | None,
+        booking_id: UUID | None,
+        customer_id: UUID,
+        *,
+        actor_id: str,
+    ) -> Json:
+        self._check(property_id)
+        if customer_id != self.customer_id:
+            raise ProductRefused("this person is not on a live Lease or stay")
+        if not self.bot_ready:
+            raise ProductConflict("the Tenant bot is not set up yet")
+        self.codes.append((lease_id, booking_id, customer_id))
+        return {
+            "url": "https://t.me/ChetanaSupportBot?start=" + "a1" * 20,
+            "bot": "ChetanaSupportBot",
+            "name": "Sao Rina",
+            "unit_number": "U302",
+            "expires_at": "2026-11-12T04:00:00+00:00",
+        }
 
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json:
         self._check(property_id)
@@ -329,3 +363,37 @@ def test_a_visit_request_step_needs_work_and_a_manager_gives_or_marks_spam() -> 
         ("BOOK", {"visit_at": "2026-11-09T10:00", "note": "Bring the keys"}),
         ("NO_SHOW", {}),
     ]
+
+
+def test_a_telegram_qr_needs_the_lease_or_desk_right_and_shows_once() -> None:
+    """DL-214, API-TG-009: the people of a live Lease or stay, then one QR for one person."""
+    flow = InMemoryTelegram()
+    lease = uuid4()
+    people = f"{base(flow)}/link-people?lease_id={lease}"
+    assert client(flow, "telegram.read").get(people).status_code == 403
+    for right in ("leases.sign", "short_stays.desk"):
+        answer = client(flow, right).get(people)
+        assert answer.status_code == 200
+        assert answer.headers["Cache-Control"] == "private, no-store"
+        assert answer.json()["data"]["people"][0]["name"] == "Sao Rina"
+    desk = client(flow, "short_stays.desk")
+    assert desk.get(f"{base(flow)}/link-people").status_code == 400
+    both = f"{base(flow)}/link-people?lease_id={lease}&booking_id={uuid4()}"
+    assert desk.get(both).status_code == 400
+    url = f"{base(flow)}/link-codes"
+    body = {"booking_id": str(uuid4()), "customer_id": str(flow.customer_id)}
+    assert desk.post(url, json=body).status_code == 403  # no browser mutation checks
+    made = desk.post(url, json=body, headers=HEADERS)
+    assert made.status_code == 201 and made.headers["Cache-Control"] == "private, no-store"
+    data = made.json()["data"]
+    assert data["url"].startswith("https://t.me/ChetanaSupportBot?start=")
+    assert data["qr_svg"].startswith("<svg") and "<script" not in data["qr_svg"]
+    assert flow.codes == [(None, UUID(body["booking_id"]), flow.customer_id)]
+    stranger = {"lease_id": str(lease), "customer_id": str(uuid4())}
+    assert desk.post(url, json=stranger, headers=HEADERS).status_code == 422
+    assert (
+        desk.post(url, json={"customer_id": str(flow.customer_id)}, headers=HEADERS).status_code
+        == 400
+    )
+    flow.bot_ready = False
+    assert desk.post(url, json=body, headers=HEADERS).status_code == 409

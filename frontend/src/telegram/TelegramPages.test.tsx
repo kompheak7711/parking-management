@@ -48,6 +48,8 @@ const LINKS: LinksPage = {
       name: "Sao Rina",
       unit_number: "601",
       lease_end_date: "2027-06-30",
+      booking_number: null,
+      stay_end_date: null,
       linked_at: "2026-11-03T02:40:00Z",
     },
   ],

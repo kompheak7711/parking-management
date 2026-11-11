@@ -65,6 +65,12 @@ class TelegramStore(Protocol):
 
     def offline_clock(self) -> dict[str, Any]: ...
 
+    def tenant_link_code(self, user: int, code: str) -> dict[str, Any]: ...
+
+    def link_codes_offline(self) -> list[dict[str, Any]]: ...
+
+    def bot_name_set(self, bot: str, username: str) -> bool: ...
+
     def tenant_problem_report(
         self,
         inbound_id: str,
@@ -341,6 +347,35 @@ class PostgresTelegramStore:
         result = self._one("SELECT app.telegram_offline_clock(%s, %s)", self._property, self._actor)
         assert isinstance(result, dict)
         return result
+
+    def tenant_link_code(self, user: int, code: str) -> dict[str, Any]:
+        # DL-214: the Tenant bot's Start with the one-time code of a QR.
+        result = self._one(
+            "SELECT app.telegram_tenant_link_code(%s, %s, %s, %s)",
+            self._property,
+            user,
+            code,
+            self._actor,
+        )
+        assert isinstance(result, dict)
+        return result
+
+    def link_codes_offline(self) -> list[dict[str, Any]]:
+        result = self._one(
+            "SELECT app.telegram_link_codes_offline(%s, %s)", self._property, self._actor
+        )
+        assert isinstance(result, list)
+        return [item for item in result if isinstance(item, dict)]
+
+    def bot_name_set(self, bot: str, username: str) -> bool:
+        result = self._one(
+            "SELECT app.telegram_bot_name_set(%s, %s, %s, %s)",
+            self._property,
+            bot,
+            username,
+            self._actor,
+        )
+        return result is True
 
     def tenant_problem_report(
         self,

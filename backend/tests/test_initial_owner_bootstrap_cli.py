@@ -1088,6 +1088,9 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/telegram/health": {"get"},
         "/api/v1/properties/{property_id}/telegram/invoices": {"get"},
         "/api/v1/properties/{property_id}/telegram/outbox/{message_id}/retry": {"post"},
+        # DL-214: the one-time Telegram QR.
+        "/api/v1/properties/{property_id}/telegram/link-people": {"get"},
+        "/api/v1/properties/{property_id}/telegram/link-codes": {"post"},
         # Telegram bots step 2d part 2 (DL-170) and steps 3a to 3c (DL-171 to DL-173).
         "/api/v1/properties/{property_id}/telegram/contact": {"get"},
         "/api/v1/properties/{property_id}/telegram/contact/{message_id}/answer": {"post"},

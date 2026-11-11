@@ -147,6 +147,11 @@ class FakeStore:
         # The Customer and Staff bots while the office is away (migration 20270711_383, DL-213).
         self.clock: dict[str, Any] = {"timezone_name": "Asia/Phnom_Penh", "utc_offset_minutes": 420}
         self.staff_join_state = "WAITING"
+        # The one-time QR (migration 20270712_384, DL-214).
+        self.code_answers: list[dict[str, Any]] = []
+        self.code_tries: list[tuple[int, str]] = []
+        self.start_codes: list[dict[str, Any]] = []
+        self.bot_names: dict[str, str] = {}
 
     def record_item(self, item: dict[str, Any]) -> dict[str, Any]:
         if item["relay_item_id"] in self.items:
@@ -238,6 +243,21 @@ class FakeStore:
 
     def offline_clock(self) -> dict[str, Any]:
         return self.clock
+
+    def tenant_link_code(self, user: int, code: str) -> dict[str, Any]:
+        self.code_tries.append((user, code))
+        answer = self.code_answers.pop(0)
+        if answer["result"] == "LINKED":
+            self.links[user] = {"name": answer["name"], "unit_number": answer["unit_number"]}
+        return answer
+
+    def link_codes_offline(self) -> list[dict[str, Any]]:
+        return self.start_codes
+
+    def bot_name_set(self, bot: str, username: str) -> bool:
+        changed = self.bot_names.get(bot) != username
+        self.bot_names[bot] = username
+        return changed
 
     def tenant_problem_report(
         self,

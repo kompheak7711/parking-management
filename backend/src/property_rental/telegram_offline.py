@@ -75,6 +75,7 @@ MESSAGES: Final[dict[str, tuple[str, str | None]]] = {
     "linked": ("tenant.linked_offline", "tenant.menu"),
     "no_match": ("tenant.no_match", "tenant.reject"),
     "blocked": ("tenant.blocked", "tenant.reject"),
+    "code_bad": ("tenant.code_bad", "tenant.reject"),
     "link_first": ("tenant.link_first", "tenant.start"),
     "contact_ask": ("tenant.contact_ask", "tenant.back"),
     "contact_text_only": ("tenant.contact_text_only", "tenant.back"),
@@ -298,13 +299,29 @@ def staff_offline_texts(data: dict[str, Any], relay_host: str) -> dict[str, Any]
     }
 
 
-def offline_links(data: dict[str, Any], key: str) -> dict[str, Any]:
-    """The scrambled check list: hash -> Unit, and each Unit's number and places."""
+def offline_links(
+    data: dict[str, Any], key: str | None, start_codes: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """The scrambled check list: hash -> Unit, and each Unit's number and places. With the QR
+    codes (DL-214): the SHA-256 of each unused code -> [Unit, the second it stops working]."""
     units: list[dict[str, Any]] = []
     where: dict[str, int] = {}
     codes: dict[str, int] = {}
+    starts: dict[str, list[int]] = {}
+    for code in start_codes or []:
+        unit_id = str(code.get("unit_id"))
+        code_hash = code.get("code_hash")
+        expires = code.get("expires_at")
+        if not isinstance(code_hash, str) or not isinstance(expires, int):
+            continue
+        if unit_id not in where:
+            where[unit_id] = len(units)
+            units.append({"unit": code.get("unit"), "places": code.get("places") or []})
+        starts[code_hash] = [where[unit_id], expires]
     known = data.get("units") or {}
-    for person in data.get("people") or []:
+    # Without the link check key the relay links nobody by name, only by a QR code.
+    people = (data.get("people") or []) if key else []
+    for person in people:
         unit_id = str(person.get("unit_id"))
         unit = known.get(unit_id)
         if not isinstance(unit, dict) or not unit.get("unit_key"):
@@ -315,8 +332,12 @@ def offline_links(data: dict[str, Any], key: str) -> dict[str, Any]:
         for phone in person.get("phones") or []:
             for name_form in person.get("names") or []:
                 if isinstance(phone, str) and isinstance(name_form, str) and len(name_form) > 2:
-                    codes[link_code(key, phone, str(unit["unit_key"]), name_form)] = where[unit_id]
-    return {"units": units, "codes": codes}
+                    hashed = link_code(str(key), phone, str(unit["unit_key"]), name_form)
+                    codes[hashed] = where[unit_id]
+    linked: dict[str, Any] = {"units": units, "codes": codes}
+    if starts:
+        linked["start_codes"] = starts
+    return linked
 
 
 def _send_when_changed(
@@ -364,7 +385,7 @@ def push_offline(
         except LinkKeyError as error:
             log(f"telegram_pull:offline_{error}")
     data = store.tenant_offline_data()
-    links = offline_links(data, key) if key else {"units": [], "codes": {}}
+    links = offline_links(data, key, store.link_codes_offline())
     sent = _send_when_changed(
         client, "TENANT", offline_texts(data, relay_host), links, status_directory, log
     )

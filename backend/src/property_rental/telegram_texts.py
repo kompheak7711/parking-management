@@ -103,6 +103,19 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។",
         "en": "Please link your Lease first.",
     },
+    # DL-214 (owner 11/11/2026): the one-time QR staff show at Lease signing or guest check-in.
+    "tenant.linked_code": {
+        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
+        "en": "Welcome, {name}. You are linked to Unit {unit}. What do you need?",
+    },
+    "tenant.code_bad": {
+        "km": "QR នេះមិនដំណើរការទៀតទេ។ សូមសុំ QR ថ្មីពីការិយាល័យ។",
+        "en": "This QR code does not work any more. Please ask the office for a new one.",
+    },
+    "tenant.code_ended": {
+        "km": "កិច្ចសន្យាជួល ឬការស្នាក់នៅរបស់លោកអ្នកបានបញ្ចប់ហើយ។ សូមទាក់ទងការិយាល័យ។",
+        "en": "Your Lease or stay has ended. Please contact the office.",
+    },
     # DL-210: what the relay says while the office app is closed (owner 07/11/2026). The relay
     # cannot say the person's name, so "linked" names only the Unit.
     "tenant.linked_offline": {

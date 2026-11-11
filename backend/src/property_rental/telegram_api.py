@@ -28,6 +28,11 @@ call, book (and move) a visit, visited, no-show, close, reopen and sent by hand
 Step 3c (DL-173): reserve (the request became a Reservation; `visit_requests.work`), block and
 unblock the Telegram account (`visit_requests.manage`).
 
+DL-214: `GET .../telegram/link-people?lease_id=|booking_id=` lists who on a live Lease or stay
+can get a one-time Telegram QR, and `POST .../telegram/link-codes` makes one for a person: the
+t.me link and its QR picture, shown once (`leases.sign` for a Lease, `short_stays.desk` for a
+Booking).
+
 The database functions check the rights again.
 """
 
@@ -57,6 +62,7 @@ from property_rental.products_api import (
     _require,
 )
 from property_rental.settings import Settings
+from property_rental.totp_qr import telegram_link_qr_svg
 
 TELEGRAM_READ = "telegram.read"
 TELEGRAM_OPERATE = "telegram.operate"
@@ -65,6 +71,7 @@ TELEGRAM_FAQ = "telegram.faq"
 VISIT_REQUESTS_READ = "visit_requests.read"
 VISIT_REQUESTS_WORK = "visit_requests.work"
 VISIT_REQUESTS_MANAGE = "visit_requests.manage"
+LINK_QR_RIGHTS = ("leases.sign", "short_stays.desk")
 MANAGER_STEPS = frozenset({"give", "spam", "block", "unblock"})
 Reason = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 AnswerText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
@@ -119,6 +126,20 @@ class TelegramPageFlow(Protocol):
 
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json: ...
 
+    def link_people(
+        self, property_id: UUID, lease_id: UUID | None, booking_id: UUID | None, *, actor_id: str
+    ) -> Json: ...
+
+    def link_code(
+        self,
+        property_id: UUID,
+        lease_id: UUID | None,
+        booking_id: UUID | None,
+        customer_id: UUID,
+        *,
+        actor_id: str,
+    ) -> Json: ...
+
     def visit_request(self, property_id: UUID, request_id: UUID, *, actor_id: str) -> Json: ...
 
     def visit_step(
@@ -161,6 +182,21 @@ class UnavailableTelegramPageFlow:
         raise ProductUnavailable
 
     def visit_requests(self, property_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def link_people(
+        self, property_id: UUID, lease_id: UUID | None, booking_id: UUID | None, **_: object
+    ) -> Json:
+        raise ProductUnavailable
+
+    def link_code(
+        self,
+        property_id: UUID,
+        lease_id: UUID | None,
+        booking_id: UUID | None,
+        customer_id: UUID,
+        **_: object,
+    ) -> Json:
         raise ProductUnavailable
 
     def visit_request(self, property_id: UUID, request_id: UUID, **_: object) -> Json:
@@ -264,6 +300,32 @@ class PostgresTelegramPageFlow:
             self._one("SELECT app.telegram_faq_load_starter(%s, %s)", (property_id, UUID(actor_id)))
         )
 
+    def link_people(
+        self, property_id: UUID, lease_id: UUID | None, booking_id: UUID | None, *, actor_id: str
+    ) -> Json:
+        return _json(
+            self._one(
+                "SELECT app.telegram_link_people(%s, %s, %s, %s)",
+                (property_id, lease_id, booking_id, UUID(actor_id)),
+            )
+        )
+
+    def link_code(
+        self,
+        property_id: UUID,
+        lease_id: UUID | None,
+        booking_id: UUID | None,
+        customer_id: UUID,
+        *,
+        actor_id: str,
+    ) -> Json:
+        return _json(
+            self._one(
+                "SELECT app.telegram_link_code_create(%s, %s, %s, %s, %s)",
+                (property_id, lease_id, booking_id, customer_id, UUID(actor_id)),
+            )
+        )
+
     def visit_requests(self, property_id: UUID, *, actor_id: str) -> Json:
         return _json(
             self._one("SELECT app.visit_requests_page(%s, %s)", (property_id, UUID(actor_id)))
@@ -290,6 +352,14 @@ class RemoveLink(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     reason: Reason
+
+
+class LinkCode(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    lease_id: UUID | None = Field(default=None, strict=False)
+    booking_id: UUID | None = Field(default=None, strict=False)
+    customer_id: UUID = Field(strict=False)
 
 
 class ContactAnswer(BaseModel):
@@ -487,6 +557,52 @@ def create_telegram_router(
             )
         except REFUSED as exc:
             raise _http(exc) from exc
+
+    @pages.get("/telegram/link-people")
+    def telegram_link_people(
+        property_id: UUID,
+        request: Request,
+        response: Response,
+        lease_id: UUID | None = None,
+        booking_id: UUID | None = None,
+    ) -> Json:
+        actor = _require_any(request, resolver, LINK_QR_RIGHTS, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        if (lease_id is None) == (booking_id is None):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        try:
+            return envelope(
+                request,
+                flow.link_people(property_id, lease_id, booking_id, actor_id=actor.actor_id),
+            )
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @pages.post("/telegram/link-codes", status_code=status.HTTP_201_CREATED)
+    def telegram_link_code(
+        property_id: UUID, body: LinkCode, request: Request, response: Response
+    ) -> Json:
+        actor = _require_any(request, resolver, LINK_QR_RIGHTS, property_id)
+        require_browser_mutation(request, settings)
+        response.headers["Cache-Control"] = "private, no-store"
+        if (body.lease_id is None) == (body.booking_id is None):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        try:
+            made = flow.link_code(
+                property_id,
+                body.lease_id,
+                body.booking_id,
+                body.customer_id,
+                actor_id=actor.actor_id,
+            )
+        except REFUSED as exc:
+            raise _http(exc) from exc
+        link = str(made.get("url") or "")
+        try:
+            picture = telegram_link_qr_svg(link)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
+        return envelope(request, {**made, "qr_svg": picture})
 
     @pages.get("/visit-requests")
     def visit_requests(property_id: UUID, request: Request, response: Response) -> Json:

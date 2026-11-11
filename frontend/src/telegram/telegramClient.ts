@@ -18,6 +18,9 @@ export interface LinkedTenant {
   name: string | null;
   unit_number: string | null;
   lease_end_date: string | null;
+  /** DL-214: a guest linked to a short stay by QR; the link ends at check-out. */
+  booking_number: string | null;
+  stay_end_date: string | null;
   linked_at: string;
 }
 
@@ -496,6 +499,8 @@ export function linksPageOf(value: unknown): LinksPage {
         name: maybeText(row.name),
         unit_number: maybeText(row.unit_number),
         lease_end_date: maybeText(row.lease_end_date),
+        booking_number: maybeText(row.booking_number),
+        stay_end_date: maybeText(row.stay_end_date),
         linked_at: text(row.linked_at),
       };
     }),
@@ -889,5 +894,94 @@ export const telegramApi: TelegramApi = {
       request: visitRequestDetailOf(answer.request),
       page: visitRequestsPageOf(answer.page),
     };
+  },
+};
+
+// DL-214 (owner 11 Nov 2026, "Yes, QR for tenants and guests"): a one-time Telegram QR at Lease
+// signing or guest check-in. Staff with Sign Lease (Lease) or the front desk (Booking) may show it.
+
+/** One person on a live Lease or stay who can get a Telegram QR. */
+export interface LinkPerson {
+  customer_id: string;
+  name: string;
+  unit_number: string | null;
+}
+
+export interface LinkPeople {
+  people: LinkPerson[];
+  /** False until the app has learned the Tenant bot's user name (the send job does it). */
+  bot_ready: boolean;
+  /** How long a QR works. */
+  hours: number;
+}
+
+/** A QR made once: the server keeps only a hash, so it cannot be shown again. */
+export interface LinkCodeMade {
+  url: string;
+  name: string;
+  unit_number: string | null;
+  expires_at: string;
+  qr_svg: string;
+}
+
+/** Exactly one of the two is set. */
+export type LinkStay = { lease_id: string } | { booking_id: string };
+
+export interface LinkQrApi {
+  people: (propertyId: string, stay: LinkStay) => Promise<LinkPeople>;
+  make: (
+    propertyId: string,
+    stay: LinkStay,
+    customerId: string,
+  ) => Promise<LinkCodeMade>;
+}
+
+export function linkPeopleOf(value: unknown): LinkPeople {
+  const page = record(value);
+  if (typeof page.bot_ready !== "boolean") throw new TelegramError();
+  return {
+    people: list(page.people).map((item) => {
+      const row = record(item);
+      return {
+        customer_id: text(row.customer_id),
+        name: text(row.name),
+        unit_number: maybeText(row.unit_number),
+      };
+    }),
+    bot_ready: page.bot_ready,
+    hours: whole(page.hours),
+  };
+}
+
+export function linkCodeOf(value: unknown): LinkCodeMade {
+  const made = record(value);
+  const picture = text(made.qr_svg);
+  if (!picture.startsWith("<svg")) throw new TelegramError();
+  return {
+    url: text(made.url),
+    name: text(made.name),
+    unit_number: maybeText(made.unit_number),
+    expires_at: text(made.expires_at),
+    qr_svg: picture,
+  };
+}
+
+export const linkQrApi: LinkQrApi = {
+  async people(propertyId, stay) {
+    const query =
+      "lease_id" in stay
+        ? `lease_id=${encodeURIComponent(stay.lease_id)}`
+        : `booking_id=${encodeURIComponent(stay.booking_id)}`;
+    return linkPeopleOf(
+      await request(`${root(propertyId)}/link-people?${query}`),
+    );
+  },
+  async make(propertyId, stay, customerId) {
+    return linkCodeOf(
+      await request(
+        `${root(propertyId)}/link-codes`,
+        post({ ...stay, customer_id: customerId }),
+      ),
+    );
   },
 };

@@ -1,4 +1,5 @@
-"""The QR picture of a new sign-in code's provisioning link (login sub-slice L6).
+"""The QR picture of a new sign-in code's provisioning link (login sub-slice L6), and of a
+one-time Telegram link that links a tenant or a short-stay guest (DL-214).
 
 The picture is built on the server with the approved `qrcode` library, so the secret never
 leaves the one-time enrollment answer for another service or library in the browser. Only the
@@ -6,20 +7,33 @@ module matrix comes from the library; the SVG text is written here: dark squares
 background with the standard four-module quiet zone, no script, no link and no XML header.
 """
 
+import re
 from typing import Final
 
 import qrcode  # type: ignore[import-untyped]
 from qrcode.constants import ERROR_CORRECT_M  # type: ignore[import-untyped]
 
 QR_QUIET_ZONE_MODULES: Final = 4
+TELEGRAM_LINK: Final = re.compile(r"https://t\.me/[A-Za-z][A-Za-z0-9_]{3,31}\?start=[0-9a-f]{40}")
 
 
 def provisioning_qr_svg(provisioning_uri: str) -> str:
     """An SVG QR code of the `otpauth://totp/` link, scaled by the viewBox."""
     if not provisioning_uri.startswith("otpauth://totp/"):
         raise ValueError("invalid TOTP provisioning material")
+    return _qr_svg(provisioning_uri)
+
+
+def telegram_link_qr_svg(link: str) -> str:
+    """The QR of a one-time Telegram link (DL-214): `https://t.me/<bot>?start=<code>` only."""
+    if TELEGRAM_LINK.fullmatch(link) is None:
+        raise ValueError("invalid Telegram link")
+    return _qr_svg(link)
+
+
+def _qr_svg(data: str) -> str:
     code = qrcode.QRCode(error_correction=ERROR_CORRECT_M, border=QR_QUIET_ZONE_MODULES)
-    code.add_data(provisioning_uri)
+    code.add_data(data)
     code.make(fit=True)
     matrix: list[list[bool]] = code.get_matrix()
     size = len(matrix)

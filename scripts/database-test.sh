@@ -402,6 +402,7 @@ database_test_suites='
   tests/test_v12_short_stay_early_check_out_migration.py
   tests/test_telegram_tenant_offline_migration.py
   tests/test_telegram_offline_clock_migration.py
+  tests/test_telegram_link_qr_migration.py
   tests/test_telegram_tenant_invoices_migration.py
 '
 # The General Ledger suites run first, in a pytest run of their own on the new database: the other

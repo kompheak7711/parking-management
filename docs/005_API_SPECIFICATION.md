@@ -2296,3 +2296,14 @@ Added by DL-179 (migration `20270625_336`, DB-TG-015). `POST /api/v1/properties/
 ### API-TG-008 Invoices on Telegram — 2026-11-08
 
 Added by DL-211 (migration `20270709_381`, DB-TG-017). `GET /api/v1/properties/{property_id}/telegram/invoices` (`telegram.read`, `Cache-Control: private, no-store`) answers `invoices` (the Invoices issued in the last 45 days, each with `number`, `unit_number`, `customer`, `status`, `issued_at`, `due_date`, `to_pay_usd_cents`, `sent` (each tenant: `telegram_user_id`, `queued_at`, `state` `WAITING`, `SENT` or `GAVE_UP`, `sent_at`) and `reminded_at`) and `rules` (`remind_days`, `days`). Refusals: 403 (no right).
+
+### API-TG-009 The one-time Telegram QR — 2026-11-11
+
+Added by DL-214 (migration `20270712_384`, DB-TG-021). Both need `leases.sign` (for a Lease) or `short_stays.desk` (for a Booking); the database checks the right for the kind of stay again. Both answer `Cache-Control: private, no-store`.
+
+- `GET /api/v1/properties/{property_id}/telegram/link-people?lease_id=…` or `?booking_id=…` (exactly one; else 400) answers `people` (each `customer_id`, `name`, `unit_number`), `bot_ready` (false until the send job has learned the Tenant bot's user name) and `hours` (how long a QR works, 24).
+- `POST /api/v1/properties/{property_id}/telegram/link-codes` (browser mutation check; body `lease_id` or `booking_id`, exactly one, and `customer_id`) answers 201 with `url` (`https://t.me/<bot>?start=<40 hex>`), `bot`, `name`, `unit_number`, `expires_at` and `qr_svg` (the QR picture, made on the server). Only the code's sha256 is kept, so a QR is shown once and never read again.
+
+Refusals: 400 (not exactly one stay), 403 (no right), 409 (the bot's user name is not known yet), 422 (the person is not on a live Lease or stay), 503 (the link is not a valid one-time Telegram link).
+
+`GET …/telegram/links` (API-TG-001) also answers `booking_id`, `booking_number` and `stay_end_date` for each link; a guest's link ends with `STAY_ENDED`.

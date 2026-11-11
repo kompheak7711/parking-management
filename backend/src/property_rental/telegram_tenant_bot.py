@@ -21,6 +21,10 @@ answers the chat and says in the item what it did. Such a message is saved the s
 language, the Contact office message, the Lease link try, the next step) but not answered again;
 only when the database's link answer differs from the relay's does the tenant get the database's.
 A Problem report the relay already sent to the caretaker is saved without a second alert.
+
+DL-214 (owner 11 Nov 2026, "Yes, QR for tenants and guests"): staff show a one-time QR at Lease
+signing or guest check-in. Scanning it opens this bot with "/start <code>"; the database links
+the person at once (a short-stay guest until check-out), with no phone, name or Unit to type.
 """
 
 from __future__ import annotations
@@ -34,6 +38,8 @@ from property_rental.telegram_texts import TEXTS, button_tapped, render
 BOT: Final = "TENANT"
 MAX_NAME: Final = 120
 MAX_UNIT: Final = 20
+# The Start of a QR scan (DL-214): 40 lower-case hex letters made by the database.
+START_CODE: Final = re.compile(r"^/start\s+([0-9a-f]{40})$")
 LANGUAGE_BUTTONS: Final = {"button.khmer": "km", "button.english": "en"}
 # The chat steps this bot saves (telegram_chat_steps.step).
 TENANT_STEPS: Final = frozenset(
@@ -115,6 +121,14 @@ def handle_tenant_update(
             reply_to=saved.get("inbound_id"),
         )
 
+    started = START_CODE.match(typed)
+    if started is not None:
+        answer = _code_answer(store.tenant_link_code(user, started.group(1)))
+        if language is None:
+            reply("language", answer, _say("tenant.welcome", "tenant.language"))
+        else:
+            reply("menu", answer)
+        return
     if typed.startswith("/start") or (language is None and tapped not in LANGUAGE_BUTTONS):
         reply("language", _say("tenant.welcome", "tenant.language"))
         return
@@ -197,6 +211,17 @@ def _after_relay(
     if chosen in LANGUAGE_BUTTONS.values():
         store.choose_language(BOT, user, str(chosen))
     language = str(chosen or store.bot_state(BOT, user).get("language") or "km")
+    code = relay.get("code")
+    started = START_CODE.match(typed)
+    if isinstance(code, dict) and started is not None:
+        result = store.tenant_link_code(user, started.group(1))
+        linked = result.get("result") == "LINKED"
+        answer = [] if linked == (code.get("outcome") == "LINKED") else [_code_answer(result)]
+        step = relay.get("step")
+        store.bot_reply(
+            BOT, user, chat, step if step in TENANT_STEPS else "menu", None, language, answer
+        )
+        return
     link = relay.get("link")
     if isinstance(link, dict):
         name = str(link.get("name") or "").strip()[:MAX_NAME]
@@ -277,6 +302,18 @@ def _hello(state: dict[str, Any]) -> dict[str, Any]:
             "tenant.hello_linked", "tenant.menu", name=link["name"], unit=link["unit_number"]
         )
     return _say("tenant.hello", "tenant.start")
+
+
+def _code_answer(result: dict[str, Any]) -> dict[str, Any]:
+    """The answer to a QR scan (DL-214): linked, the stay is over, or the code does not work."""
+    outcome = result.get("result")
+    if outcome == "LINKED":
+        return _say(
+            "tenant.linked_code", "tenant.menu", name=result["name"], unit=result["unit_number"]
+        )
+    if outcome == "ENDED":
+        return _say("tenant.code_ended", "tenant.reject")
+    return _say("tenant.code_bad", "tenant.reject")
 
 
 def _link_answer(result: dict[str, Any]) -> list[dict[str, Any]]:

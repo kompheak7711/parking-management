@@ -261,9 +261,12 @@ export function LinkedTenantsPage({
                     <td>{person(link.name, "")}</td>
                     <td>{link.unit_number ?? ""}</td>
                     <td className="ui-wide ui-num">
-                      {link.lease_end_date === null
-                        ? ""
-                        : link.lease_end_date.split("-").reverse().join("/")}
+                      {dayText(link.lease_end_date ?? link.stay_end_date)}
+                      {link.booking_number !== null && (
+                        <span className="ui-sub2">
+                          {tt(language, "stay_n", link.booking_number)}
+                        </span>
+                      )}
                     </td>
                     <td className="ui-wide ui-num">
                       {momentText(link.linked_at)}

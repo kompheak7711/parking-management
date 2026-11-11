@@ -11,12 +11,15 @@
 // money or keeps a record. Other questions (My requests, FAQ, Fixed or Not fixed) get "our office
 // is closed now" and the office answers them when it opens.
 
+import { sha256Hex } from "./seal.ts";
 import type { BotCode, Env } from "./types.ts";
 
 export const OFFICE_AWAY_SECONDS = 150; // the office pulls every 10 s (Mac) or 60 s (server)
 export const CHAT_STEP_SECONDS = 30 * 60; // a link step left for 30 minutes starts again
 export const LINK_TRIES = 5; // owner rule (2 Nov 2026): 5 wrong tries = 24 hours blocked
 export const LINK_BLOCK_SECONDS = 24 * 60 * 60;
+// The Start of a QR scan (DL-214): 40 lower-case hex letters made by the office's database.
+const START_CODE = /^\/start\s+([0-9a-f]{40})$/;
 const CODE_CHARS = 32;
 
 type Json = Record<string, unknown>;
@@ -39,6 +42,8 @@ export interface OfflineTexts {
 export interface OfflineLinks {
   units: { unit: string; places: unknown }[];
   codes: Record<string, number>;
+  // DL-214: the SHA-256 of each unused QR code -> [its Unit, the second it stops working].
+  start_codes?: Record<string, [number, number]>;
 }
 
 // What the relay did, sealed inside the item for the office.
@@ -54,6 +59,7 @@ export interface RelayFacts {
   };
   contact?: boolean;
   alerted?: boolean;
+  code?: { outcome: "LINKED" | "BAD" };
 }
 
 export interface Outgoing {
@@ -355,6 +361,20 @@ export async function tenantAnswer(
     language = tapped === "button.khmer" ? "km" : "en";
     return answer(linked ? "menu" : "hello", { step: "menu" }, { language });
   }
+  const started = START_CODE.exec(typed);
+  if (started) {
+    const done = await codeTry(env, user, started[1] ?? "", now, answer);
+    if (language === null) {
+      // A new person also chooses the language after the QR links them.
+      const welcome = say(texts, "welcome", "km");
+      if (welcome) {
+        done.out.push({ bot: "TENANT", chatId: user, said: welcome });
+      }
+      await saveChat(env, user, { language, step: "language" }, now);
+      done.facts.step = "language";
+    }
+    return done;
+  }
   if (typed.startsWith("/start") || language === null) {
     return answer("welcome", { step: "language" });
   }
@@ -492,6 +512,46 @@ async function linkTry(
         { link: { outcome: "NO_MATCH", name, unit } },
         { tries_left: String(left) },
       );
+}
+
+// A QR scan while the office is away (DL-214): an unused, unexpired code the office sent links the
+// person at once; the office links them again from the same code when it opens.
+async function codeTry(
+  env: Env,
+  user: number,
+  code: string,
+  now: number,
+  answer: Answer,
+) {
+  const hash = await sha256Hex(new TextEncoder().encode(code));
+  const links = await offlineLinks(env);
+  const entry = links?.start_codes?.[hash];
+  const used = await env.DB.prepare(
+    "SELECT user_id FROM start_codes_used WHERE code_hash = ?",
+  )
+    .bind(hash)
+    .first<{ user_id: number }>();
+  const found = entry && entry[1] > now ? entry : undefined;
+  const unit = found ? links?.units[found[0]] : undefined;
+  if (!unit || (used !== null && used.user_id !== user)) {
+    return answer("code_bad", { step: "menu" }, { code: { outcome: "BAD" } });
+  }
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO access (bot, user_id, role, data) VALUES ('TENANT', ?, 'TENANT', ?) " +
+        "ON CONFLICT (bot, user_id) DO UPDATE SET role = excluded.role, data = excluded.data",
+    ).bind(user, JSON.stringify({ places: unit.places, unit: unit.unit })),
+    env.DB.prepare(
+      "INSERT INTO start_codes_used (code_hash, user_id, used_at) VALUES (?, ?, ?) " +
+        "ON CONFLICT (code_hash) DO NOTHING",
+    ).bind(hash, user, now),
+  ]);
+  return answer(
+    "linked",
+    { step: "menu" },
+    { code: { outcome: "LINKED" } },
+    { unit: unit.unit },
+  );
 }
 
 // A Problem report form sent while the office is away: the answer to the tenant and, when it is

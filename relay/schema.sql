@@ -97,3 +97,10 @@ CREATE TABLE IF NOT EXISTS chat_requests (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (bot, user_id)
 );
+
+-- One-time QR codes the relay used while the office was away (DL-214), so a code links once.
+CREATE TABLE IF NOT EXISTS start_codes_used (
+  code_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  used_at INTEGER NOT NULL
+);

@@ -144,6 +144,53 @@ def run_send(
     return result
 
 
+BOT_NAMES_FILE: Final = "telegram-bot-names.day"
+
+
+def learn_bot_names(
+    *,
+    store: TelegramStore,
+    api_host: str,
+    tokens: dict[str, str],
+    status_directory: Path,
+    today: str,
+    post_json: PostJson = _post_json,
+    log: Callable[[str], None] = lambda line: print(line, flush=True),
+) -> int:
+    """Once a day, ask Telegram each bot's user name (getMe) and save it, so the app can make the
+    t.me link of a QR (DL-214). Returns how many names changed."""
+    marker = status_directory / BOT_NAMES_FILE
+    try:
+        if marker.read_text(encoding="utf-8").strip() == today:
+            return 0
+    except OSError:
+        pass
+    changed = 0
+    learned = True
+    for bot, token in sorted(tokens.items()):
+        try:
+            status, answer = post_json(f"https://{api_host}/bot{token}/getMe", {})
+            document = json.loads(answer) if status == 200 else {}
+            username = document["result"]["username"] if document.get("ok") else None
+        except Exception:
+            username = None
+        if not isinstance(username, str) or not username:
+            learned = False
+            log(f"telegram_send:bot_name_unknown:{bot}")
+            continue
+        try:
+            changed += store.bot_name_set(bot, username)
+        except Exception:
+            learned = False
+            log(f"telegram_send:bot_name_not_saved:{bot}")
+    if learned and tokens:
+        try:
+            marker.write_text(today + "\n", encoding="utf-8")
+        except OSError:
+            log("telegram_send:bot_names_marker_not_written")
+    return changed
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Send the Telegram messages waiting in the outbox")
     parser.add_argument("--config", required=True, type=Path)
@@ -165,10 +212,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     store = PostgresTelegramStore(
         database_url, property_id=args.property_id, actor_id=args.actor_id
     )
+    tokens = load_bot_tokens(bots.bot_token_files)
+    learn_bot_names(
+        store=store,
+        api_host=bots.api_host,
+        tokens=tokens,
+        status_directory=config.status_directory,
+        today=format_time(utc_now())[:10],
+    )
     result = run_send(
         store=store,
         api_host=bots.api_host,
-        tokens=load_bot_tokens(bots.bot_token_files),
+        tokens=tokens,
         app_host=bots.relay_host,
     )
     print(

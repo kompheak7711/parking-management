@@ -8,6 +8,7 @@ import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import { TelegramQrCard } from "../telegram/TelegramQrCard";
 import { GuestPanel } from "./GuestPanel";
 import { RefundCard } from "./RefundCard";
 import { PriceLines } from "./NewBooking";
@@ -203,6 +204,12 @@ export function BookingDetail({
   // The cards keep what was typed until the booking changes.
   const cards = `${booking.booking_id}:${String(booking.version)}`;
 
+  // DL-214: a guest on a live stay can get a one-time Telegram QR at check-in.
+  const stayLive =
+    booking.check_out_on >= today &&
+    (booking.status === "CHECKED_IN" ||
+      (booking.status === "BOOKED" && booking.check_in_on <= today));
+
   const source =
     booking.source === "BOOKING_SITE" && booking.site_name !== null
       ? booking.site_name
@@ -306,6 +313,14 @@ export function BookingDetail({
         </div>
         <div className="ui-stack">
           <CheckInCard key={`in:${cards}`} {...steps} />
+          {stayLive && may("short_stays.desk") && (
+            <TelegramQrCard
+              key={`tg:${booking.booking_id}`}
+              language={language}
+              propertyId={propertyId}
+              stay={{ booking_id: booking.booking_id }}
+            />
+          )}
           <CheckOutCard key={`out:${cards}`} {...steps} />
           <ExtendCard key={`ext:${cards}`} {...steps} />
           <CancelCard key={`can:${cards}`} {...steps} />

@@ -5968,3 +5968,13 @@ Added by DL-212 (migration `20270710_382`, forward-only). No new table. `app.ten
 ## DB-TG-020 — The Property's clock for the relay (DL-213)
 
 Added by DL-213 (migration `20270711_383`, forward-only). No new table. `app.telegram_offline_clock(property, actor)` (`telegram.operate`, granted to `prm_runtime`) gives the Property's `timezone_name` and its `utc_offset_minutes` now, so the relay offers the Customer bot's visit days and move-in months from the Property's own date while the office is away. An unknown Property is refused (`22023`).
+
+## DB-TG-021 — The one-time Telegram QR and guest links (DL-214)
+
+Added by DL-214 (migration `20270712_384`, forward-only).
+
+- `app.tenant_telegram_links` gains `booking_id` (a short stay); `lease_id` may be null; exactly one of the two is set (`num_nonnulls(lease_id, booking_id) = 1`). `app.tenant_telegram_link_endings.reason` also takes `STAY_ENDED`.
+- New append-only tables (insert only; `app.reject_telegram_change()`): `app.telegram_link_codes` (the sha256 `code_hash`, unique; customer; Lease or Booking, exactly one; Unit; `created_by`; `expires_at`, 24 hours), `app.telegram_link_code_uses` (one per code: the Telegram account and the link it made) and `app.telegram_bot_names` (the bot user name the send job learned with getMe, newest row wins).
+- `app.tenant_link_stay_live(lease, booking, day)`: a Lease is live while SIGNED and not past its End Date; a stay while not past check-out and CHECKED_IN, or BOOKED from its check-in day. The link, access, form and links-page functions use it, and `telegram_tenant_end_finished_links` ends a link with `LEASE_ENDED` or `STAY_ENDED`.
+- Functions (granted to `prm_runtime`): `telegram_link_people` and `telegram_link_code_create` (`leases.sign` for a Lease, `short_stays.desk` for a Booking; `55000` when no bot name is known, `22023` when the person is not on a live stay); `telegram_tenant_link_code(property, user, code, actor)` (`telegram.operate`; answers `LINKED` (with `repeated` and `guest`), `USED`, `EXPIRED`, `ENDED` or `NOT_FOUND`; ends the account's earlier link with `NEW_LINK`); `telegram_link_codes_offline` (`telegram.operate`; the unused live codes' hashes, Units and expiry for the relay); `telegram_bot_name_set` (`telegram.operate`; a valid Telegram user name only).
+- `telegram_invoice_people` and `telegram_invoice_reminders` skip guest links (`link.booking_id IS NULL`): guests get no Invoices on Telegram.

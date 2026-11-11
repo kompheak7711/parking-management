@@ -4,6 +4,7 @@
 // relay answers nothing.
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 
 import { handle } from "../src/index.ts";
@@ -43,6 +44,7 @@ const TEXTS = {
     linked: said("linked to Unit {unit}"),
     no_match: said("no match, {tries_left} tries left"),
     blocked: said("blocked"),
+    code_bad: said("this QR does not work"),
     link_first: said("link first"),
     contact_ask: said("type your message"),
     contact_text_only: said("text only"),
@@ -492,4 +494,62 @@ test("a busy night: 60 items with photos are pulled and confirmed within the fre
     ).n,
     0,
   );
+});
+
+test("a QR scan at night links at once, only once, and not after it stops working (DL-214)", async () => {
+  const env = await setUp();
+  const code = "0123456789abcdef0123456789abcdef01234567";
+  const old = "fedcba9876543210fedcba9876543210fedcba98";
+  const hash = (text: string) =>
+    createHash("sha256").update(text).digest("hex");
+  const put = await handle(
+    await officeRequest("PUT", "/office/offline/tenant", NOW - 900, {
+      texts: TEXTS,
+      links: {
+        ...(await links()),
+        start_codes: {
+          [hash(code)]: [0, NOW + 3600],
+          [hash(old)]: [0, NOW - 1],
+        },
+      },
+    }),
+    env,
+    () => NOW - 900,
+  );
+  assert.equal(put.status, 200);
+  const { sent, fetcher } = telegramFake();
+  await sendUpdate(env, message(1, { text: `/start ${code}` }), fetcher);
+  // A new person: linked, then the language question.
+  assert.deepEqual(
+    sent.map((item) => item.text),
+    ["km linked to Unit 305", "km welcome"],
+  );
+  const access = env.DB.sqlite
+    .prepare("SELECT data FROM access WHERE bot = 'TENANT' AND user_id = ?")
+    .get(TENANT) as { data: string };
+  assert.equal(JSON.parse(access.data).unit, "305");
+  // Someone else with the same code, and an expired code, are refused.
+  const other = {
+    update_id: 2,
+    message: {
+      message_id: 2,
+      from: { id: 5151 },
+      chat: { id: 5151, type: "private" },
+      text: `/start ${code}`,
+    },
+  };
+  await sendUpdate(env, other, fetcher);
+  assert.deepEqual(
+    sent.slice(-2).map((item) => item.text),
+    ["km this QR does not work", "km welcome"],
+  );
+  await sendUpdate(env, message(3, { text: `/start ${old}` }), fetcher);
+  assert.equal(sent.at(-2)?.text, "km this QR does not work");
+  const items = await sealedItems(env);
+  assert.deepEqual(items[0].relay, {
+    answered: true,
+    step: "language",
+    code: { outcome: "LINKED" },
+  });
+  assert.deepEqual(items[1].relay.code, { outcome: "BAD" });
 });

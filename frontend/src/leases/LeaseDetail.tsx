@@ -25,6 +25,7 @@ import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
+import { TelegramQrCard } from "../telegram/TelegramQrCard";
 import type { UnitApi } from "../unitClient";
 import type { CustomerApi } from "../customerClient";
 import type { CustomerCommandGate } from "../customers/commands";
@@ -1059,6 +1060,18 @@ export function LeaseDetail({
           </section>
         </div>
         <div className="ui-stack">
+          {signed &&
+            lease.end_date !== null &&
+            today <= lease.end_date &&
+            may("leases.sign") && (
+              // DL-214: a one-time Telegram QR for the people on the Lease.
+              <TelegramQrCard
+                key={`tg:${lease.lease_id}`}
+                language={language}
+                propertyId={propertyId}
+                stay={{ lease_id: lease.lease_id }}
+              />
+            )}
           <section aria-labelledby="lease-deposits" className="ui-card">
             <h2 id="lease-deposits">{lt(language, "deposits")}</h2>
             {deposits.state === "hidden" && (

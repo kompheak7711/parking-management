@@ -41,15 +41,15 @@ real secret: every key is made on the office computer and typed into
 Cloudflare, never into this repository or a chat.
 
 1. On the office computer, make the keys:
-   ```
-   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out office.pem
-   openssl pkey -in office.pem -pubout -out office.pub.pem
-   openssl rand -hex 32 > relay-pull.key
-   ```
-   Copy them into `/etc/prm/secrets/` (mode 0600, owner prm-ops) as
-   `prm_production_relay_office_private_key` and `prm_production_relay_pull_key`.
-   Each bot's token goes there too, as `prm_production_{customer|tenant|staff}_bot_token`.
-   Then delete `office.pem` and `relay-pull.key` from where you made them.
+    ```
+    openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out office.pem
+    openssl pkey -in office.pem -pubout -out office.pub.pem
+    openssl rand -hex 32 > relay-pull.key
+    ```
+    Copy them into `/etc/prm/secrets/` (mode 0600, owner prm-ops) as
+    `prm_production_relay_office_private_key` and `prm_production_relay_pull_key`.
+    Each bot's token goes there too, as `prm_production_{customer|tenant|staff}_bot_token`.
+    Then delete `office.pem` and `relay-pull.key` from where you made them.
 2. In Cloudflare: create the D1 database `chetana-relay` and the R2 bucket
    `chetana-relay-media`. Put the database id in `wrangler.toml`.
 3. Create the tables: `npx wrangler d1 execute chetana-relay --remote --file schema.sql`.
@@ -112,3 +112,12 @@ The same 150 seconds rule. The office sends one body per bot (`PUT /office/offli
   on shift and the Authorizers.
 
 Each item carries what the relay did, so the app saves it without answering twice.
+
+## The one-time Telegram QR (DL-214)
+
+Staff show a QR on the Lease page (at signing) or the Booking page (at guest check-in). It opens
+the Tenant bot with `/start <code>`; the app links the person at once. The office sends the relay
+only the sha256 of each unused code, with its Unit and expiry (`start_codes` in the Tenant bot
+body), so a scan while the app is closed links at once too. `start_codes_used` keeps which
+account used a code, so a second account is refused. When the app opens it links the person in
+the database and answers again only when the database disagrees with the relay.
