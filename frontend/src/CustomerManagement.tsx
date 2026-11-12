@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
   CustomerApi,
@@ -838,7 +838,10 @@ export function CustomerManagement({
     return false;
   }
 
-  useEffect(() => {
+  // A layout effect, so it has run before anyone can press a button of the new gate. As a passive
+  // effect it could run after a quick "Check the prior Customer command status" press, count that
+  // check as out of date and leave it waiting forever (TEST-FE-087, TEST-FE-2102).
+  useLayoutEffect(() => {
     reconciliationRequirementRef.current = reconciliationRequirement;
     reconciliationSequence.current += 1;
     setReconciliationProof(null);

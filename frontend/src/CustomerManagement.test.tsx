@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { useLayoutEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -2162,6 +2163,11 @@ describe("CustomerManagement", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Update Customer" }));
 
+    // The update hashes its values first and the page stays busy (its buttons disabled) until it
+    // has finished. On a busy machine a click on Return could otherwise land on a disabled button.
+    await screen.findByText(
+      "Customer source fields updated. Reload Customer detail to refresh its current audit history.",
+    );
     const returnToOriginal = await screen.findByRole("button", {
       name: "Return to pending update for Dara Sok",
     });
@@ -2969,6 +2975,11 @@ describe("CustomerManagement", () => {
         name: "I verified the Customer was not created",
       }),
     );
+    // The check above hashes the restored values before it allows the retry. Wait until it has
+    // finished: on a busy machine the hash can still be running when the list below has loaded.
+    await screen.findByText(
+      "The prior creation was not committed. A retry will reuse the same exact command identity.",
+    );
     expect(reconciled).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
     await screen.findByText("Dara Sok");
@@ -2995,6 +3006,63 @@ describe("CustomerManagement", () => {
       );
     });
     expect(reconciled).toHaveBeenCalledOnce();
+  });
+
+  it("TEST-FE-2102 a status check pressed as soon as the command gate appears still finishes", async () => {
+    const api = client({
+      commandStatus: vi.fn().mockResolvedValue({
+        recorded: false,
+        customer: null,
+      }),
+    });
+    const createSource = { legal_name: "Gate on screen" };
+    const requirement: CustomerReconciliationRequirement = {
+      actorId: "test-actor",
+      commandNonce: "command-nonce-gate-on-screen",
+      kind: "create",
+      customerId: "customer-gate-on-screen",
+      propertyId: "property-1",
+      resultFingerprint:
+        (await customerCreateResultFingerprint(
+          "customer-gate-on-screen",
+          createSource,
+        )) ?? "",
+      requestFingerprint:
+        (await customerCreateRequestFingerprint(createSource)) ?? "",
+      createSource,
+    };
+    // Presses "Check the prior Customer command status" in the same commit that shows it: a
+    // layout effect runs before any passive effect. On a busy machine a real click can land in
+    // that same gap (TEST-FE-087).
+    function PressCheckOnArrival({
+      gate,
+    }: {
+      gate: CustomerReconciliationRequirement | null;
+    }) {
+      const box = useRef<HTMLDivElement>(null);
+      useLayoutEffect(() => {
+        if (gate === null) return;
+        Array.from(box.current?.querySelectorAll("button") ?? [])
+          .find(
+            (button) =>
+              button.textContent === "Check the prior Customer command status",
+          )
+          ?.click();
+      }, [gate]);
+      return (
+        <div ref={box}>
+          <CustomerManagement api={api} reconciliationRequirement={gate} />
+        </div>
+      );
+    }
+    const rendered = render(<PressCheckOnArrival gate={null} />);
+    rendered.rerender(<PressCheckOnArrival gate={requirement} />);
+    expect(api.commandStatus).toHaveBeenCalledOnce();
+    expect(
+      await screen.findByRole("button", {
+        name: "I verified the Customer was not created",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-130 discards an exact retry identity when another tab clears its durable gate", async () => {
@@ -3204,6 +3272,11 @@ describe("CustomerManagement", () => {
       await screen.findByRole("button", {
         name: "I verified the Customer was not created",
       }),
+    );
+    // The check above hashes the restored values before it allows the retry. Wait until it has
+    // finished: on a busy machine the hash can still be running when the list below has loaded.
+    await screen.findByText(
+      "The prior creation was not committed. A retry will reuse the same exact command identity.",
     );
     fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
     await screen.findByText("Dara Sok");
@@ -3463,6 +3536,11 @@ describe("CustomerManagement", () => {
       await screen.findByRole("button", {
         name: "I verified the Customer was not created",
       }),
+    );
+    // The check above hashes the restored values before it allows the retry. Wait until it has
+    // finished: on a busy machine the hash can still be running when the list below has loaded.
+    await screen.findByText(
+      "The prior creation was not committed. A retry will reuse the same exact command identity.",
     );
     fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
     await screen.findByText("Dara Sok");

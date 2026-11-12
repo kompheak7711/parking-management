@@ -66380,6 +66380,43 @@
       "test_path": "frontend/src/hr/HrPages.test.tsx",
       "status": "implemented",
       "notes": "HRIS: the NSSF number is optional at Add employee and shows on the employee page (owner 07/11 17:59)."
+    },
+    {
+      "test_id": "TEST-FE-2100",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialEvidencePaging.test.tsx",
+      "status": "implemented",
+      "notes": "Flaky test fix (TEST-FE-488): a Next press on the Payment reversal records in the same moment the table appears keeps the next page; the page reset no longer runs in a late effect."
+    },
+    {
+      "test_id": "TEST-FE-2101",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialEvidencePaging.test.tsx",
+      "status": "implemented",
+      "notes": "Flaky test fix (TEST-FE-488): the reversal records go back to the first page only when the payment, view or revision changes."
+    },
+    {
+      "test_id": "TEST-FE-2102",
+      "upstream_ids": [
+        "BR-CUST-002",
+        "API-019",
+        "UI-103",
+        "SEC-044"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Flaky test fix (TEST-FE-087): Check the prior Customer command status pressed as soon as the command gate appears still finishes."
     }
   ]
 }

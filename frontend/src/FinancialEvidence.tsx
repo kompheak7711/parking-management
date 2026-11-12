@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { ExactJsonNumber } from "./financialJson";
 import {
   financialObject,
@@ -674,6 +674,24 @@ export function RefundCorrectionEvidence({
   );
 }
 
+/**
+ * The page number of a paged evidence table, back to the first page when `identity` changes.
+ *
+ * The page is stored with the identity it belongs to and the reset happens while rendering. A
+ * reset in useEffect ran after the table was already on screen: on a slow machine a click on
+ * "Next" could land before that effect, and the late effect then put the table back on page 1
+ * (TEST-FE-488).
+ */
+function usePageFor(identity: string): [number, (page: number) => void] {
+  const [paging, setPaging] = useState({ identity, page: 0 });
+  return [
+    paging.identity === identity ? paging.page : 0,
+    (page) => {
+      setPaging({ identity, page });
+    },
+  ];
+}
+
 export function TargetEvidence({
   target: value,
   items = [],
@@ -683,10 +701,7 @@ export function TargetEvidence({
 }) {
   const target = record(value);
   const rows = Array.isArray(items) ? items.map(record) : [];
-  const [page, setPage] = useState(0);
-  useEffect(() => {
-    setPage(0);
-  }, [target.id]);
+  const [page, setPage] = usePageFor(financialLabel(target.id));
   const currentPage = Math.min(
     page,
     Math.max(0, Math.ceil(rows.length / 50) - 1),
@@ -1906,11 +1921,9 @@ export function CreditHistoryEvidence({ items }: { items: unknown }) {
 export function PaymentReversalEvidence({ value }: { value: unknown }) {
   const row = record(value),
     items = Array.isArray(row.items) ? row.items.map(record) : [];
-  const [page, setPage] = useState(0);
-  const identity = `${financialLabel(record(record(row.payment_resource).payment).id)}:${financialLabel(row.view)}:${financialLabel(row.revision)}`;
-  useEffect(() => {
-    setPage(0);
-  }, [identity]);
+  const [page, setPage] = usePageFor(
+    `${financialLabel(record(record(row.payment_resource).payment).id)}:${financialLabel(row.view)}:${financialLabel(row.revision)}`,
+  );
   const current = Math.min(page, Math.max(0, Math.ceil(items.length / 50) - 1)),
     visible = items.slice(current * 50, current * 50 + 50),
     result = row.view === "result";

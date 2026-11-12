@@ -483,7 +483,11 @@ describe("V1-058 R5c-3 Receipt page", () => {
     expect(
       within(screen.getByRole("article")).getByText(/REPRINT/),
     ).toBeInTheDocument();
-    expect(print).toHaveBeenCalled();
+    // The page prints in an effect after it shows the copy marked REPRINT. On a busy machine the
+    // message can be on screen a moment before that effect has run.
+    await waitFor(() => {
+      expect(print).toHaveBeenCalled();
+    });
   });
 
   it("TEST-FE-919 a missing payment is named, a reversed one is stamped, and Reprint shows only to a person who may reprint", async () => {
