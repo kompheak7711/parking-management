@@ -1879,7 +1879,7 @@ describe("Daily and weekly rent: Short stays", () => {
         "en",
         invoiceType({ category: "MISCELLANEOUS_CHARGES", short_stay: null }),
       ),
-    ).toBe("Miscellaneous");
+    ).toBe("Other charges");
     expect(pyt("en", "SHORT_STAY_DAMAGE")).toBe("Short-stay damage");
     expect(
       lineWords({

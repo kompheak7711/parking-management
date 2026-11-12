@@ -329,7 +329,7 @@ describe("Invoices page (V1-058 R5)", () => {
       ),
     ).toBeTruthy();
     expect(rows()).toEqual([
-      "DraftSok DaraU101MiscellaneousSet when issued$15.00—Draft",
+      "DraftSok DaraU101Other chargesSet when issued$15.00—Draft",
       "INV260003Sok DaraU101Utilities05/11/2026$30.00$0.00Paid",
       "INV260002Chan VannaU201Rent05/11/2026$450.00$250.00Part paid",
       "INV260005Chan VannaU201Rent05/10/2026$100.00—Void",

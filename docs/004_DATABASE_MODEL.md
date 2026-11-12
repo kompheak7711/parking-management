@@ -5715,6 +5715,16 @@ DL-118. Migration `20270421_271`, forward-only.
 - `app.properties` gets `description` (at most 500) and `business_name` (at most 255); `app.property_configuration` shows them. `app.update_property_details(property, name, description, address, business_name, expected_version, actor)` (runtime) changes them at the expected version with the audit event `property.details_changed`.
 - Business rules seeded for Billing, Reservations, Prices, Quotations and the Riel rate (DL-118 (B)). `app.one_time_charge_due_days(property, on)` reads the Property's `one_time_charge_due_days` for issuing, corrections and scheduled utility items (one place for a later rule); `app.late_payment_rate_basis_points` reads `LATE_PAYMENT_PERCENT`. A trigger keeps the rules the app reads in range (22023).
 
+## DB-BS-002 — Simpler Invoice types (DL-221)
+
+Migration `20270716_390`, forward-only.
+
+- `app.invoice_types` gets `in_use` (boolean, default true). `FIRST_RENT` and `SERVICES` are `in_use` false; `RENT` is named "Rent"; `MISCELLANEOUS` is named "Other charges" (ថ្លៃផ្សេងៗ); new rows `SHORT_STAY` (late payment false) and `PRODUCTS` (late payment true). Order: Rent, Utilities, Short stay, Products, Damage, Other charges.
+- `app.invoice_type_of(invoice)` (SECURITY DEFINER, no PUBLIC execute) answers the type of one Invoice: `RENT` for the RENT and SERVICE_CHARGES categories, `UTILITIES`, `DAMAGE` for DAMAGE_CHARGES and a short-stay damage, `SHORT_STAY` for a stay, `PRODUCTS` for an Invoice linked from `app.quotations.invoice_id`, else `MISCELLANEOUS`. `app.invoice_type_late_payment(invoice)` reads its switch; the automatic late-payment charge, its validation, a person's late-payment decision (validate and finalize) and the review snapshot now use it. `app.invoice_type_code(category, rent_kind)` maps the first Rent to `RENT`.
+- `app.set_invoice_type_late_payment` refuses a type that is not `in_use` (22023).
+- `app.invoice_resource_snapshot`, `app.receive_payment_payable` and `app.payment_receipt_lines` add `invoice_type` next to `short_stay`.
+- Follow-up on branch `ui-v81` (migration `20270713_364`, read only, after `20270712_363`; comes to main with design v81, PR #14): `app.payments_period_summary` no longer has the kind `MOVEOUT` ("Move-out charges"). The money paid to Damage and Miscellaneous lines is split by the DL-221 type of the Invoice it paid (`app.invoice_type_of`) into `SHORT_STAY`, `PRODUCTS`, `DAMAGE` and `OTHER` ("Other charges"); the four add up to what `MOVEOUT` was. The ten kinds are `RENT`, `UTIL`, `SVC`, `LATE`, `DEPOSIT`, `SHORT_STAY`, `PRODUCTS`, `DAMAGE`, `OTHER`, `CREDIT`. `app.payment_receipt_lines` gives each `INVOICE` line `parts`: the money this payment paid to that Invoice by line category (`RENT`, `SERVICE_CHARGES`, `UTILITIES`, `DAMAGE_CHARGES`, `MISCELLANEOUS_CHARGES`), adding up to the line's amount. No table, row, amount, document or ledger entry changes; a printed Receipt is not touched.
+
 ## DB-RS-001 — Reservations read their business rules (V1.1 step 2b)
 
 Added by DL-119 (migration `20270422_272`, forward-only).

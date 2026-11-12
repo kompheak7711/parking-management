@@ -190,7 +190,7 @@ class PostgresBusinessSettingsFlow:
             with psycopg.connect(self._database_url) as connection:
                 rows = connection.execute(
                     "SELECT code, name_en, name_kh, late_payment, version, updated_at, "
-                    "updated_by FROM app.invoice_types ORDER BY sort_order, code"
+                    "updated_by FROM app.invoice_types WHERE in_use ORDER BY sort_order, code"
                 ).fetchall()
         except psycopg.Error as exc:
             raise BusinessSettingUnavailable from exc

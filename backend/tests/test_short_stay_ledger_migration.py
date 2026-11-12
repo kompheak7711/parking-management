@@ -120,7 +120,7 @@ def test_migration_350_names_short_stay_invoices() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision("20270610_350")
     assert revision is not None and revision.down_revision == REVISION
-    assert scripts.get_heads() == ["20270715_387"]
+    assert scripts.get_heads() == ["20270716_390"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 
@@ -235,6 +235,20 @@ def test_short_stay_money_posts_to_rent_damage_cash_and_bank(
 
         assert kind(invoice["invoice_id"]) == "SHORT_STAY"
         assert kind(damage_invoice[0]) == "SHORT_STAY_DAMAGE"
+
+        # DL-221 (owner 11/11/2026): a stay is the type Short stay (late payment No) and its
+        # damage is the type Damage, with the Damage switch.
+        def invoice_type(invoice_id: object) -> tuple[object, object, object]:
+            found = connection.execute(
+                "SELECT app.invoice_resource_snapshot(%s) ->> 'invoice_type', "
+                "app.invoice_type_of(%s), app.invoice_type_late_payment(%s)",
+                (invoice_id, invoice_id, invoice_id),
+            ).fetchone()
+            assert found is not None
+            return found[0], found[1], found[2]
+
+        assert invoice_type(invoice["invoice_id"]) == ("SHORT_STAY", "SHORT_STAY", False)
+        assert invoice_type(damage_invoice[0]) == ("DAMAGE", "DAMAGE", True)
         other = connection.execute(
             "SELECT id FROM app.invoices WHERE id NOT IN "
             "(SELECT invoice_id FROM app.short_stay_invoice_accounts) LIMIT 1"
@@ -252,6 +266,9 @@ def test_short_stay_money_posts_to_rent_damage_cash_and_bank(
         assert [
             item["short_stay"] for item in payable[0]["items"] if item["kind"] == "INVOICE"
         ] == ["SHORT_STAY_DAMAGE"]
+        assert [
+            item["invoice_type"] for item in payable[0]["items"] if item["kind"] == "INVOICE"
+        ] == ["DAMAGE"]
         receipt = connection.execute(
             "SELECT allocation.payment_id FROM app.payment_allocations AS allocation "
             "WHERE allocation.invoice_id = %s LIMIT 1",
@@ -264,6 +281,7 @@ def test_short_stay_money_posts_to_rent_damage_cash_and_bank(
         ).fetchone()
         assert printed is not None
         assert [line.get("short_stay") for line in printed[0]["lines"]] == ["SHORT_STAY"]
+        assert [line.get("invoice_type") for line in printed[0]["lines"]] == ["SHORT_STAY"]
         connection.rollback()
 
 

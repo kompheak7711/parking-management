@@ -450,6 +450,12 @@ def test_customer_signed_issues_the_invoice_and_a_void_puts_the_items_back(
             (database.owner, database.property_id, database.property_id),
         ).fetchall()
         assert ("PRODUCT_CHARGES",) in kinds
+        # DL-221 (owner 11/11/2026): an Invoice from a Quotation is the type Products.
+        assert connection.execute(
+            "SELECT app.invoice_resource_snapshot(%s) ->> 'invoice_type', "
+            "app.invoice_type_late_payment(%s)",
+            (signed["invoice_id"], signed["invoice_id"]),
+        ).fetchone() == ("PRODUCTS", True)
         version = int(invoice[5])
     # Signed once only.
     refused(

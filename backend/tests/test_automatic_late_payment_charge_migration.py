@@ -174,11 +174,12 @@ def record(case: dict[str, Any], invoice: UUID | None = None) -> dict[str, Any]:
 
 
 def switch_first_rent(url: str, actor: UUID, *, on: bool) -> None:
-    """Turn late payment for the First Rent Invoice type on or off (migration 20270421_271)."""
+    """Turn late payment for the Rent Invoice type on or off; since DL-221 (migration 20270716_390)
+    the first Rent follows the Rent switch."""
     with psycopg.connect(url) as connection:
         prop = one(url, "SELECT id FROM app.properties")[0]
         connection.execute(
-            "SELECT app.set_invoice_type_late_payment(%s,'FIRST_RENT',%s,'Test',%s,%s)",
+            "SELECT app.set_invoice_type_late_payment(%s,'RENT',%s,'Test',%s,%s)",
             (prop, on, actor, uuid4()),
         )
         connection.commit()
@@ -416,7 +417,8 @@ def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url:
     assert record(late_issue, draft) == {"outcome": "NOT_ISSUED_OR_VOID"}
 
     # BR-INV-051 became an Invoice type switch in V1.1 (DL-118, owner 01/11/2026): First Rent
-    # starts at Yes. With the switch off, the First Rent Invoice gets no charge.
+    # starts at Yes. With the switch off, the First Rent Invoice gets no charge. Since DL-221 the
+    # first Rent follows the Rent switch.
     initial = signed_with_initial(url, 40)
     with psycopg.connect(url) as connection:
         initial_service = register_billing_service_principal(
@@ -427,6 +429,8 @@ def test_the_pass_skips_invoices_the_rule_does_not_charge(migrated_database_url:
         date, one(url, "SELECT due_date FROM app.invoices WHERE id=%s", initial["invoice"])[0]
     )
     seed_last_run(url, initial["property"], initial_service, initial_due)
+    # DL-221: the first Rent Invoice is the type Rent.
+    assert one(url, "SELECT app.invoice_type_of(%s)", initial["invoice"]) == ("RENT",)
     switch_first_rent(url, initial["actor"], on=False)
     try:
         assert record(initial_case, initial["invoice"]) == {"outcome": "LATE_PAYMENT_OFF"}

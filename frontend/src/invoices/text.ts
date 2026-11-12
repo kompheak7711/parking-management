@@ -2,7 +2,11 @@
 // (i18n.js). Khmer needs the native check before the app is used. Lines marked "new" are not
 // in the mock-up.
 
-import type { InvoiceCategory, ShortStayInvoiceKind } from "../invoiceClient";
+import type {
+  InvoiceCategory,
+  InvoiceTypeCode,
+  ShortStayInvoiceKind,
+} from "../invoiceClient";
 import type { Language } from "../signInText";
 
 const TEXT = {
@@ -32,8 +36,10 @@ const TEXT = {
   UTILITIES: ["Utilities", "ថ្លៃទឹកភ្លើង"],
   // new
   SERVICE_CHARGES: ["Services", "សេវា"],
-  MISCELLANEOUS_CHARGES: ["Miscellaneous", "ផ្សេងៗ"],
+  // DL-221 (owner 11/11/2026): Miscellaneous is named "Other charges"; Products is a type.
+  MISCELLANEOUS_CHARGES: ["Other charges", "ថ្លៃផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
+  PRODUCTS: ["Products", "ផលិតផល"],
   // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
   SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
   SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],
@@ -629,12 +635,45 @@ const TEXT = {
 
 export type InvoicesTextKey = keyof typeof TEXT;
 
-/** The type a screen names an Invoice by: a short stay, else its type. */
+/** DL-221: the type of an Invoice; from its category when the server did not send it. */
+export function invoiceTypeOf(invoice: {
+  category: InvoiceCategory;
+  short_stay?: ShortStayInvoiceKind | null;
+  invoice_type?: InvoiceTypeCode | null;
+}): InvoiceTypeCode {
+  if (invoice.invoice_type) return invoice.invoice_type;
+  if (invoice.short_stay === "SHORT_STAY") return "SHORT_STAY";
+  if (invoice.short_stay === "SHORT_STAY_DAMAGE") return "DAMAGE";
+  switch (invoice.category) {
+    case "RENT":
+    case "SERVICE_CHARGES":
+      return "RENT";
+    case "UTILITIES":
+      return "UTILITIES";
+    case "DAMAGE_CHARGES":
+      return "DAMAGE";
+    case "MISCELLANEOUS_CHARGES":
+      return "MISCELLANEOUS";
+  }
+}
+
+/** The words for an Invoice type (DL-221). */
+export const INVOICE_TYPE_TEXT: Record<InvoiceTypeCode, InvoicesTextKey> = {
+  RENT: "RENT",
+  UTILITIES: "UTILITIES",
+  SHORT_STAY: "SHORT_STAY",
+  PRODUCTS: "PRODUCTS",
+  DAMAGE: "DAMAGE_CHARGES",
+  MISCELLANEOUS: "MISCELLANEOUS_CHARGES",
+};
+
+/** The type a screen names an Invoice by (DL-221). */
 export function invoiceType(invoice: {
   category: InvoiceCategory;
   short_stay?: ShortStayInvoiceKind | null;
+  invoice_type?: InvoiceTypeCode | null;
 }): InvoicesTextKey {
-  return invoice.short_stay ?? invoice.category;
+  return INVOICE_TYPE_TEXT[invoiceTypeOf(invoice)];
 }
 
 export function ivt(

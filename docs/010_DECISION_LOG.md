@@ -3039,3 +3039,20 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270712_363` (UI v81 range, on branch ui-v81 after `20270711_362`): the tables `app.lease_numbers` (one row per Lease, append-only: no update, delete or truncate) and `app.lease_number_counters` (one row per Property; moves up by one only). Only the AFTER INSERT trigger on `app.leases` writes them; `app.leases` itself is not changed. The database model doc gets its entry when the design v81 work is documented.
 - **Links:** DL-080, DL-118.
 - **Decision date:** 2026-11-08.
+
+## DL-221 — Invoice types: Rent, Utilities, Short stay, Products, Damage and Other charges
+
+- **Type:** `OWNER BUSINESS DECISION` for (A) to (E); `TECHNICAL DECISION UNDER THE OWNER'S RULE` for (F).
+- **Status:** `AGREED BY THE OWNER 11 NOV 2026 21:51 AND 22:02; BUILT ON BRANCH claude/project-thread-4yyhqn; WAITS FOR THE OWNER'S TEST AND OK`
+- **Source:** the owner's questions of 11 Nov 2026 21:34 and 21:36 (Invoices page points 1 and 2, Settings point 3) and two cards in the thread "Simplify Invoice types": "Use my 4 recommendations for the new Invoice types?" (21:51, "Yes, use all 4") and "Rename Miscellaneous to Other charges for the few Invoices still using it?" (22:02, "Yes, call it Other charges").
+- **Why.** Settings › Invoice types (DL-118 (C)) only holds the late-payment switch of each kind of Invoice. It listed First Rent and Services, but not Short stay or Products: Monthly services are lines on the Rent Invoice, so no Invoice is ever of the type Services, and short stays, Products and Quotation services were all saved as Miscellaneous, which the screens named "Short stay", "Short-stay damage" or "Miscellaneous".
+- **(A) First Rent joins Rent.** Every Rent Invoice, the first one too, follows the one Rent switch (still Yes). This keeps DL-118 (C): the first Rent gets the late-payment charge unless the Owner switches Rent to No.
+- **(B) Short stay** is a type of its own, late payment **No**.
+- **(C) Products** (an Invoice made when the Customer signs a Quotation, DL-123) is a type of its own, late payment **Yes** (as Miscellaneous was).
+- **(D) Short-stay damage** is a Damage Invoice and follows the Damage switch.
+- **(E) Other charges.** Miscellaneous is still used by the move-out cleaning charge, extra move-out charges and refund pay-back charges, so it stays and is named "Other charges" (ថ្លៃផ្សេងៗ), late payment Yes. Services and First Rent are no longer listed.
+- **(F) Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** An Invoice's category, lines, money and ledger do not change; only the type it shows and the switch it follows. The type comes from the Invoice: Rent (and the Services category) is Rent, a stay is Short stay, its damage is Damage, an Invoice linked to a Quotation is Products, any other Miscellaneous Invoice is Other charges. Old Invoices show their new type at once. The rows FIRST_RENT and SERVICES stay (types are never removed) with `in_use` No; they cannot be switched. A late switch the Owner set on First Rent before is no longer read. On the Invoices page the type filter has the same six types; Receive payment, Receipts and the printed Invoice use the same names.
+- **Database:** migration `20270716_390` (DB-BS-002); API API-BS-002. Frontend tests TEST-FE-2000 to TEST-FE-2003.
+- **Links:** DL-118, DL-123, DL-150 to DL-159 (short stays).
+- **Decision date:** 2026-11-11.
+

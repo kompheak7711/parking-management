@@ -28,8 +28,9 @@ const CATEGORY: Record<string, [string, string]> = {
   RENT: ["ថ្លៃឈ្នួល", "Rent"],
   UTILITIES: ["ថ្លៃទឹកភ្លើង", "Utilities"],
   SERVICE_CHARGES: ["ថ្លៃសេវា", "Services"],
-  MISCELLANEOUS_CHARGES: ["ថ្លៃផ្សេងៗ", "Miscellaneous"],
+  MISCELLANEOUS_CHARGES: ["ថ្លៃផ្សេងៗ", "Other charges"],
   DAMAGE_CHARGES: ["ថ្លៃខូចខាត", "Damage"],
+  PRODUCTS: ["ផលិតផល", "Products"],
   SHORT_STAY: ["ថ្លៃស្នាក់នៅ", "Short stay"],
   SHORT_STAY_DAMAGE: ["ថ្លៃខូចខាត", "Short-stay damage"],
 };

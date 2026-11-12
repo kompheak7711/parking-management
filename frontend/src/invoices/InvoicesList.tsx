@@ -4,7 +4,11 @@
 
 import { useState } from "react";
 
-import type { InvoiceCategory, InvoiceResource } from "../invoiceClient";
+import {
+  INVOICE_TYPE_CODES,
+  type InvoiceResource,
+  type InvoiceTypeCode,
+} from "../invoiceClient";
 import { dayText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
@@ -26,7 +30,12 @@ import {
   stateOf,
   unitOf,
 } from "./invoicesData";
-import { invoiceType, ivt, type InvoicesTextKey } from "./text";
+import {
+  INVOICE_TYPE_TEXT,
+  invoiceType,
+  ivt,
+  type InvoicesTextKey,
+} from "./text";
 
 const STATE_CHIPS: Record<
   InvoiceState,
@@ -62,14 +71,8 @@ const CARDS: [InvoiceCard, ShellIcon, Tone | "brand", InvoicesTextKey][] = [
   ["paid", "check", "ok", "ic_paid"],
 ];
 
-const TYPES: (InvoiceCategory | "all")[] = [
-  "all",
-  "RENT",
-  "UTILITIES",
-  "SERVICE_CHARGES",
-  "MISCELLANEOUS_CHARGES",
-  "DAMAGE_CHARGES",
-];
+// DL-221 (owner 11/11/2026): the same types as Settings › Invoice types.
+const TYPES: (InvoiceTypeCode | "all")[] = ["all", ...INVOICE_TYPE_CODES];
 
 function countText(language: Language, count: number): string {
   return count === 1 ? ivt(language, "ic_n1") : ivt(language, "ic_n", count);
@@ -94,7 +97,7 @@ export function InvoicesList({
 }) {
   const [period, setPeriod] = useState<InvoicePeriod>("all");
   const [picked, setPicked] = useState(today.slice(0, 7));
-  const [type, setType] = useState<InvoiceCategory | "all">("all");
+  const [type, setType] = useState<InvoiceTypeCode | "all">("all");
   const [card, setCard] = useState<InvoiceCard>("all");
 
   const month = periodMonth(period, today, picked);
@@ -309,13 +312,16 @@ export function InvoicesList({
           className="ui-sel"
           id="inv-type"
           onChange={(event) => {
-            setType(event.currentTarget.value as InvoiceCategory | "all");
+            setType(event.currentTarget.value as InvoiceTypeCode | "all");
           }}
           value={type}
         >
           {TYPES.map((value) => (
             <option key={value} value={value}>
-              {ivt(language, value === "all" ? "type_all" : value)}
+              {ivt(
+                language,
+                value === "all" ? "type_all" : INVOICE_TYPE_TEXT[value],
+              )}
             </option>
           ))}
         </select>

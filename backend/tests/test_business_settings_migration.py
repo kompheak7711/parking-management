@@ -104,16 +104,20 @@ def test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes
             "ORDER BY document_type, year DESC"
         ).fetchall()
         assert dict(rules) == DOCUMENTS
+        # DL-221 (owner 11/11/2026): First Rent joins Rent, Services is never an Invoice's type,
+        # Short stay starts at No and Products at Yes; Miscellaneous is named "Other charges".
         kinds = runtime.execute(
-            "SELECT code, late_payment FROM app.invoice_types ORDER BY sort_order"
+            "SELECT code, name_en, late_payment, in_use FROM app.invoice_types ORDER BY sort_order"
         ).fetchall()
         assert kinds == [
-            ("FIRST_RENT", True),
-            ("RENT", True),
-            ("UTILITIES", True),
-            ("SERVICES", True),
-            ("DAMAGE", True),
-            ("MISCELLANEOUS", True),
+            ("RENT", "Rent", True, True),
+            ("UTILITIES", "Utilities", True, True),
+            ("SHORT_STAY", "Short stay", False, True),
+            ("PRODUCTS", "Products", True, True),
+            ("DAMAGE", "Damage", True, True),
+            ("MISCELLANEOUS", "Other charges", True, True),
+            ("FIRST_RENT", "First Rent", True, False),
+            ("SERVICES", "Services", True, False),
         ]
         codes = runtime.execute(
             "SELECT name.code, name.used_by_app FROM app.business_rule_names AS name "
@@ -213,6 +217,16 @@ def test_late_payment_off_for_a_type_needs_a_reason_and_keeps_history(
     assert scalar(connection, gate, ("UTILITIES", None)) is False
     assert scalar(connection, gate, ("RENT", "INITIAL")) is True
     assert scalar(connection, gate, ("RENT", "RECURRING")) is True
+    # DL-221: a type no Invoice gets any more cannot be switched; the first Rent follows Rent.
+    refused(
+        connection,
+        psycopg.errors.InvalidParameterValue,
+        switch,
+        (property_id, "FIRST_RENT", False, "Owner", actor_id),
+    )
+    assert scalar(connection, switch, (property_id, "RENT", False, "Owner", actor_id)) > 0
+    assert scalar(connection, gate, ("RENT", "INITIAL")) is False
+    assert scalar(connection, gate, ("RENT", "RECURRING")) is False
     action = scalar(
         connection, "SELECT action FROM app.audit_events WHERE actor_id=%s", (actor_id,)
     )
@@ -301,3 +315,11 @@ def test_property_details_change_at_the_expected_version_with_history(
         details,
         (property_id, "Name", "x" * 501, "", "", version + 1, actor_id),
     )
+
+
+def test_migration_390_simplifies_the_invoice_types_forward_only() -> None:
+    """DL-221 (owner 11/11/2026): Rent, Utilities, Short stay, Products, Damage, Other charges."""
+    found = ScriptDirectory.from_config(Config("alembic.ini")).get_revision("20270716_390")
+    assert found is not None and found.down_revision == "20270715_387"
+    with pytest.raises(NotImplementedError, match="forward-only"):
+        found.module.downgrade()

@@ -42,9 +42,12 @@ function periodOf(period: JsonValue | undefined): string | null {
 function khmerOf(
   line: InvoiceLine,
   shortStay: InvoiceResource["short_stay"],
+  invoiceType: InvoiceResource["invoice_type"],
 ): string {
   if (shortStay === "SHORT_STAY") return "ថ្លៃស្នាក់នៅ";
   if (shortStay === "SHORT_STAY_DAMAGE") return "ថ្លៃខូចខាត";
+  // DL-221: an Invoice from a Quotation sells Products.
+  if (invoiceType === "PRODUCTS") return "ផលិតផល";
   const type = textOf(line.calculation_evidence.utility_type);
   if (line.category === "UTILITIES")
     return type === "WATER"
@@ -191,7 +194,7 @@ export function InvoiceDocument({
                 <td>
                   <div className="cat">
                     <span className="kh">
-                      {khmerOf(line, invoice.short_stay)}
+                      {khmerOf(line, invoice.short_stay, invoice.invoice_type)}
                     </span>
                     {line.description}
                   </div>

@@ -60311,6 +60311,17 @@
       "notes": "V1.1 part 2: Late payment for a type needs a reason, adds a version and an audit event; types are never removed."
     },
     {
+      "test_id": "test_migration_390_simplifies_the_invoice_types_forward_only",
+      "upstream_ids": [
+        "DL-221",
+        "DB-BS-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_business_settings_migration.py",
+      "status": "implemented",
+      "notes": "DL-221: Migration 20270716_390 follows 20270715_387 and is forward-only (Invoice types Rent, Utilities, Short stay, Products, Damage, Other charges)."
+    },
+    {
       "test_id": "test_the_program_reads_the_late_percent_from_the_rules",
       "upstream_ids": [
         "DL-118",

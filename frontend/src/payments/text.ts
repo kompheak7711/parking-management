@@ -387,8 +387,10 @@ const TEXT = {
   UTILITIES: ["Utilities", "ថ្លៃទឹកភ្លើង"],
   // new
   SERVICE_CHARGES: ["Services", "សេវា"],
-  MISCELLANEOUS_CHARGES: ["Miscellaneous", "ផ្សេងៗ"],
+  // DL-221 (owner 11/11/2026): Miscellaneous is named "Other charges"; Products is a type.
+  MISCELLANEOUS_CHARGES: ["Other charges", "ថ្លៃផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
+  PRODUCTS: ["Products", "ផលិតផល"],
   // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
   SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
   SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],

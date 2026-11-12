@@ -6,6 +6,7 @@ import {
   billingTransport,
   type BillingTransmission,
   InvoiceClientError,
+  invoiceTypeCode,
   shortStayKind,
 } from "../invoiceClient";
 import type { PayableItem, PaysTargetInput } from "./payFor";
@@ -234,6 +235,23 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : invalid();
 }
 
+/**
+ * DL-221 (owner 11/11/2026): the name a payment screen gives an Invoice of this type. A
+ * short-stay damage Invoice is Damage; an Invoice from a Quotation is Products.
+ */
+export function typeCategory(value: unknown): string | null {
+  const type = invoiceTypeCode(value);
+  if (type === null) return null;
+  return {
+    RENT: "RENT",
+    UTILITIES: "UTILITIES",
+    SHORT_STAY: "SHORT_STAY",
+    PRODUCTS: "PRODUCTS",
+    DAMAGE: "DAMAGE_CHARGES",
+    MISCELLANEOUS: "MISCELLANEOUS_CHARGES",
+  }[type];
+}
+
 function payableItem(value: unknown): PayableItem {
   const item = object(value);
   const kind = item.kind;
@@ -243,8 +261,10 @@ function payableItem(value: unknown): PayableItem {
     id: text(item.id),
     invoiceId: text(item.invoice_id),
     invoiceNumber: text(item.invoice_number),
-    // A short-stay Invoice is named "Short stay" instead of its type (owner test 05/11/2026).
+    // A short-stay Invoice is named "Short stay" instead of its type (owner test 05/11/2026);
+    // DL-221: the Invoice's type when the server sends it.
     category:
+      typeCategory(item.invoice_type) ??
       shortStayKind(item.short_stay) ??
       (item.category === null ? null : text(item.category)),
     dueDate: item.due_date === null ? null : text(item.due_date),
@@ -383,7 +403,10 @@ function receiptOf(value: unknown): ReceiptView {
         kind,
         invoiceId: maybeText(line.invoice_id),
         invoiceNumber: maybeText(line.invoice_number),
-        category: shortStayKind(line.short_stay) ?? maybeText(line.category),
+        category:
+          typeCategory(line.invoice_type) ??
+          shortStayKind(line.short_stay) ??
+          maybeText(line.category),
         dueDate: maybeText(line.due_date),
         depositType: maybeText(line.deposit_type),
         amount: cents(line.amount_usd_cents),

@@ -5,11 +5,12 @@
 import type { CustomerApi } from "../customerClient";
 import type {
   InvoiceApi,
-  InvoiceCategory,
   InvoiceResource,
+  InvoiceTypeCode,
   Money,
 } from "../invoiceClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
+import { invoiceTypeOf } from "./text";
 
 export interface InvoicesData {
   invoices: InvoiceResource[];
@@ -234,12 +235,12 @@ export function periodMonth(
 export function filtered(
   invoices: readonly InvoiceResource[],
   month: string | null,
-  type: InvoiceCategory | "all",
+  type: InvoiceTypeCode | "all",
   customerId: string | null,
 ): InvoiceResource[] {
   return invoices.filter(
     (invoice) =>
-      (type === "all" || invoice.category === type) &&
+      (type === "all" || invoiceTypeOf(invoice) === type) &&
       (customerId === null || invoice.customer_id === customerId) &&
       (month === null || invoice.due_date?.startsWith(month) === true),
   );

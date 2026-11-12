@@ -43,6 +43,18 @@ export interface InvoiceLine {
 }
 /** A short-stay Invoice (daily and weekly rent): the stay, or its damage. */
 export type ShortStayInvoiceKind = "SHORT_STAY" | "SHORT_STAY_DAMAGE";
+/**
+ * DL-221 (owner 11/11/2026): the type of an Invoice, as Settings › Invoice types lists it. A
+ * stay is Short stay, its damage is Damage, an Invoice from a Quotation is Products, and
+ * MISCELLANEOUS is named "Other charges".
+ */
+export type InvoiceTypeCode =
+  | "RENT"
+  | "UTILITIES"
+  | "SHORT_STAY"
+  | "PRODUCTS"
+  | "DAMAGE"
+  | "MISCELLANEOUS";
 export interface InvoiceResource {
   id: string;
   property_id: string;
@@ -52,6 +64,8 @@ export interface InvoiceResource {
   category: InvoiceCategory;
   /** Set when the Invoice is a short stay; screens name it so instead of its type. */
   short_stay?: ShortStayInvoiceKind | null;
+  /** DL-221: the Invoice's type (absent from an older server). */
+  invoice_type?: InvoiceTypeCode | null;
   status: InvoiceStatus;
   invoice_date: string;
   due_date: string | null;
@@ -450,6 +464,17 @@ const categories: readonly InvoiceCategory[] = [
 export function shortStayKind(value: unknown): ShortStayInvoiceKind | null {
   return value === "SHORT_STAY" || value === "SHORT_STAY_DAMAGE" ? value : null;
 }
+export const INVOICE_TYPE_CODES: readonly InvoiceTypeCode[] = [
+  "RENT",
+  "UTILITIES",
+  "SHORT_STAY",
+  "PRODUCTS",
+  "DAMAGE",
+  "MISCELLANEOUS",
+];
+export function invoiceTypeCode(value: unknown): InvoiceTypeCode | null {
+  return INVOICE_TYPE_CODES.find((code) => code === value) ?? null;
+}
 
 function invoice(value: unknown): InvoiceResource {
   const row = object(value);
@@ -461,6 +486,7 @@ function invoice(value: unknown): InvoiceResource {
     invoice_number: text(row.invoice_number),
     category: choice(row.category, categories),
     short_stay: shortStayKind(row.short_stay),
+    invoice_type: invoiceTypeCode(row.invoice_type),
     status: choice(row.status, [
       "DRAFT",
       "UNPAID",
