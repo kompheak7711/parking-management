@@ -100,6 +100,11 @@ class InMemoryStays:
         self.calls.append(("credits_due", None))
         return []
 
+    def damage_due(self, property_id: UUID, *, actor_id: str) -> list[Json]:
+        self._check(property_id)
+        self.calls.append(("damage_due", None))
+        return [{"booking_id": str(self.booking_id), "problem_count": 1}]
+
     def act(
         self, property_id: UUID, action: Action, target: UUID, body: Json, *, actor_id: str
     ) -> Json:
@@ -194,10 +199,16 @@ def test_each_step_of_a_stay_needs_its_own_right() -> None:
         (f"{booking}/check-out", {"version": 4}, "short_stays.desk"),
         (
             f"{booking}/room-check",
-            {"damage": "Broken lamp", "damage_usd_cents": 8000},
+            {"problems": [{"problem_type_id": str(uuid4()), "description": "Broken lamp"}]},
             "short_stays.housekeeping",
         ),
-        (damage, {"approve": True}, "short_stays.approve"),
+        # DL-222: a damage charge from before is decided by the person who bills damage.
+        (damage, {"approve": True}, "damage_charges.bill"),
+        (
+            f"{booking}/damage",
+            {"charge": True, "description": "Broken lamp", "amount_usd_cents": 8000},
+            "damage_charges.bill",
+        ),
         (f"{booking}/deposit/end", None, "short_stays.desk"),
         (f"{booking}/fee", {"version": 5, "kind": "LATE_CHECK_OUT"}, "short_stays.desk"),
         (f"{booking}/extend", {"version": 6, "check_out_on": "2026-11-12"}, "short_stays.desk"),
@@ -228,6 +239,7 @@ def test_each_step_of_a_stay_needs_its_own_right() -> None:
             "short_stays.housekeeping",
             "short_stays.approve",
             "short_stays.credit",
+            "damage_charges.bill",
         } - {right}
         assert client(flow, *others).post(url, json=body, headers=HEADERS).status_code == 403, url
         answer = client(flow, right).post(url, json=body, headers=HEADERS)
@@ -242,6 +254,7 @@ def test_each_step_of_a_stay_needs_its_own_right() -> None:
         "check_out",
         "room_check",
         "decide",
+        "damage",
         "end_deposit",
         "fee",
         "extend",
@@ -266,6 +279,30 @@ def test_each_step_of_a_stay_needs_its_own_right() -> None:
     ):
         assert desk.post(f"{booking}/deposit", json=wrong, headers=HEADERS).status_code == 422
     assert desk.post(f"{booking}/check-in", json={"version": 3}, headers=HEADERS).status_code == 422
+    # DL-222: the room check reports problems, never a cost.
+    cleaner = client(flow, "short_stays.housekeeping")
+    for wrong_check in (
+        {"damage": "Broken lamp", "damage_usd_cents": 8000},
+        {"problems": [{"description": "No type"}]},
+        {"problems": [{"problem_type_id": str(uuid4()), "description": "Lamp", "cost": 1}]},
+    ):
+        answer = cleaner.post(f"{booking}/room-check", json=wrong_check, headers=HEADERS)
+        assert answer.status_code == 422, wrong_check
+    biller = client(flow, "damage_charges.bill")
+    for wrong_charge in (
+        {"charge": True, "description": "Lamp"},
+        {"charge": True, "amount_usd_cents": 8000},
+        {"charge": False, "amount_usd_cents": 8000},
+        {"charge": False, "description": "Lamp"},
+        {"charge": True, "description": "Lamp", "amount_usd_cents": 0},
+    ):
+        answer = biller.post(f"{booking}/damage", json=wrong_charge, headers=HEADERS)
+        assert answer.status_code == 422, wrong_charge
+    no_charge = biller.post(
+        f"{booking}/damage", json={"charge": False, "note": "Wear"}, headers=HEADERS
+    )
+    assert no_charge.status_code == 200
+    assert flow.calls[-1] == ("damage", (flow.booking_id, {"charge": False, "note": "Wear"}))
     assert desk.post(f"{booking}/cancel", json={"version": 7}, headers=HEADERS).status_code == 422
     approver = client(flow, "short_stays.approve")
     for wrong_discount in (
@@ -378,6 +415,17 @@ def test_an_unused_credit_ends_with_the_credit_right() -> None:
     assert client(flow, "short_stays.desk").post(end, headers=HEADERS).status_code == 403
     assert client(flow, "short_stays.credit").post(end, headers=HEADERS).status_code == 200
     assert flow.calls[-1][0] == "end_credit"
+
+
+def test_stays_waiting_for_a_damage_decision_need_the_billing_right() -> None:
+    flow = InMemoryStays()
+    due = f"{base(flow)}/damage-due"
+    for rights in (("short_stays.approve",), ("short_stays.housekeeping", "short_stays.desk")):
+        assert client(flow, *rights).get(due).status_code == 403
+    answer = client(flow, "damage_charges.bill").get(due)
+    assert answer.status_code == 200 and answer.headers["Cache-Control"] == "private, no-store"
+    assert answer.json()["data"] == [{"booking_id": str(flow.booking_id), "problem_count": 1}]
+    assert flow.calls[-1] == ("damage_due", None)
 
 
 def test_the_weekly_report_needs_the_approve_right_and_a_complaint_the_desk() -> None:

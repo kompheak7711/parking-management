@@ -64731,7 +64731,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
       "status": "implemented",
-      "notes": "Short stays: records the room check with damage and lets only the Manager decide."
+      "notes": "Short stays (DL-222): the room check reports problems as Problem reports, with no cost; without the billing right the deposit waits."
     },
     {
       "test_id": "TEST-FE-1610",
@@ -64741,7 +64741,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
       "status": "implemented",
-      "notes": "Short stays: approves damage from the deposit, then keeps it."
+      "notes": "Short stays (DL-222): the person who bills damage charges the guest with no approval, from the deposit first, then keeps it."
     },
     {
       "test_id": "TEST-FE-1611",
@@ -66391,6 +66391,132 @@
       "test_path": "frontend/src/hr/HrPages.test.tsx",
       "status": "implemented",
       "notes": "HRIS: the NSSF number is optional at Add employee and shows on the employee page (owner 07/11 17:59)."
+    },
+    {
+      "test_id": "test_migration_391_follows_the_invoice_types",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: migration 391 follows 390 (DL-221), is the one head and is forward-only."
+    },
+    {
+      "test_id": "test_the_room_check_reports_problems_and_the_charge_needs_no_approval",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: the room check makes Unit Problem reports with no cost; the person who bills damage charges the guest with no approval; the deposit waits; the damage-due list."
+    },
+    {
+      "test_id": "test_no_charge_gives_the_whole_deposit_back",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: No charge gives the whole deposit back; a room check with no problem needs no decision."
+    },
+    {
+      "test_id": "test_a_housekeeper_without_the_report_right_reports_no_problem",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: reporting a problem at the room check needs problem_reports.add."
+    },
+    {
+      "test_id": "test_a_charge_that_waited_from_before_is_decided_by_the_billing_right",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: a damage charge waiting from before is decided with damage_charges.bill, not short_stays.approve."
+    },
+    {
+      "test_id": "test_the_links_and_decisions_are_never_changed",
+      "upstream_ids": [
+        "DL-222",
+        "DB-PR-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_short_stay_room_check_problems_migration.py",
+      "status": "implemented",
+      "notes": "DL-222: the room-check report links and the damage decisions are append-only."
+    },
+    {
+      "test_id": "test_stays_waiting_for_a_damage_decision_need_the_billing_right",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stays_api.py",
+      "status": "implemented",
+      "notes": "DL-222: GET damage-due needs damage_charges.bill."
+    },
+    {
+      "test_id": "TEST-FE-2050",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays (DL-222): a room check without the right to add a Problem report reports nothing."
+    },
+    {
+      "test_id": "TEST-FE-2051",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays (DL-222): No charge returns the whole deposit (Khmer screen)."
+    },
+    {
+      "test_id": "TEST-FE-2052",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays (DL-222): a damage charge waiting from before is decided by the person who bills damage."
+    },
+    {
+      "test_id": "TEST-FE-2053",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Short stays (DL-222): the Bookings list shows the stays waiting for a damage decision to the person who bills damage."
+    },
+    {
+      "test_id": "TEST-FE-2055",
+      "upstream_ids": [
+        "DL-222"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/problems/ProblemReportsPage.test.tsx",
+      "status": "implemented",
+      "notes": "Problem reports (DL-222): a problem from a short-stay room check links back to the stay."
     },
     {
       "test_id": "TEST-FE-2100",

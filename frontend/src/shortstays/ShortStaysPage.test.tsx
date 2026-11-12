@@ -15,6 +15,7 @@ import {
 } from "../customerClient";
 import type { InvoiceResource } from "../invoiceClient";
 import { type InvoicesData, payerIds } from "../invoices/invoicesData";
+import type { ProblemType } from "../problems/problemsClient";
 import { invoiceType, ivt } from "../invoices/text";
 import { lineWords } from "../payments/ReceiptDocument";
 import { pyt } from "../payments/text";
@@ -161,6 +162,9 @@ const BOOKING: Booking = {
   deposit: null,
   room_check: null,
   damages: [],
+  problems: [],
+  damage_decision: null,
+  damage_due: false,
   extra_invoices: [],
   early_check_in: false,
   late_check_out: false,
@@ -273,6 +277,63 @@ function weekReport(extra: Partial<WeekReport> = {}): WeekReport {
   };
 }
 
+/** DL-222: the problem types a room check offers; a water leak is always urgent. */
+const PROBLEM_TYPES: ProblemType[] = [
+  {
+    id: "pt-1",
+    code: "FURNITURE",
+    name_en: "Furniture",
+    name_kh: "គ្រឿងសង្ហារិម",
+    icon: "sofa",
+    always_urgent: false,
+  },
+  {
+    id: "pt-2",
+    code: "WATER_LEAK",
+    name_en: "Water leak",
+    name_kh: null,
+    icon: "water",
+    always_urgent: true,
+  },
+];
+
+/** DL-222: checked out, the deposit held, the room check still to do. */
+function checkedOut(extra: Partial<Booking> = {}): Booking {
+  return {
+    ...TODAY_STAY,
+    status: "CHECKED_OUT",
+    payment: "PAID",
+    invoice: INVOICE,
+    deposit: DEPOSIT,
+    room_check: {
+      task_id: "t-1",
+      task_on: "2026-11-04",
+      status: "TO_DO",
+      note: null,
+      done_at: null,
+    },
+    ...extra,
+  };
+}
+
+const ROOM_DONE: Booking["room_check"] = {
+  task_id: "t-1",
+  task_on: "2026-11-04",
+  status: "DONE",
+  note: null,
+  done_at: "2026-11-04T04:00:00Z",
+};
+
+const PROBLEM: Booking["problems"][number] = {
+  report_id: "r-1",
+  report_number: "UP260007",
+  description: "Lamp broken",
+  type_name_en: "Furniture",
+  type_name_kh: "គ្រឿងសង្ហារិម",
+  urgent: true,
+  status: "RECEIVED",
+};
+
 function fakeApi(overrides: Partial<ShortStaysApi> = {}): ShortStaysApi {
   return {
     calendar: vi.fn((_: string, from: string, days: number) =>
@@ -310,6 +371,8 @@ function fakeApi(overrides: Partial<ShortStaysApi> = {}): ShortStaysApi {
     ),
     complaint: vi.fn(() => Promise.resolve()),
     creditsDue: vi.fn(() => Promise.resolve([])),
+    damageDue: vi.fn(() => Promise.resolve([])),
+    problemTypes: vi.fn(() => Promise.resolve(PROBLEM_TYPES)),
     refundMethods: vi.fn(() => Promise.resolve([])),
     refund: vi.fn(() => Promise.reject(new Error("not used"))),
     ...overrides,
@@ -781,80 +844,253 @@ describe("Daily and weekly rent: Short stays", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-1609 records the room check with damage and lets only the Manager decide", async () => {
-    const out: Booking = {
-      ...TODAY_STAY,
-      status: "CHECKED_OUT",
-      payment: "PAID",
-      invoice: INVOICE,
-      deposit: DEPOSIT,
-      room_check: {
-        task_id: "t-1",
-        task_on: "2026-11-04",
-        status: "TO_DO",
+  it("TEST-FE-1609 the room check reports problems as Problem reports, with no cost", async () => {
+    const out = checkedOut();
+    const reported = checkedOut({
+      room_check: ROOM_DONE,
+      problems: [PROBLEM],
+      damage_due: true,
+    });
+    const step = vi.fn(() => Promise.resolve(reported));
+    const problemTypes = vi.fn(() => Promise.resolve(PROBLEM_TYPES));
+    show({
+      api: fakeApi({
+        get: vi.fn(() => Promise.resolve(out)),
+        step,
+        problemTypes,
+      }),
+      capabilities: new Set([
+        ...DESK,
+        "short_stays.housekeeping",
+        "problem_reports.read",
+        "problem_reports.add",
+      ]),
+    });
+    go("#/shortstays/st:b-1");
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Report a problem" }),
+    );
+    expect(problemTypes).toHaveBeenCalledWith("p-1");
+    // The room check never asks for money.
+    expect(screen.queryByLabelText(/Cost/)).toBeNull();
+    expect(screen.queryByLabelText(/Amount/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    expect(screen.getByText("Pick the type of problem.")).toBeInTheDocument();
+    expect(screen.getByText("Say what is wrong.")).toBeInTheDocument();
+    expect(step).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText(/Type 1/), {
+      target: { value: "pt-1" },
+    });
+    fireEvent.change(screen.getByLabelText(/What is wrong 1/), {
+      target: { value: " Lamp broken " },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Urgent" }));
+    // A second problem of a type that is always urgent, then removed again.
+    fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
+    fireEvent.change(screen.getByLabelText(/Type 2/), {
+      target: { value: "pt-2" },
+    });
+    const urgent = screen.getAllByRole("checkbox", { name: "Urgent" });
+    expect(urgent[1]).toBeChecked();
+    expect(urgent[1]).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Remove 2" }));
+    expect(screen.queryByLabelText(/Type 2/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
+      problems: [
+        { problem_type_id: "pt-1", description: "Lamp broken", urgent: true },
+      ],
+    });
+    // The problem shows on the booking and opens its Problem report.
+    expect(
+      await screen.findByRole("link", { name: "UP260007" }),
+    ).toHaveAttribute("href", "#/problems/pr%3Ar-1");
+    // Without the right to bill damage: no decision form, and the deposit waits.
+    expect(
+      screen.getByText(
+        "The damage charge is not decided yet. A person who bills damage decides it.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Save the decision" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Return the deposit/ }),
+    ).toBeNull();
+  });
+
+  it("TEST-FE-1610 charges the guest without an approval: from the deposit, then keeps it", async () => {
+    const reported = checkedOut({
+      room_check: ROOM_DONE,
+      problems: [PROBLEM],
+      damage_due: true,
+    });
+    const charged: Booking = {
+      ...reported,
+      damage_due: false,
+      damage_decision: {
+        outcome: "CHARGE",
+        damage_id: "g-1",
         note: null,
-        done_at: null,
-      },
-    };
-    const waiting: Booking = {
-      ...out,
-      room_check: {
-        ...(out.room_check ?? { task_id: "", task_on: "" }),
-        status: "DONE",
-        done_at: "2026-11-04T04:00:00Z",
-        note: null,
+        decided_at: "2026-11-04T05:00:00Z",
       },
       damages: [
         {
           damage_id: "g-1",
           description: "Broken lamp",
           amount_usd_cents: 8000,
-          status: "WAITING",
-          decided_at: null,
+          status: "APPROVED",
+          decided_at: "2026-11-04T05:00:00Z",
           decision_note: null,
-          from_deposit_usd_cents: 0,
-          invoice_id: null,
-          invoice_number: null,
+          from_deposit_usd_cents: 5000,
+          invoice_id: "i-2",
+          invoice_number: "INV-000124",
         },
       ],
     };
-    const step = vi.fn(() => Promise.resolve(waiting));
+    const step = vi
+      .fn()
+      .mockResolvedValueOnce(charged)
+      .mockResolvedValueOnce({
+        ...charged,
+        deposit: { ...DEPOSIT, status: "KEPT" as const, kept_usd_cents: 5000 },
+      });
     show({
-      api: fakeApi({ get: vi.fn(() => Promise.resolve(out)), step }),
-      capabilities: new Set([...DESK, "short_stays.housekeeping"]),
+      api: fakeApi({ get: vi.fn(() => Promise.resolve(reported)), step }),
+      capabilities: new Set([...DESK, "damage_charges.bill"]),
     });
     go("#/shortstays/st:b-1");
-    fireEvent.click(await screen.findByLabelText("Damage found"));
-    fireEvent.change(screen.getByLabelText(/What is damaged/), {
-      target: { value: "Broken lamp" },
-    });
-    fireEvent.change(screen.getByLabelText(/Cost to fix/), {
-      target: { value: "80,5" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    expect(
+      await screen.findByText(
+        "Decide the damage charge. The deposit waits until then.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The deposit ends after check-out and the room check, once the damage charge is decided.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Return the deposit/ }),
+    ).toBeNull();
+    // Charge the guest is chosen first; what for starts from the problems, and it needs both.
+    const what = screen.getByLabelText(/What the guest pays for/);
+    expect(what).toHaveValue("Lamp broken");
+    fireEvent.change(what, { target: { value: " " } });
+    fireEvent.click(screen.getByRole("button", { name: "Save the decision" }));
+    expect(
+      screen.getByText("Say what the guest pays for."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Type the cost in dollars, for example 80 or 80.50."),
     ).toBeInTheDocument();
     expect(step).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText(/Cost to fix/), {
+    fireEvent.change(screen.getByLabelText(/What the guest pays for/), {
+      target: { value: "Broken lamp" },
+    });
+    fireEvent.change(screen.getByLabelText(/Amount/), {
       target: { value: "80" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save the decision" }));
+    expect(step).toHaveBeenCalledWith("p-1", "b-1", "damage", {
+      charge: true,
+      description: "Broken lamp",
+      amount_usd_cents: 8000,
+    });
+    expect(
+      await screen.findByText(/\$50\.00 from the deposit/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Charged")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Invoice INV-000124 for the rest" }),
+    ).toHaveAttribute("href", "#/invoices/inv%3Ai-2");
+    expect(
+      screen.queryByRole("button", { name: "Save the decision" }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Keep $50.00 for damage, return $0.00",
+      }),
+    );
+    expect(step).toHaveBeenLastCalledWith("p-1", "b-1", "deposit/end", null);
+    expect(await screen.findByText(/Kept \$50\.00/)).toBeInTheDocument();
+  });
+
+  it("TEST-FE-2050 a room check without the right to add a Problem report reports nothing", async () => {
+    const problemTypes = vi.fn(() => Promise.resolve(PROBLEM_TYPES));
+    const step = vi.fn(() =>
+      Promise.resolve(checkedOut({ room_check: ROOM_DONE })),
+    );
+    show({
+      api: fakeApi({
+        get: vi.fn(() => Promise.resolve(checkedOut())),
+        step,
+        problemTypes,
+      }),
+      capabilities: new Set([...DESK, "short_stays.housekeeping"]),
+    });
+    go("#/shortstays/st:b-1");
+    expect(
+      await screen.findByText(
+        "To report a problem, your account needs the right to add a Problem report.",
+      ),
+    ).toBeInTheDocument();
+    expect(problemTypes).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Report a problem" }),
+    ).toBeNull();
+    fireEvent.change(screen.getByLabelText("Note"), {
+      target: { value: "All fine" },
     });
     fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
-      damage: "Broken lamp",
-      damage_usd_cents: 8000,
+      note: "All fine",
     });
-    expect(
-      await screen.findByText("Waits for the Manager"),
-    ).toBeInTheDocument();
-    // Without the approve right there is nothing to press; the deposit waits.
-    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: /Return the deposit/ }),
-    ).toBeNull();
   });
 
-  it("TEST-FE-1610 approves damage from the deposit, then keeps it", async () => {
+  it("TEST-FE-2051 No charge returns the whole deposit", async () => {
+    const reported = checkedOut({
+      room_check: ROOM_DONE,
+      problems: [{ ...PROBLEM, urgent: false }],
+      damage_due: true,
+    });
+    const decided: Booking = {
+      ...reported,
+      damage_due: false,
+      damage_decision: {
+        outcome: "NO_CHARGE",
+        damage_id: null,
+        note: "Normal wear",
+        decided_at: "2026-11-04T05:00:00Z",
+      },
+    };
+    const step = vi.fn(() => Promise.resolve(decided));
+    show({
+      api: fakeApi({ get: vi.fn(() => Promise.resolve(reported)), step }),
+      capabilities: new Set([...DESK, "damage_charges.bill"]),
+      language: "km",
+    });
+    go("#/shortstays/st:b-1");
+    // The problem's type shows in Khmer.
+    expect(await screen.findByText(/គ្រឿងសង្ហារិម/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "មិនគិតថ្លៃ" }));
+    expect(screen.queryByLabelText(/ចំនួនទឹកប្រាក់/)).toBeNull();
+    fireEvent.change(screen.getByLabelText(/កំណត់ចំណាំ \(បើចង់\)/), {
+      target: { value: " Normal wear " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "រក្សាទុកការសម្រេច" }));
+    expect(step).toHaveBeenCalledWith("p-1", "b-1", "damage", {
+      charge: false,
+      note: "Normal wear",
+    });
+    expect(await screen.findByText("មិនគិតថ្លៃការខូចខាត។")).toBeInTheDocument();
+    expect(screen.getByText("Normal wear")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "ប្រគល់ប្រាក់កក់វិញ" }),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-2052 a damage charge waiting from before is decided by the person who bills damage", async () => {
     const damage = {
       damage_id: "g-1",
       description: "Broken lamp",
@@ -866,75 +1102,62 @@ describe("Daily and weekly rent: Short stays", () => {
       invoice_id: null,
       invoice_number: null,
     };
-    const checked: Booking = {
-      ...TODAY_STAY,
-      status: "CHECKED_OUT",
-      payment: "PAID",
-      invoice: INVOICE,
-      deposit: DEPOSIT,
-      room_check: {
-        task_id: "t-1",
-        task_on: "2026-11-04",
-        status: "DONE",
-        note: null,
-        done_at: "2026-11-04T04:00:00Z",
-      },
-      damages: [damage],
-    };
-    const approved: Booking = {
-      ...checked,
-      damages: [
-        {
-          ...damage,
-          status: "APPROVED",
-          decision_note: "Photo on file",
-          from_deposit_usd_cents: 5000,
-          invoice_id: "i-2",
-          invoice_number: "INV-000124",
-        },
-      ],
-    };
-    const decide = vi.fn(() => Promise.resolve(approved));
-    const step = vi.fn(() =>
-      Promise.resolve({
-        ...approved,
-        deposit: { ...DEPOSIT, status: "KEPT" as const, kept_usd_cents: 5000 },
-      }),
-    );
+    const waiting = checkedOut({ room_check: ROOM_DONE, damages: [damage] });
+    const decide = vi.fn(() => Promise.resolve(waiting));
+    // The old approve right alone no longer decides it.
     show({
-      api: fakeApi({
-        get: vi.fn(() => Promise.resolve(checked)),
-        decide,
-        step,
-      }),
+      api: fakeApi({ get: vi.fn(() => Promise.resolve(waiting)), decide }),
       capabilities: new Set([...DESK, "short_stays.approve"]),
     });
     go("#/shortstays/st:b-1");
-    // A refusal needs a reason.
-    fireEvent.click(await screen.findByRole("button", { name: "Refuse" }));
-    expect(screen.getByText("A refusal says why.")).toBeInTheDocument();
+    expect(await screen.findByText("Waits for a decision")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "No charge" })).toBeNull();
+    cleanup();
+    show({
+      api: fakeApi({ get: vi.fn(() => Promise.resolve(waiting)), decide }),
+      capabilities: new Set([...DESK, "damage_charges.bill"]),
+    });
+    go("#/shortstays/st:b-1");
+    fireEvent.click(await screen.findByRole("button", { name: "No charge" }));
+    expect(screen.getByText("No charge says why.")).toBeInTheDocument();
     expect(decide).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByPlaceholderText("Reason"), {
-      target: { value: "Photo on file" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
-    expect(decide).toHaveBeenCalledWith("p-1", "g-1", {
-      approve: true,
-      note: "Photo on file",
-    });
-    expect(
-      await screen.findByText(/\$50\.00 from the deposit/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Invoice INV-000124 for the rest" }),
-    ).toHaveAttribute("href", "#/invoices/inv%3Ai-2");
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Keep $50.00 for damage, return $0.00",
-      }),
+    fireEvent.click(screen.getByRole("button", { name: "Charge the guest" }));
+    expect(decide).toHaveBeenCalledWith("p-1", "g-1", { approve: true });
+  });
+
+  it("TEST-FE-2053 the Bookings list shows stays waiting for a damage decision to the person who bills damage", async () => {
+    const damageDue = vi.fn(() =>
+      Promise.resolve([
+        {
+          booking_id: "b-1",
+          booking_number: "ST260001",
+          guest_name: "Lim Dara",
+          unit_number: "U501",
+          problem_count: 2,
+        },
+      ]),
     );
-    expect(step).toHaveBeenCalledWith("p-1", "b-1", "deposit/end", null);
-    expect(await screen.findByText(/Kept \$50\.00/)).toBeInTheDocument();
+    show({ api: fakeApi({ damageDue }) });
+    fireEvent.click(await screen.findByRole("button", { name: "Bookings" }));
+    await screen.findByRole("table");
+    expect(damageDue).not.toHaveBeenCalled();
+    cleanup();
+    show({
+      api: fakeApi({ damageDue }),
+      capabilities: new Set([...DESK, "damage_charges.bill"]),
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Bookings" }));
+    const title =
+      "1 stay(s) wait for a damage decision. Open each booking and choose Charge the guest or No charge.";
+    const due = await screen.findByRole("region", { name: title });
+    expect(damageDue).toHaveBeenCalledWith("p-1");
+    expect(within(due).getByRole("link", { name: "ST260001" })).toHaveAttribute(
+      "href",
+      "#/shortstays/st%3Ab-1",
+    );
+    expect(
+      within(due).getByText(/Lim Dara, U501: problems 2/),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-1611 adds a late check-out and shows its own Invoice once the stay is billed", async () => {

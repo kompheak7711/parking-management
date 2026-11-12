@@ -20,9 +20,13 @@ Manager's extra discount before the Invoice (`short_stays.approve`). Step 5c add
 report (`GET .../report?from=`, `short_stays.approve`) and a monthly tenant's complaint about
 short-stay guests (`POST .../complaints`, `short_stays.desk`). Step 5d ends a late-cancel credit
 after its use-by day (`POST .../bookings/{id}/credit/end`, `GET .../credits-due`,
-`short_stays.credit`). The database
-functions check the rights again, price the stay from the owner's rules and keep one booking per
-Unit and night.
+`short_stays.credit`). DL-222 (migration 20270716_391): the room check reports problems as
+Problem reports, with no cost, and the person who bills damage (`damage_charges.bill`) decides on
+the booking "Charge the guest" or "No charge" (`POST .../bookings/{id}/damage`), with no
+approval; a damage charge that still waits from before is decided with the same right.
+`GET .../damage-due` lists the stays still waiting for that decision. The
+database functions check the rights again, price the stay from the owner's rules and keep one
+booking per Unit and night.
 """
 
 from __future__ import annotations
@@ -58,6 +62,7 @@ SHORT_STAYS_DESK = "short_stays.desk"
 SHORT_STAYS_HOUSEKEEPING = "short_stays.housekeeping"
 SHORT_STAYS_APPROVE = "short_stays.approve"
 SHORT_STAYS_CREDIT = "short_stays.credit"
+DAMAGE_CHARGES_BILL = "damage_charges.bill"
 SiteText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 Day = Annotated[date, Field(strict=False)]
@@ -83,6 +88,7 @@ Action = Literal[
     "quote",
     "complaint",
     "end_credit",
+    "damage",
 ]
 # Step 3 (migration 20270602_312): each action is one database function that checks the right
 # again. "version" is the booking version the screen read (refused with 412 when it changed).
@@ -118,6 +124,8 @@ ACTION_SQL: dict[str, str] = {
     "complaint": "SELECT app.record_short_stay_complaint(%(p)s, %(b)s, %(a)s, %(c)s)",
     # Step 5d (migration 20270609_319): a late-cancel credit ends after its use-by day.
     "end_credit": "SELECT app.end_short_stay_credit(%(p)s, %(t)s, %(a)s, %(c)s)",
+    # DL-222 (migration 20270716_391): Charge the guest or No charge, with no approval.
+    "damage": "SELECT app.decide_short_stay_charge(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
 }
 
 
@@ -147,6 +155,8 @@ class ShortStayFlow(Protocol):
     def week_report(self, property_id: UUID, start: date, *, actor_id: str) -> Json: ...
 
     def credits_due(self, property_id: UUID, *, actor_id: str) -> list[Json]: ...
+
+    def damage_due(self, property_id: UUID, *, actor_id: str) -> list[Json]: ...
 
     def act(
         self, property_id: UUID, action: Action, target: UUID, body: Json, *, actor_id: str
@@ -190,6 +200,9 @@ class UnavailableShortStayFlow:
         raise ProductUnavailable
 
     def credits_due(self, property_id: UUID, **_: object) -> list[Json]:
+        raise ProductUnavailable
+
+    def damage_due(self, property_id: UUID, **_: object) -> list[Json]:
         raise ProductUnavailable
 
     def act(self, property_id: UUID, action: Action, target: UUID, body: Json, **_: object) -> Json:
@@ -310,6 +323,12 @@ class PostgresShortStayFlow:
             raise ProductUnavailable("Short-stay persistence is unavailable")
         return [_json(item) for item in found]
 
+    def damage_due(self, property_id: UUID, *, actor_id: str) -> list[Json]:
+        found = self._one("SELECT app.short_stay_damage_due(%s, %s)", (property_id, UUID(actor_id)))
+        if not isinstance(found, list):
+            raise ProductUnavailable("Short-stay persistence is unavailable")
+        return [_json(item) for item in found]
+
     def act(
         self, property_id: UUID, action: Action, target: UUID, body: Json, *, actor_id: str
     ) -> Json:
@@ -365,12 +384,34 @@ class Deposit(BaseModel):
     card_last4: Annotated[str, StringConstraints(pattern=r"^[0-9]{4}$")] | None = None
 
 
+class RoomProblem(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    problem_type_id: Id
+    description: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)
+    ]
+    urgent: bool = False
+
+
 class RoomCheck(BaseModel):
+    """DL-222: the room check reports problems (each one a Problem report), never a cost."""
+
     model_config = ConfigDict(extra="forbid", strict=True)
 
     note: Note | None = None
-    damage: Note | None = None
-    damage_usd_cents: Annotated[int, Field(ge=1, le=100_000_000)] | None = None
+    problems: Annotated[list[RoomProblem], Field(max_length=20)] = []
+
+
+class DamageCharge(BaseModel):
+    """DL-222: Charge the guest (what for and how much) or No charge (an optional note)."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    charge: bool
+    description: Note | None = None
+    amount_usd_cents: Annotated[int, Field(ge=1, le=100_000_000)] | None = None
+    note: Note | None = None
 
 
 class Decision(BaseModel):
@@ -610,11 +651,24 @@ def create_short_stays_router(
     ) -> Json:
         return act(request, property_id, SHORT_STAYS_HOUSEKEEPING, "room_check", booking_id, body)
 
+    @router.post("/bookings/{booking_id}/damage")
+    def decide_short_stay_charge(
+        property_id: UUID, booking_id: UUID, body: DamageCharge, request: Request
+    ) -> Json:
+        given = (body.description is not None, body.amount_usd_cents is not None)
+        if given != ((True, True) if body.charge else (False, False)):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="A charge says what for and how much; No charge has no amount",
+            )
+        return act(request, property_id, DAMAGE_CHARGES_BILL, "damage", booking_id, body)
+
+    # A damage charge that still waits from before DL-222 is decided by the same right.
     @router.post("/damages/{damage_id}/decision")
     def decide_short_stay_damage(
         property_id: UUID, damage_id: UUID, body: Decision, request: Request
     ) -> Json:
-        return act(request, property_id, SHORT_STAYS_APPROVE, "decide", damage_id, body)
+        return act(request, property_id, DAMAGE_CHARGES_BILL, "decide", damage_id, body)
 
     @router.post("/bookings/{booking_id}/fee")
     def add_short_stay_fee(
@@ -650,6 +704,15 @@ def create_short_stays_router(
         response.headers["Cache-Control"] = "private, no-store"
         try:
             return envelope(request, flow.credits_due(property_id, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @router.get("/damage-due")
+    def short_stay_damage_due(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, DAMAGE_CHARGES_BILL, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.damage_due(property_id, actor_id=actor.actor_id))
         except REFUSED as exc:
             raise _http(exc) from exc
 

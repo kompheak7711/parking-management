@@ -400,6 +400,7 @@ database_test_suites='
   tests/test_v12_payroll_one_run_check.py
   tests/test_v12_telegram_outbox_migration.py
   tests/test_v12_short_stay_early_check_out_migration.py
+  tests/test_short_stay_room_check_problems_migration.py
   tests/test_telegram_tenant_offline_migration.py
   tests/test_telegram_offline_clock_migration.py
   tests/test_telegram_link_qr_migration.py

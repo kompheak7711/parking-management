@@ -31,22 +31,22 @@ from test_short_stay_booking_migration import (
 from test_short_stay_cancel_migration import CANCEL, CREDIT, WHY, paid_stay
 from test_short_stay_check_in_migration import (
     BILL,
+    CHARGE,
     CHECK_IN,
     CHECK_OUT,
-    DECIDE,
     DEPOSIT,
     END_DEPOSIT,
     ROOM,
     TICKS,
     guest_with_id,
     pay,
+    problem_type,
     read,
 )
 
 REVISION = "20270609_319"
 DUE = "SELECT app.short_stay_credits_due(%s, %s)"
 END_CREDIT = "SELECT app.end_short_stay_credit(%s, %s, %s, NULL)"
-APPROVE = json.dumps({"approve": True, "note": "Photo on file"})
 
 
 @pytest.fixture(scope="module")
@@ -59,7 +59,7 @@ def stay_database(migrated_database_url: str) -> Iterator[BookingDatabase]:
 def a_stay_with_damage(
     db: BookingDatabase, unit: uuid.UUID, start: int, deposit: dict[str, str], damage: int
 ) -> tuple[str, dict[str, Any]]:
-    """A guest who paid, stayed 2 nights, left damage the Manager approved; the deposit ended."""
+    """A guest who paid, stayed 2 nights, left damage that was charged; the deposit ended."""
     guest = guest_with_id(db)
     made = run(
         db.runtime_url,
@@ -75,22 +75,10 @@ def a_stay_with_damage(
         db.runtime_url, CHECK_IN, db.property_id, made, TICKS, read(db, made)["version"], db.staff
     )
     run(db.runtime_url, CHECK_OUT, db.property_id, made, inside["version"], db.staff)
-    checked = run(
-        db.runtime_url,
-        ROOM,
-        db.property_id,
-        made,
-        json.dumps({"damage": "Broken lamp", "damage_usd_cents": damage}),
-        db.staff,
-    )
-    run(
-        db.runtime_url,
-        DECIDE,
-        db.property_id,
-        checked["damages"][0]["damage_id"],
-        APPROVE,
-        db.manager,
-    )
+    lamp = {"problem_type_id": problem_type(db), "description": "Broken lamp"}
+    run(db.runtime_url, ROOM, db.property_id, made, json.dumps({"problems": [lamp]}), db.staff)
+    charge = {"charge": True, "description": "Broken lamp", "amount_usd_cents": damage}
+    run(db.runtime_url, CHARGE, db.property_id, made, json.dumps(charge), db.manager)
     return made, run(db.runtime_url, END_DEPOSIT, db.property_id, made, db.staff)
 
 
@@ -120,7 +108,7 @@ def test_migration_350_names_short_stay_invoices() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision("20270610_350")
     assert revision is not None and revision.down_revision == REVISION
-    assert scripts.get_heads() == ["20270716_390"]
+    assert scripts.get_heads() == ["20270716_391"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 

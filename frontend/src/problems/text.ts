@@ -85,6 +85,7 @@ const TEXT = {
   src_INSPECTION: ["Inspection", "ការត្រួតពិនិត្យ"],
   src_TENANT_BOT: ["Tenant bot", "បូតអ្នកជួល"],
   src_STAFF_BOT: ["Staff bot", "បូតបុគ្គលិក"],
+  src_ROOM_CHECK: ["Short-stay room check", "ការពិនិត្យបន្ទប់ស្នាក់នៅខ្លី"],
   st_RECEIVED: ["Received", "បានទទួល"],
   st_PLANNED: ["Visit planned", "បានរៀបចំការមកពិនិត្យ"],
   st_CHECKED: ["Checked", "បានពិនិត្យ"],
@@ -706,6 +707,12 @@ const TEXT = {
     "ពីការត្រួតពិនិត្យពេលចាកចេញ ថ្ងៃ {0}៖ {1}",
   ],
   fi_open: ["Open the move-out", "បើកការចាកចេញ"],
+  // DL-222: a problem reported at a short-stay room check.
+  st_link: [
+    "From the room check after short stay {0} ({1}, {2} to {3}).",
+    "ពីការពិនិត្យបន្ទប់ក្រោយការស្នាក់នៅខ្លី {0} ({1}, {2} ដល់ {3})។",
+  ],
+  st_open: ["Open the stay", "បើកការស្នាក់នៅ"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type ProblemsTextKey = keyof typeof TEXT;

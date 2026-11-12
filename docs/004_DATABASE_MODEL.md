@@ -5799,6 +5799,19 @@ Added by DL-132 (migration `20270512_292`, forward-only).
 - `app.add_problem_report` takes the source `INSPECTION` only with a `finding_id`: a Unit Problem in the inspected Lease's Unit, from an inspection not replaced, and a finding with no report yet (22023 or 55000 otherwise). `app.problem_report_json` gains `finding` (inspection, Lease, day, number and text).
 - `app.problem_report_finding(property, actor, finding)` (`problem_reports.add`, runtime): what the form copies (Unit, text, day), whether the inspection was replaced, and the report the finding already has.
 
+## DB-PR-005 — Problem reports from a short-stay room check, and the damage charge
+
+Added by DL-222 (migration `20270716_391`, forward-only).
+
+- `app.problem_reports.source` also takes `ROOM_CHECK` (the check constraint is widened; no row changes).
+- `app.short_stay_problem_reports` (`report_id` primary key, `booking_id`, created at and by): append-only, no truncate, runtime read only. `app.add_problem_report` takes the source `ROOM_CHECK` only with a `booking_id` (`app.problem_report_booking_for`): a Unit Problem in the stay's Unit, the stay checked out and its room check still to do (22023 or 55000 otherwise). `app.problem_report_json` gains `stay` (booking, number, guest, dates).
+- `app.check_short_stay_room` takes `problems` (at most 20; each `problem_type_id`, `description`, `urgent`) and refuses `damage` and `damage_usd_cents`; each problem is a Problem report made by `app.add_problem_report` (needs `problem_reports.add` too, 42501 otherwise). The event `ROOM_CHECKED` lists the reports.
+- `app.short_stay_damage_decisions` (`booking_id` primary key, `outcome` `CHARGE` or `NO_CHARGE`, `damage_id` unique and set only for a charge, optional `note`, decided at and by): append-only, no truncate, runtime read only.
+- `app.decide_short_stay_charge(property, booking, decision, actor, correlation)` (`damage_charges.bill`, runtime): `{"charge": true, "description", "amount_usd_cents"}` or `{"charge": false, "note"?}`; only after the room check reported a problem and once per stay (55000). A charge is a `short_stay_damages` row decided at once (`APPROVED`): from the held deposit first, the rest a Damage Invoice for the guest. Events `DAMAGE_CHARGED` and `NO_DAMAGE_CHARGE`; audit `short_stay.damage_charged` and `short_stay.no_damage_charge`.
+- `app.decide_short_stay_damage` (a charge still `WAITING` from before) checks `damage_charges.bill` instead of `short_stays.approve`. `app.end_short_stay_deposit` also waits while the room check's problems have no decision; a kept deposit says "Kept for the damage charge".
+- `app.short_stay_booking_json` gains `problems` (report, number, text, type, Urgent, status), `damage_decision` and `damage_due` (problems reported and no decision yet).
+- `app.short_stay_damage_due(property, actor)` (`damage_charges.bill`, runtime): the stays whose room check reported problems and that have no decision yet (booking, number, guest, Unit, number of problems).
+
 ## DB-TG-001 — Telegram bots shared base (bots step 1)
 
 Added by DL-125 (migration `20270430_281`, forward-only; it follows the daily and weekly rent head `20270611_351` since 6 Nov 2026).

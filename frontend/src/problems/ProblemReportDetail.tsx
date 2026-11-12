@@ -410,6 +410,24 @@ export function ProblemReportDetail({
           </p>
         </div>
       )}
+      {report.stay !== null && (
+        <div className="ui-notice" role="note">
+          <Icon name="info" />
+          <p>
+            {pt(
+              language,
+              "st_link",
+              report.stay.booking_number,
+              report.stay.guest_name,
+              dayText(report.stay.check_in_on),
+              dayText(report.stay.check_out_on),
+            )}{" "}
+            <a href={hashForPage("shortstays", `st:${report.stay.booking_id}`)}>
+              {pt(language, "st_open")}
+            </a>
+          </p>
+        </div>
+      )}
       {report.late !== null && (
         <div className="ui-notice err" role="note">
           <Icon name="clock" />

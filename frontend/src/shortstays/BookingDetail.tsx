@@ -1,8 +1,11 @@
 // Daily and weekly rent, phase 6 steps 2 and 3: one booking (Tenants › Short stays › ST…). It shows
 // the stay, the guest, the price lines kept at booking time and the history, and (step 3) the steps
-// of the stay: payment, deposit, check-in, check-out, room check and damage.
+// of the stay: payment, deposit, check-in, check-out, room check and damage. DL-222: the room
+// check reports problems of the types the Problem reports page offers.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import type { ProblemType } from "../problems/problemsClient";
 
 import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -81,7 +84,31 @@ export function BookingDetail({
   const [notice, setNotice] = useState<string | null>(flash);
   const [busy, setBusy] = useState(false);
   const [stepError, setStepError] = useState<StaysTextKey | null>(null);
+  const [problemTypes, setProblemTypes] = useState<ProblemType[]>([]);
   const sequence = useRef(0);
+
+  // DL-222: the problem types, read once a room check waits and the person may report a problem.
+  const roomCheckDue =
+    booking?.room_check?.status === "TO_DO" &&
+    may("short_stays.housekeeping") &&
+    may("problem_reports.add") &&
+    may("problem_reports.read");
+  useEffect(() => {
+    if (!roomCheckDue) return;
+    let live = true;
+    void api
+      .problemTypes(propertyId)
+      .then((found) => {
+        if (live) setProblemTypes(found);
+      })
+      .catch(() => {
+        // The room check still works; it then reports no problem.
+        if (live) setProblemTypes([]);
+      });
+    return () => {
+      live = false;
+    };
+  }, [api, propertyId, roomCheckDue]);
 
   useEffect(() => {
     if (flash !== null) onFlashShown();
@@ -200,6 +227,7 @@ export function BookingDetail({
       );
     },
     onPrice: priceFor,
+    problemTypes,
   };
   // The cards keep what was typed until the booking changes.
   const cards = `${booking.booking_id}:${String(booking.version)}`;

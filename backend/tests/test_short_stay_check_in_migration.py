@@ -3,8 +3,9 @@
 Full payment before check-in: the booking's Invoice is paid on the usual Receive payment
 command, or a booking-site booking is paid on the site. Every guest leaves a $50 cash deposit or
 card hold (never a card number). Check-in needs the ID number, the copy and the house rules; the
-room check after check-out can report damage, which the Manager approves: it is taken from the
-deposit first and the rest is an Invoice.
+room check after check-out reports problems (DL-222, migration 20270716_391) and the person who
+bills damage charges the guest with no approval: it is taken from the deposit first and the rest
+is an Invoice.
 """
 
 from __future__ import annotations
@@ -52,6 +53,7 @@ CHECK_IN = "SELECT app.check_in_short_stay(%s, %s, %s::jsonb, %s, %s, NULL)"
 CHECK_OUT = "SELECT app.check_out_short_stay(%s, %s, %s, %s, NULL)"
 ROOM = "SELECT app.check_short_stay_room(%s, %s, %s::jsonb, %s, NULL)"
 DECIDE = "SELECT app.decide_short_stay_damage(%s, %s, %s::jsonb, %s, NULL)"
+CHARGE = "SELECT app.decide_short_stay_charge(%s, %s, %s::jsonb, %s, NULL)"
 END_DEPOSIT = "SELECT app.end_short_stay_deposit(%s, %s, %s, NULL)"
 TICKS = json.dumps({"id_copy_made": True, "house_rules_signed": True})
 
@@ -71,6 +73,10 @@ def read(db: BookingDatabase, made: Any) -> dict[str, Any]:
 
 def unit_status(db: BookingDatabase, unit: uuid.UUID) -> str:
     return str(run(db.owner_url, "SELECT status FROM app.units WHERE id = %s", unit))
+
+
+def problem_type(db: BookingDatabase, code: str = "FURNITURE") -> str:
+    return str(run(db.owner_url, "SELECT id FROM app.problem_types WHERE code = %s", code))
 
 
 def guest_with_id(db: BookingDatabase) -> uuid.UUID:
@@ -194,45 +200,33 @@ def test_a_full_stay_from_payment_to_the_deposit(stay_database: BookingDatabase)
     left = run(db.runtime_url, CHECK_OUT, db.property_id, made, inside["version"], db.staff)
     assert left["status"] == "CHECKED_OUT" and left["room_check"]["status"] == "TO_DO"
     assert unit_status(db, db.studio) == "CLEANING"
-    # The room check finds damage; the Unit is ready again.
+    # The room check reports a problem, never a cost; the Unit is ready again.
+    lamp = {"problem_type_id": problem_type(db), "description": "Broken lamp"}
     checked = run(
         db.runtime_url,
         ROOM,
         db.property_id,
         made,
-        json.dumps({"damage": "Broken lamp", "damage_usd_cents": 8000}),
+        json.dumps({"problems": [lamp]}),
         db.staff,
     )
     assert checked["room_check"]["status"] == "DONE"
     assert unit_status(db, db.studio) == "VACANT"
-    damage = checked["damages"][0]
-    assert (damage["status"], damage["amount_usd_cents"]) == ("WAITING", 8000)
-    assert "Damage waits" in refused(
+    assert [problem["description"] for problem in checked["problems"]] == ["Broken lamp"]
+    assert checked["damage_due"] is True and checked["damages"] == []
+    assert "not decided" in refused(
         db.runtime_url, "55000", END_DEPOSIT, db.property_id, made, db.staff
     )
-    # Only the approve right decides; a refusal says why.
-    decision = json.dumps({"approve": True, "note": "Photo on file"})
-    refused(
-        db.runtime_url, "42501", DECIDE, db.property_id, damage["damage_id"], decision, db.staff
-    )
-    refused(
-        db.runtime_url,
-        "22023",
-        DECIDE,
-        db.property_id,
-        damage["damage_id"],
-        json.dumps({"approve": False}),
-        db.manager,
-    )
-    approved = run(
-        db.runtime_url, DECIDE, db.property_id, damage["damage_id"], decision, db.manager
-    )
-    charge = approved["damages"][0]
-    assert charge["status"] == "APPROVED" and charge["from_deposit_usd_cents"] == 5000
+    # Only the person who bills damage charges the guest; there is no approval.
+    charge = json.dumps({"charge": True, "description": "Broken lamp", "amount_usd_cents": 8000})
+    refused(db.runtime_url, "42501", CHARGE, db.property_id, made, charge, db.staff)
+    charged = run(db.runtime_url, CHARGE, db.property_id, made, charge, db.manager)
+    damage = charged["damages"][0]
+    assert damage["status"] == "APPROVED" and damage["from_deposit_usd_cents"] == 5000
     rest = run(
         db.owner_url,
         "SELECT original_total_usd_cents FROM app.invoices WHERE id = %s",
-        charge["invoice_id"],
+        damage["invoice_id"],
     )
     assert rest == 3000
     ended = run(db.runtime_url, END_DEPOSIT, db.property_id, made, db.staff)
@@ -244,7 +238,7 @@ def test_a_full_stay_from_payment_to_the_deposit(stay_database: BookingDatabase)
         "CHECKED_IN",
         "CHECKED_OUT",
         "ROOM_CHECKED",
-        "DAMAGE_APPROVED",
+        "DAMAGE_CHARGED",
         "DEPOSIT_KEPT",
     ]
 

@@ -20,7 +20,8 @@ export type ProblemSource =
   | "SEEN"
   | "INSPECTION"
   | "TENANT_BOT"
-  | "STAFF_BOT";
+  | "STAFF_BOT"
+  | "ROOM_CHECK";
 export type BestTime = "AM" | "PM" | "ANY";
 
 export interface ProblemType {
@@ -190,6 +191,8 @@ export interface ProblemReport {
   done_at: string | null;
   /** DL-132: the move-out inspection finding the report was made from. */
   finding: InspectionLink | null;
+  /** DL-222: the short stay whose room check reported the problem. */
+  stay: StayLink | null;
   /** Only on one report read with its history; null on the list. */
   cost: RepairCost | null;
   closes_on: string | null;
@@ -212,6 +215,15 @@ export interface ProblemReport {
   created_by_name: string | null;
   version: number;
   history: HistoryEntry[] | null;
+}
+
+/** DL-222: the short stay whose room check reported the problem. */
+export interface StayLink {
+  booking_id: string;
+  booking_number: string;
+  guest_name: string;
+  check_in_on: string;
+  check_out_on: string;
 }
 
 /** DL-132: the move-out inspection finding a report was made from. */
@@ -515,6 +527,7 @@ const SOURCES: readonly ProblemSource[] = [
   "INSPECTION",
   "TENANT_BOT",
   "STAFF_BOT",
+  "ROOM_CHECK",
 ];
 
 const CURRENCIES = ["USD", "KHR"] as const;
@@ -528,6 +541,17 @@ function linkOfInspection(value: unknown): InspectionLink {
     inspection_date: text(row.inspection_date),
     ordinal: whole(row.ordinal),
     description: text(row.description),
+  };
+}
+
+function linkOfStay(value: unknown): StayLink {
+  const row = record(value);
+  return {
+    booking_id: text(row.booking_id),
+    booking_number: text(row.booking_number),
+    guest_name: text(row.guest_name),
+    check_in_on: text(row.check_in_on),
+    check_out_on: text(row.check_out_on),
   };
 }
 
@@ -717,6 +741,7 @@ export function reportOf(value: unknown): ProblemReport {
           },
     done_at: maybeText(row.done_at),
     finding: row.finding == null ? null : linkOfInspection(row.finding),
+    stay: row.stay == null ? null : linkOfStay(row.stay),
     cost: costOf(row.cost),
     closes_on: maybeText(row.closes_on),
     closed_at: maybeText(row.closed_at),

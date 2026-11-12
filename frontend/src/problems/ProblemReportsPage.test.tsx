@@ -95,6 +95,7 @@ function report(extra: Partial<ProblemReport>): ProblemReport {
     damage: null,
     done_at: null,
     finding: null,
+    stay: null,
     cost: null,
     closes_on: null,
     closed_at: null,
@@ -1166,5 +1167,39 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
         .getByRole("link", { name: "Open the move-out" })
         .getAttribute("href"),
     ).toBe("#/moveout/lease-1");
+  });
+
+  it("TEST-FE-2055 a problem from a short-stay room check links back to the stay", async () => {
+    window.location.hash = "#/problems/pr:r-1";
+    show(
+      apiOf({
+        get: vi.fn(() =>
+          Promise.resolve(
+            report({
+              source: "ROOM_CHECK",
+              stay: {
+                booking_id: "b-1",
+                booking_number: "ST260001",
+                guest_name: "Lim Dara",
+                check_in_on: "2026-11-04",
+                check_out_on: "2026-11-07",
+              },
+            }),
+          ),
+        ),
+      }),
+      STAFF,
+    );
+    expect(
+      await screen.findByText(
+        /From the room check after short stay ST260001 \(Lim Dara, 04\/11\/2026 to 07\/11\/2026\)\./,
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByText(/Short-stay room check/).length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      screen.getByRole("link", { name: "Open the stay" }).getAttribute("href"),
+    ).toBe("#/shortstays/st%3Ab-1");
   });
 });

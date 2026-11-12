@@ -2,6 +2,8 @@
 // bookings. The server prices every stay from the owner's rules and checks every right; this
 // client only reads and sends.
 
+import { choicesOf, type ProblemType } from "../problems/problemsClient";
+
 export type BookingStatus =
   | "BOOKED"
   | "CHECKED_IN"
@@ -193,6 +195,30 @@ export interface StayDamage {
   invoice_number: string | null;
 }
 
+/** DL-222: a problem the room check reported, kept as a Unit Problem report. */
+export interface StayProblem {
+  report_id: string;
+  report_number: string;
+  description: string;
+  type_name_en: string;
+  type_name_kh: string | null;
+  urgent: boolean;
+  status: string;
+}
+
+/** DL-222: the one decision on a stay's damage, made by the person who bills damage. */
+export interface DamageDecision {
+  outcome: "CHARGE" | "NO_CHARGE";
+  damage_id: string | null;
+  note: string | null;
+  decided_at: string;
+}
+
+/** DL-222: Charge the guest (what for and how much) or No charge. */
+export type DamageChoice =
+  | { charge: true; description: string; amount_usd_cents: number }
+  | { charge: false; note?: string };
+
 /** Owner test 06/11/2026: a free cancel's money, given back with the Refund button. */
 export interface StayRefund {
   credits: { credit_id: string; left_usd_cents: number }[];
@@ -252,6 +278,11 @@ export interface Booking {
   deposit: StayDeposit | null;
   room_check: RoomCheck | null;
   damages: StayDamage[];
+  /** DL-222: the problems the room check reported. */
+  problems: StayProblem[];
+  damage_decision: DamageDecision | null;
+  /** Problems were reported and nobody has charged the guest or chosen No charge yet. */
+  damage_due: boolean;
   extra_invoices: ExtraInvoice[];
   early_check_in: boolean;
   late_check_out: boolean;
@@ -425,6 +456,7 @@ export type StayStep =
   | "check-in"
   | "check-out"
   | "room-check"
+  | "damage"
   | "fee"
   | "extend"
   | "cancel"
@@ -483,6 +515,15 @@ export interface CreditDue {
   guest_name: string;
   use_by: string;
   left_usd_cents: number;
+}
+
+/** DL-222: a stay whose room check reported problems and whose damage is not decided yet. */
+export interface DamageDue {
+  booking_id: string;
+  booking_number: string;
+  guest_name: string;
+  unit_number: string;
+  problem_count: number;
 }
 
 /** Step 4a: an Invoice for a fee or an extension, made after the stay was billed. */
@@ -584,6 +625,10 @@ export interface ShortStaysApi {
   weekReport: (propertyId: string, from: string) => Promise<WeekReport>;
   complaint: (propertyId: string, complaint: NewComplaint) => Promise<void>;
   creditsDue: (propertyId: string) => Promise<CreditDue[]>;
+  /** DL-222: the stays waiting for Charge the guest or No charge (damage_charges.bill). */
+  damageDue: (propertyId: string) => Promise<DamageDue[]>;
+  /** DL-222: the problem types the room check offers (problem_reports.read). */
+  problemTypes: (propertyId: string) => Promise<ProblemType[]>;
   refundMethods: (propertyId: string) => Promise<RefundMethod[]>;
   /** Records a Refund draft of one Credit; a financial.approve holder confirms it. */
   refund: (propertyId: string, refund: NewRefund, key: string) => Promise<void>;
@@ -814,6 +859,30 @@ function roomCheckOf(value: unknown): RoomCheck | null {
   };
 }
 
+function problemOf(value: unknown): StayProblem {
+  const row = record(value);
+  return {
+    report_id: text(row.report_id),
+    report_number: text(row.report_number),
+    description: text(row.description),
+    type_name_en: text(row.type_name_en),
+    type_name_kh: maybeText(row.type_name_kh),
+    urgent: row.urgent === true,
+    status: text(row.status),
+  };
+}
+
+function decisionOf(value: unknown): DamageDecision | null {
+  if (value === null || value === undefined) return null;
+  const row = record(value);
+  return {
+    outcome: oneOf(["CHARGE", "NO_CHARGE"] as const, row.outcome),
+    damage_id: maybeText(row.damage_id),
+    note: maybeText(row.note),
+    decided_at: text(row.decided_at),
+  };
+}
+
 function damageOf(value: unknown): StayDamage {
   const row = record(value);
   return {
@@ -898,6 +967,9 @@ export function bookingOf(value: unknown): Booking {
     deposit: depositOf(row.deposit),
     room_check: roomCheckOf(row.room_check),
     damages: list(row.damages).map(damageOf),
+    problems: list(row.problems ?? []).map(problemOf),
+    damage_decision: decisionOf(row.damage_decision),
+    damage_due: row.damage_due === true,
     extra_invoices: list(row.extra_invoices).map((entry) => {
       const extra = record(entry);
       return {
@@ -1154,6 +1226,16 @@ function creditDueOf(row: Record<string, unknown>): CreditDue {
   };
 }
 
+function damageDueOf(row: Record<string, unknown>): DamageDue {
+  return {
+    booking_id: text(row.booking_id),
+    booking_number: text(row.booking_number),
+    guest_name: text(row.guest_name),
+    unit_number: text(row.unit_number),
+    problem_count: whole(row.problem_count),
+  };
+}
+
 const EXTRA_KINDS = ["EXTEND", "EARLY_CHECK_IN", "LATE_CHECK_OUT"] as const;
 const TASK_STATUSES = ["TO_DO", "DONE", "SKIPPED"] as const;
 const TASK_KINDS = ["DAILY_CLEAN", "CHANGE_OVER", "ROOM_CHECK"] as const;
@@ -1288,6 +1370,16 @@ export const shortStaysApi: ShortStaysApi = {
     list(await request(`${base(propertyId)}/credits-due`)).map((row) =>
       creditDueOf(record(row)),
     ),
+  damageDue: async (propertyId) =>
+    list(await request(`${base(propertyId)}/damage-due`)).map((row) =>
+      damageDueOf(record(row)),
+    ),
+  problemTypes: async (propertyId) =>
+    choicesOf(
+      await request(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/problem-report-choices`,
+      ),
+    ).types,
   refundMethods: async (propertyId) =>
     list(
       await request(

@@ -1,7 +1,9 @@
 // Daily and weekly rent, phase 6 step 3: the steps of a stay on the booking page (migration
 // 20270602_312). Payment (the booking's Invoice, paid on Receive payment, or paid on the booking
 // site), the deposit (cash or a card hold, never a card number), check-in, check-out, the room
-// check with any damage, the Manager's decision on damage and the end of the deposit. Each button
+// check with any damage, the decision on damage and the end of the deposit. DL-222 (migration
+// 20270716_391): the room check reports problems as Problem reports, and the person who bills
+// damage chooses Charge the guest or No charge on the booking, with no approval. Each button
 // shows only to a person who holds its right; the server checks every step again. Step 4a adds the
 // early check-in and late check-out fee, extending the stay and the fee and extension Invoices.
 
@@ -13,6 +15,7 @@ import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { Chip, type Tone } from "../shell/ui";
+import type { ProblemType } from "../problems/problemsClient";
 import type { Language } from "../signInText";
 import {
   addDays,
@@ -33,6 +36,8 @@ export interface StepsProps {
   onDecide: (damageId: string, approve: boolean, note: string) => void;
   /** The whole stay's new total for another check-out day (fees kept); null when it fails. */
   onPrice: (checkOut: string) => Promise<number | null>;
+  /** DL-222: the problem types the room check offers; empty until read or without the right. */
+  problemTypes: ProblemType[];
 }
 
 /** Minutes after midnight as "14:00". */
@@ -197,6 +202,7 @@ export function DepositCard({
     deposit?.status === "HELD" &&
     booking.status === "CHECKED_OUT" &&
     booking.room_check?.status === "DONE" &&
+    !booking.damage_due &&
     !booking.damages.some((damage) => damage.status === "WAITING");
   const mayEnd = endReady && may("short_stays.desk");
   const referenceOk = kind === "CASH" || reference.trim() !== "";
@@ -442,17 +448,32 @@ export function CheckOutCard({
   );
 }
 
+/** One problem the housekeeper is reporting, before the room check is sent. */
+interface ProblemRow {
+  key: number;
+  typeId: string;
+  what: string;
+  urgent: boolean;
+}
+
+function typeName(language: Language, type: ProblemType): string {
+  return language === "km" && type.name_kh !== null
+    ? type.name_kh
+    : type.name_en;
+}
+
+/** DL-222: the room check reports problems as Problem reports of the Unit, never a cost. */
 export function RoomCheckCard({
   language,
   booking,
   may,
   busy,
   onStep,
+  problemTypes,
 }: StepsProps) {
   const [note, setNote] = useState("");
-  const [damaged, setDamaged] = useState(false);
-  const [what, setWhat] = useState("");
-  const [cost, setCost] = useState("");
+  const [rows, setRows] = useState<ProblemRow[]>([]);
+  const [nextKey, setNextKey] = useState(1);
   const [checked, setChecked] = useState(false);
   const task = booking.room_check;
   if (task === null) return null;
@@ -466,16 +487,29 @@ export function RoomCheckCard({
         </p>
       </section>
     );
-  const cents = centsOf(cost);
-  const wrongWhat = damaged && what.trim() === "";
-  const wrongCost = damaged && cents === null;
+  const mayReport = may("problem_reports.add") && problemTypes.length > 0;
+  const typeOf = (id: string) => problemTypes.find((type) => type.id === id);
+  const wrong = rows.some((row) => row.typeId === "" || row.what.trim() === "");
+  const change = (key: number, patch: Partial<ProblemRow>) => {
+    setRows((before) =>
+      before.map((row) => (row.key === key ? { ...row, ...patch } : row)),
+    );
+  };
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setChecked(true);
-    if (wrongWhat || wrongCost) return;
+    if (wrong) return;
     onStep("room-check", {
       ...(note.trim() === "" ? {} : { note: note.trim() }),
-      ...(damaged ? { damage: what.trim(), damage_usd_cents: cents } : {}),
+      ...(rows.length === 0
+        ? {}
+        : {
+            problems: rows.map((row) => ({
+              problem_type_id: row.typeId,
+              description: row.what.trim(),
+              urgent: row.urgent || typeOf(row.typeId)?.always_urgent === true,
+            })),
+          }),
     });
   };
   return (
@@ -486,68 +520,126 @@ export function RoomCheckCard({
       </p>
       {may("short_stays.housekeeping") && (
         <form className="ui-form ss-form" noValidate onSubmit={submit}>
-          <label className="ui-chk">
-            <input
-              checked={damaged}
-              disabled={busy}
-              onChange={(event) => {
-                setDamaged(event.currentTarget.checked);
-              }}
-              type="checkbox"
-            />
-            {st(language, "room_damage")}
-          </label>
-          {damaged && (
-            <div className="ui-row2">
-              <div className="ui-field">
-                <label htmlFor="ss-room-what">
-                  {st(language, "room_what")}
-                  <span className="req">{st(language, "required")}</span>
-                </label>
-                <input
-                  aria-invalid={checked && wrongWhat}
-                  autoComplete="off"
-                  disabled={busy}
-                  id="ss-room-what"
-                  maxLength={500}
-                  onChange={(event) => {
-                    setWhat(event.currentTarget.value);
-                  }}
-                  value={what}
-                />
-                {checked && wrongWhat && (
-                  <p className="ui-error">
+          <fieldset className="ss-problems">
+            <legend>{st(language, "room_problems")}</legend>
+            <p className="ui-small ui-muted">{st(language, "room_hint")}</p>
+            {rows.map((row, index) => {
+              const id = `ss-room-${String(row.key)}`;
+              const always = typeOf(row.typeId)?.always_urgent === true;
+              return (
+                <div className="ss-problem" key={row.key}>
+                  <div className="ui-row2">
+                    <div className="ui-field">
+                      <label htmlFor={`${id}-type`}>
+                        {st(language, "room_type")} {index + 1}
+                        <span className="req">{st(language, "required")}</span>
+                      </label>
+                      <select
+                        aria-invalid={checked && row.typeId === ""}
+                        disabled={busy}
+                        id={`${id}-type`}
+                        onChange={(event) => {
+                          change(row.key, {
+                            typeId: event.currentTarget.value,
+                          });
+                        }}
+                        value={row.typeId}
+                      >
+                        <option value="">{st(language, "room_pick")}</option>
+                        {problemTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {typeName(language, type)}
+                          </option>
+                        ))}
+                      </select>
+                      {checked && row.typeId === "" && (
+                        <p className="ui-error">
+                          <Icon name="alert" small />
+                          <span>{st(language, "e_type")}</span>
+                        </p>
+                      )}
+                    </div>
+                    <div className="ui-field">
+                      <label htmlFor={`${id}-what`}>
+                        {st(language, "room_wrong")} {index + 1}
+                        <span className="req">{st(language, "required")}</span>
+                      </label>
+                      <input
+                        aria-invalid={checked && row.what.trim() === ""}
+                        autoComplete="off"
+                        disabled={busy}
+                        id={`${id}-what`}
+                        maxLength={1000}
+                        onChange={(event) => {
+                          change(row.key, { what: event.currentTarget.value });
+                        }}
+                        value={row.what}
+                      />
+                      {checked && row.what.trim() === "" && (
+                        <p className="ui-error">
+                          <Icon name="alert" small />
+                          <span>{st(language, "e_wrong")}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ui-hrow">
+                    <label className="ui-chk">
+                      <input
+                        checked={row.urgent || always}
+                        disabled={busy || always}
+                        onChange={(event) => {
+                          change(row.key, {
+                            urgent: event.currentTarget.checked,
+                          });
+                        }}
+                        type="checkbox"
+                      />
+                      {st(language, "room_urgent")}
+                    </label>
+                    <button
+                      className="ui-btn link"
+                      disabled={busy}
+                      onClick={() => {
+                        setRows((before) =>
+                          before.filter((other) => other.key !== row.key),
+                        );
+                      }}
+                      type="button"
+                    >
+                      <Icon name="x" small />
+                      {st(language, "room_remove")} {index + 1}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {mayReport ? (
+              rows.length < 20 && (
+                <div className="ui-actions">
+                  <button
+                    className="ui-btn"
+                    disabled={busy}
+                    onClick={() => {
+                      setRows((before) => [
+                        ...before,
+                        { key: nextKey, typeId: "", what: "", urgent: false },
+                      ]);
+                      setNextKey(nextKey + 1);
+                    }}
+                    type="button"
+                  >
                     <Icon name="alert" small />
-                    <span>{st(language, "e_what")}</span>
-                  </p>
-                )}
-              </div>
-              <div className="ui-field">
-                <label htmlFor="ss-room-cost">
-                  {st(language, "room_cost")}
-                  <span className="req">{st(language, "required")}</span>
-                </label>
-                <input
-                  aria-invalid={checked && wrongCost}
-                  autoComplete="off"
-                  disabled={busy}
-                  id="ss-room-cost"
-                  inputMode="decimal"
-                  maxLength={10}
-                  onChange={(event) => {
-                    setCost(event.currentTarget.value);
-                  }}
-                  value={cost}
-                />
-                {checked && wrongCost && (
-                  <p className="ui-error">
-                    <Icon name="alert" small />
-                    <span>{st(language, "e_cost")}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+                    {st(language, "room_add")}
+                  </button>
+                </div>
+              )
+            ) : (
+              <p className="ui-small ui-muted">
+                {st(language, "room_no_right")}
+              </p>
+            )}
+          </fieldset>
           <div className="ui-field">
             <label htmlFor="ss-room-note">{st(language, "room_note")}</label>
             <input
@@ -579,122 +671,309 @@ const DAMAGE_TONES = {
   REFUSED: "neutral",
 } as const;
 
+/** DL-222: Charge the guest (what for and how much) or No charge, by the person who bills damage. */
+function DamageDecisionForm({
+  language,
+  booking,
+  busy,
+  onStep,
+}: Pick<StepsProps, "language" | "booking" | "busy" | "onStep">) {
+  const [charge, setCharge] = useState(true);
+  // What the guest pays for starts from the problems the room check reported.
+  const [what, setWhat] = useState(() =>
+    booking.problems
+      .map((problem) => problem.description)
+      .join("; ")
+      .slice(0, 500),
+  );
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [checked, setChecked] = useState(false);
+  const cents = centsOf(amount);
+  const wrongWhat = charge && what.trim() === "";
+  const wrongAmount = charge && cents === null;
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setChecked(true);
+    if (wrongWhat || wrongAmount) return;
+    onStep(
+      "damage",
+      charge
+        ? { charge: true, description: what.trim(), amount_usd_cents: cents }
+        : {
+            charge: false,
+            ...(note.trim() === "" ? {} : { note: note.trim() }),
+          },
+    );
+  };
+  return (
+    <form className="ui-form ss-form" noValidate onSubmit={submit}>
+      <div className="ui-notice warn" role="note">
+        <Icon name="alert" />
+        <p>{st(language, "dmg_due")}</p>
+      </div>
+      <fieldset className="ui-radios">
+        <legend className="ui-sr">{st(language, "dmg_t")}</legend>
+        {([true, false] as const).map((value) => (
+          <label className="ui-chk" key={String(value)}>
+            <input
+              checked={charge === value}
+              disabled={busy}
+              name="ss-dmg-charge"
+              onChange={() => {
+                setCharge(value);
+              }}
+              type="radio"
+            />
+            {st(language, value ? "dmg_charge" : "dmg_none")}
+          </label>
+        ))}
+      </fieldset>
+      {charge ? (
+        <>
+          <div className="ui-row2">
+            <div className="ui-field">
+              <label htmlFor="ss-dmg-for">
+                {st(language, "dmg_for")}
+                <span className="req">{st(language, "required")}</span>
+              </label>
+              <input
+                aria-invalid={checked && wrongWhat}
+                autoComplete="off"
+                disabled={busy}
+                id="ss-dmg-for"
+                maxLength={500}
+                onChange={(event) => {
+                  setWhat(event.currentTarget.value);
+                }}
+                value={what}
+              />
+              {checked && wrongWhat && (
+                <p className="ui-error">
+                  <Icon name="alert" small />
+                  <span>{st(language, "e_for")}</span>
+                </p>
+              )}
+            </div>
+            <div className="ui-field">
+              <label htmlFor="ss-dmg-amount">
+                {st(language, "dmg_amount")}
+                <span className="req">{st(language, "required")}</span>
+              </label>
+              <input
+                aria-invalid={checked && wrongAmount}
+                autoComplete="off"
+                disabled={busy}
+                id="ss-dmg-amount"
+                inputMode="decimal"
+                maxLength={10}
+                onChange={(event) => {
+                  setAmount(event.currentTarget.value);
+                }}
+                value={amount}
+              />
+              {checked && wrongAmount && (
+                <p className="ui-error">
+                  <Icon name="alert" small />
+                  <span>{st(language, "e_cost")}</span>
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="ui-small ui-muted">{st(language, "dmg_rule")}</p>
+        </>
+      ) : (
+        <div className="ui-field">
+          <label htmlFor="ss-dmg-note">{st(language, "dmg_note_opt")}</label>
+          <input
+            autoComplete="off"
+            disabled={busy}
+            id="ss-dmg-note"
+            maxLength={500}
+            onChange={(event) => {
+              setNote(event.currentTarget.value);
+            }}
+            value={note}
+          />
+        </div>
+      )}
+      <div className="ui-actions">
+        <button className="ui-btn primary" disabled={busy} type="submit">
+          {st(language, "dmg_save")}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function DamagesCard({
   language,
   booking,
   may,
   busy,
+  onStep,
   onDecide,
 }: StepsProps) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [missing, setMissing] = useState<string | null>(null);
-  if (booking.damages.length === 0) return null;
+  const decision = booking.damage_decision;
+  if (booking.damages.length === 0 && booking.problems.length === 0)
+    return null;
+  const mayBill = may("damage_charges.bill");
   return (
     <section aria-labelledby="ss-dmg" className="ui-card">
       <h2 id="ss-dmg">{st(language, "dmg_t")}</h2>
-      <ul className="ui-plain ss-found">
-        {booking.damages.map((damage) => {
-          const note = notes[damage.damage_id] ?? "";
-          return (
-            <li className="ss-damage" key={damage.damage_id}>
-              <div>
-                <b>{damage.description}</b> ·{" "}
-                <span className="ui-num">
-                  {usdFromCents(damage.amount_usd_cents)}
-                </span>{" "}
-                <Chip tone={DAMAGE_TONES[damage.status]}>
-                  {st(language, `dmg_${damage.status}`)}
-                </Chip>
-                {damage.status === "APPROVED" && (
-                  <span className="ui-sub2">
-                    {damage.from_deposit_usd_cents > 0 &&
-                      st(
-                        language,
-                        "dmg_from",
-                        usdFromCents(damage.from_deposit_usd_cents),
-                      )}
-                    {damage.from_deposit_usd_cents > 0 &&
-                      damage.invoice_number !== null &&
-                      " · "}
-                    {damage.invoice_id !== null &&
-                      damage.invoice_number !== null && (
-                        <a
-                          href={hashForPage(
-                            "invoices",
-                            `inv:${damage.invoice_id}`,
-                          )}
-                        >
-                          {st(language, "dmg_inv", damage.invoice_number)}
-                        </a>
-                      )}
-                  </span>
-                )}
-                {damage.decision_note !== null && (
-                  <span className="ui-sub2">{damage.decision_note}</span>
-                )}
-              </div>
-              {damage.status === "WAITING" && may("short_stays.approve") && (
-                <div className="ui-stack">
-                  <label
-                    className="ui-sr"
-                    htmlFor={`ss-dmg-${damage.damage_id}`}
+      {booking.problems.length > 0 && (
+        <>
+          <h3 className="ui-small">{st(language, "dmg_problems")}</h3>
+          <ul className="ui-plain ss-found">
+            {booking.problems.map((problem) => (
+              <li key={problem.report_id}>
+                <div>
+                  <a
+                    className="ui-num"
+                    href={hashForPage("problems", `pr:${problem.report_id}`)}
                   >
-                    {st(language, "dmg_note")}
-                  </label>
-                  <input
-                    autoComplete="off"
-                    disabled={busy}
-                    id={`ss-dmg-${damage.damage_id}`}
-                    maxLength={500}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      setNotes((before) => ({
-                        ...before,
-                        [damage.damage_id]: value,
-                      }));
-                    }}
-                    placeholder={st(language, "dmg_note")}
-                    value={note}
-                  />
-                  {missing === damage.damage_id && (
-                    <p className="ui-error">
-                      <Icon name="alert" small />
-                      <span>{st(language, "e_reason")}</span>
-                    </p>
-                  )}
-                  <div className="ui-actions">
-                    <button
-                      className="ui-btn primary"
-                      disabled={busy}
-                      onClick={() => {
-                        onDecide(damage.damage_id, true, note.trim());
-                      }}
-                      type="button"
-                    >
-                      {st(language, "dmg_ok")}
-                    </button>
-                    <button
-                      className="ui-btn"
-                      disabled={busy}
-                      onClick={() => {
-                        if (note.trim() === "") {
-                          setMissing(damage.damage_id);
-                          return;
-                        }
-                        setMissing(null);
-                        onDecide(damage.damage_id, false, note.trim());
-                      }}
-                      type="button"
-                    >
-                      {st(language, "dmg_no")}
-                    </button>
-                  </div>
+                    {problem.report_number}
+                  </a>{" "}
+                  ·{" "}
+                  {language === "km" && problem.type_name_kh !== null
+                    ? problem.type_name_kh
+                    : problem.type_name_en}
+                  <span className="ui-sub2">{problem.description}</span>
                 </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                {problem.urgent && (
+                  <Chip tone="err">{st(language, "room_urgent")}</Chip>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {decision?.outcome === "NO_CHARGE" && (
+        <p>
+          {st(language, "dmg_no_charge")}
+          {decision.note !== null && (
+            <span className="ui-sub2">{decision.note}</span>
+          )}
+        </p>
+      )}
+      {booking.damages.length > 0 && (
+        <ul className="ui-plain ss-found">
+          {booking.damages.map((damage) => {
+            const note = notes[damage.damage_id] ?? "";
+            return (
+              <li className="ss-damage" key={damage.damage_id}>
+                <div>
+                  <b>{damage.description}</b> ·{" "}
+                  <span className="ui-num">
+                    {usdFromCents(damage.amount_usd_cents)}
+                  </span>{" "}
+                  <Chip tone={DAMAGE_TONES[damage.status]}>
+                    {st(language, `dmg_${damage.status}`)}
+                  </Chip>
+                  {damage.status === "APPROVED" && (
+                    <span className="ui-sub2">
+                      {damage.from_deposit_usd_cents > 0 &&
+                        st(
+                          language,
+                          "dmg_from",
+                          usdFromCents(damage.from_deposit_usd_cents),
+                        )}
+                      {damage.from_deposit_usd_cents > 0 &&
+                        damage.invoice_number !== null &&
+                        " · "}
+                      {damage.invoice_id !== null &&
+                        damage.invoice_number !== null && (
+                          <a
+                            href={hashForPage(
+                              "invoices",
+                              `inv:${damage.invoice_id}`,
+                            )}
+                          >
+                            {st(language, "dmg_inv", damage.invoice_number)}
+                          </a>
+                        )}
+                    </span>
+                  )}
+                  {damage.decision_note !== null && (
+                    <span className="ui-sub2">{damage.decision_note}</span>
+                  )}
+                </div>
+                {damage.status === "WAITING" && mayBill && (
+                  <div className="ui-stack">
+                    <label
+                      className="ui-sr"
+                      htmlFor={`ss-dmg-${damage.damage_id}`}
+                    >
+                      {st(language, "dmg_note")}
+                    </label>
+                    <input
+                      autoComplete="off"
+                      disabled={busy}
+                      id={`ss-dmg-${damage.damage_id}`}
+                      maxLength={500}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        setNotes((before) => ({
+                          ...before,
+                          [damage.damage_id]: value,
+                        }));
+                      }}
+                      placeholder={st(language, "dmg_note")}
+                      value={note}
+                    />
+                    {missing === damage.damage_id && (
+                      <p className="ui-error">
+                        <Icon name="alert" small />
+                        <span>{st(language, "e_reason")}</span>
+                      </p>
+                    )}
+                    <div className="ui-actions">
+                      <button
+                        className="ui-btn primary"
+                        disabled={busy}
+                        onClick={() => {
+                          onDecide(damage.damage_id, true, note.trim());
+                        }}
+                        type="button"
+                      >
+                        {st(language, "dmg_ok")}
+                      </button>
+                      <button
+                        className="ui-btn"
+                        disabled={busy}
+                        onClick={() => {
+                          if (note.trim() === "") {
+                            setMissing(damage.damage_id);
+                            return;
+                          }
+                          setMissing(null);
+                          onDecide(damage.damage_id, false, note.trim());
+                        }}
+                        type="button"
+                      >
+                        {st(language, "dmg_no")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {booking.damage_due &&
+        (mayBill ? (
+          <DamageDecisionForm
+            booking={booking}
+            busy={busy}
+            language={language}
+            onStep={onStep}
+          />
+        ) : (
+          <p className="ui-small ui-muted">{st(language, "dmg_wait")}</p>
+        ))}
     </section>
   );
 }
