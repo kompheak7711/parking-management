@@ -95,7 +95,9 @@ def test_the_relay_gets_name_forms_phones_units_and_who_gets_an_alert(
     assert data["alert"]["always"] == [BOSS]
     now = datetime.now(UTC).timestamp()
     covering = [person for person, starts, ends in data["alert"]["shifts"] if starts <= now < ends]
-    assert covering == [CARETAKER]
+    # From 06:30 to 07:30 Phnom Penh time yesterday's Night shift and today's Morning shift
+    # overlap, so the caretaker on both is listed twice; the relay alerts each chat once (a Set).
+    assert set(covering) == {CARETAKER}
     # No name or phone number of a person reaches the relay except through the office's hash.
     assert "Dara" not in json.dumps(data)
 

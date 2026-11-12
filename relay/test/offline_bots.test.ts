@@ -152,7 +152,11 @@ const STAFF_TEXTS = {
   places: { "p-lobby": "ផ្ទះធំ" },
   alert: {
     always: [AUTHORIZER],
-    shifts: [[CARETAKER_ON, NOW - 3600, NOW + 3600]],
+    // Two covering shifts for one caretaker (Night and Morning overlap): still one alert.
+    shifts: [
+      [CARETAKER_ON, NOW - 3600, NOW + 3600],
+      [CARETAKER_ON, NOW - 30000, NOW + 60],
+    ],
   },
   staff_urgent: "🚨 {type} · {where}",
 };

@@ -113,6 +113,8 @@ const TEXTS = {
     always: [AUTHORIZER],
     shifts: [
       [CARETAKER_ON, NOW - 3600, NOW + 3600],
+      // Yesterday's Night shift overlaps today's Morning shift for an hour: still one alert.
+      [CARETAKER_ON, NOW - 30000, NOW + 60],
       [CARETAKER_OFF, NOW + 3600, NOW + 7200],
     ],
   },
