@@ -69,6 +69,17 @@ class ReservationIdempotencyKeyReused(ReservationCommandConflictError):
     """Raised when one idempotency key is reused for different input (API-016)."""
 
 
+class ReservationUnitBookedError(ReservationCommandConflictError):
+    """A short-stay guest has booked the Unit; the booking wins over the Reservation (DL-225)."""
+
+
+# The words of migration 20270721_376 (trigger reservations_short_stay_guest), SQLSTATE 23P01.
+UNIT_BOOKED_BY_SHORT_STAY_GUEST: Final = (
+    "A daily or weekly guest has booked this Unit; reserve another Unit or move the guest "
+    "to another Unit first"
+)
+
+
 class ReservationCommandInvalidError(ValueError):
     """Raised when a command violates a Reservation lifecycle invariant."""
 
@@ -366,6 +377,9 @@ def _raise_command_error(exc: psycopg.Error) -> NoReturn:
         raise ReservationIdempotencyKeyReused("Reservation idempotency key was reused") from exc
     if exc.sqlstate == "P5305":
         raise ReservationIdempotencyKeyReused("Reservation payment key was reused") from exc
+    # DL-225: a booked short-stay guest has the Unit. A refusal with a reason, never "unknown".
+    if exc.sqlstate == "23P01" and exc.diag.message_primary == UNIT_BOOKED_BY_SHORT_STAY_GUEST:
+        raise ReservationUnitBookedError(UNIT_BOOKED_BY_SHORT_STAY_GUEST) from exc
     if exc.sqlstate in {"P0001", "23505"}:
         raise ReservationCommandConflictError("Reservation command conflicted") from exc
     if exc.sqlstate in {"22023", "23514", "55000", "P5302"}:

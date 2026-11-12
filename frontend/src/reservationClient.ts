@@ -208,6 +208,35 @@ export class ReservationConflictError extends Error {
   }
 }
 
+/**
+ * DL-225: a short-stay guest has booked the Unit, so the Reservation was not saved and no money
+ * was taken. It carries the server's words; the dialog shows them (serverWords).
+ */
+export class ReservationUnitBookedError extends ReservationConflictError {
+  readonly code = "RESERVATION_UNIT_BOOKED";
+
+  constructor(message: string) {
+    super();
+    this.message = message;
+    this.name = "ReservationUnitBookedError";
+  }
+}
+
+/** The refusal a 409 answer names, when it is the booked short-stay guest of DL-225. */
+async function unitBooked(
+  response: Response,
+): Promise<ReservationUnitBookedError | null> {
+  const body: unknown = await response.json().catch(() => null);
+  if (typeof body !== "object" || body === null) return null;
+  const error: unknown = (body as Record<string, unknown>).error;
+  if (typeof error !== "object" || error === null) return null;
+  const { code, message } = error as Record<string, unknown>;
+  if (code !== "RESERVATION_UNIT_BOOKED") return null;
+  return new ReservationUnitBookedError(
+    typeof message === "string" ? message : "",
+  );
+}
+
 export class ReservationRequestError extends Error {
   /** V1-060 B7: the answer's status, when the server gave one. */
   constructor(public readonly status: number | null = null) {
@@ -236,7 +265,10 @@ async function request(
   } catch {
     throw new ReservationUnavailableError();
   }
-  if (response.status === 409 || response.status === 412) {
+  if (response.status === 409) {
+    throw (await unitBooked(response)) ?? new ReservationConflictError();
+  }
+  if (response.status === 412) {
     throw new ReservationConflictError();
   }
   // V1-060 B7: a timeout, too many requests or a server failure cannot say whether a command was

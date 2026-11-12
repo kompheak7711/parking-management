@@ -17,6 +17,7 @@ from property_rental.access_control import RENT_BELOW_DEFAULT_CAPABILITY
 from property_rental.api_refusals import (
     LEASE_END_DATE_NOT_MONTH_END,
     LEASE_REQUIRED_SERVICE_MISSING,
+    LEASE_UNIT_BOOKED,
     OCCUPANT_LAST_SIGNER,
     OCCUPANT_MOVE_OUT_DATE,
     OCCUPANT_NOT_LIVING_THERE,
@@ -62,6 +63,7 @@ from property_rental.lease import (
     LeaseServiceTerm,
     LeaseStatus,
     LeaseTerminateCommand,
+    LeaseUnitBookedError,
     LeaseUpdateDraftCommand,
     LeaseVersionConflictError,
     PostgresLeaseService,
@@ -1451,6 +1453,8 @@ def _translate(exc: Exception) -> HTTPException | RefusedRequest:
         return RefusedRequest(LEASE_END_DATE_NOT_MONTH_END)
     if isinstance(exc, LeaseRequiredServiceMissingError):
         return RefusedRequest(LEASE_REQUIRED_SERVICE_MISSING)
+    if isinstance(exc, LeaseUnitBookedError):
+        return RefusedRequest(LEASE_UNIT_BOOKED)
     if isinstance(exc, OccupantMoveOutRefusedError):
         return RefusedRequest(OCCUPANT_MOVE_OUT_REFUSALS[exc.reason])
     if isinstance(exc, VehicleRefusedError):

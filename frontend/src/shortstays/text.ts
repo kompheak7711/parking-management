@@ -719,6 +719,55 @@ const TEXT = {
   rv_copied: ["Copied.", "បានចម្លង។"],
   rv_b: ["Mark as asked", "សម្គាល់ថាបានស្នើ"],
   rv_done: ["Review asked for on {0}.", "បានស្នើសុំការវាយតម្លៃនៅ {0}។"],
+  // DL-224 (new, owner's rules of 12/11/2026): Change Unit for a booking that is not checked in
+  // yet, and the special discount after a move. The Khmer needs the native check.
+  cu_t: ["Change Unit", "ប្ដូរបន្ទប់"],
+  cu_s: [
+    "Move the guest to another Unit before check-in. The guest keeps the agreed price of {0}.",
+    "ផ្លាស់ភ្ញៀវទៅបន្ទប់ផ្សេងមុនពេលចូល។ ភ្ញៀវរក្សាតម្លៃដែលបានព្រមព្រៀង {0}។",
+  ],
+  cu_loading: ["Looking for free Units…", "កំពុងរកបន្ទប់ទំនេរ…"],
+  cu_failed: [
+    "The free Units could not be read just now.",
+    "មិនអាចអានបន្ទប់ទំនេរបានទេឥឡូវនេះ។",
+  ],
+  cu_none: [
+    "No other Unit is free on these nights.",
+    "គ្មានបន្ទប់ផ្សេងទំនេរនៅយប់ទាំងនេះទេ។",
+  ],
+  cu_to: ["Move to", "ផ្លាស់ទៅ"],
+  cu_same: ["Same type", "ប្រភេទដូចគ្នា"],
+  cu_other: ["Other types", "ប្រភេទផ្សេង"],
+  cu_other_note: [
+    "This Unit is another type. The price stays the same. An Owner or Manager can give a special discount after the move.",
+    "បន្ទប់នេះជាប្រភេទផ្សេង។ តម្លៃនៅដដែល។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងអាចផ្ដល់ការបញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់។",
+  ],
+  cu_wrong: [
+    "Choose a Unit and write the reason.",
+    "សូមជ្រើសបន្ទប់ និងសរសេរមូលហេតុ។",
+  ],
+  cu_b: ["Move the guest", "ផ្លាស់ភ្ញៀវ"],
+  cu_moved: [
+    "Moved from {0} to {1}. The guest keeps the agreed price.",
+    "បានផ្លាស់ពី {0} ទៅ {1}។ ភ្ញៀវរក្សាតម្លៃដែលបានព្រមព្រៀង។",
+  ],
+  cu_hist: ["{0} to {1}", "{0} ទៅ {1}"],
+  cu_no_extend: [
+    "A moved stay is not extended. Make a new booking for the extra nights.",
+    "ការស្នាក់នៅដែលបានផ្លាស់បន្ទប់មិនអាចបន្តបានទេ។ សូមធ្វើការកក់ថ្មីសម្រាប់យប់បន្ថែម។",
+  ],
+  md_t: [
+    "Special discount after the move",
+    "បញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់បន្ទប់",
+  ],
+  md_s: [
+    "Owner or Manager only, once for each move. If the stay is already paid, the amount becomes the guest's Credit.",
+    "សម្រាប់ម្ចាស់ ឬអ្នកគ្រប់គ្រងតែប៉ុណ្ណោះ ម្ដងសម្រាប់ការផ្លាស់នីមួយៗ។ បើការស្នាក់នៅបានបង់រួច ចំនួននេះក្លាយជាឥណទានរបស់ភ្ញៀវ។",
+  ],
+  md_b: ["Give the special discount", "ផ្ដល់ការបញ្ចុះតម្លៃពិសេស"],
+  md_credit: ["{0} is now the guest's Credit.", "{0} ឥឡូវជាឥណទានរបស់ភ្ញៀវ។"],
+  ev_UNIT_CHANGED: ["Moved to another Unit", "បានផ្លាស់ទៅបន្ទប់ផ្សេង"],
+  ev_MOVE_DISCOUNT: ["Special discount given", "បានផ្ដល់ការបញ្ចុះតម្លៃពិសេស"],
   gh_t: ["Guest", "ភ្ញៀវ"],
   gh_returning: ["Returning guest", "ភ្ញៀវត្រឡប់មកវិញ"],
   gh_problem: ["Problem guest", "ភ្ញៀវមានបញ្ហា"],

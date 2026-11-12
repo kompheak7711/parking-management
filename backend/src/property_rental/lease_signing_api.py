@@ -34,7 +34,7 @@ from psycopg import IsolationLevel
 from psycopg.types.json import Jsonb, set_json_loads
 from pydantic import BaseModel, ConfigDict, Field
 
-from property_rental.api_refusals import Refusal, RefusedRequest
+from property_rental.api_refusals import SIGNING_UNIT_BOOKED, Refusal, RefusedRequest
 from property_rental.browser_security import require_browser_mutation
 from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import (
@@ -43,6 +43,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.lease import UNIT_BOOKED_BY_SHORT_STAY
 from property_rental.payment_api import Evidence, Identity, Instant, Memo, StrictInput, UsdAmount
 from property_rental.payment_confirmation import _exact_json
 from property_rental.settings import Settings
@@ -197,6 +198,8 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
     # V1-060 B7 (second and third review): refusals from a step inside the command.
     "Payment source not found": SIGNING_PAYMENT_SOURCE_GONE,
     "Payment Method is not accepted": SIGNING_PAYMENT_SOURCE_GONE,
+    # DL-223: a guest booked the Unit after the draft was made; the booking wins.
+    UNIT_BOOKED_BY_SHORT_STAY: SIGNING_UNIT_BOOKED,
 }
 
 # V1-060 B7 (second review): another signed Lease of the Unit covers these dates (the database's

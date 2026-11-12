@@ -1130,6 +1130,12 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/lease": {"post"},
         "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/discount": {"post"},
         "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/review": {"post"},
+        # Change Unit before check-in (DL-224).
+        "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/units": {"get"},
+        "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/unit": {"post"},
+        "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/move-discount": {
+            "post"
+        },
         "/api/v1/properties/{property_id}/short-stays/guests/{customer_id}": {"get"},
         "/api/v1/properties/{property_id}/short-stays/guests/{customer_id}/notes": {"post"},
         "/api/v1/properties/{property_id}/short-stays/quotes": {"get", "post"},

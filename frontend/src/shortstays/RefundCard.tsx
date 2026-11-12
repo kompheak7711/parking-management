@@ -70,6 +70,13 @@ export function RefundCard({
   }, [api, propertyId, mayRefund]);
 
   if (refund === null) return null;
+  // DL-224: a stay that still stands has this Credit from a special discount after a move.
+  const reason =
+    booking.status === "BOOKED" ||
+    booking.status === "CHECKED_IN" ||
+    booking.status === "CHECKED_OUT"
+      ? `Special discount ${booking.booking_number}: the money paid above the new price goes back`
+      : `Free cancel ${booking.booking_number}: the money paid goes back`;
   const wrongMethod = methodId === "";
   const wrongNote = note.trim() === "";
 
@@ -95,7 +102,7 @@ export function RefundCard({
             {
               credit_id: credit.credit_id,
               amount_usd_cents: amount,
-              reason: `Free cancel ${booking.booking_number}: the money paid goes back`,
+              reason,
               refund_method_id: methodId,
               reference_note: note.trim(),
             },

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   LeaseConflictError,
-  LeaseRefusedError,
   LeaseRequestError,
+  LeaseUnitBookedError,
   leaseApi,
 } from "./leaseClient";
 
@@ -114,6 +114,47 @@ describe("Lease API client", () => {
       ),
     ).rejects.toBeInstanceOf(LeaseConflictError);
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-2167 a draft refused because a short-stay guest has booked the Unit carries the server's reason; any other refusal of that kind stays a conflict (DL-223)", async () => {
+    const booked = {
+      error: {
+        code: "LEASE_UNIT_BOOKED",
+        message:
+          "A short-stay guest has booked this Unit on some of these days. Nothing was saved.",
+      },
+    };
+    const fetcher = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(response(booked, 409))
+      .mockResolvedValueOnce(response({ error: { code: "CONFLICT" } }, 409))
+      .mockResolvedValueOnce(new Response("not JSON", { status: 409 }));
+    const lease = { lease_id: "lease-1", version: 2 } as Parameters<
+      typeof leaseApi.update
+    >[0];
+    const send = () =>
+      leaseApi.update(
+        lease,
+        {
+          event_id: "event-1",
+          start_date: "2026-11-11",
+          end_date: "2027-11-30",
+          monthly_rent_usd_cents: 29900,
+          reason: "Start earlier",
+        },
+        "command-1",
+      );
+
+    const error: unknown = await send().catch((found: unknown) => found);
+    expect(error).toBeInstanceOf(LeaseUnitBookedError);
+    expect(error).not.toBeInstanceOf(LeaseConflictError);
+    expect(error).toMatchObject({
+      code: "LEASE_UNIT_BOOKED",
+      message: booked.error.message,
+    });
+    await expect(send()).rejects.toBeInstanceOf(LeaseConflictError);
+    await expect(send()).rejects.toBeInstanceOf(LeaseConflictError);
+    expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
   it("TEST-FE-195 loads one exact bounded timeline continuation", async () => {

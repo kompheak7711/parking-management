@@ -14,6 +14,12 @@ import type { Language } from "../signInText";
 import { TelegramQrCard } from "../telegram/TelegramQrCard";
 import { GuestPanel } from "./GuestPanel";
 import { RefundCard } from "./RefundCard";
+import {
+  ChangeUnitCard,
+  MoveDiscountCard,
+  movesOf,
+  moveText,
+} from "./ChangeUnit";
 import { PriceLines } from "./NewBooking";
 import { BookingChip, nightsText, unitTypeText } from "./ShortStaysPage";
 import {
@@ -330,6 +336,7 @@ export function BookingDetail({
           <DepositCard key={`dep:${cards}`} {...steps} />
           <FeesCard key={`fee:${cards}`} {...steps} />
           <DiscountCard key={`disc:${cards}`} {...steps} />
+          <MoveDiscountCard key={`md:${cards}`} {...steps} />
           <section aria-labelledby="ss-price" className="ui-card">
             <h2 id="ss-price">{st(language, "d_price")}</h2>
             <PriceLines language={language} lines={booking.lines} />
@@ -350,7 +357,16 @@ export function BookingDetail({
             />
           )}
           <CheckOutCard key={`out:${cards}`} {...steps} />
-          <ExtendCard key={`ext:${cards}`} {...steps} />
+          <ChangeUnitCard
+            api={api}
+            key={`unit:${cards}`}
+            propertyId={propertyId}
+            {...steps}
+          />
+          {/* DL-224: a moved stay keeps its agreed price, so it is not extended. */}
+          {movesOf(booking).length === 0 && (
+            <ExtendCard key={`ext:${cards}`} {...steps} />
+          )}
           <CancelCard key={`can:${cards}`} {...steps} />
           <CancelledCard key={`done:${cards}`} {...steps} />
           <RefundCard
@@ -379,10 +395,14 @@ export function BookingDetail({
             <ol className="ui-timeline">
               {booking.history.map((event, index) => {
                 const key = `ev_${event.kind}`;
+                const units = moveText(language, event);
                 return (
                   <li key={index}>
                     <div>
                       {hasText(key) ? st(language, key) : event.kind}
+                      {units !== null && (
+                        <span className="ui-sub2 ui-num">{units}</span>
+                      )}
                       {event.note !== null && (
                         <span className="ui-sub2">{event.note}</span>
                       )}

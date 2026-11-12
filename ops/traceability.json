@@ -66554,6 +66554,433 @@
       "test_path": "frontend/src/CustomerManagement.test.tsx",
       "status": "implemented",
       "notes": "Flaky test fix (TEST-FE-087): Check the prior Customer command status pressed as soon as the command gate appears still finishes."
+    },
+    {
+      "test_id": "test_migration_374_follows_the_head_of_main_and_is_forward_only",
+      "upstream_ids": [
+        "DL-223"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_lease_draft_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Owner report 12 Nov 2026: migration 374 follows the head of main and is forward-only."
+    },
+    {
+      "test_id": "test_a_lease_draft_over_a_booked_night_is_not_saved",
+      "upstream_ids": [
+        "DL-223",
+        "DB-SS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_v12_lease_draft_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Owner report 12 Nov 2026 (A): a new Lease draft over a night a short-stay guest has booked answers 409 LEASE_UNIT_BOOKED and saves nothing; a Lease from the check-out day, or on another Unit, is saved."
+    },
+    {
+      "test_id": "test_edit_draft_does_not_move_a_lease_onto_booked_nights",
+      "upstream_ids": [
+        "DL-223",
+        "DB-SS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_v12_lease_draft_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Owner report 12 Nov 2026 (A): Edit draft cannot move a Lease onto booked nights (409 LEASE_UNIT_BOOKED, the draft is unchanged); a change that keeps the Lease off those nights is saved."
+    },
+    {
+      "test_id": "test_a_booking_made_after_the_draft_wins_and_signing_says_why",
+      "upstream_ids": [
+        "DL-223",
+        "DB-SS-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_lease_draft_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Owner report 12 Nov 2026 (B): a guest may book a Unit that has a draft; Sign Lease then answers 409 SIGNING_UNIT_BOOKED with the reason, saves no Lease change and no Payment, and the draft is still cancelled the usual way."
+    },
+    {
+      "test_id": "test_a_cancelled_booking_frees_its_nights_for_a_lease_draft",
+      "upstream_ids": [
+        "DL-223",
+        "DB-SS-001"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_v12_lease_draft_short_stay_migration.py",
+      "status": "implemented",
+      "notes": "Owner report 12 Nov 2026 (C): only a booked or checked-in guest stops a draft; after the booking is cancelled the same draft is saved, and another draft on the Unit holds no day."
+    },
+    {
+      "test_id": "TEST-FE-2167",
+      "upstream_ids": [
+        "DL-223"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Lease client: a 409 LEASE_UNIT_BOOKED answer is a LeaseUnitBookedError that carries the server's words; any other 409 stays a conflict."
+    },
+    {
+      "test_id": "TEST-FE-2168",
+      "upstream_ids": [
+        "DL-223"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "New Lease: a draft over a short-stay booking shows the server's reason in place of the general words, reads nothing again, and other dates are a new request."
+    },
+    {
+      "test_id": "TEST-FE-2169",
+      "upstream_ids": [
+        "DL-223"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Edit draft: dates a short-stay guest has booked are refused with the reason; the dialog stays open, the Lease is not read again, and a later Start Date is saved."
+    },
+    {
+      "test_id": "test_migration_375_follows_the_lease_draft_fix_and_is_forward_only",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Change Unit: migration 375 follows the Lease draft fix (374) and is forward-only."
+    },
+    {
+      "test_id": "test_a_booked_stay_moves_to_another_unit_and_keeps_its_price",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Owner 12 Nov 2026: the free Units are offered the same type first; a move needs a reason, another Unit and the version read; the moved stay keeps its total and price lines (a bigger Unit is a free upgrade); the History and the audit keep the two Units, the reason and the person; the old Unit is free again."
+    },
+    {
+      "test_id": "test_a_stay_moves_only_to_a_free_unit_and_only_before_check_in",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Change Unit: a Unit with another booking or a signed Lease on a night of the stay is refused; a checked-in or cancelled booking does not move."
+    },
+    {
+      "test_id": "test_a_paid_stay_moves_with_its_bill_and_money_as_they_are",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Owner's answer 'Guest keeps the agreed price': a paid stay moves with its Invoice, Payment, paid amount and deposit unchanged, and no Credit is made."
+    },
+    {
+      "test_id": "test_a_special_discount_after_a_move_makes_credit_when_the_stay_is_paid",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Owner's answer 'Owner or Manager types the amount': the special discount needs a move, the approve right, a reason and an amount below the total; on a paid stay the amount becomes the guest's Credit, the stay stays paid, the booking shows the Credit for the Refund button, and one move gets one discount."
+    },
+    {
+      "test_id": "test_a_special_discount_lowers_a_bill_that_is_not_paid_yet",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Special discount after a move: before the Invoice it lowers the total and the Invoice is made for the lower amount; an unpaid Invoice owes less and no Credit is made; a stay paid on the booking site gets no discount in the app."
+    },
+    {
+      "test_id": "test_a_moved_stay_is_not_extended_it_gets_a_new_booking",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "A moved stay keeps its agreed price: Extend is refused with the words to make a new booking for the extra nights; that new booking works; a stay that was not moved is extended as before."
+    },
+    {
+      "test_id": "test_the_api_runs_the_three_steps_on_the_database",
+      "upstream_ids": [
+        "DL-224",
+        "DB-SS-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "Change Unit API on the database: the Units, the move and the special discount run through the API's own SQL; a stale version, a taken Unit and a missing right are refused."
+    },
+    {
+      "test_id": "test_the_owners_case_the_guest_moves_and_the_lease_draft_is_then_saved",
+      "upstream_ids": [
+        "DL-223",
+        "DL-224"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_v12_short_stay_change_unit_migration.py",
+      "status": "implemented",
+      "notes": "The owner's case of 12 Nov 2026: a Lease draft over a paid guest's nights is refused with words that name Change Unit; after the guest moves the same draft is saved; a Lease on the guest's new Unit is refused the same way."
+    },
+    {
+      "test_id": "test_the_units_a_stay_can_move_to_need_the_read_right",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stay_change_unit_api.py",
+      "status": "implemented",
+      "notes": "Change Unit API: GET bookings/{id}/units needs short_stays.read and is not cached."
+    },
+    {
+      "test_id": "test_change_unit_needs_the_front_desk_right_a_unit_and_a_reason",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stay_change_unit_api.py",
+      "status": "implemented",
+      "notes": "Change Unit API: POST bookings/{id}/unit needs short_stays.desk and the browser checks; the body is the version, a Unit id and a reason; a price or any unknown field is refused."
+    },
+    {
+      "test_id": "test_the_special_discount_after_a_move_needs_the_approve_right",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_short_stay_change_unit_api.py",
+      "status": "implemented",
+      "notes": "Change Unit API: POST bookings/{id}/move-discount needs short_stays.approve and the browser checks; the body is the version, whole cents above zero and a reason."
+    },
+    {
+      "test_id": "TEST-FE-2110",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Short-stay client: reads the Units a stay can move to, sends the move and the special discount, keeps the two Units of a move in the History, and refuses a Unit the server did not describe in full."
+    },
+    {
+      "test_id": "TEST-FE-2111",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Booking page: the front desk opens Change Unit, sees the free Units with the same type first, chooses a Unit and writes a reason; the page then shows the new Unit and the History names the two Units and the reason."
+    },
+    {
+      "test_id": "TEST-FE-2112",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Change Unit: nothing is sent without a Unit and a reason; the fields are marked."
+    },
+    {
+      "test_id": "TEST-FE-2113",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Change Unit shows only to the front desk and only before check-in."
+    },
+    {
+      "test_id": "TEST-FE-2114",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Change Unit: says when no other Unit is free on the nights, and reads the list again after a failure."
+    },
+    {
+      "test_id": "TEST-FE-2115",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Change Unit: when the server refuses a Unit taken in the meantime the list is read again, the Unit that is gone is no longer chosen, and the reason typed is kept."
+    },
+    {
+      "test_id": "TEST-FE-2116",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "A moved stay is not extended: the Extend card is hidden and the page says to make a new booking for the extra nights."
+    },
+    {
+      "test_id": "TEST-FE-2117",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Special discount after the move: an Owner or Manager types an amount and a reason once; the card then shows the amount, the reason and the Credit, and the ordinary Extra discount card does not claim it."
+    },
+    {
+      "test_id": "TEST-FE-2118",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "The special discount form shows only after a move, only with the approve right, only before check-in, and not for a stay paid on the booking site."
+    },
+    {
+      "test_id": "TEST-FE-2119",
+      "upstream_ids": [
+        "DL-224"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ChangeUnit.test.tsx",
+      "status": "implemented",
+      "notes": "A Refund of the discount Credit names the special discount in its reason; Change Unit shows its Khmer words."
+    },
+    {
+      "test_id": "test_migration_376_follows_change_unit_and_is_forward_only",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_reserve_unit_booked_guest_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270721_376 follows 20270720_375 and has no downgrade."
+    },
+    {
+      "test_id": "test_make_reservation_stops_on_a_unit_with_a_booked_guest_and_keeps_no_money",
+      "upstream_ids": [
+        "DL-225",
+        "DB-SS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_reserve_unit_booked_guest_migration.py",
+      "status": "implemented",
+      "notes": "Make Reservation on a Unit a short-stay guest has booked is refused: no Payment, no Reservation, the Unit stays Vacant and the booking stays; the API answer is RESERVATION_UNIT_BOOKED; another Unit is reserved as before."
+    },
+    {
+      "test_id": "test_the_unit_is_reserved_after_the_guest_moves_to_another_unit",
+      "upstream_ids": [
+        "DL-225",
+        "DL-224",
+        "DB-SS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_reserve_unit_booked_guest_migration.py",
+      "status": "implemented",
+      "notes": "After Change Unit moves the guest the Unit is reserved; the Unit the guest moved to is then the one that cannot be reserved."
+    },
+    {
+      "test_id": "test_the_unit_is_reserved_after_the_booking_is_cancelled",
+      "upstream_ids": [
+        "DL-225",
+        "DB-SS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_reserve_unit_booked_guest_migration.py",
+      "status": "implemented",
+      "notes": "A cancelled booking no longer stops a Reservation of its Unit."
+    },
+    {
+      "test_id": "test_a_stay_that_is_over_does_not_stop_a_reservation",
+      "upstream_ids": [
+        "DL-225",
+        "DB-SS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_reserve_unit_booked_guest_migration.py",
+      "status": "implemented",
+      "notes": "A booking holds the nights up to, not including, its check-out day: a stay with a night from today on stops a Reservation, a stay whose check-out day is today does not."
+    },
+    {
+      "test_id": "test_make_reservation_on_a_booked_unit_answers_the_reason_with_a_code",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_unit_booked_api.py",
+      "status": "implemented",
+      "notes": "Both Make Reservation requests answer 409 RESERVATION_UNIT_BOOKED with the fixed words and the rule DL-225."
+    },
+    {
+      "test_id": "TEST-FE-2103",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
+      "status": "implemented",
+      "notes": "The Reservation client: a 409 RESERVATION_UNIT_BOOKED answer of Make Reservation with its money becomes an error with the code and the server's words."
+    },
+    {
+      "test_id": "TEST-FE-2104",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
+      "status": "implemented",
+      "notes": "The Reservation client: Make Reservation without money in the same step is refused the same way."
+    },
+    {
+      "test_id": "TEST-FE-2105",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
+      "status": "implemented",
+      "notes": "The Reservation client: any other conflict stays the general conflict, also when its answer cannot be read."
+    },
+    {
+      "test_id": "TEST-FE-2106",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
+      "status": "implemented",
+      "notes": "Make Reservation shows the server's reason in place of the general conflict words, keeps the Unit and the Customer open, looks up nothing, and saves once the guest has moved."
+    },
+    {
+      "test_id": "TEST-FE-2107",
+      "upstream_ids": [
+        "DL-225"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
+      "status": "implemented",
+      "notes": "The Khmer screen has Khmer words for RESERVATION_UNIT_BOOKED, with the name of Change Unit."
     }
   ]
 }

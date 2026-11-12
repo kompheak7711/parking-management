@@ -22,6 +22,7 @@ import {
   LeaseConflictError,
   LeaseRefusedError,
   LeaseRequestError,
+  LeaseUnitBookedError,
   LeaseUnavailableError,
   type LeaseApi,
   type LeaseResource,
@@ -915,7 +916,41 @@ describe("Lease actions", () => {
     expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
   });
 
-  it("TEST-FE-853 a draft whose Customer has an active Booking of the Parking takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
+  it("TEST-FE-2169 Edit draft: dates that a short-stay guest has booked are refused with the reason; the dialog stays open and the Lease is not read again (DL-223)", async () => {
+    window.location.hash = "#/leases/lease-sign";
+    const reason =
+      "A short-stay guest has booked this Unit on some of these days. Nothing was saved. Choose another Unit, or a Start Date on the guest's check-out day or later (see Short stays).";
+    const update = vi
+      .fn()
+      .mockRejectedValueOnce(new LeaseUnitBookedError(reason))
+      .mockResolvedValueOnce({ ...signable, start_date: "2026-12-15" });
+    const get = vi.fn().mockResolvedValue(signable);
+    show(api({ get, update }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Edit draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2027-12-31" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Why it changed/), {
+      target: { value: "The Customer asked to start earlier" },
+    });
+    const reads = get.mock.calls.length;
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await within(dialog).findByText(reason)).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent("The server refused this");
+    expect(get).toHaveBeenCalledTimes(reads);
+
+    // A Start Date after the guest's stay is a new request, and it is saved.
+    fireEvent.change(within(dialog).getByLabelText("Start Date"), {
+      target: { value: "2026-12-15" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
+    expect(update.mock.calls[1]?.[2]).not.toBe(update.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-853 a draft whose Customer has an active Booking of the Unit takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
     window.location.hash = "#/leases/lease-sign";
     const reservation = (
       id: string,
@@ -2227,7 +2262,53 @@ describe("New Lease and Renew", () => {
     });
   });
 
-  it("TEST-FE-1010 New Lease says when the chosen Parking has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
+  it("TEST-FE-2168 New Lease: a draft over a short-stay booking is refused with the reason, not the general words; nothing is read again, and other dates save (DL-223)", async () => {
+    const reason =
+      "A short-stay guest has booked this Unit on some of these days. Nothing was saved. Choose another Unit, or a Start Date on the guest's check-out day or later (see Short stays).";
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockRejectedValueOnce(new LeaseUnitBookedError(reason))
+      .mockImplementationOnce((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    const get = vi.fn().mockRejectedValue(new LeaseRequestError());
+    window.location.hash = "#/leases/new";
+    show(api({ create, get }), deposits(), null, undefined, people(), units);
+    await screen.findByLabelText("Unit");
+    pickIn("Unit", "unit-U402");
+    await waitFor(() => {
+      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+    });
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "300" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    expect(await within(dialog).findByText(reason)).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent("The server refused the draft");
+    expect(get).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("#/leases/new");
+
+    // Back on the form the Start Date is moved past the stay; the next save is a new request.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2027-02-01" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const again = screen.getByRole("dialog");
+    expect(again).not.toHaveTextContent(reason);
+    fireEvent.click(within(again).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(2);
+    });
+    expect(create.mock.calls[1]?.[2]).not.toBe(create.mock.calls[0]?.[2]);
+  });
+
+  it("TEST-FE-1010 New Lease says when the chosen Unit has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
     const loadMeters = vi.fn<UtilityApi["loadMeters"]>().mockResolvedValue({
       items: [meterOf("WATER", "2027-01-01")],
       nextCursor: null,

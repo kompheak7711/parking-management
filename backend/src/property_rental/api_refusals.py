@@ -93,6 +93,37 @@ LEASE_REQUIRED_SERVICE_MISSING = Refusal(
     ("DL-110",),
     ("service_terms",),
 )
+# DL-223 (owner 12 Nov 2026): a short-stay booking wins over a new Lease. Save draft and Sign
+# Lease both name the reason. DL-224: they also name Change Unit, which moves the guest first.
+LEASE_UNIT_BOOKED = Refusal(
+    409,
+    "LEASE_UNIT_BOOKED",
+    "A short-stay guest has booked this Unit on some of these days. Nothing was saved. "
+    "Choose another Unit, or a Start Date on the guest's check-out day or later "
+    "(see Short stays), or move the guest to another Unit first (Short stays, Change Unit).",
+    ("DL-223",),
+    ("unit_id", "start_date"),
+)
+SIGNING_UNIT_BOOKED = Refusal(
+    409,
+    "SIGNING_UNIT_BOOKED",
+    "A short-stay guest has booked this Unit on some of the Lease days. Nothing was saved. "
+    "Change the Start Date with Edit draft to the guest's check-out day or later "
+    "(see Short stays), or move the guest to another Unit first (Short stays, Change Unit), "
+    "or cancel this draft and make the Lease on another Unit.",
+    ("DL-223",),
+)
+# DL-225 (12 Nov 2026): a booked short-stay guest also wins over a new Reservation, as over a
+# new Lease (DL-223).
+RESERVATION_UNIT_BOOKED = Refusal(
+    409,
+    "RESERVATION_UNIT_BOOKED",
+    "A short-stay guest has booked this Unit. Nothing was saved and no money was taken. "
+    "Reserve another Unit, or move the guest to another Unit first "
+    "(Short stays, Change Unit).",
+    ("DL-225",),
+    ("unit_id",),
+)
 # V1-061 (owner 2026-10-29, DL-111): Move out one occupant.
 OCCUPANT_PRIMARY_TENANT = Refusal(
     409,

@@ -1509,6 +1509,11 @@ export function DiscountCard({
   if (given === undefined && (!open || !may("short_stays.approve")))
     return null;
   if (given !== undefined) {
+    const reasons = booking.history.filter(
+      (event) => event.kind === "DISCOUNT",
+    );
+    // DL-224: a special discount after a move shows on its own card.
+    if (reasons.length === 0) return null;
     return (
       <section aria-labelledby="ss-disc" className="ui-card">
         <h2 id="ss-disc">{st(language, "dc_t")}</h2>
@@ -1517,10 +1522,7 @@ export function DiscountCard({
             language,
             "dc_given",
             usdFromCents(-given.amount_usd_cents),
-            booking.history
-              .filter((event) => event.kind === "DISCOUNT")
-              .map((event) => event.note ?? "")
-              .join(" "),
+            reasons.map((event) => event.note ?? "").join(" "),
           )}
         </p>
       </section>

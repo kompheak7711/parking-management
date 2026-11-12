@@ -296,18 +296,32 @@ def test_a_booking_and_a_lease_never_share_a_night(stay_database: StayDatabase) 
     book(db, unit, lease_start - timedelta(days=3), 3)
     _, into_lease = booking_statements(db, unit, lease_start - timedelta(days=1), 2)
     refused(db.owner_url, "23P01", *into_lease)
-    # The booking wins: a new Lease over a booked night is refused.
+    # The booking wins: a new Lease over a booked night is refused, already as a draft (DL-223).
     other = db.units[3]
     book(db, other, db.today + timedelta(days=5), 2)
+    with pytest.raises(psycopg.Error) as caught:
+        with psycopg.connect(db.owner_url) as connection:
+            create_draft(
+                connection,
+                actor_id=db.owner,
+                unit_id=other,
+                primary_tenant_id=db.guest,
+                start_date=db.today + timedelta(days=6),
+                end_date=db.today + timedelta(days=190),
+            )
+    assert caught.value.sqlstate == "23P01"
+    assert "another Unit" in str(caught.value)
+    # A draft holds no night: a guest may book after it, and then the signing is refused.
     with psycopg.connect(db.owner_url) as connection:
         draft = create_draft(
             connection,
             actor_id=db.owner,
             unit_id=other,
             primary_tenant_id=db.guest,
-            start_date=db.today + timedelta(days=6),
+            start_date=db.today + timedelta(days=7),
             end_date=db.today + timedelta(days=190),
         )
+    book(db, other, db.today + timedelta(days=9), 2)
     with pytest.raises(psycopg.Error) as caught:
         with psycopg.connect(db.owner_url) as connection:
             sign_lease(connection, draft, db.owner)

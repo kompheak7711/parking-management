@@ -38,6 +38,7 @@ import {
   ReservationConflictError,
   ReservationRequestError,
   ReservationUnavailableError,
+  ReservationUnitBookedError,
   type ReservationApi,
   type ReservationResource,
   type ReservationRules,
@@ -47,6 +48,7 @@ import { DateInput, parseDay } from "../shell/DateInput";
 import { todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { useLeaveGuard } from "../shell/leaveGuard";
+import { serverWords } from "../shell/serverText";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
@@ -180,6 +182,8 @@ export function MakeReservationDialog({
   const [outcome, setOutcome] = useState<
     "unknown" | "refused" | "conflict" | null
   >(null);
+  // DL-225: a short-stay guest has booked the Unit (the server's words for the conflict).
+  const [booked, setBooked] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const paymentRequest = useRef<{
     fingerprint: string;
@@ -423,6 +427,11 @@ export function MakeReservationDialog({
           return;
         }
       }
+      setBooked(
+        error instanceof ReservationUnitBookedError
+          ? serverWords(language, error)
+          : null,
+      );
       setOutcome(result);
     } finally {
       setBusy(false);
@@ -765,7 +774,9 @@ export function MakeReservationDialog({
             <div className="ui-notice warn" role="alert">
               <Icon name="alert" />
               <p>
-                {rt(language, outcome !== "conflict" ? outcome : "mk_conflict")}
+                {outcome !== "conflict"
+                  ? rt(language, outcome)
+                  : (booked ?? rt(language, "mk_conflict"))}
               </p>
             </div>
           )}

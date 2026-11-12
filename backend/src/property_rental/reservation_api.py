@@ -14,7 +14,11 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.access_control import RENT_BELOW_DEFAULT_CAPABILITY
-from property_rental.api_refusals import RENT_BELOW_UNIT_DEFAULT, RefusedRequest
+from property_rental.api_refusals import (
+    RENT_BELOW_UNIT_DEFAULT,
+    RESERVATION_UNIT_BOOKED,
+    RefusedRequest,
+)
 from property_rental.browser_security import require_browser_mutation
 from property_rental.deposit import (
     DEPOSIT_CONNECT_TIMEOUT_SECONDS,
@@ -44,6 +48,7 @@ from property_rental.reservation import (
     ReservationIdempotencyKeyReused,
     ReservationNotFoundError,
     ReservationStatus,
+    ReservationUnitBookedError,
     ReservationVersionConflictError,
 )
 from property_rental.reservation_deposit_draft import (
@@ -1098,6 +1103,8 @@ def _translate(exc: Exception) -> Exception:
         return HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     if isinstance(exc, ReservationVersionConflictError):
         return HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
+    if isinstance(exc, ReservationUnitBookedError):
+        return RefusedRequest(RESERVATION_UNIT_BOOKED)
     if isinstance(exc, ReservationCommandConflictError):
         return HTTPException(status_code=status.HTTP_409_CONFLICT)
     if isinstance(exc, (ReservationCommandInvalidError, ReservationResourceInvalid, ValueError)):

@@ -423,6 +423,32 @@ export class LeaseRefusedError extends Error {
   }
 }
 
+/**
+ * DL-223: a short-stay guest has booked the Unit on a day of the Lease, so the draft was not
+ * saved. It carries the server's words; the screens show them (serverWords).
+ */
+export class LeaseUnitBookedError extends Error {
+  readonly code = "LEASE_UNIT_BOOKED";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "LeaseUnitBookedError";
+  }
+}
+
+/** The refusal a 409 answer names, when it is the short-stay booking of DL-223. */
+async function unitBooked(
+  response: Response,
+): Promise<LeaseUnitBookedError | null> {
+  const body: unknown = await response.json().catch(() => null);
+  if (typeof body !== "object" || body === null) return null;
+  const error: unknown = (body as Record<string, unknown>).error;
+  if (typeof error !== "object" || error === null) return null;
+  const { code, message } = error as Record<string, unknown>;
+  if (code !== "LEASE_UNIT_BOOKED") return null;
+  return new LeaseUnitBookedError(typeof message === "string" ? message : "");
+}
+
 function csrfToken(): string {
   const prefix = "__Host-prm_csrf=";
   const value = document.cookie
@@ -443,8 +469,9 @@ async function request(
   } catch {
     throw new LeaseUnavailableError();
   }
-  if (response.status === 409 || response.status === 412)
-    throw new LeaseConflictError();
+  if (response.status === 409)
+    throw (await unitBooked(response)) ?? new LeaseConflictError();
+  if (response.status === 412) throw new LeaseConflictError();
   if (response.status === 503) throw new LeaseUnavailableError();
   if (!response.ok) throw new LeaseRequestError();
   const value: unknown = await response.json();

@@ -24,9 +24,13 @@ after its use-by day (`POST .../bookings/{id}/credit/end`, `GET .../credits-due`
 Problem reports, with no cost, and the person who bills damage (`damage_charges.bill`) decides on
 the booking "Charge the guest" or "No charge" (`POST .../bookings/{id}/damage`), with no
 approval; a damage charge that still waits from before is decided with the same right.
-`GET .../damage-due` lists the stays still waiting for that decision. The
-database functions check the rights again, price the stay from the owner's rules and keep one
-booking per Unit and night.
+`GET .../damage-due` lists the stays still waiting for that decision. DL-224 (migration
+20270720_375) adds Change Unit for a booking that is not checked in yet: the Units it can move to
+(`GET .../bookings/{id}/units`, `short_stays.read`), the move with a reason
+(`POST .../bookings/{id}/unit`, `short_stays.desk`; the guest keeps the agreed price) and the
+Owner's or Manager's special discount after a move (`POST .../bookings/{id}/move-discount`,
+`short_stays.approve`). The database functions check the rights again, price the stay from the
+owner's rules and keep one booking per Unit and night.
 """
 
 from __future__ import annotations
@@ -83,6 +87,9 @@ Action = Literal[
     "link_lease",
     "site_calendar",
     "discount",
+    "move_units",
+    "change_unit",
+    "move_discount",
     "guest_note",
     "review",
     "quote",
@@ -117,6 +124,13 @@ ACTION_SQL: dict[str, str] = {
     ),
     # Step 5b (migration 20270607_317): a note's target is the guest; a quote's the Property.
     "discount": "SELECT app.give_short_stay_discount(%(p)s, %(t)s, %(b)s, %(v)s, %(a)s, %(c)s)",
+    # DL-224 (migration 20270720_375): a booked guest moves to another Unit before check-in and
+    # keeps the agreed price. "move_units" only reads the Units the stay can move to.
+    "move_units": "SELECT app.short_stay_move_units(%(p)s, %(t)s, %(a)s)",
+    "change_unit": "SELECT app.change_short_stay_unit(%(p)s, %(t)s, %(b)s, %(v)s, %(a)s, %(c)s)",
+    "move_discount": (
+        "SELECT app.give_short_stay_move_discount(%(p)s, %(t)s, %(b)s, %(v)s, %(a)s, %(c)s)"
+    ),
     "guest_note": "SELECT app.add_guest_note(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
     "review": "SELECT app.ask_short_stay_review(%(p)s, %(t)s, %(a)s, %(c)s)",
     "quote": "SELECT app.make_short_stay_quote(%(p)s, %(b)s, %(a)s, %(c)s)",
@@ -478,6 +492,13 @@ class Discount(Version):
     reason: Note
 
 
+class ChangeUnit(Version):
+    """DL-224: the Unit a booked guest moves to, and why. The price is not part of a move."""
+
+    unit_id: Id
+    reason: Note
+
+
 class GuestNote(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
@@ -727,6 +748,32 @@ def create_short_stays_router(
         property_id: UUID, booking_id: UUID, body: Discount, request: Request
     ) -> Json:
         return act(request, property_id, SHORT_STAYS_APPROVE, "discount", booking_id, body)
+
+    @router.get("/bookings/{booking_id}/units")
+    def short_stay_move_units(
+        property_id: UUID, booking_id: UUID, request: Request, response: Response
+    ) -> Json:
+        actor = _require(request, resolver, SHORT_STAYS_READ, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(
+                request,
+                flow.act(property_id, "move_units", booking_id, {}, actor_id=actor.actor_id),
+            )
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @router.post("/bookings/{booking_id}/unit")
+    def change_short_stay_unit(
+        property_id: UUID, booking_id: UUID, body: ChangeUnit, request: Request
+    ) -> Json:
+        return act(request, property_id, SHORT_STAYS_DESK, "change_unit", booking_id, body)
+
+    @router.post("/bookings/{booking_id}/move-discount")
+    def give_short_stay_move_discount(
+        property_id: UUID, booking_id: UUID, body: Discount, request: Request
+    ) -> Json:
+        return act(request, property_id, SHORT_STAYS_APPROVE, "move_discount", booking_id, body)
 
     @router.post("/bookings/{booking_id}/review")
     def ask_short_stay_review(property_id: UUID, booking_id: UUID, request: Request) -> Json:

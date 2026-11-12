@@ -65,6 +65,17 @@ class LeaseRequiredServiceMissingError(LeaseCommandInvalidError):
 REQUIRED_SERVICE_MISSING: Final = "Lease draft is missing a required Service of the Unit"
 
 
+class LeaseUnitBookedError(LeaseCommandConflictError):
+    """Raised when a short-stay guest has booked the Unit on a day of the Lease (DL-223)."""
+
+
+# Migrations 20270531_310 and 20270719_374: the booking wins over a new Lease, draft or signed.
+UNIT_BOOKED_BY_SHORT_STAY: Final = (
+    "A daily or weekly guest has booked this Unit on one of these days; "
+    "offer another Unit or a later Start Date"
+)
+
+
 class LeaseAuthorizationError(PermissionError):
     """Raised before persistence when trusted capability evidence is absent."""
 
@@ -524,6 +535,9 @@ class PostgresLeaseService:
                 raise LeaseNotFoundError("Lease resource was not found") from exc
             if exc.sqlstate == "40001":
                 raise LeaseVersionConflictError("Lease version precondition was not met") from exc
+            # Migration 374 (DL-223): a draft is not saved over a short-stay booking.
+            if exc.sqlstate == "23P01" and exc.diag.message_primary == UNIT_BOOKED_BY_SHORT_STAY:
+                raise LeaseUnitBookedError(UNIT_BOOKED_BY_SHORT_STAY) from exc
             if exc.sqlstate in {"23505", "23P01"}:
                 raise LeaseCommandConflictError("Lease command conflicted") from exc
             # Migration 76: draft, update and signing refuse an End Date that is not a month end.

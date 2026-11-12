@@ -146,6 +146,8 @@ export interface BookingHistoryEntry {
   kind: string;
   occurred_at: string;
   note: string | null;
+  /** What the step kept beside its note: the two Units of a move, the amount of a discount. */
+  details?: Record<string, unknown> | null;
 }
 
 /** Step 3: how the stay is paid. */
@@ -464,6 +466,8 @@ export type StayStep =
   | "credit/end"
   | "lease"
   | "discount"
+  | "unit"
+  | "move-discount"
   | "review";
 
 /** Step 4c: the guest's Lease, with the money off its first month kept from the link. */
@@ -483,6 +487,17 @@ export interface StayLeaseDraft {
 }
 
 /** Step 4b: how a cancelled booking ended. */
+/** DL-224: a Unit a booked stay can move to: free on every night of the stay. */
+export interface MoveUnit {
+  unit_id: string;
+  unit_number: string;
+  floor: string;
+  unit_type: string;
+  /** The same type as the Unit the guest booked; these are offered first. */
+  same_type: boolean;
+  monthly_rent_usd_cents: number | null;
+}
+
 export interface StayCancellation {
   kind: "CANCELLED" | "NO_SHOW";
   free: boolean;
@@ -598,6 +613,8 @@ export interface ShortStaysApi {
     step: StayStep,
     body: Record<string, unknown> | null,
   ) => Promise<Booking>;
+  /** DL-224: the Units a booked stay can move to, the same type first. */
+  moveUnits: (propertyId: string, bookingId: string) => Promise<MoveUnit[]>;
   decide: (
     propertyId: string,
     damageId: string,
@@ -947,6 +964,7 @@ export function bookingOf(value: unknown): Booking {
         kind: text(event.kind),
         occurred_at: text(event.occurred_at),
         note: maybeText(event.note),
+        ...(isObject(event.details) ? { details: event.details } : {}),
       };
     }),
     unit_status: text(row.unit_status),
@@ -1173,6 +1191,18 @@ function reportOf(value: unknown): WeekReport {
   };
 }
 
+function moveUnitOf(value: unknown): MoveUnit {
+  const row = record(value);
+  return {
+    unit_id: text(row.unit_id),
+    unit_number: text(row.unit_number),
+    floor: text(row.floor),
+    unit_type: text(row.unit_type),
+    same_type: row.same_type === true,
+    monthly_rent_usd_cents: maybeWhole(row.monthly_rent_usd_cents),
+  };
+}
+
 function leaseOfferOf(row: Record<string, unknown>): StayLeaseOffer {
   return {
     lease_id: text(row.lease_id),
@@ -1312,6 +1342,14 @@ export const shortStaysApi: ShortStaysApi = {
         post(body),
       ),
     ),
+  moveUnits: async (propertyId, bookingId) =>
+    list(
+      record(
+        await request(
+          `${base(propertyId)}/bookings/${encodeURIComponent(bookingId)}/units`,
+        ),
+      ).units,
+    ).map(moveUnitOf),
   decide: async (propertyId, damageId, decision) =>
     bookingOf(
       await request(

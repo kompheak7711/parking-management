@@ -7,6 +7,7 @@ import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
   LeaseConflictError,
   LeaseUnavailableError,
+  LeaseUnitBookedError,
   type LeaseApi,
   type LeaseResource,
   type OccupancyResource,
@@ -196,6 +197,8 @@ export function EditDraftDialog({
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>(null);
+  // DL-223: a short-stay guest has booked the Unit on a day of the Lease (the server's words).
+  const [booked, setBooked] = useState<string | null>(null);
   // V1-060 B7: the dates and Rent are saved first, then the Security Deposit. When only the
   // first is saved, the dialog stays and Try again saves only the Security Deposit.
   const [depositIssue, setDepositIssue] = useState<
@@ -253,6 +256,7 @@ export function EditDraftDialog({
     );
     setBusy(true);
     setOutcome(null);
+    setBooked(null);
     setDepositIssue(null);
     void (async () => {
       let current = before?.fingerprint === fingerprint ? before.lease : null;
@@ -264,7 +268,10 @@ export function EditDraftDialog({
             update.key,
           );
         } catch (error: unknown) {
-          if (error instanceof LeaseConflictError) onConflict();
+          // The booking wins (DL-223): the Lease did not change, so the dialog stays open.
+          if (error instanceof LeaseUnitBookedError)
+            setBooked(serverWords(language, error));
+          else if (error instanceof LeaseConflictError) onConflict();
           // No answer, or the service was down: the request may or may not have been saved.
           else
             setOutcome(
@@ -411,6 +418,12 @@ export function EditDraftDialog({
         <Problem message={problems.reason ?? null} />
       </div>
       <OutcomeNotice language={language} outcome={outcome} />
+      {booked !== null && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>{booked}</p>
+        </div>
+      )}
       {depositIssue !== null && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
