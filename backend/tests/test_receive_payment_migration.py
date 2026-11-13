@@ -254,7 +254,7 @@ def test_khr_money_pays_oldest_first_in_the_same_step(migrated_database_url: str
         base.idempotency_key,
         case["customer"],
         base.payment_method_id,
-        3_266_400,
+        3_249_600,
         RENT,
         base.received_at,
         "ABA transfer 4471",
@@ -265,7 +265,7 @@ def test_khr_money_pays_oldest_first_in_the_same_step(migrated_database_url: str
         provider=provider(base.received_at),
     )
     assert result["payment"]["received_currency"] == "KHR"
-    assert result["exchange_rate_record"]["system_rate_khr_per_usd"] == 4083
+    assert result["exchange_rate_record"]["system_rate_khr_per_usd"] == 4062
     assert status(url, case["invoice"]) == "PAID" and result["left_usd_cents"] == 0
 
 
@@ -294,7 +294,7 @@ def test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_comm
             ("prm_runtime", False, False, True, False),
         ]
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-        assert head == ("20270723_392",)
+        assert head == ("20270724_393",)
 
 
 def test_receive_payment_commands_are_append_only(migrated_database_url: str) -> None:
@@ -404,7 +404,7 @@ def test_a_khr_retry_keeps_the_first_rate_and_asks_for_no_new_one(
         base.idempotency_key,
         case["customer"],
         base.payment_method_id,
-        3_266_400,
+        3_249_600,
         RENT,
         base.received_at,
         "ABA transfer 4472",

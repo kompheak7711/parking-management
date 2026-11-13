@@ -1352,7 +1352,7 @@ Amended by DL-075 (owner, 2026-10-20): each method says whether it needs a refer
 
 Append-only System Exchange Rate record selected at KHR Payment confirmation;
 not a new Refund conversion under DL-060: `id uuid PK`, `reference_rate_khr_per_usd numeric(20,6) NOT NULL CHECK
-(>0)`, `markup_basis_points smallint NOT NULL CHECK (= 50)`, `system_rate_khr_per_usd
+(>0)`, `markup_basis_points smallint NOT NULL CHECK (= 50)` (0 or 50 since DB-BS-005), `system_rate_khr_per_usd
 bigint NOT NULL CHECK (>0)`, `rate_source text NOT NULL CHECK IN
 ('ABA_AUTOMATIC','ABA_EQUIVALENT_MANUAL')`, `source_reference text NULL`, `applicable_at
 timestamptz NOT NULL`, `entered_by uuid NULL`, `channel_actual_currency text NULL`,
@@ -1361,7 +1361,7 @@ bigint NULL CHECK (>0)`, `channel_actual_rate_khr_per_usd numeric(20,6) NULL CHE
 `channel_transaction_reference text NULL`, `channel_confirmed_at timestamptz NULL`, and
 `calculation_trace jsonb NOT NULL`. Manual ABA-equivalent records require `entered_by`;
 every System Rate equals the ABA-equivalent reference × 1.005 rounded upward to whole
-KHR. Any channel-actual value supplied by the accepted channel is preserved; presence
+KHR (since DB-BS-005: × (1 + its own mark-up), so 0 for new records and 50 for older ones). Any channel-actual value supplied by the accepted channel is preserved; presence
 of any such value requires transaction reference and timestamp, while unavailable
 values remain null rather than fabricated. Supplied values match and control the linked
 Payment without overwriting the separately preserved System Rate. Preserve existing
@@ -6075,4 +6075,12 @@ Migration `20270723_392_aba_qr_payment_method` (ABA range, on `20270717_340`). F
 - `app.payment_methods.aba_qr boolean NOT NULL DEFAULT false`, with `CHECK (NOT aba_qr OR accepted)` (`payment_methods_aba_qr_is_on`) and the unique partial index `payment_methods_one_aba_qr` on `(true) WHERE aba_qr`: at most one method has the mark, and only a method that is on.
 - `app.replace_property_payment_methods(property, methods, expected_version, actor)` (the Settings save) reads an optional boolean `aba_qr` on each method. No method with the key: the mark stays. With the key: the method marked true gets the mark and every other method loses it. Two marked methods, a marked method that is off, or a key that is not true/false are refused with `SQLSTATE 22023`. A method that is turned off or left out loses the mark before it is turned off. The signature and grants are unchanged.
 - `app.aba_payment_method(property, code, actor)` answers the marked method that is on; with no mark, the method with `code` that is on (the operations file's `aba_payway.payment_method_code`, now optional). It still needs `telegram.operate`.
+
+## DB-BS-005 — The riel rate has no mark-up (DL-228)
+
+Migration `20270724_393_riel_rate_no_markup` (on `20270723_392`). Forward-only. No riel Payment or rate record is changed.
+
+- `app.exchange_rate_records`: the mark-up check becomes `exchange_rate_markup_known CHECK (markup_basis_points IN (0, 50))`, and `exchange_rate_system_formula` becomes `system_rate_khr_per_usd = ceil(reference_rate_khr_per_usd * (10000 + markup_basis_points) / 10000)`. A record saved before keeps 50 and still passes; every new record has 0.
+- `app.confirm_khr_payment(...)` (Receive payment in riel) and `app.execute_exchange_rate(...)` (rate confirm) write 0 and the System Rate `ceil(reference)`. Signatures and grants are unchanged.
+- The unused Settings rule `RIEL_RATE_MARK_UP` ("Riel rate: ABA Sell rate plus", seeded at 0.5% by migration 271, `used_by_app` false) and its values are removed, as migration 267 removed the asset life rules.
 

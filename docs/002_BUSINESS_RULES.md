@@ -1294,11 +1294,13 @@ Money is worked out in whole cents (or exact decimals), never with floating-poin
 The outside rate is the ABA Bank USD/KHR Sell rate. No other source is approved.
 
 ```text
-App rate = ABA Sell rate × 1.005, rounded up to the next whole riel
-Example:   4,062 × 1.005 = 4,082.31, so the app rate is 4,083 riel for 1 USD
+App rate = ABA Sell rate, rounded up to the next whole riel
+Example:   ABA sells 1 USD for 4,076.25 riel, so the app rate is 4,077 riel for 1 USD
 ```
 
-The 1.005 is the approved 0.5% mark-up. If the ABA rate cannot be read automatically, an authorized user may type the ABA Sell rate by hand. The app then uses the same mark-up and the same rounding. Typing by hand never skips the formula.
+There is no mark-up (DL-228, owner 13 Nov 2026: "Always 0%, no setting"). It is not a Settings value. If the ABA rate cannot be read automatically, an authorized user may type the ABA Sell rate by hand. The app then uses the same rounding. Typing by hand never skips the formula.
+
+Riel Payments saved before 13 Nov 2026 used ABA Sell rate × 1.005 (a 0.5% mark-up). They keep that rate; it is never worked out again.
 
 Replaces: BR-MONEY-005, BR-MONEY-006, BR-MONEY-008.
 
@@ -1306,7 +1308,7 @@ Replaces: BR-MONEY-005, BR-MONEY-006, BR-MONEY-008.
 
 The app rate is chosen and kept at the moment the receipt of the Payment is confirmed. A later rate never changes that Payment. The riel amount is worked out with the rounded app rate and rounded up to the next whole riel (not half up).
 
-Every riel Payment keeps: the ABA rate, the 0.5% mark-up, the app rate, the date and time, whether the rate was read automatically or typed, the USD value and the riel amount. When KHQR or another bank channel gives its own real conversion, amount or rate, that real information is kept and never rewritten with another rate.
+Every riel Payment keeps: the ABA rate, its mark-up (0, or 0.5% for Payments saved before DL-228), the app rate, the date and time, whether the rate was read automatically or typed, the USD value and the riel amount. When KHQR or another bank channel gives its own real conversion, amount or rate, that real information is kept and never rewritten with another rate.
 
 Replaces: BR-MONEY-009, BR-MONEY-010, BR-MONEY-011.
 

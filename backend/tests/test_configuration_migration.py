@@ -651,9 +651,9 @@ def test_runtime_utility_and_exchange_commands_preserve_effective_evidence(
         )
         trace = {
             "usd_amount_cents": 10001,
-            "unrounded_payable_khr": "408340.83",
-            "payable_khr": 408341,
-            "markup_basis_points": 50,
+            "unrounded_payable_khr": "406340.63",
+            "payable_khr": 406341,
+            "markup_basis_points": 0,
             "rounding": "CEILING_WHOLE_KHR",
         }
         exchange = runtime.execute(
@@ -664,7 +664,7 @@ def test_runtime_utility_and_exchange_commands_preserve_effective_evidence(
                 "d" * 64,
                 uuid4(),
                 Decimal("4062.500000"),
-                4083,
+                4063,
                 "ABA_EQUIVALENT_MANUAL",
                 "ABA fallback evidence",
                 "2026-08-25T10:00:00+07:00",
@@ -675,7 +675,7 @@ def test_runtime_utility_and_exchange_commands_preserve_effective_evidence(
         assert exchange is not None
         assert exchange[1:5] == (
             Decimal("4062.500000"),
-            4083,
+            4063,
             "ABA_EQUIVALENT_MANUAL",
             "ABA fallback evidence",
         )
@@ -797,11 +797,11 @@ def test_runtime_exchange_history_is_scoped_to_the_exact_property(
     flow = PostgresConfigurationFlow(runtime_database_url())
 
     def persist(property_id: UUID, amount: int) -> ExchangeRateRecord:
-        unrounded = Decimal(amount) * Decimal(4083) / Decimal(100)
+        unrounded = Decimal(amount) * Decimal(4063) / Decimal(100)
         record = ExchangeRateRecord(
             id=uuid4(),
             reference_rate_khr_per_usd=Decimal("4062.500000"),
-            system_rate_khr_per_usd=4083,
+            system_rate_khr_per_usd=4063,
             rate_source="ABA_AUTOMATIC",
             source_reference=f"automatic-{property_id}",
             applicable_at=datetime.fromisoformat("2026-08-25T10:00:00+07:00"),

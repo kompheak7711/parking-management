@@ -5351,6 +5351,8 @@ ABA-equivalent USD/KHR Sell Reference Rate × 1.005
 
 The 1.005 multiplier represents the approved 0.5% markup.
 
+Amended by DL-228 (owner, 13 Nov 2026): there is no mark-up. The System Exchange Rate is the ABA Sell rate rounded upward to the next whole KHR (4,076.25 becomes 4,077). Riel Payments saved before keep their 0.5% record.
+
 ### PR-MONEY-006 — Exchange-rate Rounding
 
 **Business-rule traceability:** `BR-MONEY-006`

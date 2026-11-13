@@ -140,6 +140,54 @@ describe("complete staff financial contexts", () => {
   );
 
   it.each([
+    [0, 4080, true],
+    [0, 4101, false],
+    [50, 4101, true],
+    [25, 4091, false],
+  ] as const)(
+    "TEST-FE-2190 checks a riel rate record by its own mark-up: %s basis points, system %s, loads %s",
+    async (markup, system, loads) => {
+      // DL-228: new records keep ABA's Sell rate with no mark-up; records saved before keep 0.5%.
+      function rateRecord(value: unknown): FinancialObject | null {
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            const found = rateRecord(item);
+            if (found) return found;
+          }
+          return null;
+        }
+        if (value === null || typeof value !== "object") return null;
+        const object = value as FinancialObject;
+        if ("markup_basis_points" in object) return object;
+        for (const item of Object.values(object)) {
+          const found = rateRecord(item);
+          if (found) return found;
+        }
+        return null;
+      }
+      const original = actionContextFixtures.find((s) => rateRecord(s.data));
+      if (!original) throw new Error("Riel rate fixture missing");
+      const sample = structuredClone(original);
+      const record = rateRecord(sample.data);
+      if (!record || record.reference_rate_khr_per_usd !== "4080.000000")
+        throw new Error("Expected the 4080 riel rate fixture");
+      record.markup_basis_points = markup;
+      record.system_rate_khr_per_usd = system;
+      const s = scope(sample);
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(response(sample.data, init ?? {}, s)),
+      );
+      const result = loadFinancialActionContext(
+        s,
+        sample.request,
+        createFinancialReferenceClient(fetcher),
+      );
+      if (loads) await expect(result).resolves.toEqual(sample.data);
+      else await expect(result).rejects.toThrow();
+    },
+  );
+
+  it.each([
     ["WRONG_UNIT_MOVE", true],
     ["UNKNOWN_BASIS", false],
   ] as const)(

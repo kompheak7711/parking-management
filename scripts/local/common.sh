@@ -17,6 +17,14 @@ PRM_POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 # (fonttools for the Invoice PDF, DL-180) took longer and stopped the test app (13/11/2026).
 UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
 export UV_HTTP_TIMEOUT
+# The Invoice PDF (DL-180) uses WeasyPrint, which loads Pango from Homebrew. Python made by uv
+# does not look in Homebrew's folder on an Apple-chip Mac, so the PDF could not be made
+# (13/11/2026, "invoice_pdf_failed"). WeasyPrint's own advice: name the folder here. macOS
+# keeps its usual folders after it.
+if [ "$(uname -s)" = Darwin ] && [ -d /opt/homebrew/lib ]; then
+  DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib:${DYLD_FALLBACK_LIBRARY_PATH:-/usr/local/lib:/usr/lib}"
+  export DYLD_FALLBACK_LIBRARY_PATH
+fi
 
 # The Mac mini's local network name (for example "office-mac"), so the iPad on the same Wi-Fi
 # can open https://office-mac.local:5174. PRM_LOCAL_HOSTNAME may name it instead. It is made

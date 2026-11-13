@@ -179,12 +179,13 @@ def run_send(
                 continue
             except InvoicePdfError as error:
                 log(f"telegram_send:invoice_pdf:{error}")
-            except Exception:
-                # The QR or the PDF could not be made (database, fonts): tried again later.
+            except Exception as error:
+                # The QR or the PDF could not be made (database, fonts): tried again later. The
+                # log names the kind of error only (never its text, which may hold data).
                 outcome = store.record_attempt(message["id"], "FAILED", "invoice_pdf_failed", None)
                 result.gave_up += outcome == "GAVE_UP"
                 result.failed += outcome == "FAILED"
-                log("telegram_send:failed:invoice_pdf_failed")
+                log(f"telegram_send:failed:invoice_pdf_failed:{type(error).__name__}")
                 continue
         try:
             if invoice_file is not None:

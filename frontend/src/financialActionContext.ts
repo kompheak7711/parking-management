@@ -202,9 +202,11 @@ function sourceExchangeRate(
   same(fx.id, payment.exchange_rate_record_id);
   const reference = rateMillionths(fx.reference_rate_khr_per_usd),
     system = money(fx.system_rate_khr_per_usd, 1n);
+  // A record keeps the mark-up it was saved with: 50 (0.5%) before DL-228, 0 after it.
+  const markup = money(fx.markup_basis_points, 0n, 50n);
   if (
-    money(fx.markup_basis_points, 50n, 50n) !== 50n ||
-    system !== ceilRatio(reference * 1005n, 1_000_000_000n)
+    (markup !== 0n && markup !== 50n) ||
+    system !== ceilRatio(reference * (10_000n + markup), 10_000_000_000n)
   )
     invalidFinancial();
   choice(fx.rate_source, ["ABA_AUTOMATIC", "ABA_EQUIVALENT_MANUAL"]);

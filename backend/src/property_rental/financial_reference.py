@@ -249,8 +249,8 @@ class FinancialReferenceService:
                 "Automatic source is available; manual fallback is not permitted"
             )
         millionths = int(cast(str, selected["reference_rate_khr_per_usd"]).replace(".", ""))
-        marked = millionths * 1005
-        rate = (marked + 1_000_000_000 - 1) // 1_000_000_000
+        # DL-228: no mark-up; ABA's Sell rate rounded up to a whole riel.
+        rate = (millionths + 1_000_000 - 1) // 1_000_000
         unrounded = usd_amount_cents * rate
         payable = (unrounded + 99) // 100
         _money(payable)
@@ -258,7 +258,7 @@ class FinancialReferenceService:
             **common,
             **selected,
             "status": "available",
-            "markup_basis_points": 50,
+            "markup_basis_points": 0,
             "system_rate_khr_per_usd": rate,
             "unrounded_khr_amount": f"{unrounded // 100}.{unrounded % 100:02d}",
             "payable_khr_amount": payable,

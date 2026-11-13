@@ -1039,6 +1039,8 @@ applies `1.005`, rounds the System Exchange Rate upward to whole KHR, calculates
 payable, and rounds fractional final KHR upward. Responses expose all preserved
 calculation facts.
 
+Amended by DL-228 (13 Nov 2026; migration `20270724_393`, DB-BS-005): no mark-up is applied. The System Exchange Rate is the ABA Sell reference rounded upward to whole KHR, and new previews and records answer `markup_basis_points` 0. Records saved before keep 50 and are read as they are.
+
 ## API-059 — Payment Allocation
 
 - `GET /payments/{payment_id}/allocation-proposal`

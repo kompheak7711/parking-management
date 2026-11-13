@@ -81,10 +81,10 @@ export async function runFinancialReferenceBrowserChecks(): Promise<string[]> {
               fallback_reason: null,
               rate_source: "ABA_AUTOMATIC",
               automatic_source_unavailable: false,
-              markup_basis_points: 50,
-              system_rate_khr_per_usd: 4083,
-              unrounded_khr_amount: "40870.83",
-              payable_khr_amount: 40871,
+              markup_basis_points: 0,
+              system_rate_khr_per_usd: 4062,
+              unrounded_khr_amount: "40660.62",
+              payable_khr_amount: 40661,
             }
           : { property_id: property, capabilities: permissions };
     requests.push({
@@ -133,7 +133,7 @@ export async function runFinancialReferenceBrowserChecks(): Promise<string[]> {
     usd_amount_cents: 1001,
   });
   check(
-    financialObject(quote.data).payable_khr_amount === 40871,
+    financialObject(quote.data).payable_khr_amount === 40661,
     "Exact server quote validated in real browser",
   );
   check(
@@ -178,7 +178,7 @@ export async function runFinancialReferenceBrowserChecks(): Promise<string[]> {
         fallback_reason: null,
         rate_source: "ABA_AUTOMATIC",
         automatic_source_unavailable: false,
-        markup_basis_points: 50,
+        markup_basis_points: 0,
         system_rate_khr_per_usd: 1,
         unrounded_khr_amount: "90000000000000.00",
         payable_khr_amount: 90000000000000,

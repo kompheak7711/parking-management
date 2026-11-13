@@ -78,10 +78,10 @@ function fixture(operation: string): FinancialObject {
               fallback_reason: null,
               rate_source: "ABA_AUTOMATIC",
               automatic_source_unavailable: false,
-              markup_basis_points: 50,
-              system_rate_khr_per_usd: 4083,
-              unrounded_khr_amount: "40870.83",
-              payable_khr_amount: 40871,
+              markup_basis_points: 0,
+              system_rate_khr_per_usd: 4062,
+              unrounded_khr_amount: "40660.62",
+              payable_khr_amount: 40661,
             };
   return {
     data,
@@ -323,10 +323,10 @@ describe("financial references and provisional preview", () => {
     async (field) => {
       const mutations: Record<string, FinancialObject> = {
         amount: { usd_amount_cents: 1002 },
-        system: { system_rate_khr_per_usd: 4082 },
-        payable: { payable_khr_amount: 40870 },
-        unrounded: { unrounded_khr_amount: "40870.84" },
-        markup: { markup_basis_points: 0 },
+        system: { system_rate_khr_per_usd: 4083 },
+        payable: { payable_khr_amount: 40660 },
+        unrounded: { unrounded_khr_amount: "40660.63" },
+        markup: { markup_basis_points: 50 },
         source: { automatic_source_unavailable: true },
         status: { provisional: false },
       };

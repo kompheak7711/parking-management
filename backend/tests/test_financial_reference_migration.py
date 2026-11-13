@@ -128,7 +128,7 @@ def test_financial_reference_runtime_preview_has_no_persistent_financial_effects
     before = snapshot()
     for _ in range(2):
         result = service.preview(prop, 1001, None, actor=actor(human, prop, "payments.record"))
-        assert result["payable_khr_amount"] == 40871 and result["provisional"] is True
+        assert result["payable_khr_amount"] == 40661 and result["provisional"] is True
     assert source.calls == 2 and snapshot() == before
 
 

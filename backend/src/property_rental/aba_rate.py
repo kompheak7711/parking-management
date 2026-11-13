@@ -1,7 +1,7 @@
 """ABA's riel rate for the app (DL-181; owner card 12 Nov 2026: "ABA PayWay rate API").
 
-The System Exchange Rate rule stays as it is (BR-MONEY-005 to 008): ABA's USD Sell rate times
-1.005, rounded up to a whole riel, kept with each riel Payment when it is confirmed. This module
+The System Exchange Rate (BR-MONEY-005 to 008; DL-228: no mark-up) is ABA's USD Sell rate
+rounded up to a whole riel, kept with each riel Payment when it is confirmed. This module
 only answers "what is ABA's Sell rate now": it asks ABA PayWay at most once an hour and keeps the
 answer in memory. When ABA cannot be asked, or gives no usable USD rate, the answer is "not
 available" and staff may type ABA's rate by hand, as before (BR-MONEY-008).

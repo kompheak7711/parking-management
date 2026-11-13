@@ -67554,6 +67554,40 @@
       "test_path": "backend/tests/test_telegram_local_setup_migration.py",
       "status": "implemented",
       "notes": "Set up Telegram test writes the aba_payway block by itself when both PayWay key files are saved: sandbox host unless aba_payway_host names the live one, no Payment Method code; a wrong host is refused."
+    },
+    {
+      "test_id": "test_new_rate_records_have_no_markup_and_old_records_keep_theirs",
+      "upstream_ids": [
+        "DL-228",
+        "DB-BS-005",
+        "BR-MONEY-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_riel_rate_no_markup_migration.py",
+      "status": "implemented",
+      "notes": "A new riel rate record is ABA's Sell rate rounded up to a whole riel with mark-up 0; a record saved before keeps its 0.5%; a mark-up added to a new record, rounding down, an old record without its 0.5% or any other mark-up is refused."
+    },
+    {
+      "test_id": "test_payment_functions_no_longer_add_markup_and_the_settings_rule_is_gone",
+      "upstream_ids": [
+        "DL-228",
+        "DB-BS-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_riel_rate_no_markup_migration.py",
+      "status": "implemented",
+      "notes": "Receive payment in riel and the rate confirm no longer multiply by 1.005 or write 50; the unused Settings rule Riel rate: ABA Sell rate plus is removed."
+    },
+    {
+      "test_id": "TEST-FE-2190",
+      "upstream_ids": [
+        "DL-228",
+        "BR-MONEY-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "A riel rate record is checked by its own mark-up: 0 with ABA's Sell rate rounded up loads, 50 (saved before DL-228) with 1.005 loads, any other pair is refused."
     }
   ]
 }

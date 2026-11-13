@@ -3188,3 +3188,13 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270723_392` (DB-BS-004). **API:** `aba_qr` on each method of `GET` and `PATCH /properties/{property_id}/configuration` (docs/005). **Screen:** the tick box on the Settings screen comes with the UI v81 screens.
 - **Links:** DL-180, DL-181, DL-118.
 - **Decision date:** 2026-11-13.
+
+## DL-228 — The riel rate has no mark-up: the app rate is ABA's Sell rate
+
+- **Source:** the owner on 13 Nov 2026 in the thread "ABA QR on every Invoice": "Make sure we use exchange Sell rate not buy rate", then "I want to remove 0.5%". On the decision card the owner chose "Always 0%, no setting" (14:22Z).
+- **Before.** BR-MONEY-004 (from BR-MONEY-005 to 008, DL-060): app rate = ABA Sell rate × 1.005 (a 0.5% mark-up), rounded up to a whole riel. DL-121 (E) kept the mark-up fixed and seeded an unused Settings rule "Riel rate: ABA Sell rate plus" at 0.5%.
+- **Now.** App rate = ABA's USD Sell rate, rounded up to the next whole riel. There is no mark-up and no Settings value for one; the unused Settings rule is removed. The rate is still never ABA's Buy rate. Typing ABA's Sell rate by hand (when it cannot be read) uses the same rounding. The riel amount is still rounded up to a whole riel.
+- **Old Payments.** Riel Payments saved before this change keep their 0.5% rate record. Financial records are append-only; nothing is worked out again.
+- **Database:** migration `20270724_393` (DB-BS-005). **API:** `markup_basis_points` is 0 on new previews and records (API-058 amendment). **Screens:** "Fixed markup" shows "None" on new records and "0.5%" on older ones; the Settings Exchange note no longer says "plus 0.5%".
+- **Links:** DL-060, DL-121, DL-181, BR-MONEY-004, BR-MONEY-007.
+- **Decision date:** 2026-11-13.

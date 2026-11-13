@@ -337,7 +337,7 @@ def test_financial_reference_http_preserves_backend_valid_unicode_evidence(
     assert response.status_code == 200 and source.calls == 1
     assert response.json()["data"]["source_reference"] == value
     assert response.json()["data"]["fallback_reason"] == (value if manual_input else None)
-    assert response.json()["data"]["payable_khr_amount"] == 40871
+    assert response.json()["data"]["payable_khr_amount"] == 40661
 
 
 @pytest.mark.parametrize("kind", ["workspaces", "methods"])

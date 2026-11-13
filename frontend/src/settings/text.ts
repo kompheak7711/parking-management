@@ -578,8 +578,8 @@ const TEXT = {
   fx_none: ["No riel payment yet.", "មិនទាន់មានការបង់ជារៀលទេ។"],
   // new
   fx_note: [
-    "The rate is taken when a payment in riel is received: ABA Sell rate plus 0.5%, rounded up to the next 1 ៛.",
-    "អត្រាត្រូវយកពេលទទួលការបង់ជារៀល៖ អត្រាលក់ ABA បូក 0.5% បង្គត់ឡើងទៅ 1 ៛ បន្ទាប់។",
+    "The rate is taken when a payment in riel is received: ABA Sell rate, rounded up to the next 1 ៛.",
+    "អត្រាត្រូវយកពេលទទួលការបង់ជារៀល៖ អត្រាលក់ ABA បង្គត់ឡើងទៅ 1 ៛ បន្ទាប់។",
   ],
   // new
   fx_cannot: ["The rate could not be read.", "មិនអាចអានអត្រាបានទេ។"],

@@ -292,6 +292,8 @@ automatic source is unavailable and the actor has the configured capability. The
 server must still apply the mandatory `1.005` multiplier and both upward-rounding
 rules from `BR-MONEY-004` through `BR-MONEY-010`.
 
+Amended by DL-228 (13 Nov 2026): there is no multiplier any more; the server still applies both upward-rounding rules, and a typed rate never skips them.
+
 ## SEC-028 — Idempotency and Replay Protection
 
 Financial and scheduled commands that may be retried must use idempotency and

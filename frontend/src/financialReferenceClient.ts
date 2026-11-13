@@ -351,7 +351,7 @@ function validate(
         "unrounded_khr_amount",
         "payable_khr_amount",
       ]);
-      if (row.status !== "available" || row.markup_basis_points !== 50)
+      if (row.status !== "available" || row.markup_basis_points !== 0)
         invalidFinancial();
       const reference = rate(row.reference_rate_khr_per_usd);
       evidenceText(row.source_reference);
@@ -377,12 +377,13 @@ function validate(
           invalidFinancial();
       }
       // Verify server consequences; display only the returned provisional values.
+      // DL-228: no mark-up; the system rate is ABA's Sell rate rounded up to a whole riel.
       const system = BigInt(
         financialInteger(row.system_rate_khr_per_usd, 1n, 100_500_000_000_000n),
       );
       const unrounded = BigInt(financialInteger(row.usd_amount_cents)) * system;
       if (
-        system !== (reference * 1005n + 999_999_999n) / 1_000_000_000n ||
+        system !== (reference + 999_999n) / 1_000_000n ||
         row.unrounded_khr_amount !==
           `${(unrounded / 100n).toString()}.${(unrounded % 100n).toString().padStart(2, "0")}` ||
         BigInt(

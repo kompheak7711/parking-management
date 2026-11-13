@@ -46,7 +46,7 @@ def source(url: str) -> tuple[UUID, UUID, ConfirmKhrPaymentCommand, Provider]:
         usd.idempotency_key,
         usd.payer_customer_id,
         usd.payment_method_id,
-        40871,
+        40661,
         1001,
         usd.received_at,
         "Verified synthetic incoming KHR receipt",
@@ -85,11 +85,12 @@ def assert_no_events(
 @pytest.mark.parametrize(
     "reference,usd,khr,system",
     [
-        ("4062", 1, 41, 4083),
-        ("4062", 1001, 40871, 4083),
-        ("4000", 100, 4020, 4020),
+        ("4062", 1, 41, 4062),
+        ("4062", 1001, 40661, 4062),
+        ("4000", 100, 4000, 4000),
+        ("4076.25", 100, 4077, 4077),
         ("0.000001", 1, 1, 1),
-        ("99999999999999.999999", 1, 1005000000000, 100500000000000),
+        ("99999999999999.999999", 1, 1000000000000, 100000000000000),
         ("0.000001", 9000000000000000, 90000000000000, 1),
     ],
 )
@@ -114,7 +115,7 @@ def test_khr_confirmation_automatic_rounding_and_atomic_original_facts(
     assert payment["usd_accounting_value_cents"] == usd and payment["status"] == "RECEIVED"
     assert payment["exchange_rate_record_id"] == fx["id"]
     assert Decimal(str(fx["reference_rate_khr_per_usd"])) == Decimal(reference)
-    assert fx["markup_basis_points"] == 50 and fx["system_rate_khr_per_usd"] == system
+    assert fx["markup_basis_points"] == 0 and fx["system_rate_khr_per_usd"] == system
     assert fx["rate_source"] == "ABA_AUTOMATIC" and fx["entered_by"] is None
     assert (
         fx["channel_actual_amount_minor"] is None and fx["channel_actual_usd_value_cents"] is None
@@ -174,7 +175,7 @@ def test_payment_confirmation_timestamp_precision_preserves_original_intent_and_
             usd.idempotency_key,
             usd.payer_customer_id,
             usd.payment_method_id,
-            40871,
+            40661,
             1001,
             at,
             "Synthetic precision evidence",
@@ -258,12 +259,12 @@ def test_khr_confirmation_manual_requires_outage_permission_and_replays_after_re
 @pytest.mark.parametrize(
     "kind,khr,usd",
     [
-        ("amount_only", 40871, 1001),
+        ("amount_only", 40661, 1001),
         ("half_up", 4020, 101),
         ("rate_only", 4105, 101),
-        ("usd_only", 40871, 1001),
+        ("usd_only", 40661, 1001),
         ("all_actual", 4100, 101),
-        ("currency_only", 40871, 1001),
+        ("currency_only", 40661, 1001),
     ],
 )
 def test_khr_confirmation_channel_supplied_facts_control_only_their_fields(
@@ -300,7 +301,7 @@ def test_khr_confirmation_channel_supplied_facts_control_only_their_fields(
         cast(dict[str, object], result["exchange_rate_record"]),
     )
     assert payment["received_amount_minor"] == khr and payment["usd_accounting_value_cents"] == usd
-    assert fx["system_rate_khr_per_usd"] == 4083
+    assert fx["system_rate_khr_per_usd"] == 4062
     assert fx["channel_actual_amount_minor"] == evidence.actual_amount_minor
     assert fx["channel_actual_usd_value_cents"] == evidence.actual_usd_value_cents
     assert fx["channel_actual_currency"] == evidence.actual_currency
@@ -391,7 +392,7 @@ def test_khr_confirmation_replay_shares_usd_key_namespace_and_checks_fresh_actor
         ("request", "received_currency", "USD"),
         ("request", "received_amount_minor", True),
         ("request", "received_amount_minor", 1.5),
-        ("request", "received_amount_minor", 40870),
+        ("request", "received_amount_minor", 40660),
         ("request", "usd_amount_cents", 1002),
         ("request", "usd_accounting_value_cents", 1),
         ("request", "status", "RECEIVED"),

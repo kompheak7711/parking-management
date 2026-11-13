@@ -578,7 +578,7 @@ class PostgresConfigurationFlow:
             "usd_amount_cents": record.usd_amount_cents,
             "unrounded_payable_khr": str(record.unrounded_payable_khr),
             "payable_khr": record.payable_khr,
-            "markup_basis_points": 50,
+            "markup_basis_points": 0,
             "rounding": "CEILING_WHOLE_KHR",
             "automatic_source_unavailable": record.rate_source == "ABA_EQUIVALENT_MANUAL",
             "fallback_reason": record.fallback_reason,
@@ -1033,9 +1033,8 @@ def create_configuration_router(
             source_reference = cast(str, body.source_reference)
             applicable_at = cast(datetime, body.applicable_at)
             fallback_reason = cast(str, body.fallback_reason)
-        system_rate = int(
-            (reference_rate * Decimal("1.005")).to_integral_value(rounding=ROUND_CEILING)
-        )
+        # DL-228: no mark-up; ABA's Sell rate rounded up to a whole riel.
+        system_rate = int(reference_rate.to_integral_value(rounding=ROUND_CEILING))
         unrounded = Decimal(body.usd_amount_cents) * Decimal(system_rate) / Decimal(100)
         record = ExchangeRateRecord(
             uuid4(),

@@ -78,7 +78,7 @@ function KhrPreviewEvidence({ value }: { value: FinancialObject }) {
               financialTimestamp(value.applicable_at),
             ],
             ["Rate source", financialLabel(value.rate_source)],
-            ["Fixed markup", "0.5%"],
+            ["Fixed markup", "None"],
             [
               "Rounded system KHR per USD",
               typeof value.system_rate_khr_per_usd === "number" ||

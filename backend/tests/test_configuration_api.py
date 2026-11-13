@@ -350,9 +350,10 @@ def test_exchange_confirmation_applies_markup_and_both_ceilings() -> None:
         },
     )
     assert response.status_code == 200
-    assert response.json()["data"]["system_rate_khr_per_usd"] == 4083
-    assert response.json()["data"]["unrounded_payable_khr"] == "408340.83"
-    assert response.json()["data"]["payable_khr"] == 408341
+    # DL-228: no mark-up; 4,062.50 rounds up to 4,063, then 100.01 USD x 4,063 rounds up.
+    assert response.json()["data"]["system_rate_khr_per_usd"] == 4063
+    assert response.json()["data"]["unrounded_payable_khr"] == "406340.63"
+    assert response.json()["data"]["payable_khr"] == 406341
     history = client.get(f"/api/v1/properties/{flow.property_id}/exchange-rates")
     assert history.json()["data"][0]["source_reference"] == "ABA fallback evidence"
     assert history.json()["data"][0]["fallback_reason"] == (

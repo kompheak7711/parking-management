@@ -85,7 +85,11 @@ export function ExchangeRateEvidence({ value }: { value: unknown }) {
             : [
                 [
                   "Fixed markup",
-                  row.markup_basis_points === 50 ? "0.5%" : "Unavailable",
+                  row.markup_basis_points === 50
+                    ? "0.5%"
+                    : row.markup_basis_points === 0
+                      ? "None"
+                      : "Unavailable",
                 ] as const,
               ]),
           ...(row.applicable_at === undefined

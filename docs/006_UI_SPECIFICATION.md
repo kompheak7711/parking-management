@@ -620,7 +620,7 @@ For required USD/KHR conversion, show:
 
 - ABA-equivalent Sell reference source/value/timestamp;
 - automatic-source success or authorized manual fallback reason;
-- fixed `0.5%` markup;
+- fixed `0.5%` markup (DL-228: no mark-up since 13 Nov 2026; shown as "None", and "0.5%" only on older records);
 - upward-rounded whole-KHR System Exchange Rate;
 - USD amount;
 - unrounded calculation where safe; and

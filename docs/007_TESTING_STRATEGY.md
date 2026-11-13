@@ -659,6 +659,8 @@ For boundary tables, verify:
 System Exchange Rate = ceil(reference Sell rate × 1.005) KHR per USD
 ```
 
+Amended by DL-228 (13 Nov 2026): new records use `ceil(reference Sell rate)` with mark-up 0; records saved before keep `× 1.005` and still pass the check (`test_riel_rate_no_markup_migration.py`, TEST-FE-2190).
+
 The upward whole-KHR rounding is mandatory, including when the unrounded result is
 fractional by the smallest amount.
 

@@ -665,9 +665,9 @@ export function ConfigurationManagement({
                   Confirm and calculate exchange rate
                 </button>
                 <p className="panel-help">
-                  The server applies 0.5%, rounds the system rate up to whole
-                  KHR, then rounds final KHR payable up. Calculated values are
-                  read-only.
+                  The server uses ABA's Sell rate with no markup, rounds the
+                  system rate up to whole KHR, then rounds final KHR payable up.
+                  Calculated values are read-only.
                 </p>
               </form>
             )}

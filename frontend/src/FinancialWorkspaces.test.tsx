@@ -1491,7 +1491,7 @@ function paymentHarness(grant: "payments.read" | "payments.record") {
               applicable_at: "2026-09-08T10:00:00+07:00",
               fallback_reason: null,
             };
-        const unrounded = usd * 4020n;
+        const unrounded = usd * 4000n;
         data = {
           ...reference,
           property_id: sample.propertyId,
@@ -1500,8 +1500,8 @@ function paymentHarness(grant: "payments.read" | "payments.record") {
           usd_amount_cents: usd,
           rate_source: manual ? "ABA_EQUIVALENT_MANUAL" : "ABA_AUTOMATIC",
           automatic_source_unavailable: Boolean(manual),
-          markup_basis_points: 50,
-          system_rate_khr_per_usd: 4020,
+          markup_basis_points: 0,
+          system_rate_khr_per_usd: 4000,
           unrounded_khr_amount: `${(unrounded / 100n).toString()}.${(unrounded % 100n).toString().padStart(2, "0")}`,
           payable_khr_amount: (unrounded + 99n) / 100n,
         };
@@ -1573,7 +1573,7 @@ async function paymentInput(
   fill("Incoming currency", currency);
   fill(
     `Original received amount (${currency})`,
-    currency === "USD" ? "1.01" : "4061",
+    currency === "USD" ? "1.01" : "4040",
   );
   if (currency === "KHR") fill("Explicit USD accounting amount", "1.01");
 }
@@ -1648,7 +1648,7 @@ describe("Payment entry and original KHR evidence", () => {
     const region = screen.getByRole("region", {
       name: "Provisional KHR preview",
     });
-    expect(value(region, "Provisional payable KHR")).toBe("KHR 4,061");
+    expect(value(region, "Provisional payable KHR")).toBe("KHR 4,040");
     expect(
       h.calls
         .filter((c) => c.method === "POST")

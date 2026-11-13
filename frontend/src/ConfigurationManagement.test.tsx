@@ -159,7 +159,9 @@ describe("ConfigurationManagement", () => {
     expect(
       screen.queryByRole("button", { name: "Append Service rate" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/server applies 0.5%/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/ABA's Sell rate with no markup/i),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-164 announces conflicts as accessible failures without discarding history", async () => {

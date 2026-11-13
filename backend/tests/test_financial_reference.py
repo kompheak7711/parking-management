@@ -122,10 +122,11 @@ def test_financial_reference_workspace_uses_financial_scopes_and_fresh_read_even
 @pytest.mark.parametrize(
     "rate,usd,system,payable,unrounded",
     [
-        ("4062", 1001, 4083, 40871, "40870.83"),
+        ("4062", 1001, 4062, 40661, "40660.62"),
+        ("4076.25", 100, 4077, 4077, "4077.00"),
         ("0.000001", 1, 1, 1, "0.01"),
-        ("200", 100, 201, 201, "201.00"),
-        ("200.000001", 100, 202, 202, "202.00"),
+        ("200", 100, 200, 200, "200.00"),
+        ("200.000001", 100, 201, 201, "201.00"),
         ("0.000001", 9_000_000_000_000_000, 1, 90_000_000_000_000, "90000000000000.00"),
     ],
 )
@@ -144,7 +145,7 @@ def test_financial_reference_preview_exact_two_ceilings_ignore_decimal_context(
     assert result["system_rate_khr_per_usd"] == system
     assert result["payable_khr_amount"] == payable and result["unrounded_khr_amount"] == unrounded
     assert result["usd_amount_cents"] == usd and result["provisional"] is True
-    assert result["markup_basis_points"] == 50 and result["rate_source"] == "ABA_AUTOMATIC"
+    assert result["markup_basis_points"] == 0 and result["rate_source"] == "ABA_AUTOMATIC"
 
 
 @pytest.mark.parametrize("fallback", [False, True])
@@ -207,7 +208,7 @@ def test_financial_reference_manual_preview_requires_grant_unavailability_and_re
     )
     assert (
         result["fallback_reason"] == manual().fallback_reason
-        and result["payable_khr_amount"] == 40871
+        and result["payable_khr_amount"] == 40661
     )
     assert (
         KhrPaymentConfirmationService("synthetic", source)._selection(manual())[

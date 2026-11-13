@@ -503,6 +503,7 @@ def test_an_invoice_waits_while_its_qr_cannot_be_made() -> None:
     def broken(outbox_id: str) -> aba_qr.InvoiceDocument | None:
         raise OSError("font missing")
 
+    lines: list[str] = []
     for make, code in ((not_ready, "payway_not_ready"), (broken, "invoice_pdf_failed")):
         result = run_send(
             store=store,
@@ -511,10 +512,15 @@ def test_an_invoice_waits_while_its_qr_cannot_be_made() -> None:
             post_json=post_json,
             invoice_documents=make,
             post_document=post_document,
+            log=lines.append,
         )
         assert result.failed == 1 and result.sent == 0
         assert store.attempts[-1] == ("i1", "FAILED", code, None)
     assert posts == [], "never sent without its QR"
+    # The log names the kind of error, so the office can tell a missing library from a database
+    # problem; the error's own text is never logged.
+    assert lines[-1] == "telegram_send:failed:invoice_pdf_failed:OSError"
+    assert not any("font missing" in line for line in lines)
 
 
 def test_a_long_message_is_cut_to_telegrams_caption_limit() -> None:
