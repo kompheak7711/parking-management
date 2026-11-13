@@ -6067,3 +6067,12 @@ Migration `20270722_377_late_payment_cap` (Database v1.2 review range, on `20270
 - Why this range: `app.late_payment_decisions.default_rate_basis_points` holds only a whole percent from 0 to 1000 (`late_payment_decisions_rate_whole_percent`, DL-085), and `app.record_automatic_late_payment_charge` writes the Settings value there. A value outside it breaks that constraint, so the automatic late-payment charge could not be saved.
 - `app.late_payment_rate_basis_points(property, date)` now answers `least(value, 1000) / 100 * 100` (integer division): a row saved before this migration stays in the history (the rows are append-only) and is read as at most 10%, cut down to a whole percent. With no row it answers 1000, as before.
 - The backend passes the refusal on as `BusinessRuleInvalid` (422) with the message.
+
+## DB-BS-004 — One Payment Method is marked for ABA QR payments (DL-227)
+
+Migration `20270723_392_aba_qr_payment_method` (ABA range, on `20270717_340`). Forward-only. No data changes: no method is marked by the migration.
+
+- `app.payment_methods.aba_qr boolean NOT NULL DEFAULT false`, with `CHECK (NOT aba_qr OR accepted)` (`payment_methods_aba_qr_is_on`) and the unique partial index `payment_methods_one_aba_qr` on `(true) WHERE aba_qr`: at most one method has the mark, and only a method that is on.
+- `app.replace_property_payment_methods(property, methods, expected_version, actor)` (the Settings save) reads an optional boolean `aba_qr` on each method. No method with the key: the mark stays. With the key: the method marked true gets the mark and every other method loses it. Two marked methods, a marked method that is off, or a key that is not true/false are refused with `SQLSTATE 22023`. A method that is turned off or left out loses the mark before it is turned off. The signature and grants are unchanged.
+- `app.aba_payment_method(property, code, actor)` answers the marked method that is on; with no mark, the method with `code` that is on (the operations file's `aba_payway.payment_method_code`, now optional). It still needs `telegram.operate`.
+

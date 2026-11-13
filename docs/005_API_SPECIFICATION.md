@@ -78,6 +78,8 @@ depend on an external identity provider.
 
 Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): every route except `GET /health/live`, `GET /health/ready`, `GET /api/v1/identity/me` and the sign-in routes of API-096 to API-098 (13 operations, kept in `backend/tests/test_route_authorization_inventory.py`) first needs a signed-in user, before the request body is validated: 401 without one, whatever JSON body it gets (a body that is not JSON answers 400, because the JSON is parsed first). A change (any method but GET, HEAD and OPTIONS) then needs the configured Origin and the CSRF pair (403) before its body is validated. The generated documentation pages (`/docs`, `/redoc`, `/openapi.json`) are turned off. The route's own capability checks run after it. The customer ledger reads still refuse any GET body first (400).
 
+Amended by DL-227 (13 Nov 2026; migration `20270723_392`, DB-BS-004): each method in `GET /properties/{property_id}/configuration` and in its `PATCH` answer has `aba_qr` (true on the one method ABA QR payments are recorded with). The `PATCH` body may send `aba_qr` (true or false, strict) on a method. A body with no `aba_qr` keeps the current mark. Two methods marked true, a method marked true that is not `accepted`, or a value that is not true/false answer 422. The rights are not changed.
+
 ## API-009 — Capability Checks
 
 Each endpoint declares a capability family. The server checks capability, Property

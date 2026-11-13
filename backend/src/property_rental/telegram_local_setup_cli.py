@@ -8,7 +8,10 @@ three steps that need the database or careful JSON. It never prints a key or a t
   has no billing worker, so it registers one service principal for the Property, the same row the
   tests use, with the migration login; an active one is reused, so running it again adds nothing.
 * ``write-config``: the operations file of the test run, from the committed production file with
-  every path moved into the test run's own folder and the bots turned on.
+  every path moved into the test run's own folder and the bots turned on. When the ABA PayWay
+  key files are saved in ``.local/secrets`` it also turns on the Invoice QR (DL-180), with the
+  sandbox host unless ``aba_payway_host`` names the live one; the Payment Method is the one
+  marked in Settings (DL-227), so no file needs editing by hand.
 """
 
 from __future__ import annotations
@@ -76,8 +79,32 @@ def service_actor(database_url: str, property_id: UUID, owner_id: UUID) -> UUID:
     return actor
 
 
+ABA_SANDBOX_HOST = "checkout-sandbox.payway.com.kh"
+
+
+def aba_block(secrets: Path) -> dict[str, object] | None:
+    """The ``aba_payway`` block when both PayWay key files are saved, else None."""
+    merchant = secrets / "aba_merchant_id"
+    api_key = secrets / "aba_api_key"
+    if not (merchant.is_file() and api_key.is_file()):
+        return None
+    host = ABA_SANDBOX_HOST
+    host_file = secrets / "aba_payway_host"
+    if host_file.is_file() and host_file.read_text(encoding="utf-8").strip():
+        host = host_file.read_text(encoding="utf-8").strip()
+    return {
+        "enabled": True,
+        "host": host,
+        "merchant_id_file": str(merchant),
+        "api_key_file": str(api_key),
+    }
+
+
 def mac_test_config(
-    template: dict[str, object], folder: Path, relay_host: str
+    template: dict[str, object],
+    folder: Path,
+    relay_host: str,
+    secrets: Path | None = None,
 ) -> dict[str, object]:
     """The production file with the status folder and the bots moved into ``folder``."""
     if not folder.is_absolute():
@@ -99,12 +126,17 @@ def mac_test_config(
         },
         "media_directory": str(folder / "media"),
     }
+    aba = None if secrets is None else aba_block(secrets)
+    if aba is not None:
+        config["aba_payway"] = aba
     return config
 
 
-def write_config(template_path: Path, folder: Path, relay_host: str) -> Path:
+def write_config(
+    template_path: Path, folder: Path, relay_host: str, secrets: Path | None = None
+) -> Path:
     template = json.loads(template_path.read_text(encoding="utf-8"))
-    config = mac_test_config(template, folder, relay_host)
+    config = mac_test_config(template, folder, relay_host, secrets)
     target = folder / OPERATIONS_FILE
     descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -136,6 +168,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
     config.add_argument("--template", required=True, type=Path)
     config.add_argument("--folder", required=True, type=Path)
     config.add_argument("--relay-host", required=True)
+    config.add_argument("--secrets", type=Path, default=None)
     parsed = parser.parse_args(arguments)
     try:
         if parsed.command == "ids":
@@ -146,7 +179,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 service_actor(_url("MIGRATION_DATABASE_URL"), parsed.property_id, parsed.owner_id)
             )
         else:
-            print(write_config(parsed.template, parsed.folder, parsed.relay_host))
+            print(write_config(parsed.template, parsed.folder, parsed.relay_host, parsed.secrets))
     except (LocalSetupError, psycopg.Error) as error:
         message = str(error) if isinstance(error, LocalSetupError) else "the database refused"
         print(f"telegram_setup:{message}", file=sys.stderr, flush=True)

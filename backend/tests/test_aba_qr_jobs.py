@@ -57,7 +57,7 @@ class FakeAba:
     def to_check(self) -> list[dict[str, Any]]:
         return self.checks
 
-    def payment_method_id(self, code: str) -> UUID | None:
+    def payment_method_id(self, code: str | None) -> UUID | None:
         return None
 
 

@@ -12,7 +12,11 @@ PRM_HTTPS="$PRM_LOCAL/https"
 PRM_KEY_FILE=/usr/local/etc/pkm/totp_protection_key
 PRM_HELPER=/usr/local/libexec/pkm/with-protected-key.py
 PRM_BLOCKLIST="$PRM_ROOT/config/password-blocklist.txt"
-PRM_POSTGRES_PORT="${POSTGRES_PORT:-5433}"
+PRM_POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+# uv waits only 30 seconds for a download by default; on the office Wi-Fi a large package
+# (fonttools for the Invoice PDF, DL-180) took longer and stopped the test app (13/11/2026).
+UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+export UV_HTTP_TIMEOUT
 
 # The Mac mini's local network name (for example "office-mac"), so the iPad on the same Wi-Fi
 # can open https://office-mac.local:5174. PRM_LOCAL_HOSTNAME may name it instead. It is made

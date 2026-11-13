@@ -57,7 +57,7 @@ class AbaStore(Protocol):
 
     def to_check(self) -> list[dict[str, Any]]: ...
 
-    def payment_method_id(self, code: str) -> UUID | None: ...
+    def payment_method_id(self, code: str | None) -> UUID | None: ...
 
 
 class PostgresAbaStore:
@@ -119,7 +119,8 @@ class PostgresAbaStore:
         result = self._one("SELECT app.aba_qr_to_check(%s, %s)", self._property, self._actor)
         return result if isinstance(result, list) else []
 
-    def payment_method_id(self, code: str) -> UUID | None:
+    def payment_method_id(self, code: str | None) -> UUID | None:
+        """The method marked for ABA QR in Settings (DL-227), else the one with ``code``."""
         result = self._one(
             "SELECT app.aba_payment_method(%s, %s, %s)", self._property, code, self._actor
         )

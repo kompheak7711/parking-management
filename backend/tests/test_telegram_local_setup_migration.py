@@ -48,6 +48,36 @@ def test_the_mac_operations_file_keeps_every_bot_path_in_its_folder(tmp_path: Pa
     assert json.loads(TEMPLATE.read_text())["telegram_bots"]["enabled"] is False
 
 
+def test_the_mac_operations_file_turns_on_the_aba_qr_when_the_keys_are_saved(
+    tmp_path: Path,
+) -> None:
+    """DL-227: with both PayWay key files saved, the setup writes the ``aba_payway`` block by
+    itself (sandbox host, no Payment Method code: the method is the one marked in Settings)."""
+    folder = tmp_path / "telegram"
+    folder.mkdir()
+    secrets = tmp_path / "secrets"
+    secrets.mkdir()
+    relay = "chetana-relay.example.workers.dev"
+    assert load_operations_config(write_config(TEMPLATE, folder, relay, secrets)).aba_payway is None
+    (secrets / "aba_merchant_id").write_text("merchant\n")
+    assert load_operations_config(write_config(TEMPLATE, folder, relay, secrets)).aba_payway is None
+    (secrets / "aba_api_key").write_text("key\n")
+    aba = load_operations_config(write_config(TEMPLATE, folder, relay, secrets)).aba_payway
+    assert aba is not None and aba.enabled is True
+    assert aba.host == "checkout-sandbox.payway.com.kh"
+    assert (aba.merchant_id_file, aba.api_key_file) == (
+        secrets / "aba_merchant_id",
+        secrets / "aba_api_key",
+    )
+    assert aba.payment_method_code is None
+    (secrets / "aba_payway_host").write_text("checkout.payway.com.kh\n")
+    live = load_operations_config(write_config(TEMPLATE, folder, relay, secrets)).aba_payway
+    assert live is not None and live.host == "checkout.payway.com.kh"
+    (secrets / "aba_payway_host").write_text("example.com\n")
+    with pytest.raises(LocalSetupError, match="host"):
+        write_config(TEMPLATE, folder, relay, secrets)
+
+
 def test_a_wrong_relay_address_or_folder_is_refused(tmp_path: Path) -> None:
     template = json.loads(TEMPLATE.read_text())
     for host in ("", "https://", "chetana relay.dev", "example.dev/telegram"):

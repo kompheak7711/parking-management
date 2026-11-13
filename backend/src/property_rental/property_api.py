@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 
 from property_rental.access_control import (
     PROPERTY_READ_CAPABILITY,
@@ -60,10 +60,14 @@ class PaymentMethodConfiguration:
     code: str
     display_name: str
     accepted: bool
+    # DL-227: the method ABA QR payments are recorded with. None in a save = keep the mark.
+    aba_qr: bool | None = None
 
     def __post_init__(self) -> None:
         if not self.code.strip() or not self.display_name.strip():
             raise ValueError("Payment Method code and display name must be nonblank")
+        if self.aba_qr and not self.accepted:
+            raise ValueError("The ABA QR Payment Method must be on")
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +191,7 @@ class PostgresPropertyResourceFlow:
                     code=str(method[1]),
                     display_name=str(method[2]),
                     accepted=bool(method[3]),
+                    aba_qr=bool(method[4]),
                 )
                 for method in methods
             ),
@@ -196,7 +201,7 @@ class PostgresPropertyResourceFlow:
     def _methods(connection: psycopg.Connection[tuple[object, ...]]) -> list[tuple[object, ...]]:
         return connection.execute(
             """
-            SELECT id, code, display_name, accepted
+            SELECT id, code, display_name, accepted, aba_qr
             FROM app.payment_methods
             ORDER BY code
             """
@@ -218,7 +223,8 @@ class PostgresPropertyResourceFlow:
                         method.id,
                         method.code,
                         method.display_name,
-                        method.accepted
+                        method.accepted,
+                        method.aba_qr
                     FROM app.property_configuration AS configuration
                     LEFT JOIN app.payment_methods AS method ON true
                     WHERE configuration.property_id = %s
@@ -233,7 +239,7 @@ class PostgresPropertyResourceFlow:
             raise PropertyResourceNotFound("Property was not found")
         row = rows[0][:7]
         methods: list[tuple[object, ...]] = [
-            (item[7], item[8], item[9], item[10]) for item in rows if item[7] is not None
+            (item[7], item[8], item[9], item[10], item[11]) for item in rows if item[7] is not None
         ]
         return self._resource(row, methods)
 
@@ -312,15 +318,17 @@ class PostgresPropertyResourceFlow:
         expected_version: int,
         actor_id: str,
     ) -> PropertyResource:
-        payload = [
-            {
+        payload: list[dict[str, object]] = []
+        for method in payment_methods:
+            item: dict[str, object] = {
                 "id": str(method.method_id),
                 "code": method.code.strip(),
                 "display_name": method.display_name.strip(),
                 "accepted": method.accepted,
             }
-            for method in payment_methods
-        ]
+            if method.aba_qr is not None:
+                item["aba_qr"] = method.aba_qr
+            payload.append(item)
         try:
             with psycopg.connect(self.database_url) as connection:
                 row = connection.execute(
@@ -387,6 +395,8 @@ class PaymentMethodPatch(BaseModel):
     code: str = Field(min_length=1, max_length=100)
     display_name: str = Field(min_length=1, max_length=255)
     accepted: bool
+    # DL-227: true on the one method ABA QR payments use; left out = keep the current choice.
+    aba_qr: StrictBool | None = None
 
 
 class PropertyConfigurationPatch(BaseModel):
@@ -478,6 +488,7 @@ def _configuration_body(
                     "code": method.code,
                     "display_name": method.display_name,
                     "accepted": method.accepted,
+                    "aba_qr": bool(method.aba_qr),
                 }
                 for method in resource.payment_methods
             ],
@@ -548,11 +559,14 @@ def _patch_configuration(
                 code=method.code.strip(),
                 display_name=method.display_name.strip(),
                 accepted=method.accepted,
+                aba_qr=method.aba_qr,
             )
             for method in patch.payment_methods
         )
         if len({method.code for method in methods}) != len(methods):
             raise ValueError("Payment Method codes must be unique")
+        if sum(1 for method in methods if method.aba_qr) > 1:
+            raise ValueError("Only one Payment Method can be used for ABA QR payments")
         return flow.patch_configuration(
             property_id,
             payment_methods=methods,

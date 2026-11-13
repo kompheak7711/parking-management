@@ -1,6 +1,7 @@
 """Tests for the authorized, versioned Property HTTP resource."""
 
 from dataclasses import dataclass
+from typing import Any
 from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
@@ -185,6 +186,7 @@ def test_postgres_property_read_uses_one_snapshot_statement() -> None:
             "BANK",
             "Bank transfer",
             True,
+            False,
         )
     ]
 
@@ -200,7 +202,7 @@ def test_postgres_property_read_uses_one_snapshot_statement() -> None:
     assert resource.version == 3
     assert (resource.description, resource.business_name) == ("Rooms near Camko", None)
     assert resource.payment_methods == (
-        PaymentMethodConfiguration(method_id, "BANK", "Bank transfer", True),
+        PaymentMethodConfiguration(method_id, "BANK", "Bank transfer", True, aba_qr=False),
     )
 
 
@@ -362,14 +364,48 @@ def test_property_configuration_routes_share_authorization_and_versioning() -> N
     assert get_response.status_code == 200
     assert get_response.json()["data"]["version"] == 2
     assert get_response.json()["data"]["payment_methods"] == [
-        {"code": "BANK", "display_name": "Bank transfer", "accepted": True}
+        {"code": "BANK", "display_name": "Bank transfer", "accepted": True, "aba_qr": False}
     ]
     assert patch_response.status_code == 200
     assert patch_response.json()["data"]["version"] == 3
     assert patch_response.json()["data"]["payment_methods"] == [
-        {"code": "BANK", "display_name": "Bank transfer", "accepted": False},
-        {"code": "CASH", "display_name": "Cash", "accepted": True},
+        {"code": "BANK", "display_name": "Bank transfer", "accepted": False, "aba_qr": False},
+        {"code": "CASH", "display_name": "Cash", "accepted": True, "aba_qr": False},
     ]
+
+
+def test_settings_choose_the_one_payment_method_for_aba_qr_payments() -> None:
+    """DL-227: a save may mark one method that is on "Use for ABA QR payments"; a save that
+    leaves the mark out sends nothing for it, so the database keeps the current choice."""
+    property_id = uuid4()
+    flow = InMemoryPropertyResourceFlow(property_resource(property_id, version=2))
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with_settings_access(property_id),
+            property_resource_flow=flow,
+        )
+    )
+
+    def save(*methods: dict[str, object]) -> Any:
+        return client.patch(
+            f"/properties/{property_id}/configuration",
+            headers=browser_headers(str(flow.resource.version)),
+            json={"timezone_name": "Asia/Phnom_Penh", "payment_methods": list(methods)},
+        )
+
+    bank = {"code": "BANK", "display_name": "Bank transfer", "accepted": True}
+    qr = {"code": "ABA_QR", "display_name": "ABA QR code", "accepted": True}
+    marked = save(bank, {**qr, "aba_qr": True})
+    assert marked.status_code == 200, marked.text
+    assert [m["aba_qr"] for m in marked.json()["data"]["payment_methods"]] == [False, True]
+    assert [m.aba_qr for m in flow.resource.payment_methods] == [None, True]
+
+    assert save(bank, qr).status_code == 200
+    assert [m.aba_qr for m in flow.resource.payment_methods] == [None, None], "kept as is"
+
+    assert save({**bank, "aba_qr": True}, {**qr, "aba_qr": True}).status_code == 422
+    assert save(bank, {**qr, "accepted": False, "aba_qr": True}).status_code == 422
+    assert save(bank, {**qr, "aba_qr": "yes"}).status_code == 422
 
 
 def test_property_mutations_require_browser_origin_and_csrf() -> None:

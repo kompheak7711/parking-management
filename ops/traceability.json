@@ -67512,6 +67512,48 @@
       "test_path": "frontend/src/settings/BusinessTab.test.tsx",
       "status": "implemented",
       "notes": "Settings, Business: a late-payment charge above 10% or with a part of a percent shows the reason under the value box and sends nothing; 10% is sent; the reason has Khmer words."
+    },
+    {
+      "test_id": "test_settings_mark_one_method_for_aba_qr_and_the_jobs_use_it_first",
+      "upstream_ids": [
+        "DL-227",
+        "DB-BS-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_aba_qr_payment_method_migration.py",
+      "status": "implemented",
+      "notes": "The Settings save marks one Payment Method for ABA QR payments; a save without the mark keeps it; the mark moves; turning the method off takes it away; the office jobs use the marked method before the operations file's code."
+    },
+    {
+      "test_id": "test_a_wrong_mark_is_refused_and_the_table_keeps_at_most_one",
+      "upstream_ids": [
+        "DL-227",
+        "DB-BS-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_aba_qr_payment_method_migration.py",
+      "status": "implemented",
+      "notes": "Two marked methods, a marked method that is off or a mark that is not true/false are refused (22023) and change nothing; the table keeps at most one mark and only on a method that is on."
+    },
+    {
+      "test_id": "test_settings_choose_the_one_payment_method_for_aba_qr_payments",
+      "upstream_ids": [
+        "DL-227"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "PATCH configuration takes aba_qr on one method that is on; leaving it out sends nothing for it; two marks, a mark on a method that is off or a non-boolean mark answer 422; GET shows aba_qr."
+    },
+    {
+      "test_id": "test_the_mac_operations_file_turns_on_the_aba_qr_when_the_keys_are_saved",
+      "upstream_ids": [
+        "DL-227"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_local_setup_migration.py",
+      "status": "implemented",
+      "notes": "Set up Telegram test writes the aba_payway block by itself when both PayWay key files are saved: sandbox host unless aba_payway_host names the live one, no Payment Method code; a wrong host is refused."
     }
   ]
 }

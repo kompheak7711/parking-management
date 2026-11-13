@@ -3177,3 +3177,14 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open:** the native Khmer check of the new text; a question for the owner's lawyer on BR-DEP-023: the whole Security Deposit is kept and the Customer's debt stays owed; is this in the Lease text, and is it allowed? D1 is read as "both pay only the days used"; the owner was told this reading and may still choose the other one offered that day.
 - **Links:** DL-075, DL-076, DL-085, DL-097, DL-100, DL-116, DL-117, DL-118, DL-123, DL-221, DL-223, DL-224, DL-225.
 - **Decision date:** 2026-11-12.
+
+## DL-227 — The Payment Method for ABA QR payments is chosen in Settings, not in a file
+
+- **Source:** the owner on 13 Nov 2026 in the thread "ABA QR on every Invoice", while testing DL-180 on the Mac: "if I change it in the future, will I have to run paste 2 again? If I build this app for other people, will they have to ask me to run this paste?" Claude answered that a file edit is wrong for an owner and for other businesses, and that the choice moves into Settings. A technical choice by Claude under the owner's 2026-10-23 22:30 rule; no money rule changes.
+- **Before.** DL-180 recorded each ABA QR payment with the Payment Method whose code was written in the operations file (`aba_payway.payment_method_code`). Changing it meant editing a file on the office computer.
+- **Now.** Settings, Business, Payment methods: one method that is on can be marked "Use for ABA QR payments". The office jobs record ABA QR payments with that method, and the Ledger puts the money in the account set for it (for CHETANA Residence: 1020, ABA Bank USD account). Only one method has the mark. A method that is off cannot have it; turning the marked method off takes the mark away. A screen that does not show the choice keeps the mark when it saves.
+- **The operations file.** `aba_payway.payment_method_code` is now optional. It is used only while no method is marked, so a computer set up before this change keeps working. The ABA PayWay merchant id and API key stay secret files on the office computer: they are never kept in the database or shown on a screen.
+- **Mac test run.** "Set up Telegram test" writes the `aba_payway` block by itself when both key files are saved in `.local/secrets` (the sandbox host, unless `aba_payway_host` names the live host). No paste is needed.
+- **Database:** migration `20270723_392` (DB-BS-004). **API:** `aba_qr` on each method of `GET` and `PATCH /properties/{property_id}/configuration` (docs/005). **Screen:** the tick box on the Settings screen comes with the UI v81 screens.
+- **Links:** DL-180, DL-181, DL-118.
+- **Decision date:** 2026-11-13.

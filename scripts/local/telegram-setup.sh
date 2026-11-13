@@ -201,7 +201,7 @@ property_id=${ids% *}
 owner_id=${ids#* }
 service_id=$(cli service-actor --property-id "$property_id" --owner-id "$owner_id") || exit 1
 cli write-config --template "$PRM_ROOT/config/deployment/production-operations.json" \
-  --folder "$TG" --relay-host "$relay_url" >/dev/null || exit 1
+  --folder "$TG" --relay-host "$relay_url" --secrets "$PRM_SECRETS" >/dev/null || exit 1
 {
   printf 'PRM_PROPERTY_ID=%s\n' "$property_id"
   printf 'PRM_TELEGRAM_ACTOR_ID=%s\n' "$owner_id"
