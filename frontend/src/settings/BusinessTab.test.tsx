@@ -17,12 +17,14 @@ import {
   PropertySavedReadFailedError,
 } from "../propertyClient";
 import { BusinessTab, methodCode, ruleCode } from "./BusinessTab";
+import { sst } from "./text";
 import {
   type BusinessRule,
   BusinessSettingsError,
   type InvoiceType,
   type NumberRule,
   ruleValueFromText,
+  ruleValueProblem,
   ruleValueText,
 } from "./businessSettingsClient";
 
@@ -655,6 +657,49 @@ describe("Settings: Business", () => {
       effective_from: TODAY,
       reason: null,
     });
+  });
+
+  it("TEST-FE-2170 the late-payment charge takes only a whole percent from 0 to 10: more, or a part of a percent, is refused in the dialog with the reason and nothing is sent; another percent rule still takes 0.5 (DL-226)", async () => {
+    const api = show();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit: Late-payment charge" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: "Change: Late-payment charge",
+    });
+    const value = within(dialog).getByLabelText(/^New value/);
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
+      target: { value: "Owner decision" },
+    });
+    for (const typed of ["15", "10.5", "7.5", "100"]) {
+      fireEvent.change(value, { target: { value: typed } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      expect(
+        within(dialog).getByText(
+          "The late-payment charge is a whole percent from 0 to 10.",
+        ),
+      ).toBeTruthy();
+    }
+    expect(api.settings.setRule).not.toHaveBeenCalled();
+
+    fireEvent.change(value, { target: { value: "10" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      await screen.findByText(
+        "Late-payment charge saved. It starts on 03/11/2026.",
+      ),
+    ).toBeTruthy();
+    expect(api.settings.setRule).toHaveBeenLastCalledWith(
+      "property-1",
+      "LATE_PAYMENT_PERCENT",
+      { value: 1000, effective_from: TODAY, reason: "Owner decision" },
+    );
+    expect(ruleValueProblem("RESERVATION_DEPOSIT_PERCENT", 50)).toBeNull();
+    expect(ruleValueProblem("LATE_PAYMENT_PERCENT", 0)).toBeNull();
+    expect(ruleValueProblem("LATE_PAYMENT_PERCENT", 1100)).toBe("br_e_late");
+    expect(sst("km", "br_e_late")).toBe(
+      "ថ្លៃបង់យឺតគឺជាភាគរយគត់ ចាប់ពី 0 ដល់ 10។",
+    );
   });
 
   it("TEST-FE-1136 late payment for an Invoice type changes with a reason; new letters for a document must be 2 to 5 capitals no other document uses and show the next number", async () => {

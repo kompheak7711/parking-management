@@ -915,6 +915,11 @@ const TEXT = {
   br_reason: ["Reason", "មូលហេតុ"],
   br_hist: ["History", "ប្រវត្តិ"],
   br_e_val: ["Type a value that fits the unit.", "សូមវាយតម្លៃដែលត្រូវនឹងឯកតា។"],
+  // DL-226: the late-payment charge is at most 10%, in whole percent.
+  br_e_late: [
+    "The late-payment charge is a whole percent from 0 to 10.",
+    "ថ្លៃបង់យឺតគឺជាភាគរយគត់ ចាប់ពី 0 ដល់ 10។",
+  ],
   br_e_date: [
     "Type a real date, dd/mm/yyyy, today or later.",
     "សូមវាយកាលបរិច្ឆេទពិត dd/mm/yyyy ថ្ងៃនេះ ឬក្រោយ។",

@@ -385,6 +385,20 @@ export function ruleValueFromText(
   return number;
 }
 
+/**
+ * A value that fits its unit but not the rule. The late-payment charge is a whole percent from
+ * 0 to 10 (DL-226): the record of a charge holds nothing else. Gives the text key of the reason.
+ */
+export function ruleValueProblem(
+  code: string,
+  value: number,
+): "br_e_late" | null {
+  if (code === "LATE_PAYMENT_PERCENT" && (value > 1000 || value % 100 !== 0)) {
+    return "br_e_late";
+  }
+  return null;
+}
+
 /** The value as it goes back into the edit box. */
 export function ruleValueInput(unit: RuleUnit, value: number): string {
   if (unit === "USD_CENTS") return (value / 100).toFixed(2);

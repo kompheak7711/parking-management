@@ -6058,3 +6058,12 @@ Migration `20270721_376_reserve_unit_booked_guest` (Database v1.2 review range, 
 - The refusal is raised inside `app.create_reservation`, so nothing of the activation bundle is saved. `app.create_reservation_with_payment` runs the Payment and the Reservation in one transaction, so the Payment is rolled back with it.
 - The other direction is unchanged: `app.short_stay_blockers()` already answers `RESERVED` for a Unit with an `ACTIVE` Reservation.
 - The backend maps this refusal to `ReservationUnitBookedError` and the API answers `RESERVATION_UNIT_BOOKED` (409); any other `23P01` stays "not available".
+
+## DB-BS-003 — The late-payment charge in Settings is a whole percent from 0 to 10 (DL-226)
+
+Migration `20270722_377_late_payment_cap` (Database v1.2 review range, on `20270721_376`). Forward-only. Two functions change; no table, column, grant or data change.
+
+- `app.business_rules_program_range()` (the `BEFORE INSERT` trigger function of `app.business_rules`): a `LATE_PAYMENT_PERCENT` value must be from 0 to 1000 (hundredths of a percent) in steps of 100. Any other value is refused with `SQLSTATE 22023` and the message "The late-payment charge is a whole percent from 0 to 10". Before, any value up to 10000 (100%) was taken (DB-BS-001, DL-118 (B)). The ranges of the other rules are not changed.
+- Why this range: `app.late_payment_decisions.default_rate_basis_points` holds only a whole percent from 0 to 1000 (`late_payment_decisions_rate_whole_percent`, DL-085), and `app.record_automatic_late_payment_charge` writes the Settings value there. A value outside it breaks that constraint, so the automatic late-payment charge could not be saved.
+- `app.late_payment_rate_basis_points(property, date)` now answers `least(value, 1000) / 100 * 100` (integer division): a row saved before this migration stays in the history (the rows are append-only) and is read as at most 10%, cut down to a whole percent. With no row it answers 1000, as before.
+- The backend passes the refusal on as `BusinessRuleInvalid` (422) with the message.

@@ -66981,6 +66981,85 @@
       "test_path": "frontend/src/reservations/ReserveBookedUnit.test.tsx",
       "status": "implemented",
       "notes": "The Khmer screen has Khmer words for RESERVATION_UNIT_BOOKED, with the name of Change Unit."
+    },
+    {
+      "test_id": "test_migration_377_follows_376_and_is_forward_only",
+      "upstream_ids": [
+        "DL-226"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270722_377 follows 20270721_376 and has no downgrade."
+    },
+    {
+      "test_id": "test_settings_take_a_whole_percent_from_0_to_10",
+      "upstream_ids": [
+        "DL-226",
+        "DB-BS-003",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "Settings take a late-payment charge of 0%, 5% and 10%, and the charge rate read for the day is that value."
+    },
+    {
+      "test_id": "test_settings_refuse_more_than_10_percent_and_a_part_of_a_percent",
+      "upstream_ids": [
+        "DL-226",
+        "DB-BS-003",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "Settings refuse more than 10% and a part of a percent such as 7.5%; nothing is saved and the rate read stays as it was."
+    },
+    {
+      "test_id": "test_the_refusal_says_the_limit",
+      "upstream_ids": [
+        "DL-226",
+        "DB-BS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "The refusal of the database becomes the API reason: The late-payment charge is a whole percent from 0 to 10."
+    },
+    {
+      "test_id": "test_a_value_saved_before_is_read_as_at_most_10_percent_in_whole_percent",
+      "upstream_ids": [
+        "DL-226",
+        "DB-BS-003",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "A value saved before migration 377 stays in the history and is read as at most 10%, cut down to a whole percent."
+    },
+    {
+      "test_id": "test_the_other_rules_keep_their_ranges",
+      "upstream_ids": [
+        "DL-226",
+        "DB-BS-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_cap_migration.py",
+      "status": "implemented",
+      "notes": "Another business rule keeps its range: the Rent due day takes 28 and refuses 29."
+    },
+    {
+      "test_id": "TEST-FE-2170",
+      "upstream_ids": [
+        "DL-226",
+        "BR-LATE-001"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "Settings, Business: a late-payment charge above 10% or with a part of a percent shows the reason under the value box and sends nothing; 10% is sent; the reason has Khmer words."
     }
   ]
 }

@@ -404,6 +404,7 @@ database_test_suites='
   tests/test_v12_lease_draft_short_stay_migration.py
   tests/test_v12_short_stay_change_unit_migration.py
   tests/test_v12_reserve_unit_booked_guest_migration.py
+  tests/test_v12_late_payment_cap_migration.py
   tests/test_telegram_tenant_offline_migration.py
   tests/test_telegram_offline_clock_migration.py
   tests/test_telegram_link_qr_migration.py

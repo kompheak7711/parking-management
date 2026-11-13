@@ -52,6 +52,7 @@ import {
   type RuleArea,
   type RuleUnit,
   ruleValueFromText,
+  ruleValueProblem,
   ruleValueInput,
   ruleValueText,
 } from "./businessSettingsClient";
@@ -1080,6 +1081,10 @@ function RuleDialog({
     const day = parseDay(from);
     const found: typeof errors = {};
     if (number === null) found.value = sst(language, "br_e_val");
+    else {
+      const unfit = ruleValueProblem(rule.code, number);
+      if (unfit !== null) found.value = sst(language, unfit);
+    }
     if (day === "" || (today !== "" && day < today)) {
       found.from = sst(language, "br_e_date");
     }

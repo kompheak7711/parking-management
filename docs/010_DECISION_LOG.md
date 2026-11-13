@@ -3116,3 +3116,38 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open:** the native Khmer check of the new text.
 - **Links:** DL-223, DL-224, DL-112, DL-119, DL-150 to DL-159 (short stays).
 - **Decision date:** 2026-11-12.
+
+## DL-226 — The business rules are rewritten in a short form (396 rules become 128), and the owner's decisions of 12 Nov 2026 are recorded
+
+- **Type:** `OWNER DECISION` (parts B and C are the owner's business and money decisions; part A changes the wording of docs/002 only and adds or changes no rule).
+- **Status:** `PART A DONE IN docs/002 VERSION 2.0; D2 BUILT (PART D); THE REST OF PART B RECORDED, NOT BUILT; WAITS FOR THE OWNER'S MERGE OK`
+- **Source:** the owner on 12 Nov 2026 in the thread "Database v1.2 review": 09:00 "Go" (read all 396 rules and say what to drop, join or change); 10:39 "all yes" to D1 to D6 and the two advised answers; 11:12 the utility rate, the late-payment Invoice and the stored Invoice type; 14:50 "all yes" to the clean-up points; 14:53 "yes" to seven Invoice types and "yes, rewrite". The owner said the same day: "If my business rules and decisions are wrong. You must tell, advice, and give recommendation to me." The owner can change every decision here.
+- **(A) The short form.** docs/002 version 2.0 says each rule once. Version 1.0 had 396 rules; many said the same thing for one more kind of record. Version 2.0 has 128 rules. No business rule was taken out.
+  - The heading of each short rule is a rule number that existed in version 1.0. A line `Replaces:` under the rule lists the other version 1.0 numbers whose text is now in that rule. Appendix A shows where every one of the 396 numbers went. A test, a requirement or a note that names an old number still points to one rule.
+  - About 30 texts were out of date. They now say what the app does today, as the decision log already says: DL-075 and DL-097, DL-076, DL-100, DL-116 and DL-117, DL-118, DL-123, DL-150 to DL-159, DL-221, DL-223 and DL-225. The "Not built yet" notes are gone.
+  - The rewrite itself changes no code, no database and no test. Every heading of version 2.0 is a number `ops/traceability.json` already maps.
+- **(B) Decided by the owner, not built yet.** The rules of version 2.0 say what the app does today. Each decision below changes its rule in docs/002 in the same change that builds it. The list is also Appendix B of docs/002.
+  - **D1** (BR-RENT-012) A hand-back before the 5th: the tenant who paid the month and the tenant who did not both pay only the days used.
+  - **D2** (BR-LATE-001) Settings refuse a late-payment rate above 10% (Lease Article 2.3). Built with this entry: see part D.
+  - **D3** (BR-INV-021) A missed amount on a fully paid line is billed with the type of what was missed.
+  - **D4** (BR-DEP-010) The Pet Deposit for a pet kept from the start is received at Sign Lease, with the Security Deposit and the Initial Rent.
+  - **D5** (BR-PAY-030) Extra money becomes Customer Credit at once. The Customer may ask for a Refund any day.
+  - **D6** (BR-INV-015) A Draft Invoice is changed freely and may be deleted. History starts when the Invoice is issued.
+  - **Q3** (BR-UTIL-014) A new utility rate is used only for use from its start date: the rate is chosen by the start of the period.
+  - **L1** (BR-LATE-001) The late-payment charge becomes an Invoice of the type "Late-payment". This Invoice never gets a late-payment charge itself.
+  - **T1** (BR-INV-016) Seven Invoice types are kept on the Invoice in the database: Rent, Utilities, Short stay, Products, Damage, Late-payment, Other charges. The line keeps its category. Built after DL-221 is merged.
+  - **C1** (BR-LEASE-001, BR-LEASE-024, BR-DEP-023) The ending of an old Lease for unpaid Initial Rent or Security Deposit (closed for new Leases by DL-100) is taken out of the app, after a check that nothing can still reach it.
+  - **C2** (BR-UNIT-002, BR-UNIT-004) Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff.
+- **(C) Kept as they are, by the owner's decision.** Two monthly Invoices (Rent with Services, and Utilities). Nothing automatic after the Lease End Date (BR-LEASE-017). The broken Meter estimate (BR-UTIL-023). The corrections after a closed Final Settlement (BR-SETTLE-012): no new kinds; look again after six months of real use.
+- **(D) D2 is built: the late-payment charge in Settings is a whole percent from 0 to 10.**
+  - **What was wrong.** Settings took any value up to 100% (DL-118 (B)). But the record of a late-payment charge holds only a whole percent from 0 to 10 (DL-085). So a value such as 15% or 7.5% was saved in Settings, but the charge record refuses it, and the automatic late-payment charge could then not be saved.
+  - **Now.** Settings take 0, 1, 2 and so on up to 10. More than 10%, or a part of a percent such as 7.5%, is refused with the reason: "The late-payment charge is a whole percent from 0 to 10". The starting value stays 10%.
+  - **A value saved before.** The history of a rule is never changed. A value above 10% saved before this change is read as 10%, and a part of a percent is cut down to the whole percent, so the charge is never more than the value saved.
+  - **Not decided by the owner, told to the owner:** "whole percent" is not a new rule. It is what the charge record already takes (DL-085). If the owner wants a rate such as 7.5%, the charge record must change first.
+  - **Database:** migration `20270722_377` changes two functions (no table, column, grant or data change). Forward-only. See DB-BS-003.
+  - **API:** `PUT /properties/{property_id}/business-rules/LATE_PAYMENT_PERCENT` answers 422 with the reason. See docs/005.
+  - **Screen:** Settings, Business, Change "Late-payment charge" shows the reason under the value box before anything is sent, in English and Khmer.
+- **Build order agreed with the owner.** D2 first (done, part D). The rest in one clean-up step after the open pull requests are merged and before real data is entered. That step may delete the test data on the owner's Mac (the owner said on 12 Nov 2026 that all data entered so far is test data); the owner is told what is deleted before it runs.
+- **Open:** the native Khmer check of the new text; a question for the owner's lawyer on BR-DEP-023: the whole Security Deposit is kept and the Customer's debt stays owed; is this in the Lease text, and is it allowed? D1 is read as "both pay only the days used"; the owner was told this reading and may still choose the other one offered that day.
+- **Links:** DL-075, DL-076, DL-085, DL-097, DL-100, DL-116, DL-117, DL-118, DL-123, DL-221, DL-223, DL-224, DL-225.
+- **Decision date:** 2026-11-12.
