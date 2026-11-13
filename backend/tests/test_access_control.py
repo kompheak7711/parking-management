@@ -41,6 +41,11 @@ DOTTED = re.compile(r"^[a-z][a-z_]*(\.[a-z][a-z_]*)+$")
 # work file names). A new label is added here; a new capability goes in the catalog.
 NON_CAPABILITY_LABELS = frozenset(
     {
+        # ABA QR on every Invoice (DL-180): the PayWay settings, its live host and the PDF style.
+        "aba_payway.api_key_file",
+        "aba_payway.host",
+        "aba_payway.merchant_id_file",
+        "aba_payway.payment_method_code",
         "alerts.disk_paths",
         "alerts.telegram",
         "alerts.telegram.api_host",
@@ -60,6 +65,7 @@ NON_CAPABILITY_LABELS = frozenset(
         "backup.succeeded",
         "backup.tool_failed",
         "backup.verified",
+        "checkout.payway.com.kh",
         "deposit.pet.create",
         "deposit.pet_departure.record",
         "deposit.pet_refund.review",
@@ -67,6 +73,7 @@ NON_CAPABILITY_LABELS = frozenset(
         "deposit.required.adjust",
         "deposit.security.create",
         "http.request",
+        "invoice.css",
         "lease.cancel",
         "lease.draft",
         "lease.draft.update",

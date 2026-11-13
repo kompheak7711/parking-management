@@ -190,8 +190,13 @@ and do nothing while `telegram_bots.enabled` is false. The Staff bot (DL-174) al
 `PRM_TELEGRAM_SERVICE_ACTOR_ID` (a service actor, for the HR staff functions) and
 `APP_HR_FILES_DIRECTORY=/var/lib/prm/hr-files` (card scan photos, removed after the HR rule's
 90 days); without them the Staff bot answers that it is not ready. The relay setup steps are in
-`relay/README.md`. Each run writes `telegram-pull.json` or `telegram-send.json` to the status
-folder, and then the health page can show:
+`relay/README.md`. ABA QR on every Invoice (DL-180) adds an `aba_payway` block to the operations
+file (`enabled`, `host`, `merchant_id_file`, `api_key_file`, `payment_method_code`) and
+`APP_FINANCIAL_DATABASE_URL` to the jobs' environment; while it is on and not ready, Invoice
+messages wait. The API reads ABA's riel rate (DL-181) when `APP_ABA_PAYWAY_HOST`,
+`APP_ABA_PAYWAY_MERCHANT_ID_FILE` and `APP_ABA_PAYWAY_API_KEY_FILE` are set; without them the
+rate is "not available" and staff type ABA's rate. Each run writes `telegram-pull.json` or
+`telegram-send.json` to the status folder, and then the health page can show:
 
 | Check | Warning code |
 |---|---|

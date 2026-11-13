@@ -21,6 +21,13 @@ ENV APP_BUILD_VERSION=${APP_BUILD_VERSION} \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Pango and HarfBuzz draw the Invoice PDF for the Tenant bot (invoice_pdf.py, WeasyPrint): they
+# join Khmer letters correctly.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 \
+        libharfbuzz-subset0 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app app
 

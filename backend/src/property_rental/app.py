@@ -14,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from property_rental.aba_rate import provider_from_files
 from property_rental.access_admin_api import (
     AccessAdministrationConflict,
     AccessAdministrationFlow,
@@ -700,6 +701,13 @@ def create_app(
     resolved_settings = settings or Settings()
     totp_protection_key = _totp_protection_key(resolved_settings)
     password_blocklist = _password_blocklist(resolved_settings)
+    if exchange_rate_provider is None:
+        # DL-181: ABA's riel rate from ABA PayWay when its key files are set up.
+        exchange_rate_provider = provider_from_files(
+            host=resolved_settings.aba_payway_host,
+            merchant_id_file=resolved_settings.aba_payway_merchant_id_file,
+            api_key_file=resolved_settings.aba_payway_api_key_file,
+        )
     sign_in_try_key = (
         derive_sign_in_try_key(totp_protection_key) if totp_protection_key is not None else None
     )

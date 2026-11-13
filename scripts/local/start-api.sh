@@ -41,6 +41,15 @@ mkdir -p "$APP_HR_FILES_DIRECTORY"
 chmod 700 "$APP_HR_FILES_DIRECTORY"
 export APP_DATABASE_URL APP_FINANCIAL_DATABASE_URL APP_ENVIRONMENT APP_TOTP_KEY_FILE
 export APP_PASSWORD_BLOCKLIST_FILE APP_ALLOWED_BROWSER_ORIGIN APP_HR_FILES_DIRECTORY
+# DL-181: ABA's riel rate from ABA PayWay, once the PayWay keys are saved on this Mac. The test
+# app uses the PayWay sandbox unless the file aba_payway_host names the live host.
+if [ -s "$PRM_SECRETS/aba_merchant_id" ] && [ -s "$PRM_SECRETS/aba_api_key" ]; then
+  APP_ABA_PAYWAY_HOST=checkout-sandbox.payway.com.kh
+  [ -s "$PRM_SECRETS/aba_payway_host" ] && IFS= read -r APP_ABA_PAYWAY_HOST < "$PRM_SECRETS/aba_payway_host"
+  APP_ABA_PAYWAY_MERCHANT_ID_FILE="$PRM_SECRETS/aba_merchant_id"
+  APP_ABA_PAYWAY_API_KEY_FILE="$PRM_SECRETS/aba_api_key"
+  export APP_ABA_PAYWAY_HOST APP_ABA_PAYWAY_MERCHANT_ID_FILE APP_ABA_PAYWAY_API_KEY_FILE
+fi
 printf 'API for %s, on 127.0.0.1:8000. Stop it with Control-C.\n' "$APP_ALLOWED_BROWSER_ORIGIN"
 cd "$PRM_ROOT/backend"
 # The screen server adds X-Forwarded-For; it is trusted from 127.0.0.1 only, so each device on the

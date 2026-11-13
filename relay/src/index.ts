@@ -855,6 +855,9 @@ export async function cleanUp(env: Env, now: number): Promise<number> {
   await env.DB.prepare("DELETE FROM rate WHERE minute < ?")
     .bind(Math.floor(now / 60) - 60)
     .run();
+  await env.DB.prepare("DELETE FROM aba_hints WHERE minute < ?")
+    .bind(Math.floor(now / 60) - 60)
+    .run();
   // The relay's own chat steps (DL-210): a typed name or phone is not kept past 30 minutes,
   // and old link tries go after a day.
   await env.DB.prepare(
@@ -872,6 +875,65 @@ export async function cleanUp(env: Env, now: number): Promise<number> {
     ),
   ]);
   return old.results.length;
+}
+
+// ABA PayWay tells us a QR was paid (DL-180). ABA's message is not signed, so it is only a
+// hint: the office asks ABA itself before any money is recorded. Only the transaction id is
+// kept, sealed like every item; at most one hint per transaction a minute.
+const ABA_TRAN_ID = /^[A-Za-z0-9-]{1,20}$/;
+const ABA_MAX_BODY = 8192;
+
+async function abaPayway(
+  request: Request,
+  env: Env,
+  now: number,
+): Promise<Response> {
+  const text = await request.text();
+  if (text.length > ABA_MAX_BODY) {
+    return new Response("too big", { status: 413 });
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    const form = new URLSearchParams(text);
+    body = Object.fromEntries(form.entries());
+  }
+  const fields = (
+    typeof body === "object" && body !== null ? body : {}
+  ) as Record<string, unknown>;
+  const given = fields.tran_id ?? fields.merchant_ref;
+  const tranId = typeof given === "string" ? given : "";
+  if (!ABA_TRAN_ID.test(tranId)) {
+    return new Response("not ours", { status: 400 });
+  }
+  const minute = Math.floor(now / 60);
+  const seen = await env.DB.prepare(
+    "SELECT 1 FROM aba_hints WHERE tran_id = ? AND minute = ?",
+  )
+    .bind(tranId, minute)
+    .first();
+  if (seen) {
+    return json({ ok: true }, 200);
+  }
+  await env.DB.prepare("INSERT INTO aba_hints (tran_id, minute) VALUES (?, ?)")
+    .bind(tranId, minute)
+    .run();
+  const officeKey = await importOfficeKey(env.OFFICE_PUBLIC_KEY);
+  await keepItem(
+    env,
+    officeKey,
+    crypto.randomUUID(),
+    "TENANT",
+    "aba",
+    {
+      v: 1,
+      payload: { tran_id: tranId },
+      media: [],
+    },
+    now,
+  );
+  return json({ ok: true }, 200);
 }
 
 export async function handle(
@@ -933,6 +995,14 @@ export async function handle(
   }
   if (path[0] === "office") {
     return office(request, env, now, path.slice(1));
+  }
+  if (
+    path[0] === "aba" &&
+    path[1] === "payway" &&
+    path.length === 2 &&
+    request.method === "POST"
+  ) {
+    return abaPayway(request, env, now);
   }
   return new Response("not found", { status: 404 });
 }

@@ -656,3 +656,71 @@ test("the Staff forms: the page, the person's name, roles and shift, then a card
   assert.equal(plain.media[0].content_type, "image/jpeg");
   assert.equal(plain.media[0].size, photo.length);
 });
+
+test("an ABA PayWay hint keeps only the sealed transaction id, once a minute", async () => {
+  const env = testEnv(keys.publicPem);
+  const hint = (body: string, type = "application/json") =>
+    new Request("https://relay.test/aba/payway", {
+      method: "POST",
+      headers: { "content-type": type },
+      body,
+    });
+  const paid = JSON.stringify({
+    tran_id: "INV-0042-1",
+    status: 0,
+    apv: "123456",
+  });
+  assert.equal((await handle(hint(paid), env, clock)).status, 200);
+  assert.equal((await handle(hint(paid), env, clock)).status, 200);
+  assert.equal(
+    (
+      await handle(
+        hint("tran_id=INV-0042-1", "application/x-www-form-urlencoded"),
+        env,
+        clock,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await handle(
+        hint(JSON.stringify({ tran_id: "bad id; drop" })),
+        env,
+        clock,
+      )
+    ).status,
+    400,
+  );
+  assert.equal((await handle(hint("x".repeat(9000)), env, clock)).status, 413);
+  const get = new Request("https://relay.test/aba/payway");
+  assert.equal((await handle(get, env, clock)).status, 404);
+
+  const pulled = await handle(
+    await officeRequest("GET", "/office/items?limit=10", NOW),
+    env,
+    clock,
+  );
+  const batch = (await pulled.json()) as {
+    items: { id: string; bot: string; kind: string; sealed: string }[];
+  };
+  assert.equal(batch.items.length, 1, "one hint a minute per transaction");
+  const item = batch.items[0];
+  assert.ok(item);
+  assert.equal(item.kind, "aba");
+  assert.ok(!item.sealed.includes("INV-0042"), "the id is sealed");
+  const plain = await openItem(item);
+  assert.deepEqual(plain, {
+    v: 1,
+    payload: { tran_id: "INV-0042-1" },
+    media: [],
+  });
+
+  await cleanUp(env, NOW + 2 * 3600);
+  const left = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM aba_hints",
+  ).first<{
+    n: number;
+  }>();
+  assert.equal(left?.n, 0, "old hints go after an hour");
+});

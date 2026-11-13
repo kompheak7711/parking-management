@@ -104,3 +104,11 @@ CREATE TABLE IF NOT EXISTS start_codes_used (
   user_id INTEGER NOT NULL,
   used_at INTEGER NOT NULL
 );
+
+-- ABA PayWay "paid" hints (DL-180): only the transaction id, at most one a minute per
+-- transaction. Kept one hour.
+CREATE TABLE IF NOT EXISTS aba_hints (
+  tran_id TEXT NOT NULL,
+  minute INTEGER NOT NULL,
+  PRIMARY KEY (tran_id, minute)
+);

@@ -57,3 +57,13 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_HR_FILES_DIRECTORY",
     )
+    # DL-181: ABA's riel rate from ABA PayWay (owner card 12/11/2026). Paths only: the merchant
+    # id and the API key stay in secret files. Without them the rate is "not available" and staff
+    # type ABA's rate by hand.
+    aba_payway_host: str | None = Field(default=None, validation_alias="APP_ABA_PAYWAY_HOST")
+    aba_payway_merchant_id_file: str | None = Field(
+        default=None, validation_alias="APP_ABA_PAYWAY_MERCHANT_ID_FILE"
+    )
+    aba_payway_api_key_file: str | None = Field(
+        default=None, validation_alias="APP_ABA_PAYWAY_API_KEY_FILE"
+    )

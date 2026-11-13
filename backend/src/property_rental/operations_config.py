@@ -47,6 +47,19 @@ class TelegramBotsConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class AbaPayWayConfig:
+    """ABA PayWay for the Invoice QR (DL-180). Paths only: the merchant id and API key are
+    secret files. ``payment_method_code`` names the Payment Method a QR payment is recorded
+    with (the one the Ledger maps to ABA USD account 1020)."""
+
+    enabled: bool
+    host: str
+    merchant_id_file: Path
+    api_key_file: Path
+    payment_method_code: str
+
+
+@dataclass(frozen=True, slots=True)
 class OperationsConfig:
     backup_directory: Path
     backup_database_url_file: Path
@@ -64,6 +77,7 @@ class OperationsConfig:
     log_directory: Path
     log_retention: timedelta
     telegram_bots: TelegramBotsConfig | None = None
+    aba_payway: AbaPayWayConfig | None = None
 
     @property
     def thresholds(self) -> WarningThresholds:
@@ -127,6 +141,28 @@ def _telegram_bots(value: object, api_host: str) -> TelegramBotsConfig | None:
     )
 
 
+PAYWAY_HOSTS = ("checkout-sandbox.payway.com.kh", "checkout.payway.com.kh")
+
+
+def _aba_payway(value: object) -> AbaPayWayConfig | None:
+    if value is None:
+        return None
+    aba = _object(value, "aba_payway")
+    enabled = aba.get("enabled")
+    if not isinstance(enabled, bool):
+        raise OperationsConfigError("aba_payway.enabled must be true or false")
+    host = _text(aba.get("host"), "aba_payway.host")
+    if host not in PAYWAY_HOSTS:
+        raise OperationsConfigError("aba_payway.host must be the PayWay sandbox or live host")
+    return AbaPayWayConfig(
+        enabled=enabled,
+        host=host,
+        merchant_id_file=_path(aba.get("merchant_id_file"), "aba_payway.merchant_id_file"),
+        api_key_file=_path(aba.get("api_key_file"), "aba_payway.api_key_file"),
+        payment_method_code=_text(aba.get("payment_method_code"), "aba_payway.payment_method_code"),
+    )
+
+
 def load_operations_config(path: Path) -> OperationsConfig:
     """Read the configuration; refuse a file that does not have every field."""
     try:
@@ -183,4 +219,5 @@ def load_operations_config(path: Path) -> OperationsConfig:
         telegram_bots=_telegram_bots(
             root.get("telegram_bots"), _text(telegram.get("api_host"), "alerts.telegram.api_host")
         ),
+        aba_payway=_aba_payway(root.get("aba_payway")),
     )

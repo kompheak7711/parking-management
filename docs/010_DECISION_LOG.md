@@ -3069,6 +3069,32 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270716_391` (after `20270716_390` of DL-221); see DB-PR-005.
 - **Links:** DL-132, DL-201; the short-stay rules of DL-150 to DL-159 and DL-190 to DL-199; migration `20270602_312`.
 
+## DL-180 — ABA QR on every Invoice: the PDF on Telegram and the payment check
+
+- **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/project-thread-g09i9g; STEP B WAITS FOR THE PAYWAY SANDBOX KEYS, THE OWNER'S TEST AND OK TO MERGE`
+- **Source:** the owner on 5 Nov 2026: "every invoice will print with its own ABA QR code with the amount in the QR code"; on 11 Nov 2026 the owner chose "Yes, all recommended" on the card "Approve the plan and the 5 money answers for the ABA QR?", and wrote: "all invoice types which issued must come with ABA QR code that already holds the amount. And send as PDF of the approved A4 Invoice in Brand kit sample template … to all tenants via telegram." Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
+- **(A) The 5 money answers (owner, 11 Nov 2026).** 1. After a part payment the next Invoice message has a new QR for what is left; the old QR is closed at ABA. 2. Late-payment charges are not in the QR. 3. A QR works until the end of the 5th day after the Due Date (Property time); an Invoice sent later gets 3 more days (PayWay allows 30 days at most). 4. When ABA says a QR is paid for exactly its amount in USD, the Payment is recorded by itself into that Invoice, with ABA's approval code as its reference; any other answer goes to the staff as Needs check. 5. Every issued Invoice of every type that the Tenant bot sends gets a QR.
+- **(B) What the tenant gets.** The Invoice message and the reminder (DL-211) go as the A4 PDF of the approved Brand kit Invoice sample (`brand-kit/05_Templates/invoice-template.html`), with the message as its caption. The QR box at the bottom holds an ABA PayWay KHQR with the Balance due in USD and says so in Khmer and English, with the last day it works. Any bank app that reads KHQR can pay it. The PDF is made by WeasyPrint, which joins Khmer letters correctly. A fully paid Invoice still goes as text.
+- **(C) Never without a QR.** While `aba_payway` is on in the operations file, an Invoice message waits (and is tried again) when its QR cannot be made; it is never sent without one. While `aba_payway` is off or missing, the messages go as text as before.
+- **(D) How a payment is known.** ABA PayWay calls the relay (`/aba/payway`); the relay keeps only the transaction id, sealed, as a hint. ABA's call is not signed, so no money is taken from it: the office asks ABA itself (Check transaction) and records only ABA's own answer. The pull job checks a hinted QR at once; the send job checks all open QRs every 10 minutes. The Payment's key comes from the transaction id, so it is never saved twice. A QR is checked for its whole life (to 5 days after the Due Date), not only ABA's 7-day Check window: an older QR is read with ABA's Get a transaction details (at most 8 a run, as ABA allows 10 a minute). A QR ABA still gives no answer for 2 days after it stops working goes to Needs check, so no payment is missed silently. The Mac is never opened to the internet.
+- **(E) Records.** `app.aba_qr_requests` (one row per QR: Invoice, transaction id, amount in cents, QR text, last moment it works) and `app.aba_qr_events` (CLOSED, PAID, PAYMENT_RECORDED, NEEDS_CHECK, EXPIRED, CHECK_FAILED). Both are append-only. The PayWay merchant id and API key are secret files on the office computer, never in the repository or the chat.
+- **Open:** the PayWay sandbox keys and a Payment Method for ABA KHQR mapped to ABA USD account 1020 (the operations file names it); the native Khmer check of the QR box words; ABA's fee and settlement times.
+- **Built:** migration `20270717_340`, `backend/src/property_rental/payway.py`, `invoice_pdf.py`, `aba_qr.py`, the Telegram send and pull jobs, `relay/src/index.ts` (`/aba/payway`).
+- **Links:** DL-210, DL-211.
+- **Decision date:** 2026-11-11.
+
+## DL-181 — ABA's riel rate comes from ABA PayWay
+
+- **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
+- **Status:** `BUILT ON BRANCH claude/project-thread-g09i9g; WAITS FOR THE OWNER'S TEST AND OK TO MERGE`
+- **Source:** the owner on 11 Nov 2026 (Settings review): the Exchange card must always show its rate. The app had no rate source (`UnavailableExchangeRateProvider`), so only the hand-typed fallback worked. On 12 Nov 2026 the owner chose "ABA PayWay rate API" on the card "Where should the app read ABA's riel Sell rate from?".
+- **Decision:** the API asks ABA PayWay's Exchange rate service (the same rates as ababank.com) for the USD Sell rate, with the PayWay merchant id and API key already kept for DL-180. It asks at most once an hour and keeps the answer in memory; after a failed try it waits 5 minutes before asking again. The rule does not change: the System Exchange Rate is ABA's Sell rate times 1.005, rounded up to a whole riel, kept with each riel Payment when it is confirmed (BR-MONEY-005 to 007). When ABA cannot be asked, or gives no usable USD rate (between 3,000 and 6,000 riel), the rate is "not available" and an authorized user types ABA's rate as before (BR-MONEY-008). A rate older than one hour is never used.
+- **Checked:** ABA's documentation example lists other currencies in riel but not USD. The owner's sandbox test on 12/11/2026 answered a USD Sell rate (4,012 riel), so USD is in the answer. PayWay refused (HTTP 403) Python's default User-Agent; the app sends its own name.
+- **Built:** `backend/src/property_rental/payway.py` (`exchange_rate`), `aba_rate.py`, settings `APP_ABA_PAYWAY_HOST`, `APP_ABA_PAYWAY_MERCHANT_ID_FILE`, `APP_ABA_PAYWAY_API_KEY_FILE`, `scripts/local/start-api.sh`.
+- **Links:** DL-180, BR-MONEY-005, BR-MONEY-006, BR-MONEY-007, BR-MONEY-008.
+- **Decision date:** 2026-11-12.
+
 ## DL-223 — A Lease draft is not saved over a short-stay booking; both steps say why
 
 - **Type:** `TECHNICAL DECISION UNDER THE OWNER'S RULE` (it applies the owner's existing rule; no new business or money rule).

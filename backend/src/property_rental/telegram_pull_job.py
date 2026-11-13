@@ -24,6 +24,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -32,6 +33,7 @@ from pathlib import Path
 from typing import Any, Final
 from uuid import UUID
 
+from property_rental import aba_qr, payway
 from property_rental.operations_config import (
     BOT_CODES,
     OperationsConfigError,
@@ -255,6 +257,8 @@ class PullResult:
     refused: int = 0
     confirmed: int = 0
     refused_codes: list[str] = field(default_factory=list)
+    # ABA told the relay a QR was paid (DL-180): the transactions to check with ABA now.
+    aba_tran_ids: list[str] = field(default_factory=list)
 
 
 def save_item(
@@ -351,6 +355,21 @@ def _without_codes(payload: dict[str, Any]) -> dict[str, Any]:
     return payload | {"form": kept}
 
 
+ABA_KIND: Final = "aba"
+ABA_TRAN_ID: Final = re.compile(r"[A-Za-z0-9-]{1,20}")
+
+
+def aba_tran_id(item: RelayItem, key: Any) -> str | None:
+    """The transaction id in ABA's message to the relay, or None when it cannot be read."""
+    try:
+        plain = json.loads(open_sealed(key, item.sealed, item.item_id))
+    except (SealError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    payload = plain.get("payload") if isinstance(plain, dict) else None
+    tran_id = payload.get("tran_id") if isinstance(payload, dict) else None
+    return tran_id if isinstance(tran_id, str) and ABA_TRAN_ID.fullmatch(tran_id) else None
+
+
 def run_pull(
     *,
     client: RelayClient,
@@ -379,6 +398,16 @@ def run_pull(
     result.received = len(batch.items)
     done: list[str] = []
     for item in batch.items:
+        if item.kind == ABA_KIND:
+            # Only a hint: the payment itself is always read from ABA's answer to our check.
+            tran_id = aba_tran_id(item, key)
+            if tran_id is None:
+                result.refused += 1
+                result.refused_codes.append("aba_unreadable")
+            elif tran_id not in result.aba_tran_ids:
+                result.aba_tran_ids.append(tran_id)
+            done.append(item.item_id)
+            continue
         try:
             plain, saved = save_item(
                 item, client=client, key=key, store=store, media_directory=media_directory
@@ -476,6 +505,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 hr_files_directory=hr_files,
             )
             note_items(config.status_directory, started)
+            if result.aba_tran_ids:
+                check_aba(
+                    config, database_url, args.property_id, args.actor_id, result.aba_tran_ids
+                )
         store.remove_old_payloads()
         store.tenant_end_finished_links()
         store.remove_old_link_attempts()
@@ -513,6 +546,37 @@ def main(argv: Sequence[str] | None = None) -> int:
     status.update({"last_outcome": "ok", "last_success_at": format_time(utc_now())})
     _write(config.status_directory, status, store)
     return 0
+
+
+def check_aba(
+    config: Any, database_url: str, property_id: UUID, actor_id: UUID, tran_ids: list[str]
+) -> None:
+    """Check with ABA the QRs ABA told the relay about, and record the paid ones (DL-180)."""
+    try:
+        job = aba_qr.load_job(
+            config,
+            database_url=database_url,
+            financial_database_url=os.environ.get("APP_FINANCIAL_DATABASE_URL"),
+            property_id=property_id,
+            actor_id=actor_id,
+        )
+        if job is None:
+            print("aba_check:not_set_up", flush=True)
+            return
+        checked = aba_qr.check_payments(
+            store=job.store, config=job.config, record_payment=job.record_payment, only=tran_ids
+        )
+    except payway.PayWayError as error:
+        print(f"aba_check:failed:{error.code}", flush=True)
+        return
+    except Exception as error:  # the 10-minute check in the send job tries again
+        print(f"aba_check:failed:{type(error).__name__}", flush=True)
+        return
+    print(
+        f"aba_check:checked={checked.checked},recorded={checked.recorded},"
+        f"needs_check={checked.needs_check},failed={checked.failed}",
+        flush=True,
+    )
 
 
 def _write(directory: Path, status: dict[str, object], store: TelegramStore) -> None:

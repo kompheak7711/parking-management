@@ -66519,6 +66519,458 @@
       "notes": "Problem reports (DL-222): a problem from a short-stay room check links back to the stay."
     },
     {
+      "test_id": "test_the_page_is_the_approved_sample_filled_with_the_invoice",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: the page is the approved sample filled with the invoice."
+    },
+    {
+      "test_id": "test_a_part_paid_utility_invoice_shows_what_is_paid_and_the_readings",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: a part paid utility invoice shows what is paid and the readings."
+    },
+    {
+      "test_id": "test_names_are_escaped",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: names are escaped."
+    },
+    {
+      "test_id": "test_no_page_without_an_amount_to_pay_in_the_qr",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: no page without an amount to pay in the qr."
+    },
+    {
+      "test_id": "test_money_is_read_in_cents",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: money is read in cents."
+    },
+    {
+      "test_id": "test_the_pdf_is_one_a4_page",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: the pdf is one a4 page."
+    },
+    {
+      "test_id": "test_the_qr_request_is_signed_in_payways_order",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: the qr request is signed in payways order."
+    },
+    {
+      "test_id": "test_a_refused_or_odd_qr_answer_is_a_fixed_code",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: a refused or odd qr answer is a fixed code."
+    },
+    {
+      "test_id": "test_the_lifetime_stays_within_payways_limits",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: the lifetime stays within payways limits."
+    },
+    {
+      "test_id": "test_check_reads_what_aba_says_was_paid",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: check reads what aba says was paid."
+    },
+    {
+      "test_id": "test_close_cancels_an_old_qr",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: close cancels an old qr."
+    },
+    {
+      "test_id": "test_abas_amounts_become_exact_cents",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: abas amounts become exact cents."
+    },
+    {
+      "test_id": "test_a_bad_transaction_id_or_amount_never_leaves",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "DL-180 step 1: Invoice PDF / PayWay client: a bad transaction id or amount never leaves."
+    },
+    {
+      "test_id": "test_the_qr_works_until_5_days_after_the_due_date_and_at_least_3_days",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: the qr works until 5 days after the due date and at least 3 days."
+    },
+    {
+      "test_id": "test_an_invoice_message_gets_a_new_qr_with_the_amount_to_pay",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: an invoice message gets a new qr with the amount to pay."
+    },
+    {
+      "test_id": "test_an_open_qr_of_the_same_amount_is_used_again",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: an open qr of the same amount is used again."
+    },
+    {
+      "test_id": "test_after_a_part_payment_a_new_qr_replaces_the_old_one",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: after a part payment a new qr replaces the old one."
+    },
+    {
+      "test_id": "test_no_pdf_for_a_paid_invoice_or_another_message",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: no pdf for a paid invoice or another message."
+    },
+    {
+      "test_id": "test_a_payway_refusal_is_raised_so_the_message_waits",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: a payway refusal is raised so the message waits."
+    },
+    {
+      "test_id": "test_an_approved_qr_of_the_right_amount_is_recorded_once",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: an approved qr of the right amount is recorded once."
+    },
+    {
+      "test_id": "test_a_payment_not_as_the_qr_asked_waits_for_the_staff",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: a payment not as the qr asked waits for the staff."
+    },
+    {
+      "test_id": "test_a_payment_the_ledger_refuses_waits_for_the_staff",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: a payment the ledger refuses waits for the staff."
+    },
+    {
+      "test_id": "test_unpaid_expired_and_failed_checks",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: unpaid expired and failed checks."
+    },
+    {
+      "test_id": "test_only_the_hinted_transactions_are_checked",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: only the hinted transactions are checked."
+    },
+    {
+      "test_id": "test_a_qr_older_than_abas_check_window_is_read_with_transaction_details",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 (D): a QR older than ABA's 7-day Check window is read with Get a transaction details, at most 8 a run."
+    },
+    {
+      "test_id": "test_a_qr_abas_never_answers_for_goes_to_the_staff_after_it_expires",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 (D): a QR ABA gives no answer for 2 days after it stops working goes to Needs check."
+    },
+    {
+      "test_id": "test_abas_time_is_phnom_penh_time",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: abas time is phnom penh time."
+    },
+    {
+      "test_id": "test_the_full_check_runs_every_10_minutes",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: the full check runs every 10 minutes."
+    },
+    {
+      "test_id": "test_an_invoice_goes_as_the_pdf_with_the_message_as_caption",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: an invoice goes as the pdf with the message as caption."
+    },
+    {
+      "test_id": "test_an_invoice_waits_while_its_qr_cannot_be_made",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: an invoice waits while its qr cannot be made."
+    },
+    {
+      "test_id": "test_a_long_message_is_cut_to_telegrams_caption_limit",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: a long message is cut to telegrams caption limit."
+    },
+    {
+      "test_id": "test_abas_hint_from_the_relay_is_only_a_transaction_to_check",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: abas hint from the relay is only a transaction to check."
+    },
+    {
+      "test_id": "test_the_operations_file_names_payway_by_its_host_and_secret_files",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: the operations file names payway by its host and secret files."
+    },
+    {
+      "test_id": "test_payway_turned_on_without_keys_stops_invoice_messages",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: payway turned on without keys stops invoice messages."
+    },
+    {
+      "test_id": "test_the_pdf_never_says_unit_twice",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_qr_jobs.py",
+      "status": "implemented",
+      "notes": "DL-180 step 2: QR per Invoice message, PDF sending, payment check: the pdf never says unit twice."
+    },
+    {
+      "test_id": "test_a_qr_is_kept_with_its_invoice_and_its_events_once",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_aba_invoice_qr_migration.py",
+      "status": "implemented",
+      "notes": "DL-180 migration 20270717_340: ABA QR records and the QR payment: a qr is kept with its invoice and its events once."
+    },
+    {
+      "test_id": "test_only_the_office_jobs_reach_the_qr_records",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_aba_invoice_qr_migration.py",
+      "status": "implemented",
+      "notes": "DL-180 migration 20270717_340: ABA QR records and the QR payment: only the office jobs reach the qr records."
+    },
+    {
+      "test_id": "test_an_approved_qr_is_saved_as_a_payment_into_its_invoice_once",
+      "upstream_ids": [
+        "DL-180"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_aba_invoice_qr_migration.py",
+      "status": "implemented",
+      "notes": "DL-180 migration 20270717_340: ABA QR records and the QR payment: an approved qr is saved as a payment into its invoice once."
+    },
+    {
+      "test_id": "test_abas_usd_sell_rate_is_read_exactly",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: abas usd sell rate is read exactly."
+    },
+    {
+      "test_id": "test_no_usable_usd_rate_is_a_fixed_code",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: no usable usd rate is a fixed code."
+    },
+    {
+      "test_id": "test_the_rate_is_asked_at_most_once_an_hour",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: the rate is asked at most once an hour."
+    },
+    {
+      "test_id": "test_without_abas_answer_the_rate_is_not_available_and_staff_type_it",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: without abas answer the rate is not available and staff type it."
+    },
+    {
+      "test_id": "test_an_old_rate_is_never_used_after_the_hour",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: an old rate is never used after the hour."
+    },
+    {
+      "test_id": "test_the_rate_is_off_until_the_payway_keys_are_saved",
+      "upstream_ids": [
+        "DL-181",
+        "BR-MONEY-005",
+        "BR-MONEY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_rate.py",
+      "status": "implemented",
+      "notes": "DL-181 ABA riel rate from ABA PayWay: the rate is off until the payway keys are saved."
+    },
+    {
       "test_id": "TEST-FE-2100",
       "upstream_ids": [
         "TEST-117",
