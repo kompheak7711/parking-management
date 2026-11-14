@@ -131,6 +131,7 @@ export interface ForfeitureReversalDraftInput {
 export interface HandBackResolutionInput {
   action: "VOID" | "CREDIT_ADJUSTMENT";
   expected_outstanding_usd_cents: number;
+  expected_credit_usd_cents: number;
   reason: string;
 }
 

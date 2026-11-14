@@ -397,13 +397,19 @@ class RecordUnitCleaningChargeCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResolveHandBackRentCommand:
-    """BR-RENT-030 for one monthly Rent Invoice: VOID it, or remove each line's unpaid rest."""
+    """BR-RENT-012 (DL-229) for one monthly Rent Invoice: lower each line to the days used.
+
+    The next month's Invoice has no day used: it is made VOID when nothing is paid. The caller
+    sends back the unpaid amount and the credit the assessment showed, so a change in between
+    is refused. A fully paid Invoice is resolved too, so the unpaid amount may be 0.
+    """
 
     idempotency_key: UUID
     expected_action: str
     expected_outstanding_usd_cents: int
     reason: str
     expected_version: int
+    expected_credit_usd_cents: int
 
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
@@ -411,9 +417,14 @@ class ResolveHandBackRentCommand:
             raise ValueError("expected_action must be VOID or CREDIT_ADJUSTMENT")
         if (
             type(self.expected_outstanding_usd_cents) is not int
-            or not 1 <= self.expected_outstanding_usd_cents <= 9_000_000_000_000_000
+            or not 0 <= self.expected_outstanding_usd_cents <= 9_000_000_000_000_000
         ):
-            raise ValueError("expected_outstanding_usd_cents must be a bounded positive integer")
+            raise ValueError("expected_outstanding_usd_cents must be a bounded integer from 0")
+        if (
+            type(self.expected_credit_usd_cents) is not int
+            or not 1 <= self.expected_credit_usd_cents <= 9_000_000_000_000_000
+        ):
+            raise ValueError("expected_credit_usd_cents must be a bounded positive integer")
         _normalized(self.reason, "reason")
         _expected_version(self.expected_version)
 
@@ -1030,7 +1041,7 @@ class PostgresInvoiceService:
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
-        """Show which BR-RENT-030 action applies to a monthly Rent Invoice; changes nothing.
+        """Show the BR-RENT-012 action and amounts for a monthly Rent Invoice; changes nothing.
 
         The answer reveals the Lease termination basis and move-out window, so it needs
         leases.read as well, like the termination Invoice readiness read.
@@ -1050,10 +1061,10 @@ class PostgresInvoiceService:
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
-        """VOID the Invoice (invoices.void) or remove each line's unpaid rest (invoices.adjust)."""
+        """Lower each line to the days used (invoices.adjust) or VOID it (invoices.void)."""
         self._authorize(actor, property_id, HAND_BACK_RENT_CAPABILITIES[command.expected_action])
         return self._execute(
-            "SELECT app.resolve_hand_back_rent_invoice(%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.resolve_hand_back_rent_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 self._actor_id(actor),
@@ -1062,6 +1073,7 @@ class PostgresInvoiceService:
                 command.expected_action,
                 command.expected_version,
                 command.expected_outstanding_usd_cents,
+                command.expected_credit_usd_cents,
                 command.reason,
             ),
         )

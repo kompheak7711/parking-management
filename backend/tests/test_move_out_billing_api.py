@@ -222,6 +222,7 @@ def test_each_business_state_refusal_answers_its_own_code(message: str) -> None:
             json={
                 "action": "VOID",
                 "expected_outstanding_usd_cents": 80_000,
+                "expected_credit_usd_cents": 80_000,
                 "reason": "Before 5th",
             },
             headers=mutation_headers(version=2),
@@ -266,8 +267,19 @@ def test_the_hand_back_assessment_needs_invoice_and_lease_reads() -> None:
 def test_the_hand_back_action_needs_its_own_capability_a_version_and_a_key() -> None:
     flow = Flow()
     url = f"/api/v1/invoices/{flow.invoice}/hand-back-resolution"
-    void = {"action": "VOID", "expected_outstanding_usd_cents": 80_000, "reason": "Before the 5th"}
-    credit = {**void, "action": "CREDIT_ADJUSTMENT", "expected_outstanding_usd_cents": 30_000}
+    void = {
+        "action": "VOID",
+        "expected_outstanding_usd_cents": 80_000,
+        "expected_credit_usd_cents": 80_000,
+        "reason": "After the 25th",
+    }
+    # DL-229: a fully paid Invoice is lowered to the days used, so the unpaid amount may be 0.
+    credit = {
+        **void,
+        "action": "CREDIT_ADJUSTMENT",
+        "expected_outstanding_usd_cents": 0,
+        "expected_credit_usd_cents": 72_258,
+    }
     voider = api(flow, actor(flow.prop, "invoices.void"))
     adjuster = api(flow, actor(flow.prop, "invoices.adjust"))
     assert voider.post(url, json=credit, headers=mutation_headers(version=2)).status_code == 404
@@ -285,8 +297,20 @@ def test_the_hand_back_action_needs_its_own_capability_a_version_and_a_key() -> 
     assert isinstance(command, ResolveHandBackRentCommand)
     assert (command.expected_action, command.expected_version) == ("VOID", 2)
     assert command.expected_outstanding_usd_cents == 80_000
+    assert command.expected_credit_usd_cents == 80_000
+    # The credit the screen showed is required: without it the request is refused.
+    no_credit = {key: value for key, value in credit.items() if key != "expected_credit_usd_cents"}
+    assert (
+        adjuster.post(url, json=no_credit, headers=mutation_headers(version=3)).status_code == 422
+    )
     adjusted = adjuster.post(url, json=credit, headers=mutation_headers(version=3))
     assert adjusted.status_code == 200
+    command = flow.calls[-1][1]
+    assert isinstance(command, ResolveHandBackRentCommand)
+    assert (command.expected_outstanding_usd_cents, command.expected_credit_usd_cents) == (
+        0,
+        72_258,
+    )
     # The person who confirmed the action is the one the screen named.
     other = {**mutation_headers(version=3), "X-Billing-Actor-ID": str(uuid4())}
     assert adjuster.post(url, json=credit, headers=other).status_code == 403

@@ -1955,6 +1955,18 @@ optional `X-Billing-Actor-ID` must name the signed-in person. Answers are `priva
   and nothing outstanding (a credit Adjustment took it to zero) is assessed `KEEP`, not `VOID`;
   the resolution still refuses it and writes nothing, but its refusal code changes from
   `HAND_BACK_ASSESSMENT_CHANGED` to `HAND_BACK_PAID_INVOICE_KEPT`.
+- Amended by DL-229 (owner decision D1 of 12 Nov 2026; migration `20270725_378`, DB-BS-006): a
+  hand-back before the 5th pays only the days used (BR-RENT-012). The assessment also answers
+  `days_used`, `days_in_month`, `kept_usd_cents`, `credit_usd_cents` and `released_usd_cents`
+  (what was paid above the kept amount and goes back as Customer Credit), and each line answers
+  its own three amounts. For the hand-back month the action is `CREDIT_ADJUSTMENT` whether the
+  Invoice is paid or not; `VOID` is only for the next month's Invoice with nothing paid; `KEEP`
+  means nothing is to take off. The resolution body gains the required
+  `"expected_credit_usd_cents"` (1 or more), and `"expected_outstanding_usd_cents"` may be 0 (a
+  fully paid Invoice). A different action, unpaid amount or credit than the assessment answers
+  409 `HAND_BACK_ASSESSMENT_CHANGED`. The answer also carries the five numbers. The message of
+  `HAND_BACK_PAID_INVOICE_KEPT` is now "This Invoice already charges only the days used, so it
+  is kept as it is."
 - On these routes a closed Final Settlement answers 409 `FINAL_SETTLEMENT_CLOSED` (BR-SETTLE-012),
   and a rate or charge id reused with different input answers 409 `IDEMPOTENCY_KEY_REUSED`.
 - Lease draft, draft update, renewal and signing: an End Date that is not the last day of its month

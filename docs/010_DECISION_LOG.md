@@ -3198,3 +3198,22 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270724_393` (DB-BS-005). **API:** `markup_basis_points` is 0 on new previews and records (API-058 amendment). **Screens:** "Fixed markup" shows "None" on new records and "0.5%" on older ones; the Settings Exchange note no longer says "plus 0.5%".
 - **Links:** DL-060, DL-121, DL-181, BR-MONEY-004, BR-MONEY-007.
 - **Decision date:** 2026-11-13.
+
+## DL-229 — A hand-back before the 5th pays only the days used (D1 is built)
+
+- **Type:** `OWNER DECISION` (D1 of DL-226, the owner's "all yes" of 12 Nov 2026 10:39), built in the clean-up step the owner started on 13 Nov 2026 ("start").
+- **Before** (DL-068, DL-069). At a hand-back before the 5th the month's Rent Invoice was treated by what was paid. Unpaid: the whole Invoice was made Void, so the tenant paid nothing for the days in the Unit. Fully paid: the Property kept all of it, so the tenant lost the whole month. Partly paid: the paid part was kept.
+- **Now.** Every tenant pays the same: the days from the 1st to the hand-back day, by the real days of the month (BR-RENT-006). The hand-back day is a day used. Example: Rent 800.00 USD, hand-back on 3 August (31 days): 800.00 × 3 ÷ 31 = 77.42 USD.
+- **How the owner's decision was read.** Claude asked the owner four points on 13 Nov 2026 and built its advice while waiting. The pull request is merged only after the owner's own word, and the owner can change each point:
+  1. A tenant who paid the month pays the days used. The rest becomes Customer Credit (it pays the Customer's other debts first; what is left may be refunded with approval, as every Customer Credit).
+  2. A tenant who did not pay: the Invoice is not made Void any more. It is lowered to the days used, and that amount stays owed.
+  3. The fixed Service lines on the same Invoice (for example Trash Collection) go down by days too, with the Rent line.
+  4. A hand-back on or after the 25th, when next month's Invoice is already made: next month has no day used. Unpaid, the Invoice is made Void as before. Paid in full or in part, credit Adjustments take it to zero and what was paid becomes Customer Credit (before, the Property kept it).
+- **Not changed.** A hand-back on the 5th or later pays the full month. The rule covers only a Lease the Customer ended early, with the hand-back recorded. The 5th and the 25th. One hand-back step for an Invoice. No Payment or Receipt is changed: the money moves by credit Adjustments and Customer Credit, which keep their history.
+- **Told to the owner, not decided.** A late-payment charge already made on the full amount is not changed by this step; a Manager reduces it with the existing reduction if wanted. A resolution made under the old rule stays as it is.
+- **Screen.** Before this change no screen did the hand-back step (staff had to make the Void or the Adjustment by hand on the Invoices page). Move-out, step 2, now shows it after the hand-back: the days used, what the Invoice charges now, the amount for the days used, the amount to take off, how much of it was paid before and goes to Customer Credit, and what is still to pay. One button applies it with a reason (the box offers one). It needs the right to adjust Invoices (or to make an Invoice Void, for next month's unpaid Invoice). English and Khmer.
+- **Database:** migration `20270725_378` (DB-BS-006): five new columns on the hand-back record, the assessment function, and the resolve command made again with the expected credit. Forward-only; no data is changed or deleted. **API:** the assessment answers the days and the amounts; the resolution body gains `expected_credit_usd_cents` (docs/005, API-102 amendment).
+- **Documents:** BR-RENT-012 and BR-SVC-013 in docs/002 say the new rule, and D1 leaves Appendix B; PR-RENT-026 in docs/003.
+- **Open:** the owner's "yes" to the four points; the native Khmer check of the new screen text.
+- **Links:** DL-068, DL-069, DL-090, DL-226; BR-RENT-006, BR-RENT-012, BR-SVC-013.
+- **Decision date:** 2026-11-12 (the owner's decision D1); built 2026-11-13.

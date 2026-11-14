@@ -1413,19 +1413,26 @@ def test_hand_back_rent_command_validates_action_reason_and_version() -> None:
     from property_rental.invoice import ResolveHandBackRentCommand
 
     assert (
-        ResolveHandBackRentCommand(uuid4(), "VOID", 100, "Handed back", 1).expected_action == "VOID"
+        ResolveHandBackRentCommand(uuid4(), "VOID", 100, "Handed back", 1, 100).expected_action
+        == "VOID"
     )
+    # DL-229: a fully paid Invoice is lowered too, so the unpaid amount may be 0.
+    paid = ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 0, "Days used", 1, 100)
+    assert (paid.expected_outstanding_usd_cents, paid.expected_credit_usd_cents) == (0, 100)
     with pytest.raises(ValueError, match="VOID or CREDIT_ADJUSTMENT"):
-        ResolveHandBackRentCommand(uuid4(), "KEEP", 100, "Handed back", 1)
+        ResolveHandBackRentCommand(uuid4(), "KEEP", 100, "Handed back", 1, 100)
     with pytest.raises(ValueError, match="normalized"):
-        ResolveHandBackRentCommand(uuid4(), "VOID", 100, " ", 1)
+        ResolveHandBackRentCommand(uuid4(), "VOID", 100, " ", 1, 100)
     with pytest.raises(ValueError, match="expected_version"):
-        ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 100, "Unpaid rest", 0)
+        ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 100, "Days used", 0, 100)
     with pytest.raises(ValueError, match="nil UUID"):
-        ResolveHandBackRentCommand(UUID(int=0), "VOID", 100, "Handed back", 1)
-    for amount in (0, -1, cast(int, 1.5), cast(int, True)):
+        ResolveHandBackRentCommand(UUID(int=0), "VOID", 100, "Handed back", 1, 100)
+    for amount in (-1, cast(int, 1.5), cast(int, True)):
         with pytest.raises(ValueError, match="expected_outstanding_usd_cents"):
-            ResolveHandBackRentCommand(uuid4(), "VOID", amount, "Handed back", 1)
+            ResolveHandBackRentCommand(uuid4(), "VOID", amount, "Handed back", 1, 100)
+    for amount in (0, -1, cast(int, 1.5), cast(int, True)):
+        with pytest.raises(ValueError, match="expected_credit_usd_cents"):
+            ResolveHandBackRentCommand(uuid4(), "VOID", 100, "Handed back", 1, amount)
 
 
 def test_hand_back_rent_service_needs_the_capability_of_the_action_before_any_connection(
@@ -1440,8 +1447,8 @@ def test_hand_back_rent_service_needs_the_capability_of_the_action_before_any_co
     monkeypatch.setattr("property_rental.invoice.psycopg.connect", unexpected_connect)
     service = PostgresInvoiceService("postgresql://unused", "postgresql://unused")
     prop, invoice = uuid4(), uuid4()
-    void = ResolveHandBackRentCommand(uuid4(), "VOID", 100, "Handed back", 1)
-    credit = ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 100, "Unpaid rest", 1)
+    void = ResolveHandBackRentCommand(uuid4(), "VOID", 100, "Handed back", 1, 100)
+    credit = ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 100, "Days used", 1, 90)
     with pytest.raises(InvoiceAuthorizationError):
         service.resolve_hand_back_rent(prop, invoice, void, actor=actor(prop, "invoices.adjust"))
     with pytest.raises(InvoiceAuthorizationError):

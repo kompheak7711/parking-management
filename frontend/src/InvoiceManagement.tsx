@@ -374,7 +374,10 @@ function BillingWorkspace({
       active = false;
     };
   }, [api, propertyId, capabilityRetry]);
-  useEffect(() => {
+  // A layout effect: the field is marked in the same screen update that shows the refusal.
+  // As a later effect, a reader (and TEST-FE-259 on a busy machine) could find the message
+  // while the field was not marked yet.
+  useLayoutEffect(() => {
     const fields = validation?.fields ?? [];
     const controls: Element[] = [];
     fields.forEach((field, index) => {

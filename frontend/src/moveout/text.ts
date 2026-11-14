@@ -160,10 +160,69 @@ const TEXT = {
     "Handed back on {0}, on or after the 5th: Rent for {1} is due in full.",
     "ប្រគល់នៅ {0} ពីថ្ងៃទី 5 ឡើង៖ ថ្លៃឈ្នួល {1} ត្រូវបង់ពេញ។",
   ],
-  // new: the three cases of the owner's rule (03/10/2026) in one line.
+  // DL-229 (owner, 12/11/2026): every tenant pays the days used, paid or not.
   rent_before5: [
-    "Handed back on {0}, before the 5th: an unpaid Rent Invoice for {1} is voided by a Manager with a reason; a paid one is kept; a partly paid one keeps the paid part.",
-    "ប្រគល់នៅ {0} មុនថ្ងៃទី 5៖ វិក្កយបត្រថ្លៃឈ្នួល {1} មិនទាន់បង់ ត្រូវលុបចោលដោយអ្នកគ្រប់គ្រងដោយមានមូលហេតុ; បានបង់ត្រូវរក្សាទុក; បានបង់ខ្លះរក្សាផ្នែកបានបង់។",
+    "Handed back on {0}, before the 5th: Rent for {1} is charged only for the days used, from the 1st to the hand-back day. Money paid for the other days becomes Customer Credit.",
+    "ប្រគល់នៅ {0} មុនថ្ងៃទី 5៖ ថ្លៃឈ្នួល {1} គិតតែថ្ងៃដែលបានប្រើ ពីថ្ងៃទី 1 ដល់ថ្ងៃប្រគល់។ ប្រាក់ដែលបានបង់សម្រាប់ថ្ងៃផ្សេងទៀត ក្លាយជាឥណទានអតិថិជន។",
+  ],
+  hbr_loading: [
+    "Checking the Rent Invoice…",
+    "កំពុងពិនិត្យវិក្កយបត្រថ្លៃឈ្នួល…",
+  ],
+  hbr_failed: [
+    "The Rent Invoice could not be checked. Reload the page.",
+    "មិនអាចពិនិត្យវិក្កយបត្រថ្លៃឈ្នួលបានទេ។ សូមផ្ទុកទំព័រឡើងវិញ។",
+  ],
+  hbr_t: ["Rent for the days used.", "ថ្លៃឈ្នួលសម្រាប់ថ្ងៃដែលបានប្រើ។"],
+  hbr_days: [
+    "Invoice {0}: {1} of {2} days used.",
+    "វិក្កយបត្រ {0}៖ បានប្រើ {1} ថ្ងៃ ក្នុងចំណោម {2} ថ្ងៃ។",
+  ],
+  hbr_next: [
+    "Invoice {0} is for next month: no day used.",
+    "វិក្កយបត្រ {0} គឺសម្រាប់ខែក្រោយ៖ មិនបានប្រើថ្ងៃណាទេ។",
+  ],
+  hbr_now: ["Invoice charges now", "វិក្កយបត្រគិតឥឡូវ"],
+  hbr_keep: ["For the days used", "សម្រាប់ថ្ងៃដែលបានប្រើ"],
+  hbr_off: ["To take off the Invoice", "ត្រូវដកចេញពីវិក្កយបត្រ"],
+  hbr_back: [
+    "Paid before, goes to Customer Credit",
+    "បានបង់ពីមុន ទៅជាឥណទានអតិថិជន",
+  ],
+  hbr_owed: ["Still to pay after this", "នៅត្រូវបង់បន្ទាប់ពីនេះ"],
+  hbr_reason: ["Reason", "មូលហេតុ"],
+  hbr_reason_help: [
+    "Leave empty to save the reason shown in the box.",
+    "ទុកទទេ ដើម្បីរក្សាទុកមូលហេតុដែលបង្ហាញក្នុងប្រអប់។",
+  ],
+  hbr_reason_default: [
+    "Unit handed back on {0}: Rent for {1} of {2} days",
+    "ប្រគល់បន្ទប់នៅ {0}៖ ថ្លៃឈ្នួលសម្រាប់ {1} ថ្ងៃ ក្នុងចំណោម {2} ថ្ងៃ",
+  ],
+  hbr_btn: [
+    "Lower the Invoice to the days used",
+    "បញ្ចុះវិក្កយបត្រមកត្រឹមថ្ងៃដែលបានប្រើ",
+  ],
+  hbr_btn_void: [
+    "Make next month's Invoice Void",
+    "ទុកវិក្កយបត្រខែក្រោយជាមោឃៈ",
+  ],
+  hbr_done: [
+    "Invoice {0} now charges {1}, for the days used.",
+    "វិក្កយបត្រ {0} ឥឡូវគិត {1} សម្រាប់ថ្ងៃដែលបានប្រើ។",
+  ],
+  hbr_done_void: ["Invoice {0} is now Void.", "វិក្កយបត្រ {0} ឥឡូវទុកជាមោឃៈ។"],
+  hbr_kept: [
+    "Invoice {0} charges {1}: only the days used.",
+    "វិក្កយបត្រ {0} គិត {1}៖ តែថ្ងៃដែលបានប្រើប៉ុណ្ណោះ។",
+  ],
+  hbr_no_adjust: [
+    "Your account cannot adjust Invoices. Ask a Manager to do this step.",
+    "គណនីរបស់អ្នកមិនអាចកែតម្រូវវិក្កយបត្របានទេ។ សូមសុំអ្នកគ្រប់គ្រងធ្វើជំហាននេះ។",
+  ],
+  hbr_no_void: [
+    "Your account cannot make an Invoice Void. Ask a Manager to do this step.",
+    "គណនីរបស់អ្នកមិនអាចទុកវិក្កយបត្រជាមោឃៈបានទេ។ សូមសុំអ្នកគ្រប់គ្រងធ្វើជំហាននេះ។",
   ],
   cond_CLEANING: ["Cleaning", "កំពុងសម្អាត"],
   cond_UNDER_MAINTENANCE: ["Under maintenance", "កំពុងជួសជុល"],

@@ -96,7 +96,7 @@ def test_the_cleaning_rate_and_charge_routes_record_one_charge_from_the_rate_sho
     assert cleaning_rows(migrated_database_url, lease) == (1, 1)
 
 
-def test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once(
+def test_the_hand_back_routes_assess_and_lower_an_unpaid_invoice_once(
     hand_back_database: str,  # noqa: F811
 ) -> None:
     url = hand_back_database
@@ -108,12 +108,21 @@ def test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once(
     assessment = client.get(f"/api/v1/invoices/{august}/hand-back-assessment")
     assert assessment.status_code == 200, assessment.text
     data = assessment.json()["data"]
-    assert (data["coverage"], data["action"]) == ("HAND_BACK_MONTH", "VOID")
+    # DL-229: 3 of 31 days of 800.00 are kept (77.42); 722.58 is taken off.
+    assert (data["coverage"], data["action"]) == ("HAND_BACK_MONTH", "CREDIT_ADJUSTMENT")
+    assert (
+        data["days_used"],
+        data["days_in_month"],
+        data["kept_usd_cents"],
+        data["credit_usd_cents"],
+        data["released_usd_cents"],
+    ) == (3, 31, 7_742, 72_258, 0)
     assert "lease_id" not in data and "hand_back_date" not in data
     body = {
-        "action": "VOID",
+        "action": "CREDIT_ADJUSTMENT",
         "expected_outstanding_usd_cents": data["outstanding_usd_cents"],
-        "reason": "Customer handed back the Parking on 3 August",
+        "expected_credit_usd_cents": data["credit_usd_cents"],
+        "reason": "Customer handed back the Unit on 3 August",
     }
     key, first_version = uuid4(), version(url, august)
     first = {**headers(who, version=first_version), "Idempotency-Key": str(key)}
@@ -122,7 +131,11 @@ def test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once(
     )
     assert resolved.status_code == 200, resolved.text
     assert resolved.headers["etag"] == f'"{version(url, august)}"'
-    assert status(url, august) == "VOID"
+    assert status(url, august) == "UNPAID"
+    assert (resolved.json()["data"]["kept_usd_cents"], resolved.json()["data"]["days_used"]) == (
+        7_742,
+        3,
+    )
     # The same key and version answer the stored result again.
     replayed = client.post(
         f"/api/v1/invoices/{august}/hand-back-resolution", json=body, headers=first

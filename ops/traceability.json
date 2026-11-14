@@ -35307,40 +35307,43 @@
       "notes": "The rate set, rate read and cleaning charge database functions refuse a disabled user account (P4506) and record nothing; the service read maps it to an authorization error."
     },
     {
-      "test_id": "test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_service_lines",
+      "test_id": "test_hand_back_before_the_fifth_lowers_the_unpaid_invoice_and_its_service_lines",
       "upstream_ids": [
         "BR-RENT-030",
         "BR-RENT-026",
         "BR-LEASE-021",
-        "BR-MOVEOUT-010"
+        "BR-MOVEOUT-010",
+        "DL-229"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_hand_back_rent_migration.py",
       "status": "implemented",
-      "notes": "After a verified voluntary early termination with a hand-back on 3 August, the unpaid August monthly Rent Invoice is assessed as VOID without showing Lease, move-out or date identities, and an invoices.void holder VOIDs the whole Invoice, Rent and Trash Collection lines, with a reason; invoices.adjust alone, a mismatched expected action and a mismatched expected outstanding amount are refused; replay returns the same result; key reuse (other reason or other Invoice) and a second resolution are refused; lines keep their amounts; the append-only resolution links the move-out record, the VOID event and its own audit event."
+      "notes": "Changed by DL-229: after a verified voluntary early termination with a hand-back on 3 August, the unpaid August monthly Rent Invoice is assessed as a credit Adjustment without showing Lease, move-out or date identities, and an invoices.adjust holder lowers the Rent and Trash Collection lines to 3 of 31 days with a reason (no VOID event); invoices.void alone, a mismatched expected action, unpaid amount or credit are refused; replay returns the same result; key reuse (other reason or other Invoice) and a second resolution are refused; lines keep their original amounts; the append-only resolution links the move-out record and its own audit event."
     },
     {
-      "test_id": "test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line",
+      "test_id": "test_partly_paid_invoice_goes_down_to_the_days_used_and_gives_back_what_was_paid_above",
       "upstream_ids": [
         "BR-RENT-030",
         "BR-RENT-026",
-        "BR-INV-048"
+        "BR-INV-048",
+        "DL-229"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_hand_back_rent_migration.py",
       "status": "implemented",
-      "notes": "A Payment on the Rent line and Customer Credit on the Trash line both count as paid; an invoices.adjust holder removes the unpaid rest of each line with one linked credit Adjustment per line (Rent and Trash) and a reason, leaving nothing outstanding; the Payment and Credit applications are unchanged and invoices.void alone is refused. Each Adjustment references the resolution, not the move-out record."
+      "notes": "Changed by DL-229: a Payment on the Rent line and Customer Credit on the Trash line both count as paid; an invoices.adjust holder lowers each line to 4 of 31 days with one linked credit Adjustment per line (Rent and Trash) and a reason, leaving nothing outstanding; what was paid above the days used is released (the Rent line keeps 103.23 of its Payment, the Trash line 1.29 of its Credit) and invoices.void alone is refused. Each Adjustment references the resolution, not the move-out record."
     },
     {
-      "test_id": "test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_kept_when_paid",
+      "test_id": "test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_given_back_when_paid",
       "upstream_ids": [
         "BR-RENT-030",
-        "BR-RENT-026"
+        "BR-RENT-026",
+        "DL-229"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_hand_back_rent_migration.py",
       "status": "implemented",
-      "notes": "A hand-back on or after the 25th covers the next month's monthly Rent Invoice only: unpaid it is VOIDed; fully paid it is kept as issued and the command records nothing (BR-RENT-026 amendment, Q-2026-10-04-9); the hand-back month's own Invoice is not covered."
+      "notes": "Changed by DL-229: a hand-back on or after the 25th covers the next month's monthly Rent Invoice only: unpaid it is VOIDed with its VOID event; fully paid it has no day used, is never VOIDed, and is credited to zero so the money goes back as Customer Credit; the hand-back month's own Invoice is not covered."
     },
     {
       "test_id": "test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_input",
@@ -37549,15 +37552,16 @@
       "notes": "RENT_PERIOD_NOT_BILLED lists every recurring Rent month a Rent run would still bill, also a month whose Rent Invoice staff VOIDed for another reason, and refuses the draft until each month is billed; then nothing blocks (owner answers 2 to Q-2026-10-06-33 and to Q-2026-10-06-34; V1-056 sub-slice 8e-3)."
     },
     {
-      "test_id": "test_a_month_voided_by_the_hand_back_rule_does_not_block",
+      "test_id": "test_a_month_lowered_by_the_hand_back_rule_does_not_block",
       "upstream_ids": [
         "BR-RENT-030",
-        "BR-SETTLE-011"
+        "BR-SETTLE-011",
+        "DL-229"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_final_settlement_confirm_migration.py",
       "status": "implemented",
-      "notes": "A month whose Rent Invoice a BR-RENT-030 hand-back resolution VOIDed stays billable for the billing rule but does not block the Settlement (owner answer to Q-2026-10-06-34; V1-056 sub-slice 8e-3)."
+      "notes": "Changed by DL-229: a month whose Rent Invoice a hand-back resolution lowered to the days used keeps its Invoice (it is not VOID), stays billable for the billing rule and does not block the Settlement (owner answer to Q-2026-10-06-34; V1-056 sub-slice 8e-3)."
     },
     {
       "test_id": "test_the_closure_guard_and_snapshots_refuse_what_the_confirm_would_not_write",
@@ -50278,17 +50282,18 @@
       "notes": "On real PostgreSQL, a rate is set, a stale form is told the rate changed, and one cleaning charge is recorded; a replay answers the same charge (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
     },
     {
-      "test_id": "test_the_hand_back_routes_assess_and_void_an_unpaid_invoice_once",
+      "test_id": "test_the_hand_back_routes_assess_and_lower_an_unpaid_invoice_once",
       "upstream_ids": [
         "API-102",
         "BR-RENT-030",
         "API-016",
-        "DL-084"
+        "DL-084",
+        "DL-229"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_move_out_billing_api_migration.py",
       "status": "implemented",
-      "notes": "On real PostgreSQL, an unpaid hand-back month Invoice is assessed and voided once; a replay answers the stored result (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
+      "notes": "Changed by DL-229: on real PostgreSQL, an unpaid hand-back month Invoice is assessed (3 of 31 days, the amounts) and lowered to the days used once; a replay answers the stored result (V1-056 slice 11a, move-out cleaning and hand-back routes; ops/reviews/V1-056-slice-11a.md; DL-084)."
     },
     {
       "test_id": "test_an_end_date_that_is_not_a_month_end_answers_its_own_code",
@@ -67588,6 +67593,213 @@
       "test_path": "frontend/src/financialUiContext.test.ts",
       "status": "implemented",
       "notes": "A riel rate record is checked by its own mark-up: 0 with ABA's Sell rate rounded up loads, 50 (saved before DL-228) with 1.005 loads, any other pair is refused."
+    },
+    {
+      "test_id": "test_migration_378_follows_393_and_is_forward_only",
+      "upstream_ids": [
+        "DL-229",
+        "DB-BS-006"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270725_378 follows 20270724_393 and has no downgrade."
+    },
+    {
+      "test_id": "test_the_tenant_who_did_not_pay_owes_the_days_used",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "BR-RENT-006",
+        "DB-BS-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "Hand-back on 3 August, nothing paid: the assessment shows 3 of 31 days, 78.39 kept (Rent 77.42, Trash Collection 0.97) and 731.61 to take off; invoices.void alone is refused; a stale action, unpaid amount or credit is refused; two credit Adjustments leave 78.39 owed, the Invoice is not VOID, and the resolution and the audit event keep the numbers and name BR-RENT-012 and DL-229."
+    },
+    {
+      "test_id": "test_the_tenant_who_paid_gets_the_unused_days_back_as_customer_credit",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "DB-BS-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "Hand-back on 3 August, the month fully paid: the Invoice goes down to 78.39 and stays PAID; the 731.61 paid for the other days becomes Customer Credit; no Payment is changed."
+    },
+    {
+      "test_id": "test_a_part_payment_above_the_days_used_gives_the_rest_back",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "200.00 paid on the Rent line, hand-back on 4 August: the Rent line keeps 103.23 and 96.77 becomes Customer Credit; the Trash line still owes 1.29."
+    },
+    {
+      "test_id": "test_a_part_payment_below_the_days_used_leaves_the_rest_owed",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "50.00 paid, hand-back on 4 August: the line goes down to 103.23, 53.23 stays owed and nothing becomes Customer Credit."
+    },
+    {
+      "test_id": "test_the_hand_back_day_is_a_day_used",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "BR-RENT-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "A hand-back on the 1st, 2nd, 3rd or 4th keeps 1, 2, 3 or 4 of 31 days of 800.00: 25.81, 51.61, 77.42, 103.23."
+    },
+    {
+      "test_id": "test_on_the_5th_and_later_the_month_is_charged_in_full",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "A hand-back on the 5th is not covered: the month's Invoice stays in full and nothing is recorded."
+    },
+    {
+      "test_id": "test_the_next_month_has_no_day_used_void_when_unpaid_and_all_back_when_paid",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "DB-BS-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "A hand-back on or after the 25th: next month's paid Invoice is credited to zero and all 810.00 becomes Customer Credit (it is not VOID); next month's unpaid Invoice is made VOID; the hand-back month's own Invoice is untouched."
+    },
+    {
+      "test_id": "test_an_invoice_already_at_the_days_used_is_kept",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "After the resolution a second one is refused and the assessment says KEEP with the kept amount and nothing to take off."
+    },
+    {
+      "test_id": "test_the_new_command_is_least_privilege_and_the_old_one_is_gone",
+      "upstream_ids": [
+        "DL-229",
+        "DB-BS-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_hand_back_days_used_migration.py",
+      "status": "implemented",
+      "notes": "Only one resolve command exists (the old eight-parameter one is dropped); only the financial role may run it; no role reads the resolution table."
+    },
+    {
+      "test_id": "TEST-FE-2240",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "The hand-back day names the month whose Rent Invoice is decided: before the 5th its own month, from the 25th the next month, in between none; an answer that cannot be read is not shown as numbers."
+    },
+    {
+      "test_id": "TEST-FE-2241",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "API-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "An unpaid Invoice handed back on the 3rd shows 3 of 31 days and the amounts; Lower the Invoice sends the action, unpaid amount and credit shown, the Invoice version and the offered reason."
+    },
+    {
+      "test_id": "TEST-FE-2242",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "API-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "A fully paid Invoice shows what goes back as Customer Credit and sends 0 as the unpaid amount, with the reason staff typed."
+    },
+    {
+      "test_id": "TEST-FE-2243",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012",
+        "API-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "A hand-back from the 25th reads next month's Invoice: unpaid it is made Void; a person who cannot make an Invoice Void sees why there is no button."
+    },
+    {
+      "test_id": "TEST-FE-2244",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "Nothing is asked or shown when the rule does not apply (5th to 24th, no Invoice for the month, a VOID Invoice, a Lease the rule does not cover, no right to read Invoices); an Invoice already at the days used says so; a server failure is said."
+    },
+    {
+      "test_id": "TEST-FE-2245",
+      "upstream_ids": [
+        "DL-229",
+        "API-102",
+        "API-016"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/HandBackRentStep.test.tsx",
+      "status": "implemented",
+      "notes": "A refusal shows the server's words and reads the amounts again; after a lost answer the next try sends the same key."
+    },
+    {
+      "test_id": "TEST-FE-2246",
+      "upstream_ids": [
+        "DL-229",
+        "BR-RENT-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/moveout/MoveoutPage.test.tsx",
+      "status": "implemented",
+      "notes": "On the Move-out page, step 2 shows the Rent for the days used after a hand-back on the 3rd; the button sends the amounts shown, the page says what the Invoice charges now and reads its records again; a hand-back on the 12th asks nothing."
+    },
+    {
+      "test_id": "TEST-FE-2247",
+      "upstream_ids": [
+        "UI-007",
+        "UI-014"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A refused billing form marks its wrong field in the same screen update that shows the refusal, so the message never shows with an unmarked field (the timing fault behind an intermittent TEST-FE-259)."
     }
   ]
 }

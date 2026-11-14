@@ -2277,6 +2277,8 @@ Amended by DL-068 and DL-069 (2026-10-03): a VOID under BR-RENT-030 VOIDs the wh
 
 Amended by the owner's answer to Q-2026-10-04-9 (2026-10-04): Under BR-RENT-030, a fully paid Rent Invoice for the hand-back month, or for the next month when the hand-back is between the 25th and the month end, is kept as issued with no VOID, Refund or credit Adjustment (DL-068, Q-2026-10-04-8).
 
+Amended by DL-229 (owner decision D1 of 12 Nov 2026; migration `20270725_378`): the two amendments above are replaced. After a hand-back before the 5th, each line of that month's Rent Invoice (the Rent and its fixed Service lines) goes down to the days used, from the 1st to the hand-back day, by a credit Adjustment, whether the Invoice was paid or not; what was paid above the days used becomes Customer Credit. The next month's Invoice (hand-back on or after the 25th) has no day used: unpaid it is VOID as a whole; paid in full or in part it is credited to zero and what was paid becomes Customer Credit. The Move-out page shows the amounts after the hand-back and applies them in one step with a reason.
+
 ### PR-RENT-027 — Scheduled Billing Idempotency
 
 **Business-rule traceability:** `BR-RENT-027`

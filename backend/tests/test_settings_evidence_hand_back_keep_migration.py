@@ -93,7 +93,9 @@ def test_an_invoice_credit_adjusted_to_zero_is_kept_at_hand_back(
         assessment["outstanding_usd_cents"],
     ) == ("KEEP", 0, 0)
     for action in ("VOID", "CREDIT_ADJUSTMENT"):
-        with pytest.raises(psycopg.errors.InvalidParameterValue, match="kept as issued"):
+        with pytest.raises(
+            psycopg.errors.InvalidParameterValue, match="already charges only the days used"
+        ):
             raw_resolve(scenario, august, action, version(url, august), 1)
     assert resolution_count(url, august) == 0
     assert (version(url, august), status(url, august)) == before

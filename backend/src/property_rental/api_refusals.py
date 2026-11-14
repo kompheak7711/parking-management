@@ -251,7 +251,7 @@ HAND_BACK_ALREADY_RESOLVED = Refusal(
 HAND_BACK_PAID_INVOICE_KEPT = Refusal(
     409,
     "HAND_BACK_PAID_INVOICE_KEPT",
-    "This Invoice owes nothing, so it is kept as it is.",
+    "This Invoice already charges only the days used, so it is kept as it is.",
     ("BR-RENT-030",),
 )
 HAND_BACK_ASSESSMENT_CHANGED = Refusal(

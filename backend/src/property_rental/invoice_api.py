@@ -916,7 +916,7 @@ REFUSALS_BY_DATABASE_MESSAGE: Final[dict[str, Refusal]] = {
     "The current move-out record is ambiguous": HAND_BACK_MOVE_OUT_UNCLEAR,
     "The Invoice month is not covered by the hand-back date": HAND_BACK_MONTH_NOT_COVERED,
     "The Invoice already has a hand-back resolution": HAND_BACK_ALREADY_RESOLVED,
-    "A fully paid hand-back Invoice is kept as issued": HAND_BACK_PAID_INVOICE_KEPT,
+    "The hand-back Invoice already charges only the days used": HAND_BACK_PAID_INVOICE_KEPT,
     "The hand-back assessment changed": HAND_BACK_ASSESSMENT_CHANGED,
     # Raised by app.void_invoice inside the hand-back VOID; reason and status are already valid.
     "Invoice VOID dependencies are not resolved": HAND_BACK_VOID_BLOCKED,
@@ -990,7 +990,8 @@ class HandBackResolutionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     action: Literal["VOID", "CREDIT_ADJUSTMENT"]
-    expected_outstanding_usd_cents: int = Field(strict=True, ge=1, le=9_000_000_000_000_000)
+    expected_outstanding_usd_cents: int = Field(strict=True, ge=0, le=9_000_000_000_000_000)
+    expected_credit_usd_cents: int = Field(strict=True, ge=1, le=9_000_000_000_000_000)
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
 
 
@@ -1142,6 +1143,7 @@ def create_move_out_billing_router(
                     body.expected_outstanding_usd_cents,
                     body.reason,
                     expected_version,
+                    body.expected_credit_usd_cents,
                 ),
                 actor=actor,
             )

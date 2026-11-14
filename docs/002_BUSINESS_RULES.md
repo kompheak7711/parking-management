@@ -493,18 +493,20 @@ When a Customer leaves before the Lease End Date and Property Management process
 
 - The Rent of the calendar month of the real hand-back date is charged in full. It is not worked out by days.
 - No Rent is made for a month after the real termination date.
-- A hand-back before the 5th of a month (the real hand-back date counts, not the notice date):
-  - that month's Rent Invoice is unpaid: an authorized user makes the whole Invoice Void with a reason, with its fixed Service lines;
-  - it is fully paid: the Property keeps it, with no Refund and no credit Adjustment, and the Customer may stay to the last day of that month;
-  - it is partly paid: the Property keeps the paid part, and a credit Adjustment with a reason removes the unpaid rest.
-- When the hand-back is between the issue day and the end of a month, the same three outcomes apply to the next month's Rent Invoice that was already made.
+- A hand-back before the 5th of a month is the one exception (the real hand-back date counts, not the notice date). The Customer pays only the days used, the same whether that month's Rent Invoice was paid or not:
+  - the days used are the days from the 1st to the hand-back day. The hand-back day is a day used;
+  - each line of that month's Rent Invoice, the Rent and its fixed Service lines, goes down to the days used, with the formula of BR-RENT-006. An authorized user does this in one step with a reason, and the app makes a credit Adjustment for each line;
+  - what the Customer paid above the days used becomes Customer Credit. No Payment is changed;
+  - what is not yet paid of the days used stays owed.
+  - Example: Rent 800.00 USD, hand-back on 3 August (31 days). To pay: 800.00 × 3 ÷ 31 = 77.42 USD.
+- When the hand-back is between the issue day and the end of a month, the next month's Rent Invoice that was already made has no day used. Unpaid: an authorized user makes the whole Invoice Void with a reason, with its fixed Service lines. Paid in full or in part: credit Adjustments take it down to zero, and what was paid becomes Customer Credit.
 
 When another approved rule or the signed Lease asks for a last month by days, the period is from the first day of the month to the real termination date, with the formula of BR-RENT-006.
 
 An Invoice made in advance for a period that is no longer valid is never edited or deleted. It is made Void or gets a credit Adjustment (BR-INV-021, BR-INV-046). The last Rent is worked out apart from the Deposits, Damage, Utilities and the Final Settlement.
 
 Replaces: BR-RENT-014, BR-RENT-024, BR-RENT-025, BR-RENT-026, BR-RENT-030.
-Decisions: DL-068, DL-069.
+Decisions: DL-068, DL-069, DL-229.
 
 ---
 
@@ -635,7 +637,7 @@ Decisions: DL-075.
 
 ### BR-SVC-013 — The Last Month
 
-A Service is not worked out by days just because the people leave during a month. The last Service charge follows the Lease and the Rent rule for the last month (BR-RENT-012): when the hand-back month's Rent Invoice is made Void, its Service lines go with it.
+A Service is not worked out by days just because the people leave during a month. The last Service charge follows the Lease and the Rent rule for the last month (BR-RENT-012): at a hand-back before the 5th, the fixed Service lines of that month's Rent Invoice go down to the days used with the Rent line; when next month's unpaid Rent Invoice is made Void, its Service lines go with it.
 
 ---
 
@@ -1803,7 +1805,6 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| D1 | BR-RENT-012: at a hand-back before the 5th, the tenant who paid the month loses it, and the tenant who did not pay owes nothing | One outcome for both: each pays only the days used |
 | D3 | BR-INV-021: an amount missed on a fully paid line is billed as an Other charge or a Damage charge | The new charge keeps the type of what was missed |
 | D4 | BR-DEP-010: the Pet Deposit for a pet kept from the start is due within five days after the Lease Start Date | It is received at Sign Lease, with the Security Deposit and the Initial Rent |
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
@@ -1814,7 +1815,7 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

@@ -833,7 +833,7 @@ def test_move_out_correction_is_refused_when_a_hand_back_resolution_relies_on_it
     scenario = lease_with_invoices(url, (AUGUST,))
     first = hand_back(url, scenario, date(2026, 8, 3))
     august = scenario.invoices[AUGUST]
-    raw_resolve(scenario, august, "VOID", version(url, august), 80_000)
+    raw_resolve(scenario, august, "CREDIT_ADJUSTMENT", version(url, august), 80_000, credit=72_258)
     resolution = row(
         url, "SELECT id FROM app.hand_back_rent_resolutions WHERE invoice_id=%s", august
     )[0]

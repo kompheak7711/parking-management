@@ -1781,6 +1781,51 @@ describe("V1-047 bounded correction regressions", () => {
       screen.queryByText("reason: Check this value."),
     ).not.toBeInTheDocument();
   });
+  it("TEST-FE-2247 marks the wrong field in the same screen update that shows the refusal", async () => {
+    const { api, journal } = setup();
+    vi.mocked(api.correctDraft).mockRejectedValue(
+      new InvoiceClientError(
+        422,
+        "VALIDATION_ERROR",
+        false,
+        null,
+        ["reason"],
+        "request-safe-456",
+      ),
+    );
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Corrected authorized obligation ID", "approved");
+    fill("Draft correction reason", "reason");
+    const field = screen.getByLabelText("Draft correction reason");
+    // What a screen reader finds when the refusal first shows, before any later effect runs.
+    const seen: (string | null)[] = [];
+    const watcher = new MutationObserver(() => {
+      if (
+        seen.length === 0 &&
+        screen.queryByText("Support request ID: request-safe-456")
+      ) {
+        seen.push(field.getAttribute("aria-invalid"));
+      }
+    });
+    watcher.observe(document.body, { childList: true, subtree: true });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review draft correction" }),
+    );
+    await confirm();
+    await waitFor(() => {
+      expect(seen).toHaveLength(1);
+    });
+    watcher.disconnect();
+    expect(seen).toEqual(["true"]);
+  });
   it("replaces read feedback and never associates read errors with a previous form", async () => {
     const { api, journal } = setup();
     vi.mocked(api.list).mockRejectedValueOnce(

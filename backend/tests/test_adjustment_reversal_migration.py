@@ -660,11 +660,17 @@ def test_an_adjustment_a_hand_back_resolution_wrote_is_refused(
     [(rent, _, _)] = hand_back_lines(url, august)
     hand_back_pay(url, scenario, august, rent, 20_000)
     hand_back(url, scenario, date(2026, 8, 4))
+    # DL-229: 4 of 31 days are kept (103.23); the credit Adjustment takes off 696.77.
     hand_back_invoices().resolve_hand_back_rent(
         scenario.prop,
         august,
         ResolveHandBackRentCommand(
-            uuid4(), "CREDIT_ADJUSTMENT", 60_000, "Unpaid rest", hand_back_version(url, august)
+            uuid4(),
+            "CREDIT_ADJUSTMENT",
+            60_000,
+            "Days used",
+            hand_back_version(url, august),
+            69_677,
         ),
         actor=hand_back_staff(scenario.human, scenario.prop),
     )

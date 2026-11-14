@@ -573,6 +573,7 @@ function setup(
     extraCharge?: SettlementApi["extraCharge"];
     forfeitureDraft?: SettlementApi["forfeitureDraft"];
     problems?: ProblemReport[];
+    handBackAssessment?: SettlementApi["handBackAssessment"];
   } = {},
 ) {
   const byId = new Map(leases.map((item) => [item.lease_id, item]));
@@ -800,11 +801,29 @@ function setup(
           })),
     ),
   };
+  // DL-229: by default the server says the hand-back rule does not cover the Invoice.
+  const handBackApi = {
+    handBackAssessment: vi.fn<SettlementApi["handBackAssessment"]>(
+      options.handBackAssessment ??
+        (() =>
+          Promise.reject(
+            new SettlementRequestError(
+              409,
+              "HAND_BACK_NOT_EARLY_TERMINATION",
+              "The hand-back rule covers only a Lease the Customer chose to end early.",
+            ),
+          )),
+    ),
+    resolveHandBack: vi.fn<SettlementApi["resolveHandBack"]>(() =>
+      Promise.resolve({ action: "CREDIT_ADJUSTMENT" }),
+    ),
+  };
   render(
     <MoveoutPage
       active
       capabilities={options.capabilities ?? null}
       depositApi={depositApi}
+      handBackApi={handBackApi}
       invoiceApi={invoiceApi}
       language="en"
       leaseApi={leaseApi}
@@ -828,6 +847,7 @@ function setup(
     invoiceApi,
     settlementApi,
     problemsApi,
+    handBackApi,
   };
 }
 
@@ -3752,6 +3772,85 @@ describe("Move-out step 6: after closure", () => {
         "The move-out is finished. Use this step only if something comes up later.",
       ),
     ).toBeTruthy();
+  });
+  it("TEST-FE-2246 after a hand-back on the 3rd of a Lease ended early, step 2 shows the Rent for the days used; Lower the Invoice sends the amounts shown, says what the Invoice charges now and reads the page again", async () => {
+    window.location.hash = "#/moveout/lease-U105";
+    const early: MoveOutPage = {
+      ...handedBackPage,
+      items: handedBackPage.items.map((item) => ({
+        ...item,
+        actual_move_out_date: "2026-10-03",
+      })),
+    };
+    const rent: InvoiceResource = {
+      ...finalInvoice(),
+      id: "invoice-rent-october",
+      invoice_number: "INV-0040",
+      category: "RENT",
+      billing_period: {
+        start: "2026-10-01",
+        end: "2026-10-31",
+        end_inclusive: true,
+      },
+    };
+    const { handBackApi, moveOutApi, invoiceApi } = setup([out], {
+      page: early,
+      invoices: () => Promise.resolve([rent]),
+      handBackAssessment: () =>
+        Promise.resolve({
+          invoice_version: 2,
+          coverage: "HAND_BACK_MONTH",
+          action: "CREDIT_ADJUSTMENT",
+          days_used: 3,
+          days_in_month: 31,
+          applied_usd_cents: 0,
+          outstanding_usd_cents: 80000,
+          kept_usd_cents: 7742,
+          credit_usd_cents: 72258,
+          released_usd_cents: 0,
+        }),
+    });
+    await screen.findByText(
+      /Handed back on 03\/10\/2026, before the 5th: Rent for October 2026 is charged only for the days used/,
+    );
+    await screen.findByText("Invoice INV-0040: 3 of 31 days used.");
+    expect(
+      invoiceApi.list.mock.calls.some((call) => call[1]?.category === "RENT"),
+    ).toBe(true);
+    const reads = moveOutApi.read.mock.calls.length;
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Lower the Invoice to the days used",
+      }),
+    );
+    await screen.findByText(
+      "Invoice INV-0040 now charges $77.42, for the days used.",
+    );
+    expect(handBackApi.resolveHandBack.mock.calls[0]?.slice(0, 3)).toEqual([
+      "invoice-rent-october",
+      2,
+      {
+        action: "CREDIT_ADJUSTMENT",
+        expected_outstanding_usd_cents: 80000,
+        expected_credit_usd_cents: 72258,
+        reason: "Unit handed back on 03/10/2026: Rent for 3 of 31 days",
+      },
+    ]);
+    await waitFor(() => {
+      expect(moveOutApi.read.mock.calls.length).toBeGreaterThan(reads);
+    });
+    cleanup();
+
+    // The hand-back on the 12th of the other tests: the rule has no month, nothing is asked.
+    window.location.hash = "#/moveout/lease-U105";
+    const later = setup([out], { page: handedBackPage });
+    await screen.findAllByText(/Handed back on 12\/10\/2026/);
+    expect(later.handBackApi.handBackAssessment).not.toHaveBeenCalled();
+    expect(
+      later.invoiceApi.list.mock.calls.some(
+        (call) => call[1]?.category === "RENT",
+      ),
+    ).toBe(false);
   });
 });
 

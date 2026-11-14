@@ -1104,27 +1104,28 @@ def test_a_settlement_waits_for_every_unbilled_rent_month(migrated_database_url:
     assert view["blocking_issues"] == [] and view["ready"] is True
 
 
-def test_a_month_voided_by_the_hand_back_rule_does_not_block(hand_back_database: str) -> None:
-    """Owner answer to Q-2026-10-06-34: after a voluntary hand-back on 3 August the August Rent
-    Invoice is VOIDed under BR-RENT-030; the billing rule still counts August as billable (the
-    early final month), but the month is decided, so RENT_PERIOD_NOT_BILLED leaves it out."""
+def test_a_month_lowered_by_the_hand_back_rule_does_not_block(hand_back_database: str) -> None:
+    """Owner answer to Q-2026-10-06-34, and DL-229: after a voluntary hand-back on 3 August the
+    August Rent Invoice is lowered to the days used (BR-RENT-012). It is not VOID, so August has
+    its Invoice and RENT_PERIOD_NOT_BILLED leaves the month out."""
     url = hand_back_database
     scenario = lease_with_invoices(url, (AUGUST,))
     august = scenario.invoices[AUGUST]
     hand_back(url, scenario, date(2026, 8, 3))
     who = hand_back_staff(scenario.human, scenario.prop)
     owed = hand_back_invoices().hand_back_rent_assessment(scenario.prop, august, actor=who)
-    assert (owed["coverage"], owed["action"]) == ("HAND_BACK_MONTH", "VOID")
+    assert (owed["coverage"], owed["action"]) == ("HAND_BACK_MONTH", "CREDIT_ADJUSTMENT")
     assert unbilled_rent_months(url, scenario.lease) == []
     hand_back_invoices().resolve_hand_back_rent(
         scenario.prop,
         august,
         ResolveHandBackRentCommand(
             uuid4(),
-            "VOID",
+            "CREDIT_ADJUSTMENT",
             int(str(owed["outstanding_usd_cents"])),
             "Customer handed back the Parking on 3 August",
             invoice_version(url, august),
+            int(str(owed["credit_usd_cents"])),
         ),
         actor=who,
     )
@@ -1159,9 +1160,10 @@ def test_a_next_month_voided_by_the_hand_back_rule_does_not_block(
     hand_back_database: str,
 ) -> None:
     """Owner answer to Q-2026-10-06-34 (follow-up, 2026-10-06): after a hand-back between the
-    25th and the month end, the hand-back resolution VOIDs next month's Rent Invoice (BR-RENT-030,
-    slice 5). With the termination dated in that next month, the billing rule counts the month as
-    billable (the early final month), but its Rent was decided, so it does not block."""
+    25th and the month end, the hand-back resolution VOIDs next month's unpaid Rent Invoice
+    (BR-RENT-012, slice 5). With the termination dated in that next month, the billing rule counts
+    the month as billable (the early final month), but its Rent was decided, so it does not
+    block."""
     url = hand_back_database
     scenario = lease_with_invoices(url, (AUGUST, SEPTEMBER))
     september = scenario.invoices[SEPTEMBER]
@@ -1179,6 +1181,7 @@ def test_a_next_month_voided_by_the_hand_back_rule_does_not_block(
             int(str(owed["outstanding_usd_cents"])),
             "Customer handed back the Parking on 26 August",
             invoice_version(url, september),
+            int(str(owed["credit_usd_cents"])),
         ),
         actor=who,
     )

@@ -322,12 +322,14 @@ def raw_resolve(
     expected_version: int,
     outstanding: int,
     *,
+    credit: int | None = None,
     actor: UUID | None = None,
     prop: UUID | None = None,
 ) -> dict[str, Any]:
+    """Call the database command directly; the expected credit is the unpaid amount if not given."""
     with psycopg.connect(financial_database_url()) as connection:
         row = connection.execute(
-            "SELECT app.resolve_hand_back_rent_invoice(%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.resolve_hand_back_rent_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 prop or scenario.prop,
                 actor or scenario.human,
@@ -336,11 +338,33 @@ def raw_resolve(
                 action,
                 expected_version,
                 outstanding,
+                outstanding if credit is None else credit,
                 "Direct",
             ),
         ).fetchone()
     assert row is not None
     return cast(dict[str, Any], row[0])
+
+
+def resolve_as_shown(
+    url: str, scenario: Scenario, invoice: UUID, reason: str = "Hand-back rule"
+) -> dict[str, Any]:
+    """Resolve with exactly what the assessment shows, as the screen does (DL-229)."""
+    who = staff(scenario.human, scenario.prop)
+    shown = invoices().hand_back_rent_assessment(scenario.prop, invoice, actor=who)
+    return invoices().resolve_hand_back_rent(
+        scenario.prop,
+        invoice,
+        ResolveHandBackRentCommand(
+            uuid4(),
+            cast(str, shown["action"]),
+            cast(int, shown["outstanding_usd_cents"]),
+            reason,
+            version(url, invoice),
+            cast(int, shown["credit_usd_cents"]),
+        ),
+        actor=who,
+    )
 
 
 def raw_assess(
@@ -355,7 +379,7 @@ def raw_assess(
     return cast(dict[str, Any], row[0])
 
 
-def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_service_lines(
+def test_hand_back_before_the_fifth_lowers_the_unpaid_invoice_and_its_service_lines(
     hand_back_database: str,
 ) -> None:
     url = hand_back_database
@@ -371,33 +395,38 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
         assessment["action"],
         assessment["applied_usd_cents"],
         assessment["outstanding_usd_cents"],
-    ) == ("HAND_BACK_MONTH", "VOID", 0, 81_000)
+    ) == ("HAND_BACK_MONTH", "CREDIT_ADJUSTMENT", 0, 81_000)
     # An invoices.read holder sees no Lease, move-out or termination identities or dates.
     assert not {"lease_id", "customer_id", "physical_move_out_event_id", "hand_back_date"} & set(
         assessment
     )
+    # DL-229: 3 of 31 days are kept (77.42 + 0.97); the rest of each line is credited.
     request = ResolveHandBackRentCommand(
         uuid4(),
-        "VOID",
+        "CREDIT_ADJUSTMENT",
         81_000,
-        "Customer handed back the Parking on 3 August",
+        "Customer handed back the Unit on 3 August",
         version(url, august),
+        73_161,
     )
     with pytest.raises(InvoiceAuthorizationError):
         invoices().resolve_hand_back_rent(
             scenario.prop,
             august,
             request,
-            actor=staff(scenario.human, scenario.prop, "invoices.read", "invoices.adjust"),
+            actor=staff(scenario.human, scenario.prop, "invoices.read", "invoices.void"),
         )
     for stale in (
-        replace(request, expected_action="CREDIT_ADJUSTMENT"),
+        replace(request, expected_action="VOID"),
         replace(request, expected_outstanding_usd_cents=80_000),
+        replace(request, expected_credit_usd_cents=81_000),
     ):
         with pytest.raises(InvoiceConflictError):
             invoices().resolve_hand_back_rent(scenario.prop, august, stale, actor=who)
     resolved = invoices().resolve_hand_back_rent(scenario.prop, august, request, actor=who)
-    assert resolved["action"] == "VOID" and resolved["adjustment_ids"] == []
+    assert resolved["action"] == "CREDIT_ADJUSTMENT"
+    adjustment_ids = [UUID(value) for value in cast(list[str], resolved["adjustment_ids"])]
+    assert len(adjustment_ids) == 2
     assert not {"physical_move_out_event_id", "hand_back_date"} & set(resolved)
     assert invoices().resolve_hand_back_rent(scenario.prop, august, request, actor=who) == resolved
     with pytest.raises(InvoiceIdempotencyKeyReused):
@@ -415,13 +444,18 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
         )
     # Exactly the per-Invoice guard (P4503), not a version conflict.
     assert type(second.value) is InvoiceConflictError
-    assert status(url, august) == "VOID"
+    assert status(url, august) == "UNPAID"
     with psycopg.connect(url) as connection:
-        void_event = connection.execute(
-            "SELECT id,reason FROM app.invoice_void_events WHERE invoice_id=%s", (august,)
-        ).fetchall()
-        assert [reason for _, reason in void_event] == [
-            "Customer handed back the Parking on 3 August"
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s", (august,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT amount_usd_cents,reason FROM app.invoice_adjustments WHERE invoice_id=%s "
+            "ORDER BY amount_usd_cents DESC",
+            (august,),
+        ).fetchall() == [
+            (72_258, "Customer handed back the Unit on 3 August"),
+            (903, "Customer handed back the Unit on 3 August"),
         ]
         resolution = connection.execute(
             "SELECT physical_move_out_event_id,hand_back_date,coverage,action,"
@@ -434,10 +468,10 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
                 move_out,
                 date(2026, 8, 3),
                 "HAND_BACK_MONTH",
-                "VOID",
-                "invoices.void",
+                "CREDIT_ADJUSTMENT",
+                "invoices.adjust",
                 81_000,
-                void_event[0][0],
+                None,
             )
         ]
         assert connection.execute(
@@ -446,7 +480,7 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
             (resolution[0][7],),
         ).fetchone() == (
             "invoice.hand_back_rent.resolved",
-            "invoices.void",
+            "invoices.adjust",
             august,
             "Customer handed back the Parking on 3 August",
         )
@@ -461,7 +495,7 @@ def test_hand_back_before_the_fifth_voids_the_whole_unpaid_invoice_with_its_serv
                 connection.execute(statement)
 
 
-def test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line(
+def test_partly_paid_invoice_goes_down_to_the_days_used_and_gives_back_what_was_paid_above(
     hand_back_database: str,
 ) -> None:
     url = hand_back_database
@@ -479,27 +513,40 @@ def test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line(
     move_out = hand_back(url, scenario, date(2026, 8, 4)).event_id
     who = staff(scenario.human, scenario.prop)
     assessment = invoices().hand_back_rent_assessment(scenario.prop, august, actor=who)
+    # DL-229: 4 of 31 days are kept: Rent 103.23 (200.00 was paid, so 96.77 comes back) and
+    # Trash Collection 1.29 (4.00 of Customer Credit was used, so 2.71 comes back).
     assert (
         assessment["action"],
         assessment["applied_usd_cents"],
         assessment["outstanding_usd_cents"],
-    ) == ("CREDIT_ADJUSTMENT", 20_400, 60_600)
+        assessment["kept_usd_cents"],
+        assessment["credit_usd_cents"],
+        assessment["released_usd_cents"],
+    ) == ("CREDIT_ADJUSTMENT", 20_400, 60_600, 10_452, 70_548, 9_948)
     with pytest.raises(InvoiceAuthorizationError):
         invoices().resolve_hand_back_rent(
             scenario.prop,
             august,
-            ResolveHandBackRentCommand(uuid4(), "CREDIT_ADJUSTMENT", 60_600, "Unpaid rest", 1),
+            ResolveHandBackRentCommand(
+                uuid4(), "CREDIT_ADJUSTMENT", 60_600, "Days used", 1, 70_548
+            ),
             actor=staff(scenario.human, scenario.prop, "invoices.read", "invoices.void"),
         )
     before = version(url, august)
     request = ResolveHandBackRentCommand(
-        uuid4(), "CREDIT_ADJUSTMENT", 60_600, "Unpaid rest after the 4 August hand-back", before
+        uuid4(),
+        "CREDIT_ADJUSTMENT",
+        60_600,
+        "Days used after the 4 August hand-back",
+        before,
+        70_548,
     )
     resolved = invoices().resolve_hand_back_rent(scenario.prop, august, request, actor=who)
     adjustment_ids = [UUID(value) for value in cast(list[str], resolved["adjustment_ids"])]
     assert len(adjustment_ids) == 2
     assert invoices().resolve_hand_back_rent(scenario.prop, august, request, actor=who) == resolved
-    assert version(url, august) == before + 2
+    # Each of the two credit Adjustments gives money back, so each changes the Invoice twice.
+    assert version(url, august) == before + 4
     assert status(url, august) == "PAID"
     resolution = scalar(
         url,
@@ -517,17 +564,17 @@ def test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line(
                 adjustment_ids[0],
                 rent,
                 "CREDIT",
-                60_000,
+                69_677,
                 f"hand-back-rent-resolution:{resolution}",
-                "Unpaid rest after the 4 August hand-back",
+                "Days used after the 4 August hand-back",
             ),
             (
                 adjustment_ids[1],
                 trash,
                 "CREDIT",
-                600,
+                871,
                 f"hand-back-rent-resolution:{resolution}",
-                "Unpaid rest after the 4 August hand-back",
+                "Days used after the 4 August hand-back",
             ),
         ]
         assert connection.execute(
@@ -536,7 +583,7 @@ def test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line(
             "app.invoice_line_credit_value_at(id,'infinity') FROM app.invoice_lines "
             "WHERE invoice_id=%s ORDER BY line_sequence",
             (august,),
-        ).fetchall() == [(0, 20_000, 0), (0, 0, 400)]
+        ).fetchall() == [(0, 10_323, 0), (0, 0, 129)]
         assert connection.execute(
             "SELECT action,authorization_reference,adjustment_ids,invoice_void_event_id "
             "FROM app.hand_back_rent_resolutions WHERE invoice_id=%s",
@@ -544,7 +591,7 @@ def test_partly_paid_invoice_keeps_the_paid_part_and_credits_each_unpaid_line(
         ).fetchall() == [("CREDIT_ADJUSTMENT", "invoices.adjust", adjustment_ids, None)]
 
 
-def test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_kept_when_paid(
+def test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_given_back_when_paid(
     hand_back_database: str,
 ) -> None:
     url = hand_back_database
@@ -560,27 +607,35 @@ def test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_kept_wh
         raw_resolve(
             paid, paid.invoices[AUGUST], "VOID", version(url, paid.invoices[AUGUST]), 81_000
         )
-    kept = invoices().hand_back_rent_assessment(paid.prop, september, actor=who)
-    assert (kept["coverage"], kept["action"], kept["outstanding_usd_cents"]) == (
-        "NEXT_MONTH",
-        "KEEP",
-        0,
-    )
-    for action in ("VOID", "CREDIT_ADJUSTMENT"):
-        with pytest.raises(psycopg.errors.InvalidParameterValue, match="kept as issued"):
-            raw_resolve(paid, september, action, version(url, september), 1)
+    # DL-229: the paid next month has no day used; all of it goes back as Customer Credit.
+    given_back = invoices().hand_back_rent_assessment(paid.prop, september, actor=who)
+    assert (
+        given_back["coverage"],
+        given_back["action"],
+        given_back["outstanding_usd_cents"],
+        given_back["credit_usd_cents"],
+        given_back["released_usd_cents"],
+    ) == ("NEXT_MONTH", "CREDIT_ADJUSTMENT", 0, 81_000, 81_000)
+    # A paid Invoice is never made VOID by the hand-back rule.
+    with pytest.raises(psycopg.Error) as changed:
+        raw_resolve(paid, september, "VOID", version(url, september), 0, credit=81_000)
+    assert changed.value.sqlstate == "P4503"
     assert resolution_count(url, september) == 0
-    assert status(url, september) == "PAID"
+    resolve_as_shown(url, paid, september)
+    assert status(url, september) != "VOID"
     assert (
         scalar(
-            url, "SELECT count(*) FROM app.invoice_adjustments WHERE invoice_id=%s", (september,)
+            url,
+            "SELECT sum(app.invoice_adjusted_line_obligation(id)) FROM app.invoice_lines "
+            "WHERE invoice_id=%s",
+            (september,),
         )
         == 0
     )
     next_month = unpaid.invoices[SEPTEMBER]
     assessment = invoices().hand_back_rent_assessment(unpaid.prop, next_month, actor=who)
     assert (assessment["coverage"], assessment["action"]) == ("NEXT_MONTH", "VOID")
-    invoices().resolve_hand_back_rent(
+    resolved = invoices().resolve_hand_back_rent(
         unpaid.prop,
         next_month,
         ResolveHandBackRentCommand(
@@ -589,10 +644,22 @@ def test_after_the_25th_the_next_month_invoice_is_voided_when_unpaid_and_kept_wh
             cast(int, assessment["outstanding_usd_cents"]),
             "Handed back on 25 August",
             version(url, next_month),
+            cast(int, assessment["credit_usd_cents"]),
         ),
         actor=who,
     )
+    assert resolved["action"] == "VOID" and resolved["adjustment_ids"] == []
     assert status(url, next_month) == "VOID"
+    with psycopg.connect(url) as connection:
+        void_event = connection.execute(
+            "SELECT id,reason FROM app.invoice_void_events WHERE invoice_id=%s", (next_month,)
+        ).fetchall()
+        assert [reason for _, reason in void_event] == ["Handed back on 25 August"]
+        assert connection.execute(
+            "SELECT action,authorization_reference,invoice_void_event_id,adjustment_ids "
+            "FROM app.hand_back_rent_resolutions WHERE invoice_id=%s",
+            (next_month,),
+        ).fetchall() == [("VOID", "invoices.void", void_event[0][0], [])]
     assert status(url, unpaid.invoices[AUGUST]) == "UNPAID"
 
 
@@ -604,7 +671,11 @@ def test_hand_back_uses_the_current_move_out_date_not_the_termination_date(
     # Terminated on the 10th (no exception) but handed back on the 3rd: the 3rd counts.
     hand_back(url, who_scenario, date(2026, 8, 3), terminated_on=date(2026, 8, 10))
     assessment = raw_assess(who_scenario, who_scenario.invoices[AUGUST])
-    assert (assessment["coverage"], assessment["action"]) == ("HAND_BACK_MONTH", "VOID")
+    assert (assessment["coverage"], assessment["action"], assessment["days_used"]) == (
+        "HAND_BACK_MONTH",
+        "CREDIT_ADJUSTMENT",
+        3,
+    )
 
     corrected = lease_with_invoices(url, (AUGUST,))
     first = hand_back(url, corrected, date(2026, 8, 10))
@@ -613,7 +684,8 @@ def test_hand_back_uses_the_current_move_out_date_not_the_termination_date(
     current = correct_move_out(url, corrected, first, date(2026, 8, 2))
     august = corrected.invoices[AUGUST]
     assert raw_assess(corrected, august)["coverage"] == "HAND_BACK_MONTH"
-    raw_resolve(corrected, august, "VOID", version(url, august), 80_000)
+    # 2 of 31 days are kept: 51.61.
+    raw_resolve(corrected, august, "CREDIT_ADJUSTMENT", version(url, august), 80_000, credit=74_839)
     assert (
         scalar(
             url,
@@ -670,7 +742,7 @@ def test_hand_back_ignores_the_notice_date(hand_back_database: str) -> None:
     )
     hand_back(url, scenario, date(2026, 8, 3), termination=command.event_id)
     august = raw_assess(scenario, scenario.invoices[AUGUST])
-    assert (august["coverage"], august["action"]) == ("HAND_BACK_MONTH", "VOID")
+    assert (august["coverage"], august["action"]) == ("HAND_BACK_MONTH", "CREDIT_ADJUSTMENT")
     with pytest.raises(psycopg.errors.InvalidParameterValue, match="not covered"):
         raw_assess(scenario, scenario.invoices[SEPTEMBER])
 
@@ -715,7 +787,10 @@ def test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_
     august = stale.invoices[AUGUST]
     hand_back(url, stale, date(2026, 8, 1))
     who = staff(stale.human, stale.prop)
-    assert invoices().hand_back_rent_assessment(stale.prop, august, actor=who)["action"] == "VOID"
+    assert (
+        invoices().hand_back_rent_assessment(stale.prop, august, actor=who)["credit_usd_cents"]
+        == 77_419
+    )
     ((rent, _, _),) = lines(url, august)
     pay(url, stale, august, rent, 10_000)
     with pytest.raises(InvoiceVersionConflict):
@@ -723,7 +798,12 @@ def test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_
             stale.prop,
             august,
             ResolveHandBackRentCommand(
-                uuid4(), "CREDIT_ADJUSTMENT", 70_000, "Wrong version", version(url, august) + 1
+                uuid4(),
+                "CREDIT_ADJUSTMENT",
+                70_000,
+                "Wrong version",
+                version(url, august) + 1,
+                77_419,
             ),
             actor=who,
         )
@@ -732,7 +812,7 @@ def test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_
             stale.prop,
             august,
             ResolveHandBackRentCommand(
-                uuid4(), "VOID", 80_000, "Stale action", version(url, august)
+                uuid4(), "CREDIT_ADJUSTMENT", 80_000, "Stale amount", version(url, august), 77_419
             ),
             actor=who,
         )
@@ -800,7 +880,9 @@ def test_hand_back_rule_refuses_other_terminations_dates_initial_rent_and_stale_
 def test_hand_back_functions_and_table_are_least_privilege(migrated_database_url: str) -> None:
     assert migrated_database_url
     assess = "app.hand_back_rent_invoice_assessment(uuid,uuid,uuid)"
-    resolve = "app.resolve_hand_back_rent_invoice(uuid,uuid,uuid,uuid,text,integer,bigint,text)"
+    resolve = (
+        "app.resolve_hand_back_rent_invoice(uuid,uuid,uuid,uuid,text,integer,bigint,bigint,text)"
+    )
     internal = (
         "app.hand_back_rent_invoice_basis(uuid,uuid,uuid)",
         "app.reject_hand_back_rent_resolution_change()",
