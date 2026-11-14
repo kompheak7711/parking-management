@@ -425,9 +425,9 @@ def test_v1_042_is_forward_only_head_with_least_privilege(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270726_413"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20270727_379"
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20270726_413",
+        "20270727_379",
     )
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260829_33_v1_042_utility_corrections.py"
@@ -1206,8 +1206,10 @@ def test_json_snapshots_preserve_maximum_consumption_and_rate_precision(
             "INSERT INTO app.utility_rates("
             "id,property_id,utility_type,measurement_unit_code,rate_usd_per_unit,"
             "effective_date,notice_at,notice_evidence,actor_id) VALUES "
-            "(%s,%s,'ELECTRICITY','KWH',1000.00000001,DATE '2026-08-01',"
-            "TIMESTAMPTZ '2026-07-31 00:00:00+07','OVERFLOW BOUNDARY',%s)",
+            # DL-230: the rate is chosen by the first day of the period (2 January 2026), so the
+            # too-high rate must have started before it.
+            "(%s,%s,'ELECTRICITY','KWH',1000.00000001,DATE '2025-06-01',"
+            "TIMESTAMPTZ '2025-05-31 00:00:00+07','OVERFLOW BOUNDARY',%s)",
             (uuid4(), property_id, actor_id),
         )
         owner.commit()
@@ -1871,7 +1873,7 @@ def test_distinct_key_duplicate_estimate_finalization_is_a_state_conflict(
         ).fetchone() == (1,)
 
 
-def test_latest_three_weighted_basis_and_generation_date_rate(
+def test_latest_three_weighted_basis_and_period_start_rate(
     migrated_database_url: str,
 ) -> None:
     actor_id, property_id, unit_id, failed_id, readings = committed_source(
@@ -1949,8 +1951,11 @@ def test_latest_three_weighted_basis_and_generation_date_rate(
         source_kind=UtilityPreviewSourceKind.CONSUMPTION_PERIOD,
         actor=actor,
     )
+    # DL-230: the estimated time starts on 2 May, before the second rate (5 May). The first rate
+    # prices it whether the Invoice is made before or after 5 May.
     assert (before_rate.rate_id, before_rate.amount_usd_cents) == (first_rate_id, 206)
-    assert (after_rate.rate_id, after_rate.amount_usd_cents) == (second_rate_id, 248)
+    assert (after_rate.rate_id, after_rate.amount_usd_cents) == (first_rate_id, 206)
+    assert second_rate_id != first_rate_id
     assert (
         before_rate.total_basis_consumption,
         before_rate.total_basis_days,

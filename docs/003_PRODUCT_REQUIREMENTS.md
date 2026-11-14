@@ -2546,6 +2546,8 @@ Invoice.
 
 Amended by DL-075 (owner, 2026-10-20): as BR-UTIL-015: a new Utility Rate starts on a reading day (UI-091). The Rate effective on the Invoice generation date still applies.
 
+Amended by DL-230 (owner, 2026-11-12, Q3; built 2026-11-13): the Rate is chosen by the first day of the period of use, not by the Invoice generation date (BR-UTIL-014). The latest Rate that had started on or before that day applies to the whole period. A period that started before the first Rate ever set uses that first Rate, once it has started.
+
 ### PR-UTIL-016 — Historical Rate Preservation
 
 **Business-rule traceability:** `BR-UTIL-016`
@@ -2784,6 +2786,8 @@ consumption, or average separately rounded period averages.
 
 The Invoice generation date selects the effective Utility Rate. Selection uses
 the Property's configured local timezone and is preserved on the Invoice.
+
+Amended by DL-230 (owner, 2026-11-12, Q3): the first day of the period of use selects the Utility Rate (BR-UTIL-014). The generation date only decides whether the first Rate ever set has started, for a period that began before it. The chosen Rate and its start date are preserved on the Invoice as before.
 
 ### PR-UTIL-030 — Whole-period Rate Application
 

@@ -1005,6 +1005,8 @@ The server uses validated Readings, the Utility Rate effective on generation dat
 and broken-Meter hierarchy. Pending future-basis charges remain unissued and
 identified as pending.
 
+Amended by DL-230 (2026-11-13): the server uses the Utility Rate that had started on or before the first day of the period of use (BR-UTIL-014). No request or response field changes: `rate_id`, `rate_effective_date`, `rate_usd_per_unit` and `generation_date` keep their names and meaning.
+
 ## API-056 — System Job Invocation
 
 Scheduled workers invoke the same command service with a system identity, durable
@@ -2096,6 +2098,8 @@ As built in V1-056 slice 12b (DL-091): `ScheduledBillingWorker.run_once` runs a 
 `PostgresFinalUtilityInvoiceService` creates the final Utility Invoice of a departed Lease (command: Invoice identity, current final-input event, optional Due Date override with reason; capabilities `invoices.issue` and `utility.calculate`) and the catch-up Invoice for a period skipped as NOT_MOVED_IN (capability `invoices.issue`). Since slice 9d they are exposed as `POST /properties/{id}/leases/{lease_id}/final-utility-invoice` (`invoice_id`, `final_input_event_id`, optional `due_date` with `due_date_reason`) and `POST /properties/{id}/leases/{lease_id}/utility-catch-up-invoice` (`invoice_id`, `consumption_period_id`, optional `due_date` with `due_date_reason`). Both need an `Idempotency-Key`, answer 201 and replay exactly; a refusal carries the stable reason above as `error.code` (422 for invalid, 409 for conflict). Reasons are stable codes: `UTILITY_NOTHING_TO_BILL`, `UTILITY_UNRESOLVED_FINAL_INPUT`, `UTILITY_NOT_MOVED_IN`, `UTILITY_START_READING_MISSING`, `UTILITY_EARLIER_READING_NOT_FINALIZED`, `UTILITY_PERIOD_ALREADY_INVOICED`, `UTILITY_NOT_RESPONSIBLE`, `UTILITY_PERIOD_NOT_SKIPPED`. A second final Invoice for the same event, a superseded event or a period that already has a line is a conflict; exact replay returns the saved response.
 
 Amended by DL-105 (V1-060 B6, 2026-10-28): when no Utility Rate of a billed kind is in effect on the generation date (BR-UTIL-015, BR-UTIL-029), for example before the first Rate starts, both routes answer 422 with the stable reason `UTILITY_RATE_NOT_IN_EFFECT` instead of the generic `VALIDATION_ERROR`. The service names the database refusal "Generation-date Utility Rate was not found" (SQLSTATE P0002) this way.
+
+Amended by DL-230 (2026-11-13): the Rate is chosen by the first day of the period of use. `UTILITY_RATE_NOT_IN_EFFECT` is now answered only when the period began before the first Rate ever set of that kind and that first Rate has not started on the generation date, or when no Rate exists.
 
 ### V1-055 Utility baseline Reading — service boundary — 2026-10-02
 

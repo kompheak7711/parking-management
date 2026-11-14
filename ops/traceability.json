@@ -18631,7 +18631,7 @@
       "notes": "A second idempotency key targeting an already-finalized broken-Meter case is reported through the public service as a state conflict and cannot append another estimate or command result."
     },
     {
-      "test_id": "test_latest_three_weighted_basis_and_generation_date_rate",
+      "test_id": "test_latest_three_weighted_basis_and_period_start_rate",
       "upstream_ids": [
         "BR-UTIL-023",
         "BR-UTIL-025",
@@ -18648,7 +18648,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
-      "notes": "Four historical periods select only the latest three and compute one weighted result; pre-finalization, finalized, and generation-date previews return the authoritative total basis consumption, total basis days, weighted daily average, and reconstructable Meter/Reading/period evidence without client-side recalculation."
+      "notes": "Four historical periods select only the latest three and compute one weighted result; pre-finalization, finalized, and generation-date previews return the authoritative total basis consumption, total basis days, weighted daily average, and reconstructable Meter/Reading/period evidence without client-side recalculation. DL-230: the estimate is priced by the rate of the first day of the estimated time, whether the Invoice is made before or after a later rate starts."
     },
     {
       "test_id": "test_zero_history_stays_pending_until_first_complete_future_actual",
@@ -68039,6 +68039,66 @@
       "test_path": "frontend/src/leaseEnforcementClient.test.ts",
       "status": "implemented",
       "notes": "The enforcement contract takes the two new notice kinds, the new assessment flags and the first day of each step, refuses a malformed or missing one, and needs a document reference for each of the three notices."
+    },
+    {
+      "test_id": "test_the_rate_migration_follows_the_notice_days_and_is_forward_only",
+      "upstream_ids": [
+        "DL-230",
+        "DB-BS-008"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270727_379 follows 20270726_413, is forward-only and deletes nothing."
+    },
+    {
+      "test_id": "test_a_period_that_started_before_a_new_rate_keeps_the_old_rate_whatever_the_invoice_day",
+      "upstream_ids": [
+        "DL-230",
+        "DB-BS-008",
+        "BR-UTIL-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
+      "status": "implemented",
+      "notes": "Use from 2 to 31 January with a new rate from 15 January: 100 units are priced at the old rate, whether the Invoice is made in January, February or June."
+    },
+    {
+      "test_id": "test_a_period_that_starts_on_the_new_rate_day_uses_the_new_rate",
+      "upstream_ids": [
+        "DL-230",
+        "DB-BS-008",
+        "BR-UTIL-014"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
+      "status": "implemented",
+      "notes": "A period whose first day is the new rate's start day uses the new rate; a still later rate does not reach back when the Invoice is made after its start."
+    },
+    {
+      "test_id": "test_a_period_from_before_the_first_rate_uses_the_first_rate_once_it_has_started",
+      "upstream_ids": [
+        "DL-230",
+        "DB-BS-008",
+        "BR-UTIL-014",
+        "API-054"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
+      "status": "implemented",
+      "notes": "A period from before the first rate ever set is refused with the kept words until that rate starts, then uses it, also after a second rate has started."
+    },
+    {
+      "test_id": "test_no_rate_at_all_is_refused_with_the_message_the_api_names",
+      "upstream_ids": [
+        "DL-230",
+        "BR-UTIL-014",
+        "API-054"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
+      "status": "implemented",
+      "notes": "With no rate of the kind the preview is refused with SQLSTATE P0002 and the words the API names UTILITY_RATE_NOT_IN_EFFECT."
     }
   ]
 }

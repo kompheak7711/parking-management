@@ -3216,9 +3216,23 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Screen.** Before this change no screen did the hand-back step (staff had to make the Void or the Adjustment by hand on the Invoices page). Move-out, step 2, now shows it after the hand-back: the days used, what the Invoice charges now, the amount for the days used, the amount to take off, how much of it was paid before and goes to Customer Credit, and what is still to pay. One button applies it with a reason (the box offers one). It needs the right to adjust Invoices (or to make an Invoice Void, for next month's unpaid Invoice). English and Khmer.
 - **Database:** migration `20270725_378` (DB-BS-006): five new columns on the hand-back record, the assessment function, and the resolve command made again with the expected credit. Forward-only; no data is changed or deleted. **API:** the assessment answers the days and the amounts; the resolution body gains `expected_credit_usd_cents` (docs/005, API-102 amendment).
 - **Documents:** BR-RENT-012 and BR-SVC-013 in docs/002 say the new rule, and D1 leaves Appendix B; PR-RENT-026 in docs/003.
-- **Open:** the owner's "yes" to the four points; the native Khmer check of the new screen text.
+- **Open:** the native Khmer check of the new screen text. The owner said yes to the four points on 14 Nov 2026 (card "Yes to all four, merge when green"); pull request #36 was merged that day.
 - **Links:** DL-068, DL-069, DL-090, DL-226; BR-RENT-006, BR-RENT-012, BR-SVC-013.
 - **Decision date:** 2026-11-12 (the owner's decision D1); built 2026-11-13.
+
+## DL-230 — The Utilities rate is chosen by the first day of the period of use (Q3 is built)
+
+- **Type:** `OWNER DECISION`.
+- **Source.** The owner on 12 Nov 2026 (DL-226, question Q3, answer B): a new rate is used only for use from its start date; the rate is chosen by the start of the period.
+- **Before** (BR-UTIL-014, DL-075). The rate in force on the day the Invoice was made was used for the whole period. A rate that started after the use was over could still price that use, when the Invoice was made late.
+- **Now.** The latest rate that had started on or before the first day of the period of use prices the whole period, whatever day the Invoice is made. This is the same for the monthly Invoice, the catch-up Invoice, the final Invoice at move-out and a broken-Meter estimate (there the first day is the first day of the estimated time).
+- **Example.** Old rate 0.25 USD, new rate 0.30 USD from 24 November. Use up to the reading of 24 November (100 units) is 25.00 USD, also when its Invoice is made on 25 November. Use after that reading is at 0.30 USD. The first day of a period is the day after its start reading.
+- **How the build read the rest.** Not asked; the pull request is merged only after the owner's own word, and the owner can change it:
+  1. A period that started before the first rate ever set of its kind has no older price. It uses that first rate, and its Invoice can be made only once that rate has started, as today (DL-105). Without this, the first use after the start of the app could never be billed, because the first rate starts on a reading day after today (DL-075).
+- **Kept.** A period is never split. A new rate starts on a reading day after today, the first rate too (DL-075). No issued Invoice changes; every Utilities line keeps the rate and the rate's start date that were used. The words of the refusal when no rate can be used, and the API reason `UTILITY_RATE_NOT_IN_EFFECT` (DL-105).
+- **Database:** migration `20270727_379` (DB-BS-008), forward-only; no data is changed or deleted. **API:** no field changes; the amendments of DL-230 in docs/005. **Screen:** no change. Settings already said "readings before it keep the old Rate".
+- **Links:** DL-075, DL-105, DL-226; BR-UTIL-014.
+- **Decision date:** 2026-11-12 (the owner's decision Q3); built 2026-11-13.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 
@@ -3231,7 +3245,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
   2. The three notices are automatic at 09:00 Cambodia time, only when the Rent is still unpaid at that moment. Paying the Rent in full stops the next ones; a part payment does not.
   3. A tenant with no Telegram link: the app alerts staff the same day to print and give the paper letter. The paper letter is the official copy.
   4. No notice is sent before the Due Date has passed (the Due Date in Settings may be day 1 to 28).
-- **How the build read the rest.** These points were not asked. The pull request is merged only after the owner's own word, and the owner can change each of them:
+- **How the build read the rest.** These points were asked on 14 Nov 2026 with the pull request, and the owner said yes to all seven (card "Yes to all seven, merge when green"); pull request #37 was merged that day:
   1. For a linked tenant the Telegram message is the notice. Nobody prints a letter, so the three messages do not name a paper letter; they say the tenant may ask the office for a paper copy.
   2. Notices go in order and at most one a day. After a gap (the office computer was off, or the link was made late) the app catches up one notice each day.
   3. The termination letter waits for the three notices. When day 30 has passed and a notice is missing, staff give the missing notices first.
@@ -3242,6 +3256,6 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Kept.** The day count from the 1st of the billed month (DL-073). Only the Rent line counts. The termination letter changes nothing by itself. The Deposit rule of BR-DEP-023 reads the same day-30 record. A letter by hand may still be given on paper, by email, Telegram or WhatsApp (owner, 25 Oct 2026). Lease rule warnings are not changed.
 - **Found and fixed.** Home's "letters to give" card read the alert flags one level too high and always counted 0. It now counts the notices a person must give and the termination letters ready to send.
 - **Database:** migration `20270726_413` (DB-BS-007), forward-only; no data is changed or deleted. **API:** the amendment of DL-237 in docs/005 (two new event kinds, the new assessment keys, `leases.terminate` for the day-30 step). **Telegram:** texts `tenant.rent_notice_1`, `tenant.rent_warning`, `tenant.rent_notice_3`, `tenant.rent_default`, English and Khmer; the pull job calls `app.rent_notices_run` before the warnings queue. **Screen:** Letters shows the four steps of each unpaid Rent month, says when the Tenant bot sends a notice, and has the termination letter dialog; the Lease page, the Telegram warnings page and Home use the new names.
-- **Open.** The owner's read of the seven points above. The Lease text (Article 2.3) must name the new days: for the owner's lawyer. A native Khmer check of the new messages and screen words.
+- **Open.** The Lease text (Article 2.3) must name the new days, and the owner's lawyer should say whether the Lease lets a notice go by Telegram (told to the owner on 14 Nov 2026 as a risk of point 1: a court may ask for proof on paper). A native Khmer check of the new messages and screen words.
 - **Links:** DL-073, DL-210, DL-217; BR-LEASE-024, BR-LEASE-026, BR-DEP-023.
 - **Decision date:** 2026-11-13.

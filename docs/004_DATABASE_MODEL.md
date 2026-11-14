@@ -6107,3 +6107,15 @@ Added by DL-237 (owner, 13 Nov 2026; migration `20270726_413` on `20270725_378`,
 - Telegram (DB-TG-024): `app.telegram_warnings_since` and `app.telegram_warnings_queue` cover the four steps with kinds `RENT_10`, `RENT_20`, `RENT_25`, `RENT_30` and text codes `tenant.rent_notice_1`, `tenant.rent_warning`, `tenant.rent_notice_3`, `tenant.rent_default`. `app.telegram_warning_details` adds `letter_day`, the first day of the termination letter.
 - Home: the letters block of `app.home_page` now reads the assessment inside each alert row (before it read the flags one level too high and always counted 0). `letter_day_20` is a notice a person must give (a tenant with no Tenant-bot link); `letter_day_30` is a termination letter ready to send. A linked tenant's notices are not listed, because the app sends them.
 - Rights in the database are unchanged. The service layer also asks for `leases.terminate` for the day-30 step (API amendment of DL-237).
+
+## DB-BS-008 — The Utility Rate is chosen by the first day of the period of use (DL-230)
+
+Added by DL-230 (owner, 12 Nov 2026, Q3; migration `20270727_379` on `20270726_413`, forward-only). No table and no row is changed: an issued Invoice, its lines and their stored rate stay as they are.
+
+- `app.preview_utility_calculation` (same signature, owner and grants) prices every Utilities Invoice: the monthly run, the catch-up and the final Invoice at move-out. It now takes the latest row of `app.utility_rates` of the Property and the Utility whose `effective_date` is on or before the first day of the period: `utility_consumption_periods.start_date` (the day after the start reading), or `broken_meter_estimation_cases.unmeasured_start_date` for the preview of an estimate. Before, it took the latest rate on or before the generation date.
+- The first rate. When no rate had started on that first day, the function takes the first rate ever set of that kind. In both cases the chosen rate must have started on the generation date; if not, or when no rate exists, it raises "Generation-date Utility Rate was not found" (SQLSTATE P0002) as before, so the API reason `UTILITY_RATE_NOT_IN_EFFECT` is kept.
+- `app.validate_invoice_line` (the deferred check of `app.invoice_lines`) holds a Utilities line to the same choice, read from the line's `utility_consumption_period_id`. A line that carries another rate is refused with "Utility line source is invalid" (SQLSTATE 23514).
+- A Draft Utilities Invoice made before this change keeps its line. If its rate is not the rate of the first day of its period, a later change of that line is refused; staff make the Draft Void and make it again.
+- The answer keeps its keys (`rate_id`, `rate_effective_date`, `rate_usd_per_unit`, `amount_usd_cents`, `generation_date`).
+
+Tests: `backend/tests/test_v12_utility_rate_period_start_migration.py`.

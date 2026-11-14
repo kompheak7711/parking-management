@@ -190,6 +190,7 @@ database_test_suites='
   tests/test_billing_service_migration.py
   tests/test_utility_meter_migration.py
   tests/test_utility_consumption_migration.py
+  tests/test_v12_utility_rate_period_start_migration.py
   tests/test_utility_api_migration.py
   tests/test_move_out_final_inputs_migration.py
   tests/test_initial_rent_lease_start_migration.py

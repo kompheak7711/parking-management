@@ -1088,6 +1088,16 @@ def test_finalized_utility_issues_exact_rate_and_responsibility_evidence(
             property_id=property_id,
             utility_type="ELECTRICITY",
             measurement_unit_code="KWH",
+            # DL-230: the rate of the first day of the period (1 August) prices it.
+            effective_date=date(2026, 8, 1),
+        )
+        # A rate that starts inside the period, before the Invoice is made, does not price it.
+        later_rate_id = add_rate(
+            owner,
+            actor_id=human_actor_id,
+            property_id=property_id,
+            utility_type="ELECTRICITY",
+            measurement_unit_code="KWH",
             effective_date=date(2026, 8, 30),
         )
         worker_actor_id = register_billing_service_principal(
@@ -1141,6 +1151,22 @@ def test_finalized_utility_issues_exact_rate_and_responsibility_evidence(
             (period_id,),
         ).fetchone()
     assert line == (3086, "123.456789", rate_id, str(lease_id))
+    # DL-230: the line check holds the same choice. The rate of the Invoice day is refused.
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            "ALTER TABLE app.invoice_lines DISABLE TRIGGER invoice_lines_10_protect_history"
+        )
+        with pytest.raises(psycopg.Error) as refused:
+            with owner.transaction():
+                owner.execute(
+                    "UPDATE app.invoice_lines SET utility_rate_id=%s "
+                    "WHERE utility_consumption_period_id=%s",
+                    (later_rate_id, period_id),
+                )
+                owner.execute("SET CONSTRAINTS app.invoice_lines_validate IMMEDIATE")
+        assert refused.value.sqlstate == "23514"
+        assert "Utility line source is invalid" in str(refused.value)
+        owner.rollback()
 
 
 def test_completed_approved_estimate_issues_once_with_preserved_basis(

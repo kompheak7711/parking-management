@@ -554,14 +554,16 @@ Replaces: BR-UTIL-010, BR-UTIL-011, BR-UTIL-012.
 
 Electricity and Water each have their own rate. Every rate has a start date, and a new rate (the first one too) starts on a reading day after today. Until a rate of a kind is in force, no Utilities Invoice of that kind can be made.
 
-The rate in force on the day the Invoice is made is used, in the Property's time zone, for the whole period of the Invoice. A period is never split because the rate changed inside it.
+A new rate is used only for use from its start date. The rate is chosen by the first day of the period of use (the day after the reading that starts it): the latest rate that had started on or before that day is used for the whole period, whatever day the Invoice is made. A period is never split because the rate changed inside it. For a broken-Meter estimate the first day is the first day of the estimated time.
+
+A period that started before the first rate ever set of its kind has no older price. It uses that first rate, and its Invoice can be made only once that rate has started.
 
 Customers are told about a new rate before its start date. The start date, not the telling date, decides which rate the app uses.
 
 A new rate never changes an issued Utilities Invoice, charge, use or a finished period. Every Utilities line keeps the exact rate and the rate's start date that were used.
 
 Replaces: BR-UTIL-015, BR-UTIL-016, BR-UTIL-017, BR-UTIL-029, BR-UTIL-030, BR-UTIL-031.
-Decisions: DL-075, DL-105.
+Decisions: DL-075, DL-105, DL-230.
 
 ### BR-UTIL-018 — No Double Billing, One Customer for a Period
 
@@ -1823,13 +1825,12 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 | D4 | BR-DEP-010: the Pet Deposit for a pet kept from the start is due within five days after the Lease Start Date | It is received at Sign Lease, with the Security Deposit and the Initial Rent |
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
-| Q3 | BR-UTIL-014: the rate of the day the Invoice is made is used for the whole period | A new rate is used only for use from its start date: the rate is chosen by the start of the period |
 | L1 | BR-LATE-001: the late-payment charge is its own debt, not an Invoice | The late-payment charge becomes an Invoice of the type "Late-payment", which never gets a late-payment charge itself |
 | T1 | BR-INV-016: the Invoice type is worked out from the category each time | Seven types are kept on the Invoice: Rent, Utilities, Short stay, Products, Damage, Late-payment, Other charges. The line keeps its category |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

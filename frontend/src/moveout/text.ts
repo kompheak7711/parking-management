@@ -368,7 +368,8 @@ const TEXT = {
     "The Lease is not ended yet.",
     "កិច្ចសន្យាមិនទាន់បញ្ចប់ទេ។",
   ],
-  // V1-060 B6 (DL-105): the Invoice uses the rate in effect on the day it is made.
+  // V1-060 B6 (DL-105), DL-230: the rate is chosen by the first day of the period. Only a
+  // period from before the first rate ever set waits: that first rate must have started.
   ur_UTILITY_RATE_NOT_IN_EFFECT: [
     "No electricity or water rate is in effect today, so this Invoice cannot be made yet. In Settings, Rates and services, a rate must start on or before today.",
     "គ្មានអត្រាអគ្គិសនី ឬទឹកដែលមានប្រសិទ្ធភាពនៅថ្ងៃនេះទេ ដូច្នេះមិនទាន់អាចធ្វើវិក្កយបត្រនេះបានទេ។ នៅក្នុង ការកំណត់ អត្រា និងសេវា អត្រាត្រូវចាប់ផ្តើមនៅថ្ងៃនេះ ឬមុនថ្ងៃនេះ។",

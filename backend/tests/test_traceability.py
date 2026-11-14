@@ -66,6 +66,17 @@ CHANGED_ENTRIES: Final[dict[str, dict[str, object]]] = {
     "test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft": {
         "test_id": "test_http_sign_with_reservation_then_lease_move_in_and_cancel_draft",
     },
+    # DL-230 (Q3): the Utility Rate is chosen by the first day of the period; this test changed.
+    "test_latest_three_weighted_basis_and_period_start_rate": {
+        "test_id": "test_latest_three_weighted_basis_and_generation_date_rate",
+        "notes": (
+            "Four historical periods select only the latest three and compute one weighted "
+            "result; pre-finalization, finalized, and generation-date previews return the "
+            "authoritative total basis consumption, total basis days, weighted daily average, "
+            "and reconstructable Meter/Reading/period evidence without client-side "
+            "recalculation."
+        ),
+    },
 }
 
 
