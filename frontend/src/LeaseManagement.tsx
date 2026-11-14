@@ -64,10 +64,14 @@ const timelineLabels: Record<string, string> = {
   "lease.unpaid_initial_moved_in_credit":
     "Unpaid Initial obligation resolved: Rent credited after termination",
   "lease.initial_rent_due_date_override": "Initial Rent Due Date set",
+  "lease.rent_nonpayment_ten_day_notice":
+    "Rent nonpayment: day-10 notice recorded",
   "lease.rent_nonpayment_twenty_day_warning":
-    "Rent nonpayment: 20-day warning recorded",
+    "Rent nonpayment: day-20 notice recorded",
+  "lease.rent_nonpayment_twenty_five_day_notice":
+    "Rent nonpayment: day-25 notice recorded",
   "lease.rent_nonpayment_thirty_day_serious_default":
-    "Rent nonpayment: 30-day serious default recorded",
+    "Rent nonpayment: day-30 termination letter recorded",
   "lease.rent_nonpayment_cure": "Rent nonpayment: cure recorded",
   "lease.rent_nonpayment_authorized_follow_up":
     "Rent nonpayment: authorized follow-up recorded",

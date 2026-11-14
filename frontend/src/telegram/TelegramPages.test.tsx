@@ -699,7 +699,7 @@ describe("Office › Telegram", () => {
       name: "Warnings on Telegram",
     });
     const rent = await within(warnings).findByRole("row", { name: /U512/ });
-    expect(rent.textContent).toContain("Rent not paid: day 20");
+    expect(rent.textContent).toContain("Rent not paid: notice 2 (day 20)");
     expect(rent.textContent).toContain("Sent to 1");
     const lease = within(warnings).getByRole("row", { name: /U301/ });
     expect(lease.textContent).toContain("Lease warning");

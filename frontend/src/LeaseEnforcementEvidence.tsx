@@ -67,21 +67,41 @@ export function EnforcementAssessment({
             row.source_applicable ? "Yes" : "No",
           ],
           [
-            "20-day Warning Notice eligible",
+            "Day-10 notice eligible",
+            row.ten_day_notice_eligible ? "Yes" : "No",
+          ],
+          [
+            "Day-20 notice eligible",
             row.twenty_day_warning_eligible ? "Yes" : "No",
           ],
           [
-            "30-day Serious Default eligible",
+            "Day-25 notice eligible",
+            row.twenty_five_day_notice_eligible ? "Yes" : "No",
+          ],
+          [
+            "Day-30 termination letter eligible",
             row.thirty_day_default_eligible ? "Yes" : "No",
           ],
           ["Cure eligible", row.cure_eligible ? "Yes" : "No"],
           [
-            "Warning Notice already recorded",
+            "Day-10 notice already recorded",
+            row.ten_day_notice_recorded ? "Yes" : "No",
+          ],
+          [
+            "Day-20 notice already recorded",
             row.warning_recorded ? "Yes" : "No",
           ],
           [
-            "Serious Default already recorded",
+            "Day-25 notice already recorded",
+            row.twenty_five_day_notice_recorded ? "Yes" : "No",
+          ],
+          [
+            "Termination letter already recorded",
             row.serious_default_recorded ? "Yes" : "No",
+          ],
+          [
+            "Tenant bot link (notices go by themselves)",
+            row.telegram_linked ? "Yes" : "No",
           ],
         ]}
       />

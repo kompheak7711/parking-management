@@ -195,40 +195,85 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": "📢 សេចក្តីជូនដំណឹងពីការិយាល័យ\n\n{notice}",
         "en": "📢 Notice from the office\n\n{notice}",
     },
-    # DL-217 (owner card 11 Nov 2026 "When staff record it"): the late Rent letters and the Lease
-    # warning, sent when staff record them. Khmer is new and needs the native check.
-    "tenant.rent_warning": {
+    # DL-237 (owner 13 Nov 2026): the notices of day 10, 20 and 25 of the billed month go by
+    # themselves at 09:00 while the Rent is unpaid, and the termination letter of day 30 when a
+    # Manager or the Owner sends it. For a linked tenant the message is the notice, so the three
+    # notices do not name a paper letter. The two codes of DL-217 keep their fields, so a
+    # message queued before DL-237 still reads. Khmer is new and needs the native check.
+    "tenant.rent_notice_1": {
         "km": (
-            "⚠️ មិនទាន់បង់ថ្លៃឈ្នួល៖ ២០ ថ្ងៃ\n{unit}\n"
+            "⚠️ មិនទាន់បង់ថ្លៃឈ្នួល៖ លិខិតជូនដំណឹងទី ១ ក្នុងចំណោម ៣\n{unit}\n"
             "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
             "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
             "សូមបង់ឱ្យបានឆាប់តាមដែលអាចធ្វើបាន ឬទាក់ទងការិយាល័យ ប្រសិនបើមានបញ្ហា។\n"
-            "លិខិតក្រដាសពីការិយាល័យ ថ្ងៃ {date} គឺជាច្បាប់ផ្លូវការ។"
+            "ប្រសិនបើថ្លៃឈ្នួលនៅតែមិនបង់ លិខិតបញ្ចប់កិច្ចសន្យាអាចចេញចាប់ពីថ្ងៃ {letter_day}។\n"
+            "សូមសួរការិយាល័យ ប្រសិនបើលោកអ្នកចង់បានលិខិតនេះជាក្រដាស។"
         ),
         "en": (
-            "⚠️ Rent not paid: 20 days\n{unit}\n"
+            "⚠️ Rent not paid: notice 1 of 3\n{unit}\n"
             "Invoice {invoice} was due on {due}.\n"
             "Rent still to pay: {amount}\n\n"
             "Please pay as soon as you can, or contact the office if there is a problem.\n"
-            "The office's paper letter of {date} is the official copy."
+            "If the Rent stays unpaid, a termination letter may be issued from {letter_day}.\n"
+            "Ask the office if you want this notice on paper."
+        ),
+    },
+    "tenant.rent_warning": {
+        "km": (
+            "⚠️ មិនទាន់បង់ថ្លៃឈ្នួល៖ លិខិតជូនដំណឹងទី ២ ក្នុងចំណោម ៣\n{unit}\n"
+            "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
+            "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
+            "សូមបង់ឱ្យបានឆាប់តាមដែលអាចធ្វើបាន ឬទាក់ទងការិយាល័យ ប្រសិនបើមានបញ្ហា។\n"
+            "ប្រសិនបើថ្លៃឈ្នួលនៅតែមិនបង់ លិខិតបញ្ចប់កិច្ចសន្យាអាចចេញបន្ទាប់។\n"
+            "សូមសួរការិយាល័យ ប្រសិនបើលោកអ្នកចង់បានលិខិតនេះជាក្រដាស។"
+        ),
+        "en": (
+            "⚠️ Rent not paid: notice 2 of 3\n{unit}\n"
+            "Invoice {invoice} was due on {due}.\n"
+            "Rent still to pay: {amount}\n\n"
+            "Please pay as soon as you can, or contact the office if there is a problem.\n"
+            "If the Rent stays unpaid, a termination letter may follow.\n"
+            "Ask the office if you want this notice on paper."
+        ),
+    },
+    "tenant.rent_notice_3": {
+        "km": (
+            "🔴 មិនទាន់បង់ថ្លៃឈ្នួល៖ លិខិតជូនដំណឹងទី ៣ ក្នុងចំណោម ៣\n{unit}\n"
+            "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
+            "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
+            "នេះជាលិខិតជូនដំណឹងចុងក្រោយ។ ប្រសិនបើថ្លៃឈ្នួលមិនបានបង់គ្រប់មុនថ្ងៃ {letter_day} "
+            "លិខិតបញ្ចប់កិច្ចសន្យាអាចចេញ។\n"
+            "សូមបង់ ឬទាក់ទងការិយាល័យនៅថ្ងៃនេះ។\n"
+            "សូមសួរការិយាល័យ ប្រសិនបើលោកអ្នកចង់បានលិខិតនេះជាក្រដាស។"
+        ),
+        "en": (
+            "🔴 Rent not paid: notice 3 of 3\n{unit}\n"
+            "Invoice {invoice} was due on {due}.\n"
+            "Rent still to pay: {amount}\n\n"
+            "This is the last notice. If the Rent is not paid in full before {letter_day}, "
+            "a termination letter may be issued.\n"
+            "Please pay or contact the office today.\n"
+            "Ask the office if you want this notice on paper."
         ),
     },
     "tenant.rent_default": {
         "km": (
-            "🔴 មិនទាន់បង់ថ្លៃឈ្នួល៖ ៣០ ថ្ងៃ\n{unit}\n"
+            "🔴 លិខិតបញ្ចប់កិច្ចសន្យា\n{unit}\n"
             "វិក្កយបត្រ {invoice} ដល់កាលកំណត់បង់នៅថ្ងៃ {due}។\n"
             "ថ្លៃឈ្នួលនៅត្រូវបង់៖ {amount}\n\n"
-            "យោងតាមកិច្ចសន្យាជួលរបស់លោកអ្នក នេះជាការមិនបង់ថ្លៃឈ្នួលធ្ងន់ធ្ងរ។ "
-            "សូមបង់ ឬទាក់ទងការិយាល័យនៅថ្ងៃនេះ។\n"
-            "លិខិតក្រដាសពីការិយាល័យ ថ្ងៃ {date} គឺជាច្បាប់ផ្លូវការ។"
+            "ថ្លៃឈ្នួលនៅតែមិនទាន់បង់ បន្ទាប់ពីលិខិតជូនដំណឹងបីលើក។ "
+            "ការិយាល័យបានចេញលិខិតបញ្ចប់កិច្ចសន្យា តាមកិច្ចសន្យាជួលរបស់លោកអ្នក នៅថ្ងៃ {date}។\n"
+            "សូមទាក់ទងការិយាល័យនៅថ្ងៃនេះ។\n"
+            "លិខិតក្រដាសពីការិយាល័យ គឺជាច្បាប់ផ្លូវការ។"
         ),
         "en": (
-            "🔴 Rent not paid: 30 days\n{unit}\n"
+            "🔴 Termination letter\n{unit}\n"
             "Invoice {invoice} was due on {due}.\n"
             "Rent still to pay: {amount}\n\n"
-            "Under your Lease this is now a serious nonpayment. "
-            "Please pay or contact the office today.\n"
-            "The office's paper letter of {date} is the official copy."
+            "The Rent is still not paid after three notices. "
+            "The office issued a termination letter under your Lease on {date}.\n"
+            "Please contact the office today.\n"
+            "The office's paper letter is the official copy."
         ),
     },
     "tenant.lease_warning": {

@@ -4,8 +4,10 @@ import type { LeaseResource } from "../leaseClient";
 import { addDays, daysBetween } from "../reservations/reservationsData";
 import type {
   LeaseWarning,
+  LetterKind,
   LettersApi,
   RentAlert,
+  RentAssessment,
   RentLetterEvent,
 } from "./lettersClient";
 import { storedText } from "./text";
@@ -43,22 +45,80 @@ export function rentMonthStart(dueDate: string): string {
   return `${dueDate.slice(0, 8)}01`;
 }
 
-/** The day of a letter: day N is N - 1 days after the 1st of the Rent month (day 30 of
- * February is 1 or 2 March). */
-export function letterDay(monthStart: string, day: 20 | 30): string {
-  return addDays(monthStart, day - 1);
+// DL-237 (owner 13 Nov 2026): notices on day 10, 20 and 25 of the Rent month, then the
+// termination letter on day 30.
+export const NOTICE_STEPS = [10, 20, 25] as const;
+export const STEPS = [...NOTICE_STEPS, 30] as const;
+export type Step = (typeof STEPS)[number];
+export type NoticeStep = (typeof NOTICE_STEPS)[number];
+
+export const STEP_KIND: Record<Step, LetterKind> = {
+  10: "TEN_DAY_NOTICE",
+  20: "TWENTY_DAY_WARNING",
+  25: "TWENTY_FIVE_DAY_NOTICE",
+  30: "THIRTY_DAY_SERIOUS_DEFAULT",
+};
+
+/** The step is on the case. */
+export function stepGiven(a: RentAssessment, step: Step): boolean {
+  if (step === 10) return a.ten_day_notice_recorded;
+  if (step === 20) return a.warning_recorded;
+  if (step === 25) return a.twenty_five_day_notice_recorded;
+  return a.serious_default_recorded;
+}
+
+/** The server says the step may be recorded now (its day has come and the Rent is unpaid). */
+export function stepDue(a: RentAssessment, step: Step): boolean {
+  if (step === 10) return a.ten_day_notice_eligible;
+  if (step === 20) return a.twenty_day_warning_eligible;
+  if (step === 25) return a.twenty_five_day_notice_eligible;
+  return a.thirty_day_default_eligible;
+}
+
+export function noticesGiven(a: RentAssessment): boolean {
+  return NOTICE_STEPS.every((step) => stepGiven(a, step));
 }
 
 export function dayNumber(monthStart: string, businessDate: string): number {
   return daysBetween(monthStart, businessDate) + 1;
 }
 
+// What is stored with a termination notice for unpaid Rent, in English like every stored
+// record. The Lease page's Terminate reuses the notice's own provision and grounds.
+export const NOTICE_PROVISION =
+  "Signed Lease: Rent not paid after the notices of day 10, day 20 and day 25 (BR-LEASE-026)";
+export const NOTICE_GROUNDS =
+  "Rent unpaid on day 30 after the three notices (DL-237)";
+export const NOTICE_TERMS = "The Lease ends on the date written in the notice";
+export const NOTICE_REASON = "Termination notice given";
+export const NOTICE_AUTHORITY =
+  "Approved in the app by the signed-in Owner or Manager (leases.terminate)";
+
 export interface RentRow {
   alert: RentAlert;
   lease: LeaseResource | undefined;
   monthStart: string;
   /** The letters already given, or null when they could not be read. */
-  letters: { d20: RentLetterEvent | null; d30: RentLetterEvent | null } | null;
+  letters: Record<Step, RentLetterEvent | null> | null;
+}
+
+const NO_LETTERS: Record<Step, RentLetterEvent | null> = {
+  10: null,
+  20: null,
+  25: null,
+  30: null,
+};
+
+/**
+ * The first day of a step. The server counts it: day N is N - 1 days after the 1st of the Rent
+ * month (day 30 of February is 1 or 2 March), and no step comes before the Due Date has passed.
+ */
+export function stepDay(row: RentRow, step: Step): string {
+  const counted = row.alert.assessment.step_days?.[STEP_KIND[step]];
+  if (counted !== undefined) return counted;
+  const byMonth = addDays(row.monthStart, step - 1);
+  const afterDue = addDays(row.alert.due_date, 1);
+  return byMonth > afterDue ? byMonth : afterDue;
 }
 
 export interface RentLetters {
@@ -78,7 +138,7 @@ export async function loadRentLetters(
       const monthStart = rentMonthStart(alert.due_date);
       const lease = byId.get(alert.lease_id);
       if (alert.case_id === null)
-        return { alert, lease, monthStart, letters: { d20: null, d30: null } };
+        return { alert, lease, monthStart, letters: NO_LETTERS };
       try {
         const events = await api.events(alert.case_id);
         const find = (kind: RentLetterEvent["event_kind"]) =>
@@ -88,8 +148,10 @@ export async function loadRentLetters(
           lease,
           monthStart,
           letters: {
-            d20: find("TWENTY_DAY_WARNING"),
-            d30: find("THIRTY_DAY_SERIOUS_DEFAULT"),
+            10: find(STEP_KIND[10]),
+            20: find(STEP_KIND[20]),
+            25: find(STEP_KIND[25]),
+            30: find(STEP_KIND[30]),
           },
         };
       } catch {
@@ -105,12 +167,32 @@ export async function loadRentLetters(
   return { rows, businessDate: alerts.business_date };
 }
 
-/** The letter to record next, if one is due and not given. */
-export function nextLetter(row: RentRow): 20 | 30 | null {
+function dueNotice(a: RentAssessment): NoticeStep | null {
+  return (
+    NOTICE_STEPS.find((step) => stepDue(a, step) && !stepGiven(a, step)) ?? null
+  );
+}
+
+/**
+ * The step a person does now. The termination letter always waits for a person. The notices
+ * of a tenant with a Tenant-bot link go by themselves, so only a tenant without one is listed.
+ */
+export function nextLetter(row: RentRow): Step | null {
   const a = row.alert.assessment;
-  if (a.twenty_day_warning_eligible && !a.warning_recorded) return 20;
   if (a.thirty_day_default_eligible && !a.serious_default_recorded) return 30;
-  return null;
+  return a.telegram_linked ? null : dueNotice(a);
+}
+
+/** The notice the Tenant bot sends by itself at 09:00 (a linked tenant only). */
+export function botNotice(row: RentRow): NoticeStep | null {
+  const a = row.alert.assessment;
+  return a.telegram_linked ? dueNotice(a) : null;
+}
+
+/** The first step not given yet: the one to wait for when nothing is due today. */
+export function waitingStep(row: RentRow): Step | null {
+  const a = row.alert.assessment;
+  return STEPS.find((step) => !stepGiven(a, step)) ?? null;
 }
 
 /** A Lease that may be warned: signed, moved in, and not ended. */

@@ -15,6 +15,7 @@ from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import PostgresInvoiceService, VoidInvoiceCommand
 from property_rental.lease_enforcement import (
+    LEASE_TERMINATE,
     NONPAYMENT_EVENT,
     NONPAYMENT_OPEN,
     NONPAYMENT_READ,
@@ -247,6 +248,15 @@ def test_enforcement_http_case_and_event_capabilities_do_not_imply_each_other(
     )
     assert poster.get(path + "/events").status_code == 404
     assert reader.get(f"/api/v1/leases/{lease}/violation-warnings").status_code == 404
+    # DL-237: each notice needs its document reference, and the day-30 step (the termination
+    # letter) also needs the right to end a Lease.
+    missing = {"event_kind": "TEN_DAY_NOTICE", "reason": "Notice without its number"}
+    assert poster.post(path + "/events", json=missing, headers=headers(human)).status_code == 422
+    letter = {"event_kind": "THIRTY_DAY_SERIOUS_DEFAULT", "reason": "Termination letter"}
+    assert poster.post(path + "/events", json=letter, headers=headers(human)).status_code == 403
+    ender = api(staff(human, prop, NONPAYMENT_EVENT, LEASE_TERMINATE))
+    # With both rights the step is still refused until the three notices are on the case.
+    assert ender.post(path + "/events", json=letter, headers=headers(human)).status_code == 409
 
 
 def test_enforcement_http_lost_reply_then_void_keeps_original_replay_and_current_zero(
@@ -406,10 +416,25 @@ def test_enforcement_alerts_include_unopened_rent_and_never_create_business_even
         and rows[0]["case_id"] is None
         and rows[0]["rent_invoice_line_id"] == str(line)
     )
-    assert (
-        rows[0]["lease_id"] == str(lease)
-        and cast(dict[str, object], rows[0]["assessment"])["thirty_day_default_eligible"] is True
+    assessment = cast(dict[str, object], rows[0]["assessment"])
+    assert rows[0]["lease_id"] == str(lease)
+    # DL-237: the three notices are due; the day-30 step waits for them.
+    assert all(
+        assessment[key] is True
+        for key in (
+            "ten_day_notice_eligible",
+            "twenty_day_warning_eligible",
+            "twenty_five_day_notice_eligible",
+        )
     )
+    assert assessment["thirty_day_default_eligible"] is False
+    assert assessment["telegram_linked"] is False
+    assert sorted(cast(dict[str, str], assessment["step_days"])) == [
+        "TEN_DAY_NOTICE",
+        "THIRTY_DAY_SERIOUS_DEFAULT",
+        "TWENTY_DAY_WARNING",
+        "TWENTY_FIVE_DAY_NOTICE",
+    ]
     assert alert["timezone"] == "Asia/Phnom_Penh" and date.fromisoformat(
         str(alert["business_date"])
     )
@@ -599,7 +624,7 @@ def test_enforcement_new_context_permissions_and_forward_only_head(
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_heads() == ["20270725_378"]
+    assert scripts.get_heads() == ["20270726_413"]
     revision = scripts.get_revision("20260910_51")
     assert revision is not None and revision.down_revision == "20260910_50"
     with pytest.raises(RuntimeError, match="forward-only"):

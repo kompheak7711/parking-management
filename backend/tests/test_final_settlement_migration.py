@@ -34,7 +34,6 @@ from property_rental.late_payment import (
     LatePaymentApplicationReversalRequired,
     LatePaymentConflictError,
 )
-from property_rental.lease_enforcement import NonpaymentEventKind
 from property_rental.lease_termination import TerminationBasis
 from property_rental.move_out_inspection import InspectionFinding, RecordMoveOutInspection
 from property_rental.payment_allocation import PostAllocationsCommand
@@ -59,8 +58,7 @@ from test_one_time_charges_migration import damage, draft_and_issue, invoices
 from test_one_time_charges_migration import staff as invoice_staff
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import service as allocations
-from test_rent_nonpayment_recurring_only_migration import enforcement, open_case
-from test_rent_nonpayment_recurring_only_migration import record as record_nonpayment_event
+from test_rent_nonpayment_recurring_only_migration import enforcement, open_case, record_default
 from test_termination_deposit_migration import setup_deposits, terminate
 from test_unpaid_initial_termination_migration import signed_with_initial
 from test_unpaid_initial_termination_migration import terminate as terminate_unpaid
@@ -709,9 +707,7 @@ def test_violation_default_and_unpaid_initial_grounds_keep_only_the_security_dep
         )
     flow = enforcement()
     case = open_case(flow, prop, lease, rent_line, human)
-    record_nonpayment_event(
-        flow, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
-    )
+    record_default(flow, prop, lease, case, human)
     terminate_on(
         url,
         human,

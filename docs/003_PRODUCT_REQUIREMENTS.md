@@ -1608,6 +1608,8 @@ Amended by DL-070 (owner, 2026-10-15; the new standard Lease agreement): a serio
 
 Amended by DL-073 (owner, 2026-10-20): for a Rent nonpayment termination the day-20 Nonpayment Warning Notice (BR-LEASE-027) is letter 1, the day-30 default notice (BR-LEASE-028) is letter 2 and the termination notice (BR-LEASE-022) is letter 3; such a termination needs no other warning letters (the owner's explicit approval under this rule). Not built yet.
 
+Amended by DL-237 (owner, 2026-11-13; migration `20270726_413`): for unpaid Rent the letters are now three notices, on day 10, day 20 and day 25 of the billed month, then the termination letter on day 30 (BR-LEASE-026). The app records and sends the three notices by itself to a tenant with a Tenant-bot link, from 09:00 and only while the Rent is unpaid; for a tenant with no link it alerts staff, who give the paper letter and record it. A Manager or the Owner sends the termination letter from the Letters screen, which records the day-30 step and the termination notice with its end date. The termination letter waits for the three notices.
+
 ### PR-LEASE-025 — Signed-Lease Termination Authority
 
 **Business-rule traceability:** `BR-LEASE-025`
@@ -1725,6 +1727,8 @@ A remaining recurring-Service balance alone does not satisfy the Rent-balance co
 for this rule.
 
 Amended by DL-073 (owner, 2026-10-20): the day-30 default notice is a letter the system records, like the day-20 Notice of BR-LEASE-027, and it counts as letter 2 of a Rent nonpayment termination (BR-LEASE-024). The condition itself and its no-automatic-action list are unchanged. Not built yet.
+
+Amended by DL-237 (owner, 2026-11-13): the day-30 record is the termination letter. It still changes nothing by itself (the Lease stays Signed, the Unit stays Occupied), it is never recorded by the app by itself, and it needs the right to end a Lease.
 
 ### PR-LEASE-029 — Cure After Warning and Before Thirty Days
 

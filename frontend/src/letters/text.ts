@@ -5,9 +5,11 @@
 import type { Language } from "../signInText";
 
 const TEXT = {
+  // DL-237 (owner 13 Nov 2026): notices on day 10, 20 and 25, the termination letter on
+  // day 30. The Khmer of the changed lines is new and needs the native check.
   sub: [
-    "Rent letters on day 20 and day 30, and Lease rule warnings",
-    "លិខិតថ្លៃឈ្នួលថ្ងៃទី២០ និងថ្ងៃទី៣០ និងការព្រមានអំពីវិន័យកិច្ចសន្យា",
+    "Rent notices on day 10, 20 and 25, the termination letter on day 30, and Lease rule warnings",
+    "លិខិតជូនដំណឹងថ្លៃឈ្នួលថ្ងៃទី១០ ទី២០ និងទី២៥ លិខិតបញ្ចប់កិច្ចសន្យាថ្ងៃទី៣០ និងការព្រមានអំពីវិន័យកិច្ចសន្យា",
   ],
   // new
   as_of: ["as of {0}", "គិតត្រឹម {0}"],
@@ -31,22 +33,25 @@ const TEXT = {
     "You are not allowed to see this list.",
     "អ្នកមិនត្រូវបានអនុញ្ញាតឱ្យមើលបញ្ជីនេះទេ។",
   ],
-  c_due: ["Letters due", "លិខិតត្រូវផ្តល់"],
-  c_due_s: ["Day 20 or day 30 passed", "ថ្ងៃទី២០ ឬទី៣០ បានកន្លង"],
-  c_w20: ["Day-20 letter given", "បានផ្តល់លិខិតថ្ងៃទី២០"],
-  c_w20_s: ["Waiting for day 30", "រង់ចាំថ្ងៃទី៣០"],
-  c_w30: ["Day-30 letter given", "បានផ្តល់លិខិតថ្ងៃទី៣០"],
-  c_w30_s: ["Termination may follow", "អាចបញ្ចប់កិច្ចសន្យាបន្ទាប់"],
+  c_due: ["Letters to give", "លិខិតត្រូវផ្តល់"],
+  c_due_s: [
+    "A notice on paper, or the termination letter",
+    "លិខិតជូនដំណឹងជាក្រដាស ឬលិខិតបញ្ចប់កិច្ចសន្យា",
+  ],
+  c_w20: ["Notices given", "បានផ្តល់លិខិតជូនដំណឹង"],
+  c_w20_s: ["Waiting for the next day", "រង់ចាំថ្ងៃបន្ទាប់"],
+  c_w30: ["Termination letter sent", "បានផ្ញើលិខិតបញ្ចប់កិច្ចសន្យា"],
+  c_w30_s: ["The Lease may be ended", "អាចបញ្ចប់កិច្ចសន្យាបាន"],
   // new
   showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
   // new
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   late_open: [
-    "Day 20 and day 30 have both passed and no letter is recorded yet.",
-    "ថ្ងៃទី២០ និងទី៣០ បានកន្លងទាំងពីរ ហើយមិនទាន់កត់ត្រាលិខិតទេ។",
+    "Day 30 has passed and the three notices are not all given. The termination letter waits for them.",
+    "ថ្ងៃទី៣០ បានកន្លង ហើយលិខិតជូនដំណឹងទាំងបីមិនទាន់ផ្តល់គ្រប់ទេ។ លិខិតបញ្ចប់កិច្ចសន្យារង់ចាំលិខិតទាំងនោះ។",
   ],
-  cases: ["Unpaid Rent after day 20", "ថ្លៃឈ្នួលមិនទាន់បង់ក្រោយថ្ងៃទី២០"],
-  col_case: ["Parking and Customer", "ចំណត និងអតិថិជន"],
+  cases: ["Unpaid Rent after day 10", "ថ្លៃឈ្នួលមិនទាន់បង់ក្រោយថ្ងៃទី១០"],
+  col_case: ["Unit and Customer", "បន្ទប់ និងអតិថិជន"],
   col_month: ["Rent month", "ខែថ្លៃឈ្នួល"],
   col_20: ["Day-20 letter", "លិខិតថ្ងៃទី២០"],
   col_30: ["Day-30 letter", "លិខិតថ្ងៃទី៣០"],
@@ -61,20 +66,34 @@ const TEXT = {
   due_since: ["Due since {0}", "ត្រូវផ្តល់តាំងពី {0}"],
   on: ["On {0}", "នៅ {0}"],
   rec: ["Record letter", "កត់ត្រាលិខិត"],
-  wait30: ["Wait for day 30 ({0})", "រង់ចាំថ្ងៃទី៣០ ({0})"],
-  term: ["Termination notice", "លិខិតបញ្ចប់កិច្ចសន្យា"],
+  // new (DL-237)
+  rec_hand: ["Record by hand", "កត់ត្រាដោយដៃ"],
+  // new (DL-237)
+  bot_sends: [
+    "The Tenant bot sends notice {0} at 09:00.",
+    "Tenant bot ផ្ញើលិខិតជូនដំណឹងទី {0} នៅម៉ោង 09:00។",
+  ],
+  wait_step: ["Wait for day {0} ({1})", "រង់ចាំថ្ងៃទី {0} ({1})"],
+  // new (DL-237)
+  term_letter: ["Termination letter", "លិខិតបញ្ចប់កិច្ចសន្យា"],
+  // new (DL-237)
+  term_wait: [
+    "Termination letter ready: a Manager or the Owner sends it",
+    "លិខិតបញ្ចប់កិច្ចសន្យារួចរាល់៖ អ្នកគ្រប់គ្រង ឬម្ចាស់ជាអ្នកផ្ញើ",
+  ],
+  term: ["End the Lease", "បញ្ចប់កិច្ចសន្យា"],
   mgr_badge: ["MANAGER", "អ្នកគ្រប់គ្រង"],
   // new
   no_step: ["Nothing to do now", "គ្មានអ្វីត្រូវធ្វើឥឡូវ"],
   none: [
-    "No Rent is unpaid on day 20. No letters are due.",
-    "គ្មានថ្លៃឈ្នួលមិនទាន់បង់នៅថ្ងៃទី២០ទេ។ គ្មានលិខិតត្រូវផ្តល់ទេ។",
+    "No Rent is unpaid on day 10. No letters are due.",
+    "គ្មានថ្លៃឈ្នួលមិនទាន់បង់នៅថ្ងៃទី១០ទេ។ គ្មានលិខិតត្រូវផ្តល់ទេ។",
   ],
   // new
   none_here: ["No letters here.", "គ្មានលិខិតនៅទីនេះទេ។"],
   how_count: [
-    "Day 1 is the 1st of the Rent month. November Rent gives the day-20 letter on 20/11 and the day-30 letter on 30/11. Only unpaid Rent counts, not Services or Utilities. The Invoice Due Date is a different date: it starts the late-payment charge.",
-    "ថ្ងៃទី១ គឺថ្ងៃទី១ នៃខែថ្លៃឈ្នួល។ ថ្លៃឈ្នួលខែវិច្ឆិកា ផ្តល់លិខិតថ្ងៃទី២០ នៅ 20/11 និងលិខិតថ្ងៃទី៣០ នៅ 30/11។ គិតតែថ្លៃឈ្នួលមិនទាន់បង់ មិនគិតសេវា ឬទឹកភ្លើងទេ។ ថ្ងៃផុតកំណត់វិក្កយបត្រ ជាថ្ងៃផ្សេង៖ វាចាប់ផ្តើមថ្លៃពិន័យបង់យឺត។",
+    "Day 1 is the 1st of the Rent month. November Rent gives the notices on 10/11, 20/11 and 25/11 and the termination letter on 30/11. No notice comes before the Invoice Due Date has passed. Only unpaid Rent counts, not Services or Utilities. A tenant with Telegram gets the three notices from the Tenant bot at 09:00. For a tenant without Telegram, print the letter and record it here.",
+    "ថ្ងៃទី១ គឺថ្ងៃទី១ នៃខែថ្លៃឈ្នួល។ ថ្លៃឈ្នួលខែវិច្ឆិកា ផ្តល់លិខិតជូនដំណឹងនៅ 10/11, 20/11 និង 25/11 ហើយលិខិតបញ្ចប់កិច្ចសន្យានៅ 30/11។ គ្មានលិខិតជូនដំណឹងមុនថ្ងៃផុតកំណត់វិក្កយបត្រកន្លងទេ។ គិតតែថ្លៃឈ្នួលមិនទាន់បង់ មិនគិតសេវា ឬទឹកភ្លើងទេ។ អ្នកជួលដែលមាន Telegram ទទួលលិខិតជូនដំណឹងទាំងបីពី Tenant bot នៅម៉ោង 09:00។ សម្រាប់អ្នកជួលគ្មាន Telegram សូមបោះពុម្ពលិខិត ហើយកត់ត្រានៅទីនេះ។",
   ],
   nothing: [
     "A letter never ends the Lease, adds a fee or changes the Parking by itself. The Owner or a Manager decides each next step.",
@@ -93,8 +112,9 @@ const TEXT = {
     "គិតតែជួរថ្លៃឈ្នួល។ ថ្ងៃទី១ គឺ {0}។",
   ],
   d_which: ["Which letter", "លិខិតមួយណា"],
-  d_20: ["Day-20 warning letter", "លិខិតព្រមានថ្ងៃទី២០"],
-  d_30: ["Day-30 default notice", "លិខិតជូនដំណឹងខកខានថ្ងៃទី៣០"],
+  d_10: ["Notice 1 (day 10)", "លិខិតជូនដំណឹងទី១ (ថ្ងៃទី១០)"],
+  d_20: ["Notice 2 (day 20)", "លិខិតជូនដំណឹងទី២ (ថ្ងៃទី២០)"],
+  d_25: ["Notice 3 (day 25)", "លិខិតជូនដំណឹងទី៣ (ថ្ងៃទី២៥)"],
   d_given: ["already recorded", "បានកត់ត្រារួច"],
   d_date: ["Date given", "ថ្ងៃផ្តល់"],
   // new
@@ -125,8 +145,8 @@ const TEXT = {
   ],
   // new
   d_no_e: [
-    "Write the letter number. The day-20 letter needs one.",
-    "សូមសរសេរលេខលិខិត។ លិខិតថ្ងៃទី២០ ត្រូវការលេខ។",
+    "Write the letter number. Each notice needs one.",
+    "សូមសរសេរលេខលិខិត។ លិខិតជូនដំណឹងនីមួយៗត្រូវការលេខ។",
   ],
   // new
   d_which_e: ["Choose the letter.", "សូមជ្រើសលិខិត។"],
@@ -139,6 +159,40 @@ const TEXT = {
   try_again: ["Try again", "ព្យាយាមម្តងទៀត"],
   d_save: ["Record letter", "កត់ត្រាលិខិត"],
   d_toast: ["{0} recorded for {1}.", "បានកត់ត្រា {0} សម្រាប់ {1}។"],
+  // new (DL-237): the termination letter of day 30, sent by a Manager or the Owner.
+  tl_t: ["Termination letter · {0}", "លិខិតបញ្ចប់កិច្ចសន្យា · {0}"],
+  tl_note: [
+    "Day 30 has come and the three notices were given. This records the termination letter with its end date. It does not end the Lease: Terminate does, on the Lease page, once the end date has come.",
+    "ថ្ងៃទី៣០ បានមកដល់ ហើយលិខិតជូនដំណឹងទាំងបីបានផ្តល់រួច។ នេះកត់ត្រាលិខិតបញ្ចប់កិច្ចសន្យា ជាមួយថ្ងៃបញ្ចប់។ វាមិនបញ្ចប់កិច្ចសន្យាទេ៖ ប៊ូតុងបញ្ចប់នៅទំព័រកិច្ចសន្យាធ្វើវា ពេលថ្ងៃបញ្ចប់មកដល់។",
+  ],
+  tl_ends: ["The Lease ends on", "កិច្ចសន្យាបញ្ចប់នៅ"],
+  tl_ends_h: [
+    "The standard Lease gives 30 days' landlord notice.",
+    "កិច្ចសន្យាស្តង់ដារ ផ្តល់ការជូនដំណឹងពីម្ចាស់ 30 ថ្ងៃ។",
+  ],
+  tl_ends_e: [
+    "The end date cannot be before today.",
+    "ថ្ងៃបញ្ចប់មិនអាចមុនថ្ងៃនេះទេ។",
+  ],
+  tl_no_e: ["Write the letter number.", "សូមសរសេរលេខលិខិត។"],
+  tl_tg: [
+    "Print the letter and give it on paper. The paper letter is the official copy. The Tenant bot also sends a copy in Telegram when you press Send.",
+    "សូមបោះពុម្ពលិខិត ហើយផ្តល់ជាក្រដាស។ លិខិតក្រដាសគឺជាច្បាប់ផ្លូវការ។ Tenant bot ក៏ផ្ញើច្បាប់ចម្លងតាម Telegram ពេលអ្នកចុចផ្ញើ។",
+  ],
+  tl_paper: [
+    "This tenant has no Telegram link. Print the letter and give it on paper.",
+    "អ្នកជួលនេះគ្មានតំណ Telegram ទេ។ សូមបោះពុម្ពលិខិត ហើយផ្តល់ជាក្រដាស។",
+  ],
+  tl_send: ["Send termination letter", "ផ្ញើលិខិតបញ្ចប់កិច្ចសន្យា"],
+  tl_toast: [
+    "Termination letter recorded for {0}.",
+    "បានកត់ត្រាលិខិតបញ្ចប់កិច្ចសន្យាសម្រាប់ {0}។",
+  ],
+  // Stored with the record, in English.
+  tl_text: [
+    "The Lease of {0} ends on {1} because the Rent is still unpaid after the notices of day 10, day 20 and day 25.",
+    "កិច្ចសន្យា {0} បញ្ចប់នៅ {1} ព្រោះថ្លៃឈ្នួលនៅមិនទាន់បង់ បន្ទាប់ពីលិខិតជូនដំណឹងថ្ងៃទី១០ ទី២០ និងទី២៥។",
+  ],
   // new
   unknown: [
     "No answer came back, so it is not known whether it was saved. Press Try again: the same request is sent and it is saved only once.",

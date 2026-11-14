@@ -459,7 +459,9 @@ export function commandBody(
         ],
       );
       choice(row.event_kind, [
+        "TEN_DAY_NOTICE",
         "TWENTY_DAY_WARNING",
+        "TWENTY_FIVE_DAY_NOTICE",
         "THIRTY_DAY_SERIOUS_DEFAULT",
         "CURE",
         "AUTHORIZED_FOLLOW_UP",
@@ -474,7 +476,12 @@ export function commandBody(
           text(value, field === "communication_record" ? 2000 : 500, true);
         });
       if (
-        (row.event_kind === "TWENTY_DAY_WARNING" &&
+        // DL-237: each of the three notices needs its document reference.
+        ([
+          "TEN_DAY_NOTICE",
+          "TWENTY_DAY_WARNING",
+          "TWENTY_FIVE_DAY_NOTICE",
+        ].includes(row.event_kind as string) &&
           row.notice_document_reference == null) ||
         (row.event_kind === "AUTHORIZED_FOLLOW_UP" &&
           row.authorization_reference == null)

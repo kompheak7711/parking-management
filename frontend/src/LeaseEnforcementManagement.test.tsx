@@ -335,7 +335,9 @@ describe("Lease enforcement staff workflows", () => {
       name: "Record Rent nonpayment event",
     });
     expect(
-      screen.getByRole("option", { name: /20-day Warning Notice.*ineligible/ }),
+      screen.getByRole("option", {
+        name: /Day-20 notice \(notice 2\).*ineligible/,
+      }),
     ).toBeDisabled();
     expect(
       screen.getByRole("option", { name: /Cure.*ineligible/ }),

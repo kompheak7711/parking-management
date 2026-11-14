@@ -148,14 +148,18 @@ def test_the_late_rent_letters_go_to_the_linked_tenant_once(
     number, due = found
     # Opening the case is not a warning: nothing is sent.
     assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 0
-    rent_event(db, case, "TWENTY_DAY_WARNING")
-    assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 1
-    assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 0
+    # DL-237: the notices of day 10, 20 and 25, then the termination letter of day 30.
+    for kind in ("TEN_DAY_NOTICE", "TWENTY_DAY_WARNING", "TWENTY_FIVE_DAY_NOTICE"):
+        rent_event(db, case, kind)
+        assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 1
+        assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 0
     rent_event(db, case, "THIRTY_DAY_SERIOUS_DEFAULT")
     assert run(db.runtime_url, QUEUE, db.property_id, db.manager) == 1
     messages = sent(db)
     assert [(code, chat, language) for code, chat, language, _ in messages] == [
+        ("tenant.rent_notice_1", TENANT, "km"),
         ("tenant.rent_warning", TENANT, "km"),
+        ("tenant.rent_notice_3", TENANT, "km"),
         ("tenant.rent_default", TENANT, "km"),
     ]
     details = messages[0][3]
@@ -163,7 +167,8 @@ def test_the_late_rent_letters_go_to_the_linked_tenant_once(
     assert details["due"] == due and details["amount"] == "$800.00"
     page = run(db.runtime_url, PAGE, db.property_id, db.manager)
     kinds = [row["kind"] for row in page["warnings"]]
-    assert kinds[:2] == ["RENT_30", "RENT_20"] and page["rules"] == {"days": 90}
+    assert kinds[:4] == ["RENT_30", "RENT_25", "RENT_20", "RENT_10"]
+    assert page["rules"] == {"days": 90}
     newest = page["warnings"][0]
     assert newest["unit_number"] == "Unit 512" and newest["customer"] == "Heng Dara"
     assert [person["telegram_user_id"] for person in newest["sent"]] == [TENANT]

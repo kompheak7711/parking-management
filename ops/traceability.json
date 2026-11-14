@@ -28337,12 +28337,13 @@
     {
       "test_id": "test_notice_and_follow_up_require_distinct_permanent_evidence",
       "upstream_ids": [
-        "DB-LEASE-009"
+        "DB-LEASE-009",
+        "DL-237"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_lease_enforcement.py",
       "status": "implemented",
-      "notes": "V1-054 foundation coverage: Warning and authorized follow-up command constructors reject their missing Notice or authorization reference. No HTTP/UI or full-version acceptance implied."
+      "notes": "V1-054 foundation coverage, changed by DL-237: each of the three notice commands and the authorized follow-up reject their missing Notice or authorization reference. No HTTP/UI or full-version acceptance implied."
     },
     {
       "test_id": "test_event_requires_typed_canonical_kind",
@@ -28450,12 +28451,13 @@
       "upstream_ids": [
         "SEC-028",
         "SEC-029",
-        "DB-LEASE-009"
+        "DB-LEASE-009",
+        "DL-237"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_lease_enforcement_migration.py",
       "status": "implemented",
-      "notes": "V1-054 foundation coverage: Concurrent same-key events return one result; distinct keys cannot duplicate a warning/default milestone, including subsequent races. No HTTP/UI or full-version acceptance implied."
+      "notes": "V1-054 foundation coverage, changed by DL-237: concurrent same-key events return one result; distinct keys cannot duplicate any of the four steps (notices of day 10, 20, 25 and the day-30 step), including subsequent races. No HTTP/UI or full-version acceptance implied."
     },
     {
       "test_id": "test_stale_actor_replay_and_wrong_lease_fail_closed",
@@ -28648,12 +28650,13 @@
         "API-095",
         "SEC-022",
         "SEC-041",
-        "SEC-070"
+        "SEC-070",
+        "DL-237"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
       "status": "implemented",
-      "notes": "Case management, event posting and history are independently authorized through real HTTP. Event-only context omits opened-by/time/count history; authorized Notice is visible to the separate reader."
+      "notes": "Case management, event posting and history are independently authorized through real HTTP. Event-only context omits opened-by/time/count history; authorized Notice is visible to the separate reader. DL-237: a day-10 notice with no document reference is refused (422); the day-30 step is refused (403) with the event right alone and reaches the database rule only with the right to end a Lease as well."
     },
     {
       "test_id": "test_enforcement_http_lost_reply_then_void_keeps_original_replay_and_current_zero",
@@ -28697,12 +28700,13 @@
       "upstream_ids": [
         "DEPLOY-031",
         "API-095",
-        "SEC-022"
+        "SEC-022",
+        "DL-237"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
       "status": "implemented",
-      "notes": "Bounded human alert view includes overdue issued Rent without a manual case and current milestone eligibility in Property timezone; evaluation is read-only and event-post permission does not grant alerts."
+      "notes": "Bounded human alert view includes overdue issued Rent without a manual case and current milestone eligibility in Property timezone; evaluation is read-only and event-post permission does not grant alerts. DL-237: the assessment answers the three notice flags, the day-30 flag (false until the notices are given), telegram_linked and the four step days."
     },
     {
       "test_id": "test_enforcement_evaluation_connection_is_bound_scoped_read_only_and_revocable",
@@ -52880,12 +52884,13 @@
         "BR-LEASE-026",
         "BR-LEASE-027",
         "BR-LEASE-028",
-        "UI-037"
+        "UI-037",
+        "DL-237"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/letters/LettersPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 Letters: Rent letters list each unpaid Rent month from day 20 (day 1 is the 1st of the Rent month): owed Rent with its Due Date, the day-20 and day-30 letter cells (Given with how and number, Due since, On), count cards that filter, the red notice when both days passed with no letter, and the next step (Record letter, Wait for day 30, Termination notice with the MANAGER badge)."
+      "notes": "V1-058 R3 Letters, changed by DL-237: Rent letters list each unpaid Rent month from its day-10 notice day (day 1 is the 1st of the Rent month): owed Rent with its Due Date, the four steps of day 10, 20, 25 and 30 (Given with how and number, Due since, On), count cards that filter, the red notice when day 30 passed and the three notices are not all given, and the next step (Record letter, Wait for the next day, End the Lease with the MANAGER badge)."
     },
     {
       "test_id": "TEST-FE-863",
@@ -52893,24 +52898,28 @@
         "DL-074",
         "BR-LEASE-027",
         "API-016",
-        "UI-037"
+        "UI-037",
+        "DL-237",
+        "BR-LEASE-026"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/letters/LettersPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 Letters: Record letter opens the Rent nonpayment case once, requires how, details and the letter number for the day-20 letter, and after a lost answer Try again sends the very same request (same key and values)."
+      "notes": "V1-058 R3 Letters, changed by DL-237: Record letter offers the three notices only, opens the Rent nonpayment case once, requires how, details and the letter number for each notice, and after a lost answer Try again sends the very same request (same key and values)."
     },
     {
       "test_id": "TEST-FE-864",
       "upstream_ids": [
         "DL-074",
         "BR-LEASE-028",
-        "UI-037"
+        "UI-037",
+        "DL-237",
+        "BR-LEASE-026"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/letters/LettersPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 Letters: the day-30 letter is recorded on the open case without a letter number; a given letter is greyed; a change meanwhile closes the dialog and reads the list again."
+      "notes": "V1-058 R3 Letters, changed by DL-237: a notice is recorded on the open case with its number; a given notice is greyed; a change meanwhile closes the dialog and reads the list again."
     },
     {
       "test_id": "TEST-FE-865",
@@ -54300,7 +54309,8 @@
       "upstream_ids": [
         "DL-074",
         "DL-072",
-        "UI-008"
+        "UI-008",
+        "DL-237"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/home/HomeScreen.test.tsx",
@@ -56410,12 +56420,13 @@
       "test_id": "test_the_alert_page_lists_exactly_the_lines_of_the_old_filter",
       "upstream_ids": [
         "DL-096",
-        "DL-071"
+        "DL-071",
+        "DL-237"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_v1_060_release_migration.py",
       "status": "implemented",
-      "notes": "V1-060 speed fix (migration 239): the faster alerts page lists exactly the lines of the old per-line filter, for every Property."
+      "notes": "V1-060 speed fix (migration 239): the faster alerts page lists exactly the lines of the old per-line filter, for every Property. DL-237: the filter lists a line from its first notice day (day 10, and never before the Due Date has passed)."
     },
     {
       "test_id": "test_the_invoice_list_order_has_its_index",
@@ -66230,12 +66241,14 @@
       "test_id": "test_the_late_rent_letters_go_to_the_linked_tenant_once",
       "upstream_ids": [
         "DL-217",
-        "DB-TG-024"
+        "DB-TG-024",
+        "DL-237",
+        "DB-BS-007"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_telegram_warnings_migration.py",
       "status": "implemented",
-      "notes": "Warnings on Telegram: opening a Rent case sends nothing; the day-20 and day-30 events each go once to the linked tenant in the tenant's language with the Invoice, Due Date and Rent still to pay; the office page lists who got them."
+      "notes": "Warnings on Telegram, changed by DL-237: opening a Rent case sends nothing; the three notices and the termination letter each go once to the linked tenant in the tenant's language with the Invoice, Due Date and Rent still to pay; the office page lists who got them."
     },
     {
       "test_id": "test_a_lease_warning_goes_with_the_words_staff_wrote",
@@ -66260,14 +66273,16 @@
       "notes": "Warnings on Telegram: queueing needs telegram.operate and the page telegram.read; the notices are append-only and not readable by the runtime role."
     },
     {
-      "test_id": "test_the_late_rent_letters_read_as_the_tenant_gets_them",
+      "test_id": "test_the_three_rent_notices_read_as_the_tenant_gets_them",
       "upstream_ids": [
-        "DL-217"
+        "DL-217",
+        "DL-237",
+        "BR-LEASE-026"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_telegram_warnings.py",
       "status": "implemented",
-      "notes": "Warnings on Telegram: the day-20 and day-30 Rent messages in English and Khmer, with the paper letter as the official copy."
+      "notes": "Changed by DL-237: the three unpaid-Rent notices (day 10, 20 and 25) read in English and Khmer with the Invoice, Due Date and Rent still to pay; they name no paper letter and offer a paper copy; notice 1 and the last notice name the first day of the termination letter."
     },
     {
       "test_id": "test_a_lease_warning_reads_with_the_words_staff_wrote",
@@ -67800,6 +67815,230 @@
       "test_path": "frontend/src/InvoiceManagement.test.tsx",
       "status": "implemented",
       "notes": "A refused billing form marks its wrong field in the same screen update that shows the refusal, so the message never shows with an unmarked field (the timing fault behind an intermittent TEST-FE-259)."
+    },
+    {
+      "test_id": "test_migration_413_follows_378_and_is_forward_only",
+      "upstream_ids": [
+        "DL-237",
+        "DB-BS-007"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270726_413 follows 20270725_378 and has no downgrade."
+    },
+    {
+      "test_id": "test_each_step_counts_from_the_first_and_waits_for_the_due_date",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "The first day of each step is day N of the billed month (10, 20, 25, 30; day 30 of February is in March) and never before the day after the Due Date (Due Date 5th, 15th, 28th)."
+    },
+    {
+      "test_id": "test_a_step_opens_at_phnom_penh_midnight_of_its_first_day",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "A step is not eligible one microsecond before Phnom Penh midnight of its first day and is eligible at midnight, only while Rent is owed."
+    },
+    {
+      "test_id": "test_the_next_notice_goes_in_order_and_one_a_day",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "The automatic run picks the first missing notice whose day has come, never a second one the same day, and none when the three are given."
+    },
+    {
+      "test_id": "test_notices_go_from_nine_in_the_morning_in_phnom_penh",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "The automatic run starts at 09:00 Asia/Phnom_Penh and not a minute before."
+    },
+    {
+      "test_id": "test_a_linked_tenant_gets_the_first_notice_by_itself_once_a_day",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007",
+        "DB-TG-024"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "For a Lease with a live Tenant-bot link the run opens the Rent case, records the day-10 notice with the Telegram how-given words, the TG reference, the service account and a SCHEDULED audit row, queues tenant.rent_notice_1 with its details, and records nothing more the same day."
+    },
+    {
+      "test_id": "test_the_run_keeps_the_hour_and_needs_the_telegram_right",
+      "upstream_ids": [
+        "DL-237",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "app.rent_notices_run needs telegram.operate (42501 for staff); the runtime role cannot call the internal send or read the events table."
+    },
+    {
+      "test_id": "test_a_tenant_without_telegram_gets_no_notice_by_itself",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "A Lease with no Tenant-bot link gets no event from the run; the alert page lists it from day 10 and Home counts one notice a person must give."
+    },
+    {
+      "test_id": "test_the_termination_letter_needs_the_three_notices",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-024",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "The day-30 step is refused until the three notices are on the case, then Home counts one termination letter ready; a second notice of a kind is refused; the four messages go to the tenant in order."
+    },
+    {
+      "test_id": "test_paying_the_rent_in_full_stops_the_notices_and_a_part_payment_does_not",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "DB-BS-007"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_rent_notice_days_migration.py",
+      "status": "implemented",
+      "notes": "After a part payment the next notice still goes; after the Rent line is paid in full no further notice is recorded."
+    },
+    {
+      "test_id": "test_the_day_thirty_step_also_needs_the_right_to_end_a_lease",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_enforcement.py",
+      "status": "implemented",
+      "notes": "The day-30 step needs leases.terminate besides rent_nonpayment.event_post, checked before any database call; a notice needs only its own right."
+    },
+    {
+      "test_id": "test_the_termination_letter_reads_as_the_tenant_gets_it",
+      "upstream_ids": [
+        "DL-237",
+        "DL-217",
+        "BR-LEASE-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_warnings.py",
+      "status": "implemented",
+      "notes": "The termination letter message in English and Khmer names the three notices, the letter date and the paper letter as the official copy; the two older text codes still read a message queued before DL-237."
+    },
+    {
+      "test_id": "test_each_run_makes_the_rent_notices_before_it_queues_the_messages",
+      "upstream_ids": [
+        "DL-237",
+        "DB-BS-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_telegram_jobs.py",
+      "status": "implemented",
+      "notes": "The pull job records the automatic Rent notices before it queues the warning messages, so a notice goes to the tenant in the same run."
+    },
+    {
+      "test_id": "TEST-FE-2250",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/letters/lettersData.test.ts",
+      "status": "implemented",
+      "notes": "Each step shows the day the server counted; without it, day N from the 1st of the Rent month and never before the day after the Due Date."
+    },
+    {
+      "test_id": "TEST-FE-2251",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/letters/lettersData.test.ts",
+      "status": "implemented",
+      "notes": "A person gives the notices of a tenant without a Tenant-bot link (oldest first), the Tenant bot those of a linked tenant, and the termination letter always waits for a person once the three notices are given."
+    },
+    {
+      "test_id": "TEST-FE-2252",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "For a linked tenant the Letters screen says the Tenant bot sends the next notice at 09:00, counts no letter to give, shows the days after a late Due Date, and still lets a person record the notice by hand."
+    },
+    {
+      "test_id": "TEST-FE-2253",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-024",
+        "BR-LEASE-026",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "On day 30 a Manager opens the termination letter ready (end date 30 days on, number); it is always given on paper, so how it was given is never filled in by the app, also for a linked tenant, who gets a copy from the Tenant bot; Send records the day-30 step and the termination notice, and Try again sends the very same requests; the end date cannot be before today."
+    },
+    {
+      "test_id": "TEST-FE-2254",
+      "upstream_ids": [
+        "DL-237",
+        "BR-LEASE-026",
+        "UI-037"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/letters/LettersPage.test.tsx",
+      "status": "implemented",
+      "notes": "Without leases.terminate the termination letter is shown as waiting for a Manager or the Owner; when day 30 passed with notices missing, the red notice names the Unit and staff may record the notices."
+    },
+    {
+      "test_id": "TEST-FE-2255",
+      "upstream_ids": [
+        "DL-237",
+        "DB-BS-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "The enforcement contract takes the two new notice kinds, the new assessment flags and the first day of each step, refuses a malformed or missing one, and needs a document reference for each of the three notices."
     }
   ]
 }

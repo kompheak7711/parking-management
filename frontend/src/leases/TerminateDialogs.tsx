@@ -17,7 +17,15 @@ import type {
   LettersApi,
   TerminationNotice,
 } from "../letters/lettersClient";
-import { howRecord, type How } from "../letters/lettersData";
+import {
+  NOTICE_AUTHORITY as AUTHORITY,
+  NOTICE_GROUNDS,
+  NOTICE_PROVISION,
+  NOTICE_REASON,
+  NOTICE_TERMS,
+  howRecord,
+  type How,
+} from "../letters/lettersData";
 import { ltr } from "../letters/text";
 import { addDays } from "../reservations/reservationsData";
 import { DateInput, isDay } from "../shell/DateInput";
@@ -38,8 +46,6 @@ const GROUNDS: Ground[] = ["EARLY", "VIOLATION", "RENT", "UNPAID"];
 
 // The evidence stored with the termination, in English like every stored record. A Rent
 // termination reuses the notice's own provision and grounds, which the database matches exactly.
-const AUTHORITY =
-  "Approved in the app by the signed-in Owner or Manager (leases.terminate)";
 const PROVISION: Record<Exclude<Ground, "RENT">, string> = {
   EARLY: "Signed Lease: early leaving at the Customer's request (BR-LEASE-021)",
   VIOLATION:
@@ -61,12 +67,8 @@ const NO_NOTICE: Record<Exclude<Ground, "RENT">, string> = {
     "No landlord notice: the Initial obligation was not paid within 5 days (BR-LEASE-005)",
 };
 
-// DL-073: for unpaid Rent the termination notice is the third letter.
-const NOTICE_PROVISION =
-  "Signed Lease: Rent not paid after the day-20 warning letter and the day-30 default notice (BR-LEASE-028)";
-const NOTICE_GROUNDS = "Rent unpaid after the day-30 default notice (DL-073)";
-const NOTICE_TERMS = "The Lease ends on the date written in the notice";
-const NOTICE_REASON = "Termination notice given";
+// DL-237: for unpaid Rent the termination notice is the termination letter of day 30. Its
+// stored words are shared with the Letters screen (letters/lettersData.ts).
 
 function governing(ground: Ground, pet: boolean): string {
   if (ground === "EARLY") return "BR-LEASE-021";

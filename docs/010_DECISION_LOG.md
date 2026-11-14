@@ -1806,6 +1806,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 
 ## DL-073 — Lease follow-ups: serious-breach deposits, Rent nonpayment letters, leaving and the Refund reminder
 
+- **Amended by DL-237 (owner, 13 Nov 2026):** the unpaid-Rent letters of item 3 are now three notices (day 10, day 20, day 25) and the termination letter on day 30. The day-30 default notice is no longer a letter of its own: the termination letter is recorded as the day-30 step together with the Termination Notice.
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED; NOT IMPLEMENTED`
 - **Source:** the owner, answers of 2026-10-20 to the Lease agreement points of DL-070; item 3c replaced and items 3a and 3b restated by the owner on 2026-10-21 after the conflict report of docs-only rules update 1b. Recorded on 2026-10-21 in docs-only rules update 1c (ops/V1_056_TAKEOVER.md section 8). V1-056 stays paused before slice 11. Nothing is built by this entry.
@@ -2989,6 +2990,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 
 ## DL-217 — Telegram bots: warnings go to the tenant when staff record them
 
+- **Amended by DL-237 (owner, 13 Nov 2026):** for unpaid Rent the Tenant bot no longer waits for staff. The app records the notices of day 10, 20 and 25 by itself for a linked tenant and the bot sends them. The termination letter of day 30 goes when a Manager or the Owner sends it. Lease warnings are unchanged.
 - **Type:** `OWNER DECISION` and `TECHNICAL DECISION`
 - **Status:** `BUILT ON BRANCH claude/telegram-warnings (on DL-216); WAITS FOR THE OWNER'S TEST AND OK TO MERGE`
 - **Source:** the owner on 11 Nov 2026: CHETANA Residence support sends "any notice or warning", and on the card "Which should CHETANA Residence support send next, after the QR?": "All three, in that order" (Receipts, then notices, then warnings). On the card "When should CHETANA Residence support send warnings to a tenant on Telegram?" the owner chose "When staff record it" (11 Nov 2026, 05:11 UTC): "The day-20 and day-30 late Rent letters and Lease warnings go to the tenant on Telegram as soon as staff record them. Paper stays the official copy." The owner did not choose the automatic "Your Rent is overdue" note the day after the Due Date. Technical choices by Claude under the owner's 2026-10-23 22:30 rule.
@@ -3217,3 +3219,29 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open:** the owner's "yes" to the four points; the native Khmer check of the new screen text.
 - **Links:** DL-068, DL-069, DL-090, DL-226; BR-RENT-006, BR-RENT-012, BR-SVC-013.
 - **Decision date:** 2026-11-12 (the owner's decision D1); built 2026-11-13.
+
+## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
+
+- **Type:** `OWNER DECISION`.
+- **Source.** The owner on 13 Nov 2026 18:56 UTC, own words: "First notice: 10 days count from day first. Second notice: 20 days. Third notice: 25 days. issue termination letter on 30 days. notice will send automatically since we build telegram." Claude asked four points with advice; the owner answered "all yes" on 13 Nov 2026 19:02 UTC.
+- **Before** (DL-073, DL-217). Two steps, both recorded by staff by hand: a warning on day 20 and a Serious Nonpayment Default with a default notice on day 30, then a separate Termination Notice. The Tenant bot sent only what staff had recorded.
+- **Now.** Four steps for unpaid monthly Rent, counted from the 1st of the billed month: notice 1 on day 10, notice 2 on day 20, notice 3 on day 25, the termination letter on day 30 (BR-LEASE-026).
+- **The four points the owner approved.**
+  1. The termination letter is not sent by the app by itself. On day 30 the app has it ready and alerts; a Manager or the Owner sends it.
+  2. The three notices are automatic at 09:00 Cambodia time, only when the Rent is still unpaid at that moment. Paying the Rent in full stops the next ones; a part payment does not.
+  3. A tenant with no Telegram link: the app alerts staff the same day to print and give the paper letter. The paper letter is the official copy.
+  4. No notice is sent before the Due Date has passed (the Due Date in Settings may be day 1 to 28).
+- **How the build read the rest.** These points were not asked. The pull request is merged only after the owner's own word, and the owner can change each of them:
+  1. For a linked tenant the Telegram message is the notice. Nobody prints a letter, so the three messages do not name a paper letter; they say the tenant may ask the office for a paper copy.
+  2. Notices go in order and at most one a day. After a gap (the office computer was off, or the link was made late) the app catches up one notice each day.
+  3. The termination letter waits for the three notices. When day 30 has passed and a notice is missing, staff give the missing notices first.
+  4. A notice the app recorded counts as given even when Telegram could not deliver it. The Telegram warnings page shows what was not delivered, so staff can give the paper letter.
+  5. "A Manager or the Owner" is a user with the right to end a Lease (`leases.terminate`). Staff with the right to record letters record the three notices by hand, but not the termination letter.
+  6. The termination letter is ready in one dialog: the end date (30 days from today, as the standard Lease's landlord notice; it can be changed), and a letter number. The termination letter is always given on paper, also to a linked tenant: the paper letter is the official copy and the Tenant bot sends a copy. So the person who gave it writes how it was given; the app never fills that in. One button records the day-30 step and the Termination Notice. Ending the Lease stays its own step on the Lease page, on or after the end date.
+  7. A Rent case from before this change that holds only the day-20 notice needs notices 1 and 3 before its termination letter.
+- **Kept.** The day count from the 1st of the billed month (DL-073). Only the Rent line counts. The termination letter changes nothing by itself. The Deposit rule of BR-DEP-023 reads the same day-30 record. A letter by hand may still be given on paper, by email, Telegram or WhatsApp (owner, 25 Oct 2026). Lease rule warnings are not changed.
+- **Found and fixed.** Home's "letters to give" card read the alert flags one level too high and always counted 0. It now counts the notices a person must give and the termination letters ready to send.
+- **Database:** migration `20270726_413` (DB-BS-007), forward-only; no data is changed or deleted. **API:** the amendment of DL-237 in docs/005 (two new event kinds, the new assessment keys, `leases.terminate` for the day-30 step). **Telegram:** texts `tenant.rent_notice_1`, `tenant.rent_warning`, `tenant.rent_notice_3`, `tenant.rent_default`, English and Khmer; the pull job calls `app.rent_notices_run` before the warnings queue. **Screen:** Letters shows the four steps of each unpaid Rent month, says when the Tenant bot sends a notice, and has the termination letter dialog; the Lease page, the Telegram warnings page and Home use the new names.
+- **Open.** The owner's read of the seven points above. The Lease text (Article 2.3) must name the new days: for the owner's lawyer. A native Khmer check of the new messages and screen words.
+- **Links:** DL-073, DL-210, DL-217; BR-LEASE-024, BR-LEASE-026, BR-DEP-023.
+- **Decision date:** 2026-11-13.

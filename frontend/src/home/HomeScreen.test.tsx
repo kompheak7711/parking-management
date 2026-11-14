@@ -224,7 +224,7 @@ describe("Home", () => {
     const rows = within(list).getAllByRole("listitem");
     expect(rows.map((row) => row.querySelector("b")?.textContent)).toEqual([
       "INV260006: $210.00 not paid",
-      "Day 20 letter due: U201",
+      "Rent notice due: U201",
       "Refund waiting for approval",
       "Deposit waiting for a decision: U305",
       "Reservation for U406 ends",
@@ -243,7 +243,7 @@ describe("Home", () => {
     ).toBe(hashForPage("invoices", "inv:inv-6"));
     expect(
       within(list)
-        .getByRole("link", { name: "Open Letters: Day 20 letter due: U201" })
+        .getByRole("link", { name: "Open Letters: Rent notice due: U201" })
         .getAttribute("href"),
     ).toBe("#/letters");
     expect(

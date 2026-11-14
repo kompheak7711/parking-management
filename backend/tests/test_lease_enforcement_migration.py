@@ -23,9 +23,11 @@ from property_rental.credit import ReverseCreditApplicationCommand
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import PostgresInvoiceService, VoidInvoiceCommand
 from property_rental.lease_enforcement import (
+    LEASE_TERMINATE,
     NONPAYMENT_EVENT,
     NONPAYMENT_OPEN,
     NONPAYMENT_READ,
+    RENT_NOTICE_KINDS,
     WARNING_CREATE,
     WARNING_READ,
     LeaseEnforcementAuthorizationError,
@@ -82,6 +84,7 @@ def staff(human: UUID, prop: UUID, *caps: str) -> AuthenticatedActor:
                     NONPAYMENT_READ,
                     NONPAYMENT_OPEN,
                     NONPAYMENT_EVENT,
+                    LEASE_TERMINATE,
                 )
             )
         ),
@@ -127,7 +130,7 @@ def event(
         uuid4(),
         kind,
         "Authorized documented action",
-        "Notice-001" if kind is NonpaymentEventKind.TWENTY_DAY_WARNING else None,
+        "Notice-001" if kind in RENT_NOTICE_KINDS else None,
         "Delivered to Customer",
         "Management instruction" if kind is NonpaymentEventKind.AUTHORIZED_FOLLOW_UP else None,
     )
@@ -135,6 +138,12 @@ def event(
         prop, lease, case, request, actor=staff(human, prop), request_id="event"
     )
     return cast(dict[str, object], result.body["data"])
+
+
+def other_notices(prop: UUID, lease: UUID, case: UUID, human: UUID) -> None:
+    """DL-237: the day-30 step needs the three notices. These are the first and the third."""
+    event(prop, lease, case, human, NonpaymentEventKind.TEN_DAY_NOTICE)
+    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_FIVE_DAY_NOTICE)
 
 
 def test_warning_case_and_events_preserve_all_tenancy_and_financial_sources(
@@ -187,12 +196,16 @@ def test_warning_case_and_events_preserve_all_tenancy_and_financial_sources(
     )
     case = UUID(str(cast(dict[str, object], opened_case.body["data"])["id"]))
     notice = event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    # DL-237: the day-30 step waits for the three notices.
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    other_notices(prop, lease, case, human)
     default = event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
     event(prop, lease, case, human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP)
     assert notice["remaining_rent_usd_cents"] == default["remaining_rent_usd_cents"] == 80000
     assert default["customer_id"] == str(customer) and default["rent_invoice_line_id"] == str(line)
     assert flow.read(prop, lease, "WARNINGS", actor=actor)["total"] == 1
-    assert flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["total"] == 3
+    assert flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["total"] == 5
     assert (
         len(
             cast(
@@ -218,7 +231,7 @@ def test_warning_case_and_events_preserve_all_tenancy_and_financial_sources(
         assert connection.execute(
             "SELECT count(*) FROM app.audit_events WHERE lease_id=%s AND action=ANY(%s)",
             (lease, [WARNING_CREATE, NONPAYMENT_OPEN, NONPAYMENT_EVENT]),
-        ).fetchone() == (5,)
+        ).fetchone() == (7,)
 
 
 @pytest.mark.parametrize(
@@ -286,6 +299,7 @@ def test_payment_and_credit_applications_cure_rent_and_reversal_keeps_default_hi
     )
     case = UUID(str(cast(dict[str, object], opened_case.body["data"])["id"]))
     event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    other_notices(prop, lease, case, human)
     event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
     with psycopg.connect(migrated_database_url) as connection:
         pay = seed_payment(
@@ -329,11 +343,17 @@ def test_payment_and_credit_applications_cure_rent_and_reversal_keeps_default_hi
     assert assessment["remaining_rent"] == {"currency": "USD", "minor_units": 50000}
     assert assessment["serious_default_recorded"] is True
     assert assessment["thirty_day_default_eligible"] is False
-    assert read["event_count"] == 3
+    assert read["event_count"] == 5
 
 
 @pytest.mark.parametrize(
-    "kind", [NonpaymentEventKind.TWENTY_DAY_WARNING, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT]
+    "kind",
+    [
+        NonpaymentEventKind.TEN_DAY_NOTICE,
+        NonpaymentEventKind.TWENTY_DAY_WARNING,
+        NonpaymentEventKind.TWENTY_FIVE_DAY_NOTICE,
+        NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT,
+    ],
 )
 @pytest.mark.parametrize("same_key", [True, False])
 def test_same_key_and_different_key_concurrency_preserve_one_milestone(
@@ -342,11 +362,16 @@ def test_same_key_and_different_key_concurrency_preserve_one_milestone(
     same_key: bool,
 ) -> None:
     human, prop, _, lease, _, _, case = opened(migrated_database_url)
+    before = 0
+    if kind is NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT:
+        event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+        other_notices(prop, lease, case, human)
+        before = 3
     request = RecordRentNonpaymentEvent(
         uuid4(),
         kind,
         "Concurrent milestone",
-        "Notice" if kind is NonpaymentEventKind.TWENTY_DAY_WARNING else None,
+        "Notice" if kind in RENT_NOTICE_KINDS else None,
     )
 
     barrier = Barrier(2)
@@ -379,7 +404,8 @@ def test_same_key_and_different_key_concurrency_preserve_one_milestone(
         conflicts = list(pool.map(post, [uuid4(), uuid4()]))
     assert conflicts == ["LeaseEnforcementConflictError"] * 2
     assert (
-        service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"] == 1
+        service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"]
+        == before + 1
     )
 
 
@@ -877,6 +903,7 @@ def test_void_case_reconciles_current_rent_and_preserves_authorized_follow_up_hi
     human, prop, customer, lease, invoice, line, case = opened(migrated_database_url)
     flow, actor = service(), staff(human, prop)
     event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    other_notices(prop, lease, case, human)
     event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
     original_events = flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"]
     with psycopg.connect(migrated_database_url) as connection:
@@ -973,8 +1000,8 @@ def test_void_case_reconciles_current_rent_and_preserves_authorized_follow_up_hi
         list[dict[str, object]],
         flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"],
     )
-    assert retained[:2] == original_events and len(retained) == 3
-    assert [item["remaining_rent_usd_cents"] for item in retained] == [80000, 80000, 0]
+    assert retained[:4] == original_events and len(retained) == 5
+    assert [item["remaining_rent_usd_cents"] for item in retained] == [80000] * 4 + [0]
     with pytest.raises(LeaseEnforcementConflictError):
         event(prop, lease, case, human, NonpaymentEventKind.CURE)
     with psycopg.connect(migrated_database_url) as connection:

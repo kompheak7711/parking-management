@@ -953,7 +953,7 @@ describe("Lease staff workflow", () => {
     await loadAndOpen(api);
     expect(screen.getByText(/Initial Rent Due Date set/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Rent nonpayment: 20-day warning recorded/),
+      screen.getByText(/Rent nonpayment: day-20 notice recorded/),
     ).toBeInTheDocument();
   });
 

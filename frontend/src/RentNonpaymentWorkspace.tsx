@@ -15,6 +15,7 @@ import {
 import { financialMoney, financialUiError } from "./financialUi";
 import {
   ENFORCEMENT_EVENTS,
+  RENT_NOTICE_EVENTS,
   enforcementRows,
   enforcementValue,
   type EnforcementEvent,
@@ -385,7 +386,10 @@ function EventForm(
     ? financialObject(props.source.assessment)
     : null;
   const eligible: Record<EnforcementEvent, boolean> = {
+    TEN_DAY_NOTICE: assessment?.ten_day_notice_eligible === true,
     TWENTY_DAY_WARNING: assessment?.twenty_day_warning_eligible === true,
+    TWENTY_FIVE_DAY_NOTICE:
+      assessment?.twenty_five_day_notice_eligible === true,
     THIRTY_DAY_SERIOUS_DEFAULT:
       assessment?.thirty_day_default_eligible === true,
     CURE: assessment?.cure_eligible === true,
@@ -411,7 +415,7 @@ function EventForm(
           body: {
             event_kind: kind,
             reason,
-            ...(kind === "TWENTY_DAY_WARNING"
+            ...(RENT_NOTICE_EVENTS.includes(kind)
               ? { notice_document_reference: notice }
               : {}),
             ...(communication ? { communication_record: communication } : {}),
@@ -469,7 +473,7 @@ function EventForm(
             </option>
           ))}
         </select>
-        {kind === "TWENTY_DAY_WARNING" && (
+        {RENT_NOTICE_EVENTS.includes(kind) && (
           <>
             <label htmlFor={`${id}-notice`}>
               Warning Notice document reference

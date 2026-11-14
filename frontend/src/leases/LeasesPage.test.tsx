@@ -3373,11 +3373,11 @@ describe("New Lease and Renew", () => {
         expected_lease_version: running.version,
         notice_date: today,
         intended_termination_date: addDays(today, 30),
-        notice_text: `The Lease of U101 ends on ${dayText(addDays(today, 30))} because the Rent is still unpaid after the day-20 warning letter and the day-30 default notice.`,
+        notice_text: `The Lease of U101 ends on ${dayText(addDays(today, 30))} because the Rent is still unpaid after the notices of day 10, day 20 and day 25.`,
         governing_lease_provision:
-          "Signed Lease: Rent not paid after the day-20 warning letter and the day-30 default notice (BR-LEASE-028)",
+          "Signed Lease: Rent not paid after the notices of day 10, day 20 and day 25 (BR-LEASE-026)",
         approved_grounds:
-          "Rent unpaid after the day-30 default notice (DL-073)",
+          "Rent unpaid on day 30 after the three notices (DL-237)",
         notice_period_terms: "The Lease ends on the date written in the notice",
         evidence_reference: "TN-7",
         communication_record: "Handed to the tenant: signed our copy",

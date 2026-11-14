@@ -22,14 +22,28 @@ WARNING_CREATE = "leases.warn"
 NONPAYMENT_READ = "rent_nonpayment.read"
 NONPAYMENT_OPEN = "rent_nonpayment.case_manage"
 NONPAYMENT_EVENT = "rent_nonpayment.event_post"
+# DL-237: the day-30 step is the termination letter. It also needs the right to end a Lease.
+LEASE_TERMINATE = "leases.terminate"
 NIL_UUID = UUID(int=0)
 
 
 class NonpaymentEventKind(StrEnum):
+    # DL-237: notices on day 10, 20 and 25 of the billed month, then the day-30 step.
+    TEN_DAY_NOTICE = "TEN_DAY_NOTICE"
     TWENTY_DAY_WARNING = "TWENTY_DAY_WARNING"
+    TWENTY_FIVE_DAY_NOTICE = "TWENTY_FIVE_DAY_NOTICE"
     THIRTY_DAY_SERIOUS_DEFAULT = "THIRTY_DAY_SERIOUS_DEFAULT"
     CURE = "CURE"
     AUTHORIZED_FOLLOW_UP = "AUTHORIZED_FOLLOW_UP"
+
+
+RENT_NOTICE_KINDS = frozenset(
+    {
+        NonpaymentEventKind.TEN_DAY_NOTICE,
+        NonpaymentEventKind.TWENTY_DAY_WARNING,
+        NonpaymentEventKind.TWENTY_FIVE_DAY_NOTICE,
+    }
+)
 
 
 class LeaseEnforcementNotFoundError(LookupError):
@@ -141,10 +155,7 @@ class RecordRentNonpaymentEvent:
             value = getattr(self, field)
             if value is not None:
                 _text(value, field, 2000 if field == "communication_record" else 500)
-        if (
-            self.event_kind is NonpaymentEventKind.TWENTY_DAY_WARNING
-            and self.notice_document_reference is None
-        ):
+        if self.event_kind in RENT_NOTICE_KINDS and self.notice_document_reference is None:
             raise LeaseEnforcementInvalidError("A formal Warning Notice reference is required")
         if (
             self.event_kind is NonpaymentEventKind.AUTHORIZED_FOLLOW_UP
@@ -381,6 +392,8 @@ class PostgresLeaseEnforcementService:
         actor: AuthenticatedActor,
         request_id: str,
     ) -> LeaseEnforcementResponse:
+        if command.event_kind is NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT:
+            self._authorize(actor, property_id, LEASE_TERMINATE)
         return self._command(
             property_id,
             lease_id,

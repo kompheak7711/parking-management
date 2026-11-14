@@ -43,7 +43,6 @@ from property_rental.lease_deposit_forfeiture import (
     RecordLeaseDepositForfeitureCommand,
     RecordLeaseDepositReversalCommand,
 )
-from property_rental.lease_enforcement import NonpaymentEventKind
 from property_rental.lease_termination import TerminationBasis
 from property_rental.move_out_inspection import (
     INSPECTION_READ,
@@ -87,8 +86,7 @@ from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import designated
 from test_payment_allocation_migration import service as allocations
 from test_payment_move_migration import SOURCE_ACK, TARGET_ACK, allocation_ids
-from test_rent_nonpayment_recurring_only_migration import enforcement, open_case
-from test_rent_nonpayment_recurring_only_migration import record as record_nonpayment_event
+from test_rent_nonpayment_recurring_only_migration import enforcement, open_case, record_default
 from test_termination_deposit_migration import terminate
 from test_unpaid_initial_termination_migration import signed_with_initial
 from test_unpaid_initial_termination_migration import terminate as terminate_unpaid
@@ -1089,9 +1087,7 @@ def test_unpaid_initial_and_default_terminations_let_only_the_customer_choose(
         )
     flow = enforcement()
     case = open_case(flow, prop, lease, rent_line, human)
-    record_nonpayment_event(
-        flow, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
-    )
+    record_default(flow, prop, lease, case, human)
     terminate_on(
         url,
         human,

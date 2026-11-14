@@ -35,13 +35,24 @@ export const ENFORCEMENT_COMMAND_CAPABILITIES: Record<
   rentNonpaymentOpen: "rent_nonpayment.case_manage",
   rentNonpaymentEvent: "rent_nonpayment.event_post",
 };
+// DL-237 (owner 13 Nov 2026): notices on day 10, 20 and 25 of the billed month, then the
+// termination letter on day 30.
 export const ENFORCEMENT_EVENTS = {
-  TWENTY_DAY_WARNING: "20-day Warning Notice",
-  THIRTY_DAY_SERIOUS_DEFAULT: "30-day Serious Nonpayment Default",
+  TEN_DAY_NOTICE: "Day-10 notice (notice 1)",
+  TWENTY_DAY_WARNING: "Day-20 notice (notice 2)",
+  TWENTY_FIVE_DAY_NOTICE: "Day-25 notice (notice 3)",
+  THIRTY_DAY_SERIOUS_DEFAULT: "Day-30 termination letter",
   CURE: "Cure",
   AUTHORIZED_FOLLOW_UP: "Authorized follow-up",
 } as const;
 export type EnforcementEvent = keyof typeof ENFORCEMENT_EVENTS;
+/** The three notices. Each needs its document reference. */
+export const RENT_NOTICE_EVENTS: readonly string[] = [
+  "TEN_DAY_NOTICE",
+  "TWENTY_DAY_WARNING",
+  "TWENTY_FIVE_DAY_NOTICE",
+];
+const RENT_STEP_EVENTS = [...RENT_NOTICE_EVENTS, "THIRTY_DAY_SERIOUS_DEFAULT"];
 interface Keyset {
   limit?: number;
   cursor?: string;
@@ -175,13 +186,21 @@ export function enforcementGrants(value: unknown): EnforcementCapabilities {
 }
 export function enforcementAssessment(value: unknown): FinancialObject {
   const row = financialObject(value);
-  const flags = [
-    "source_applicable",
+  const eligible = [
+    "ten_day_notice_eligible",
     "twenty_day_warning_eligible",
+    "twenty_five_day_notice_eligible",
     "thirty_day_default_eligible",
     "cure_eligible",
+  ];
+  const flags = [
+    "source_applicable",
+    ...eligible,
+    "ten_day_notice_recorded",
     "warning_recorded",
+    "twenty_five_day_notice_recorded",
     "serious_default_recorded",
+    "telegram_linked",
   ];
   exactKeys(row, [
     "as_of",
@@ -190,8 +209,15 @@ export function enforcementAssessment(value: unknown): FinancialObject {
     "days_overdue",
     "invoice_status",
     "remaining_rent",
+    "step_days",
     ...flags,
   ]);
+  // The first day of each step; null when the source is not a monthly Rent Invoice.
+  if (row.step_days !== null) {
+    const days = financialObject(row.step_days);
+    exactKeys(days, RENT_STEP_EVENTS);
+    for (const kind of RENT_STEP_EVENTS) financialCalendarDate(days[kind]);
+  }
   financialInstant(row.as_of);
   financialCalendarDate(row.business_date);
   financialInteger(row.days_overdue, 0n, 3_652_058n);
@@ -211,9 +237,7 @@ export function enforcementAssessment(value: unknown): FinancialObject {
   if (
     !row.source_applicable &&
     (BigInt(financialInteger(amount.minor_units)) !== 0n ||
-      row.twenty_day_warning_eligible ||
-      row.thirty_day_default_eligible ||
-      row.cure_eligible)
+      eligible.some((key) => row[key] === true))
   )
     invalidFinancial();
   return row;
@@ -349,7 +373,7 @@ export function enforcementEvent(
     if (row[field] !== null)
       financialText(row[field], field === "communication_record" ? 2000 : 500);
   if (
-    row.event_kind === "TWENTY_DAY_WARNING" &&
+    RENT_NOTICE_EVENTS.includes(row.event_kind) &&
     row.notice_document_reference === null
   )
     invalidFinancial();

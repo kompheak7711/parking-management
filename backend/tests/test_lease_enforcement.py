@@ -9,6 +9,7 @@ import pytest
 
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_enforcement import (
+    LEASE_TERMINATE,
     NONPAYMENT_EVENT,
     NONPAYMENT_OPEN,
     NONPAYMENT_READ,
@@ -62,7 +63,13 @@ def test_warning_rejects_malformed_or_unbounded_source(field: str, value: object
 
 
 @pytest.mark.parametrize(
-    "kind", [NonpaymentEventKind.TWENTY_DAY_WARNING, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP]
+    "kind",
+    [
+        NonpaymentEventKind.TEN_DAY_NOTICE,
+        NonpaymentEventKind.TWENTY_DAY_WARNING,
+        NonpaymentEventKind.TWENTY_FIVE_DAY_NOTICE,
+        NonpaymentEventKind.AUTHORIZED_FOLLOW_UP,
+    ],
 )
 def test_notice_and_follow_up_require_distinct_permanent_evidence(
     kind: NonpaymentEventKind,
@@ -112,6 +119,43 @@ def test_generic_warning_case_and_view_grants_never_authorize_nonpayment_events(
             RecordRentNonpaymentEvent(uuid4(), NonpaymentEventKind.CURE, "Cure"),
             actor=actor,
             request_id="test",
+        )
+
+
+def test_the_day_thirty_step_also_needs_the_right_to_end_a_lease() -> None:
+    # DL-237: a Manager or Owner sends the termination letter, so the right to record the
+    # three notices is not enough for the day-30 step.
+    prop = uuid4()
+    step = RecordRentNonpaymentEvent(
+        uuid4(), NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT, "Termination letter"
+    )
+    notice = RecordRentNonpaymentEvent(
+        uuid4(), NonpaymentEventKind.TEN_DAY_NOTICE, "First notice", "Notice-001"
+    )
+
+    def actor(*caps: str) -> AuthenticatedActor:
+        return AuthenticatedActor(
+            str(uuid4()), frozenset(CapabilityGrant(cap, frozenset({str(prop)})) for cap in caps)
+        )
+
+    flow = PostgresLeaseEnforcementService("unused")
+    for caps in ((NONPAYMENT_EVENT,), (LEASE_TERMINATE,)):
+        with pytest.raises(LeaseEnforcementAuthorizationError):
+            flow.record_event(prop, uuid4(), uuid4(), step, actor=actor(*caps), request_id="test")
+    # With both rights, and for a notice with its own right, the check passes: the call
+    # stops later, because this service has no command database.
+    with pytest.raises(LeaseEnforcementUnavailableError):
+        flow.record_event(
+            prop,
+            uuid4(),
+            uuid4(),
+            step,
+            actor=actor(NONPAYMENT_EVENT, LEASE_TERMINATE),
+            request_id="test",
+        )
+    with pytest.raises(LeaseEnforcementUnavailableError):
+        flow.record_event(
+            prop, uuid4(), uuid4(), notice, actor=actor(NONPAYMENT_EVENT), request_id="test"
         )
 
 

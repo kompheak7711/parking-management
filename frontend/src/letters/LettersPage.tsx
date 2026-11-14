@@ -1,6 +1,9 @@
 // V1-058 R3: the Letters tab of Leases (DESIGN.md "Letters (round 8)"). "#/letters" shows the
-// Rent letters (day 20 and day 30 of unpaid Rent); "#/letters/warnings" shows the Lease rule
-// warnings. A letter or a warning never ends a Lease, adds a fee or changes a Unit by itself.
+// Rent letters; "#/letters/warnings" shows the Lease rule warnings. A letter or a warning never
+// ends a Lease, adds a fee or changes a Unit by itself.
+// DL-237 (owner 13 Nov 2026): unpaid Rent gets a notice on day 10, 20 and 25 of its month and
+// the termination letter on day 30. The Tenant bot sends the notices of a linked tenant by
+// itself; a Manager or the Owner sends the termination letter.
 
 import "../shell/screens.css";
 
@@ -14,18 +17,29 @@ import { hashForPage } from "../shell/navigation";
 import { useHashDetail } from "../shell/useHashPage";
 import { Chip, CountCard } from "../shell/ui";
 import type { Language } from "../signInText";
-import { RecordLetterDialog, RecordWarningDialog } from "./LettersDialogs";
+import {
+  RecordLetterDialog,
+  RecordWarningDialog,
+  TerminationLetterDialog,
+} from "./LettersDialogs";
 import type { LettersApi, RentLetterEvent } from "./lettersClient";
 import {
   LeaseWarnings,
   RentLetters,
+  NOTICE_STEPS,
   RentRow,
+  STEPS,
+  type Step,
+  botNotice,
   dayNumber,
   howOf,
-  letterDay,
   loadRentLetters,
   loadWarnings,
   nextLetter,
+  noticesGiven,
+  stepDay,
+  stepGiven,
+  waitingStep,
   warnable,
 } from "./lettersData";
 import { ltr, monthText } from "./text";
@@ -187,7 +201,7 @@ export function LettersPage({
   );
 }
 
-/** One letter of a Rent month: given (with how and its number), due, or the day it falls on. */
+/** One step of a Rent month: given (with how and its number), due, or the day it falls on. */
 function LetterLine({
   language,
   n,
@@ -196,7 +210,7 @@ function LetterLine({
   businessDate,
 }: {
   language: Language;
-  n: 20 | 30;
+  n: Step;
   given: RentLetterEvent | null;
   day: string;
   businessDate: string;
@@ -246,7 +260,11 @@ type RentCard = "due" | "w20" | "w30";
 function inRentCard(row: RentRow, card: RentCard): boolean {
   const a = row.alert.assessment;
   if (card === "due") return nextLetter(row) !== null;
-  if (card === "w20") return a.warning_recorded && !a.serious_default_recorded;
+  if (card === "w20")
+    return (
+      NOTICE_STEPS.some((step) => stepGiven(a, step)) &&
+      !a.serious_default_recorded
+    );
   return a.serious_default_recorded;
 }
 
@@ -269,16 +287,18 @@ function RentLettersTab({
 }) {
   const [card, setCard] = useState<RentCard | "all">("all");
   const [recording, setRecording] = useState<RentRow | null>(null);
+  const [sending, setSending] = useState<RentRow | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const today = data.businessDate;
   const shown = data.rows.filter(
     (row) => card === "all" || inRentCard(row, card),
   );
+  // Day 30 has come, but the termination letter waits for the three notices.
   const late = data.rows.filter(
     (row) =>
-      row.alert.assessment.thirty_day_default_eligible &&
-      !row.alert.assessment.warning_recorded &&
-      !row.alert.assessment.serious_default_recorded,
+      stepDay(row, 30) <= today &&
+      !row.alert.assessment.serious_default_recorded &&
+      !noticesGiven(row.alert.assessment),
   );
   const unitOf = (row: RentRow) =>
     row.lease?.unit_number ?? row.alert.invoice_number;
@@ -378,7 +398,30 @@ function RentLettersTab({
                 {shown.map((row) => {
                   const a = row.alert.assessment;
                   const next = nextLetter(row);
-                  const d30 = letterDay(row.monthStart, 30);
+                  const bot = botNotice(row);
+                  const waiting = waitingStep(row);
+                  const record = (label: "rec" | "rec_hand") =>
+                    mayRecord(row) ? (
+                      <button
+                        className={
+                          label === "rec" ? "ui-btn primary" : "ui-btn"
+                        }
+                        onClick={() => {
+                          setToast(null);
+                          setRecording(row);
+                        }}
+                        type="button"
+                      >
+                        <Icon name="plus" />
+                        {ltr(language, label)}
+                      </button>
+                    ) : (
+                      label === "rec" && (
+                        <span className="ui-small ui-muted">
+                          {ltr(language, "rec")}
+                        </span>
+                      )
+                    );
                   return (
                     <tr key={row.alert.rent_invoice_line_id}>
                       <td>
@@ -424,40 +467,54 @@ function RentLettersTab({
                         </span>
                       </td>
                       <td className="wrap ui-letters">
-                        <LetterLine
-                          businessDate={today}
-                          day={letterDay(row.monthStart, 20)}
-                          given={row.letters?.d20 ?? null}
-                          language={language}
-                          n={20}
-                        />
-                        <LetterLine
-                          businessDate={today}
-                          day={d30}
-                          given={row.letters?.d30 ?? null}
-                          language={language}
-                          n={30}
-                        />
+                        {STEPS.map((step) => (
+                          <LetterLine
+                            businessDate={today}
+                            day={stepDay(row, step)}
+                            given={row.letters?.[step] ?? null}
+                            key={step}
+                            language={language}
+                            n={step}
+                          />
+                        ))}
                       </td>
                       <td className="wrap">
-                        {next !== null ? (
-                          mayRecord(row) ? (
+                        {next === 30 ? (
+                          canTerminate &&
+                          mayRecord(row) &&
+                          row.lease !== undefined ? (
                             <button
-                              className="ui-btn primary"
+                              className="ui-btn primary ui-btn-wrap"
                               onClick={() => {
                                 setToast(null);
-                                setRecording(row);
+                                setSending(row);
                               }}
                               type="button"
                             >
                               <Icon name="plus" />
-                              {ltr(language, "rec")}
+                              {ltr(language, "term_letter")}
+                              <span className="ui-badge">
+                                {ltr(language, "mgr_badge")}
+                              </span>
                             </button>
                           ) : (
                             <span className="ui-small ui-muted">
-                              {ltr(language, "rec")}
+                              {ltr(language, "term_wait")}
                             </span>
                           )
+                        ) : next !== null ? (
+                          record("rec")
+                        ) : bot !== null ? (
+                          <>
+                            <span className="ui-small ui-muted">
+                              {ltr(
+                                language,
+                                "bot_sends",
+                                NOTICE_STEPS.indexOf(bot) + 1,
+                              )}
+                            </span>
+                            {record("rec_hand")}
+                          </>
                         ) : a.serious_default_recorded ? (
                           canTerminate && row.lease !== undefined ? (
                             <a
@@ -479,9 +536,16 @@ function RentLettersTab({
                             </span>
                           )
                         ) : (
-                          <span className="ui-small ui-muted">
-                            {ltr(language, "wait30", dayText(d30))}
-                          </span>
+                          waiting !== null && (
+                            <span className="ui-small ui-muted">
+                              {ltr(
+                                language,
+                                "wait_step",
+                                waiting,
+                                dayText(stepDay(row, waiting)),
+                              )}
+                            </span>
+                          )
                         )}
                       </td>
                     </tr>
@@ -523,6 +587,29 @@ function RentLettersTab({
           }}
           row={recording}
           unit={unitOf(recording)}
+        />
+      )}
+      {sending?.lease !== undefined && (
+        <TerminationLetterDialog
+          api={api}
+          businessDate={today}
+          language={language}
+          lease={sending.lease}
+          onClose={(openedCase) => {
+            setSending(null);
+            if (openedCase) onChanged();
+          }}
+          onConflict={() => {
+            setSending(null);
+            setToast(ltr(language, "conflict"));
+            onChanged();
+          }}
+          onSaved={(message) => {
+            setSending(null);
+            setToast(message);
+            onChanged();
+          }}
+          row={sending}
         />
       )}
     </>

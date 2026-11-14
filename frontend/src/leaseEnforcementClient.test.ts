@@ -19,11 +19,16 @@ import {
 } from "./leaseEnforcementClient";
 import {
   captureEnforcementRead,
+  ENFORCEMENT_EVENTS,
+  enforcementAssessment,
+  enforcementEvent,
   type EnforcementRead,
 } from "./leaseEnforcementContract";
 import {
+  assessment,
   commands,
   commandResponse,
+  eventRecord,
   ids,
   readInputs,
   readData,
@@ -234,6 +239,67 @@ describe("Lease enforcement transport contracts", () => {
       ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
     },
   );
+  it("TEST-FE-2255 takes the notice days of DL-237: the new assessment flags, the first day of each step, and a document reference for each of the three notices", () => {
+    expect(Object.keys(ENFORCEMENT_EVENTS).slice(0, 4)).toEqual([
+      "TEN_DAY_NOTICE",
+      "TWENTY_DAY_WARNING",
+      "TWENTY_FIVE_DAY_NOTICE",
+      "THIRTY_DAY_SERIOUS_DEFAULT",
+    ]);
+    const read = enforcementAssessment(assessment());
+    expect(read.ten_day_notice_eligible).toBe(true);
+    expect(financialObject(read.step_days).TEN_DAY_NOTICE).toBe("2026-08-10");
+    // A source that is not monthly Rent has no step days.
+    expect(
+      enforcementAssessment({ ...assessment(true), step_days: null }).step_days,
+    ).toBeNull();
+    for (const broken of [
+      { telegram_linked: "yes" },
+      { ten_day_notice_recorded: null },
+      { step_days: { TEN_DAY_NOTICE: "2026-08-10" } },
+      { step_days: "2026-08-10" },
+    ])
+      expect(() =>
+        enforcementAssessment({ ...assessment(), ...broken }),
+      ).toThrow();
+    const missing = assessment();
+    delete missing.twenty_five_day_notice_eligible;
+    expect(() => enforcementAssessment(missing)).toThrow();
+
+    for (const event_kind of ["TEN_DAY_NOTICE", "TWENTY_FIVE_DAY_NOTICE"]) {
+      const given = eventRecord({
+        event_kind,
+        reason: "Notice given",
+        notice_document_reference: "SYNTHETIC-NOTICE-237",
+      });
+      expect(enforcementEvent(given, ids.case).event_kind).toBe(event_kind);
+      expect(() =>
+        enforcementEvent(
+          { ...given, notice_document_reference: null },
+          ids.case,
+        ),
+      ).toThrow();
+      expect(
+        captureFinancialRequest({
+          operation: "rentNonpaymentEvent",
+          target: { id: ids.case },
+          body: {
+            event_kind,
+            reason: "Notice given",
+            notice_document_reference: "SYNTHETIC-NOTICE-237",
+          },
+        }).operation,
+      ).toBe("rentNonpaymentEvent");
+      expect(() =>
+        captureFinancialRequest({
+          operation: "rentNonpaymentEvent",
+          target: { id: ids.case },
+          body: { event_kind, reason: "Notice given" },
+        }),
+      ).toThrow();
+    }
+  });
+
   it("TEST-FE-648 reads the Initial Rent alert route with a bounded keyset and refuses a Lease selector", async () => {
     const input: EnforcementRead = { kind: "initialRentAlerts", limit: 25 };
     const fetcher = vi.fn<typeof fetch>((_url, init) =>

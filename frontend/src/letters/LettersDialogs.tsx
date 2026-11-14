@@ -2,7 +2,7 @@
 // keeps one identity (idempotency key) while its values stay the same, so "Try again" after an
 // unknown result sends the very same request and the server records it once.
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
 
 import type { LeaseResource } from "../leaseClient";
 import { DateInput, isDay } from "../shell/DateInput";
@@ -18,12 +18,22 @@ import {
 import {
   HOWS,
   type How,
+  NOTICE_AUTHORITY,
+  NOTICE_GROUNDS,
+  NOTICE_PROVISION,
+  NOTICE_REASON,
+  NOTICE_STEPS,
+  NOTICE_TERMS,
+  type NoticeStep,
   type RentRow,
+  STEP_KIND,
   howRecord,
-  letterDay,
-  nextLetter,
+  stepDay,
+  stepDue,
+  stepGiven,
   warnable,
 } from "./lettersData";
+import { addDays } from "../reservations/reservationsData";
 import { ltr, monthText, storedText } from "./text";
 
 type Outcome = "unknown" | "refused" | null;
@@ -123,9 +133,16 @@ export function HowSelect({
 }
 
 const LETTER_REASON = {
+  10: "Day-10 notice given",
   20: "Day-20 warning letter given",
-  30: "Day-30 default notice given",
+  25: "Day-25 notice given",
 } as const;
+const TERMINATION_REASON = "Termination letter sent";
+const NOTICE_NAME = { 10: "d_10", 20: "d_20", 25: "d_25" } as const;
+
+function noticeName(language: Language, n: NoticeStep): string {
+  return ltr(language, NOTICE_NAME[n]);
+}
 const CASE_REASON = "Rent letter";
 const WARNING_REASON = "Lease rule warning given";
 
@@ -150,7 +167,10 @@ export function RecordLetterDialog({
   onConflict: () => void;
 }) {
   const a = row.alert.assessment;
-  const [which, setWhich] = useState<20 | 30 | null>(nextLetter(row));
+  // The oldest notice that is due and not given. The termination letter has its own dialog.
+  const [which, setWhich] = useState<NoticeStep | null>(
+    NOTICE_STEPS.find((n) => stepDue(a, n) && !stepGiven(a, n)) ?? null,
+  );
   const [how, setHow] = useState<How | "">("");
   const [details, setDetails] = useState("");
   const [number, setNumber] = useState("");
@@ -159,16 +179,15 @@ export function RecordLetterDialog({
   const caseId = useRef<string | null>(row.alert.case_id);
   const caseKey = useRef(crypto.randomUUID());
   const letterKey = useValuesKey();
-  const name = (n: 20 | 30) => ltr(language, n === 20 ? "d_20" : "d_30");
+  const name = (n: NoticeStep) => noticeName(language, n);
   const { busy, outcome, send } = useLettersSend(() => {
     if (which !== null) onSaved(ltr(language, "d_toast", name(which), unit));
   }, onConflict);
 
-  const option = (n: 20 | 30) => {
-    const given = n === 20 ? a.warning_recorded : a.serious_default_recorded;
-    const due =
-      n === 20 ? a.twenty_day_warning_eligible : a.thirty_day_default_eligible;
-    const event = n === 20 ? row.letters?.d20 : row.letters?.d30;
+  const option = (n: NoticeStep) => {
+    const given = stepGiven(a, n);
+    const due = stepDue(a, n);
+    const event = row.letters?.[n];
     return (
       <label className="ui-chk" key={n}>
         <input
@@ -185,7 +204,7 @@ export function RecordLetterDialog({
           <small className="ui-sub2">
             {given
               ? `${ltr(language, "given", dayText(event?.event_date ?? null))} · ${ltr(language, "d_given")}`
-              : ltr(language, "on", dayText(letterDay(row.monthStart, n)))}
+              : ltr(language, "on", dayText(stepDay(row, n)))}
           </small>
         </span>
       </label>
@@ -201,18 +220,14 @@ export function RecordLetterDialog({
     if (which === null) found.which = ltr(language, "d_which_e");
     if (how === "") found.how = ltr(language, "d_how_e");
     if (detail === "") found.details = ltr(language, "d_detail_e");
-    if (which === 20 && reference === "")
-      found.number = ltr(language, "d_no_e");
+    if (reference === "") found.number = ltr(language, "d_no_e");
     setProblems(found);
     if (which === null || how === "" || Object.keys(found).length > 0) return;
     const source = {
-      event_kind:
-        which === 20
-          ? ("TWENTY_DAY_WARNING" as const)
-          : ("THIRTY_DAY_SERIOUS_DEFAULT" as const),
+      event_kind: STEP_KIND[which],
       reason: LETTER_REASON[which],
       communication_record: howRecord(how, detail),
-      ...(reference === "" ? {} : { notice_document_reference: reference }),
+      notice_document_reference: reference,
     };
     const key = letterKey(JSON.stringify(source));
     send(async () => {
@@ -261,8 +276,7 @@ export function RecordLetterDialog({
       </p>
       <fieldset className="ui-radios">
         <legend>{ltr(language, "d_which")}</legend>
-        {option(20)}
-        {option(30)}
+        {NOTICE_STEPS.map(option)}
         <Problem message={problems.which} />
       </fieldset>
       <div className="ui-field">
@@ -306,9 +320,7 @@ export function RecordLetterDialog({
       <div className="ui-field">
         <label htmlFor="letter-number">
           {ltr(language, "d_no")}
-          <span className="req">
-            {ltr(language, which === 30 ? "optional" : "required")}
-          </span>
+          <span className="req">{ltr(language, "required")}</span>
         </label>
         <input
           aria-invalid={problems.number !== undefined}
@@ -324,6 +336,225 @@ export function RecordLetterDialog({
         <Problem message={problems.number} />
       </div>
       <p className="ui-small ui-muted">{ltr(language, "nothing")}</p>
+      <OutcomeNotice language={language} outcome={outcome} />
+    </Dialog>
+  );
+}
+
+/**
+ * DL-237: the termination letter of day 30. A Manager or the Owner sends it; the app has it
+ * ready. It records the day-30 step on the Rent case (the Tenant bot then sends it to a linked
+ * tenant) and the termination notice with its end date, which the Lease page's Terminate needs.
+ * Neither ends the Lease.
+ */
+export function TerminationLetterDialog({
+  language,
+  api,
+  row,
+  lease,
+  businessDate,
+  onClose,
+  onSaved,
+  onConflict,
+}: {
+  language: Language;
+  api: Pick<LettersApi, "openCase" | "recordLetter" | "recordNotice">;
+  row: RentRow;
+  lease: LeaseResource;
+  businessDate: string;
+  /** openedCase: this dialog opened the case, so the page must read it again. */
+  onClose: (openedCase: boolean) => void;
+  onSaved: (message: string) => void;
+  onConflict: () => void;
+}) {
+  const a = row.alert.assessment;
+  const today = todayInPhnomPenh();
+  const [ends, setEnds] = useState(addDays(today, 30));
+  const [number, setNumber] = useState(`TL-${row.alert.invoice_number}`);
+  // The termination letter is always given on paper, also to a linked tenant (the paper letter
+  // is the official copy; the Tenant bot sends a copy). So how the paper was given is written
+  // by the person who gave it, never filled in by the app.
+  const [how, setHow] = useState<How | "">("");
+  const [details, setDetails] = useState("");
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  const caseId = useRef<string | null>(row.alert.case_id);
+  const caseKey = useRef(crypto.randomUUID());
+  const letterKey = useValuesKey();
+  const noticeKey = useValuesKey();
+  const noticeId = useValuesKey();
+  const { busy, outcome, send } = useLettersSend(() => {
+    onSaved(ltr(language, "tl_toast", lease.unit_number));
+  }, onConflict);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const detail = details.trim();
+    const reference = number.trim();
+    const found: Record<string, string> = {};
+    if (!isDay(ends) || ends < today) found.ends = ltr(language, "tl_ends_e");
+    if (reference === "") found.number = ltr(language, "tl_no_e");
+    if (how === "") found.how = ltr(language, "d_how_e");
+    if (detail === "") found.details = ltr(language, "d_detail_e");
+    setProblems(found);
+    if (how === "" || Object.keys(found).length > 0) return;
+    const given = howRecord(how, detail);
+    const step = {
+      event_kind: STEP_KIND[30],
+      reason: TERMINATION_REASON,
+      communication_record: given,
+      notice_document_reference: reference,
+    };
+    const notice = {
+      expected_lease_version: lease.version,
+      notice_date: today,
+      intended_termination_date: ends,
+      notice_text: storedText("tl_text")
+        .replace("{0}", lease.unit_number)
+        .replace("{1}", dayText(ends)),
+      governing_lease_provision: NOTICE_PROVISION,
+      approved_grounds: NOTICE_GROUNDS,
+      notice_period_terms: NOTICE_TERMS,
+      evidence_reference: reference,
+      communication_record: given,
+      authorization_reference: NOTICE_AUTHORITY,
+      reason: NOTICE_REASON,
+    };
+    // Try again sends the very same requests; changed values get new keys.
+    const print = JSON.stringify([step, notice]);
+    const stepKey = letterKey(print);
+    const identity = { id: noticeId(print), key: noticeKey(print) };
+    send(async () => {
+      if (caseId.current === null) {
+        const opened = await api.openCase(
+          row.alert.lease_id,
+          {
+            rent_invoice_line_id: row.alert.rent_invoice_line_id,
+            reason: CASE_REASON,
+          },
+          caseKey.current,
+        );
+        caseId.current = opened.id;
+      }
+      await api.recordLetter(caseId.current, step, stepKey);
+      return api.recordNotice(
+        lease.property_id,
+        lease.lease_id,
+        { notice_id: identity.id, ...notice },
+        identity.key,
+      );
+    });
+  }
+
+  return (
+    <Dialog
+      busy={busy}
+      closeLabel={ltr(language, "close")}
+      onClose={() => {
+        onClose(caseId.current !== row.alert.case_id);
+      }}
+      onSubmit={submit}
+      submitLabel={
+        busy
+          ? ltr(language, "saving")
+          : outcome === "unknown"
+            ? ltr(language, "try_again")
+            : ltr(language, "tl_send")
+      }
+      title={ltr(language, "tl_t", lease.unit_number)}
+    >
+      <p className="ui-small">{ltr(language, "tl_note")}</p>
+      <dl className="ui-kv">
+        <dt>{ltr(language, "customer")}</dt>
+        <dd>{lease.primary_tenant_name}</dd>
+        <dt>{ltr(language, "col_month")}</dt>
+        <dd>{monthText(language, row.monthStart)}</dd>
+        <dt>{ltr(language, "d_owed")}</dt>
+        <dd className="ui-num">{usdFromCents(a.remaining_rent.minor_units)}</dd>
+        {NOTICE_STEPS.map((n) => (
+          <Fragment key={n}>
+            <dt>{noticeName(language, n)}</dt>
+            <dd>
+              {ltr(
+                language,
+                "given",
+                dayText(row.letters?.[n]?.event_date ?? null),
+              )}
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
+      <div className="ui-notice" role="note">
+        <Icon name="info" />
+        <p>{ltr(language, a.telegram_linked ? "tl_tg" : "tl_paper")}</p>
+      </div>
+      <div className="ui-field">
+        <span className="ui-label">{ltr(language, "d_date")}</span>
+        <p className="ui-small">
+          {ltr(language, "d_date_today", dayText(businessDate))}
+        </p>
+      </div>
+      <div className="ui-field">
+        <label htmlFor="termination-ends">{ltr(language, "tl_ends")}</label>
+        <DateInput
+          id="termination-ends"
+          invalid={problems.ends !== undefined}
+          language={language}
+          min={today}
+          onChange={setEnds}
+          value={ends}
+        />
+        <p className="help">{ltr(language, "tl_ends_h")}</p>
+        <Problem message={problems.ends} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="termination-number">
+          {ltr(language, "d_no")}
+          <span className="req">{ltr(language, "required")}</span>
+        </label>
+        <input
+          aria-invalid={problems.number !== undefined}
+          autoComplete="off"
+          id="termination-number"
+          maxLength={500}
+          onChange={(event) => {
+            setNumber(event.currentTarget.value);
+          }}
+          value={number}
+        />
+        <Problem message={problems.number} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="termination-how">
+          {ltr(language, "d_how")}
+          <span className="req">{ltr(language, "required")}</span>
+        </label>
+        <HowSelect
+          id="termination-how"
+          invalid={problems.how !== undefined}
+          language={language}
+          onChange={setHow}
+          value={how}
+        />
+        <Problem message={problems.how} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="termination-details">
+          {ltr(language, "d_detail")}
+          <span className="req">{ltr(language, "required")}</span>
+        </label>
+        <input
+          aria-invalid={problems.details !== undefined}
+          autoComplete="off"
+          id="termination-details"
+          maxLength={1900}
+          onChange={(event) => {
+            setDetails(event.currentTarget.value);
+          }}
+          value={details}
+        />
+        <Problem message={problems.details} />
+      </div>
       <OutcomeNotice language={language} outcome={outcome} />
     </Dialog>
   );

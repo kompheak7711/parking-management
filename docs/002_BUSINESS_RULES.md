@@ -1087,27 +1087,40 @@ A violation, and the right to end the Lease for it, must come from the signed Le
 
 - Property Management sends at least three written warning letters before ending a Lease for a violation. Each letter names the violation, the date, the Lease article and how it was sent. A hidden pet follows this rule too.
 - A serious breach, meaning a crime or a danger to people or the building, may end the Lease at once, with no warning letters.
-- For unpaid Rent the three letters are: the day-20 warning (letter 1), the day-30 default notice (letter 2) and the Termination Notice (letter 3). No other letters are needed.
+- For unpaid Rent the letters are the three notices of day 10, day 20 and day 25, then the termination letter of day 30 (BR-LEASE-026). No other letters are needed.
 - Article 2.5 of the standard Lease (Security Deposit or Initial Rent not fully paid within five days after the Lease Start Date) needs no warning letters. Since Sign Lease receives this money first, it can apply only to an old Lease (BR-LEASE-001).
 
 Replaces: BR-LEASE-025.
-Decisions: DL-064, DL-070, DL-073.
+Decisions: DL-064, DL-070, DL-073, DL-237.
 
-## BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30
+## BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30
 
 This rule is only for monthly Rent Invoices. The Initial Rent Invoice never starts it.
 
-- Days are counted in the Property's time zone from a fixed day 1: the first day of the billed month. Day N is day 1 plus N − 1 days. For August Rent, day 20 is 20 August and day 30 is 30 August. For February Rent in a normal year, day 30 is 2 March. The Due Date and the late-payment charge follow their own rules and do not change this count.
+- Days are counted in the Property's time zone from a fixed day 1: the first day of the billed month. Day N is day 1 plus N − 1 days. For August Rent, day 10 is 10 August, day 20 is 20 August, day 25 is 25 August and day 30 is 30 August. For February Rent in a normal year, day 30 is 2 March.
+- No notice comes before the Due Date has passed. The Due Date in Settings may be day 1 to 28. With a Due Date on the 15th, the day-10 notice waits for the 16th. The late-payment charge follows its own rule and does not change this count.
 - Only the Rent line counts, after valid allocations, Credit uses and Adjustments. An unpaid Service alone does not count.
-- Day 20, Rent still unpaid: the app alerts staff and supports a formal Nonpayment Warning Notice to the Customer. It says that Rent still unpaid on day 30 may lead management to start ending the Lease. The Notice is a kept record: Customer, Lease, the Rent Invoice, Due Date, Rent unpaid at that time, issue time, issuer, type, how it was sent, the document, and what followed.
-- Day 30, Rent still unpaid: the app records a Serious Nonpayment Default, with a default notice letter. Management may then start ending the Lease. The default itself changes nothing: the Lease stays Signed, the Unit stays Occupied, no Occupancy ends, and no move-out or Final Settlement is made.
-- A case opened after day 20 or day 30 has passed alerts staff at once.
-- Paying in full after the day-20 Notice and before day 30 stops the day-30 step for that Rent. The history of the late Invoice, the Notice and the Payment stays.
-- Paying after day 30 does not erase the default, its Notice or an ending that management already started. The app does not decide whether that ending goes on. Management decides, and everything is kept in the history.
-- A case recorded under an older way of counting keeps its values.
+- There are four steps while the Rent is still unpaid:
+
+| Step | Day | Who sends it |
+| --- | --- | --- |
+| Notice 1 | Day 10 | The app, by itself |
+| Notice 2 | Day 20 | The app, by itself |
+| Notice 3 (the last notice) | Day 25 | The app, by itself |
+| Termination letter | Day 30 | A Manager or the Owner |
+
+- The three notices. For a tenant with a live Tenant-bot link, the app records the notice and sends it by Telegram by itself, from 09:00 in the Property's time zone, only when the Rent is still unpaid at that moment. It sends them in order and at most one a day, so after a gap it catches up one notice each day. For this tenant the Telegram message is the notice; staff give a paper copy when the tenant asks.
+- A tenant with no Tenant-bot link gets nothing by itself. The app alerts staff the same day, on Home and on the Letters screen. Staff print the letter, give it, and record it with how it was given and its number. The paper letter is the official copy.
+- Paying the Rent in full stops the next notices. A part payment does not stop them. The history of the late Invoice, the notices and the Payment stays.
+- The termination letter is never sent by the app by itself. On day 30, when the Rent is still unpaid and the three notices are given, the app has it ready and alerts. A user with the right to end a Lease (a Manager or the Owner) sends it. The app records it as the Serious Nonpayment Default of that Rent, together with the Termination Notice and its end date. A linked tenant also gets it by Telegram. The paper letter is the official copy.
+- The termination letter waits for the three notices. When day 30 has passed and a notice is missing, staff give the missing notices first.
+- The termination letter itself changes nothing: the Lease stays Signed, the Unit stays Occupied, no Occupancy ends, and no move-out or Final Settlement is made. Ending the Lease is a separate step by a Manager or the Owner, on or after the end date written in the letter (BR-LEASE-024).
+- Each notice and the termination letter is a kept record: Customer, Lease, the Rent Invoice, Due Date, Rent unpaid at that time, the time, who (or the app by itself), the type, how it was sent, the document number, and what followed.
+- Paying after the termination letter does not erase it or an ending that management already started. The app does not decide whether that ending goes on. Management decides, and everything is kept in the history.
+- A case recorded under an older way of counting keeps its values. A case that holds only the day-20 notice from before this rule needs notices 1 and 3 before its termination letter.
 
 Replaces: BR-LEASE-027, BR-LEASE-028, BR-LEASE-029, BR-LEASE-030.
-Decisions: DL-073.
+Decisions: DL-073, DL-217, DL-237.
 
 ---
 
@@ -1344,7 +1357,7 @@ Replaces: BR-AUDIT-001, BR-AUDIT-002, BR-AUDIT-004, BR-AUDIT-005, BR-AUDIT-007, 
 
 A Signer's signature time, the Lease signing time and the Lease termination time are the database's own time at the moment of the step. No browser or device clock sets them, so a device clock cannot refuse a signing or make a signature look earlier. The real termination date stays a date typed by staff.
 
-A Nonpayment Warning Notice and a Serious Nonpayment Default keep their Rent Invoice, the day count, the amount at that time, the time, who, the letter, any later payment, and what management did next.
+Each unpaid-Rent notice and the termination letter (the Serious Nonpayment Default) keep their Rent Invoice, the day count, the amount at that time, the time, who, the letter, any later payment, and what management did next.
 
 ---
 
@@ -1363,7 +1376,8 @@ Decisions: DL-074.
 | Extend a Reservation; correct Reservation dates or reasons; class a cancellation | Manager or Owner |
 | Accept a first Security Deposit below the suggestion | Authorized management, with a reason |
 | Sign a Lease; terminate a Lease; Termination Notices and warning letters; correct a move-in or move-out date | Manager or Owner |
-| Record a day-20 Notice or a day-30 default and act on it | Authorized user. Time passing alone gives no right to end a Lease |
+| Record an unpaid-Rent notice (day 10, 20, 25) by hand | Authorized user. For a tenant with a Tenant-bot link the app records and sends it by itself (BR-LEASE-026) |
+| Send the day-30 termination letter and act on it | A user with the right to end a Lease. Time passing alone gives no right to end a Lease |
 | Type the ABA rate by hand | Authorized user, only when the rate cannot be read automatically |
 | Estimate use for a broken Meter, and correct it | Authorized user. A reading that is only missing can never be made into an estimate |
 | Issue a charge by hand, adjust an issued Invoice, set a Due Date by hand, make an Invoice Void | Authorized user, with a reason |
@@ -1714,11 +1728,11 @@ A number in bold is still a rule heading. Every other number now lives in the ru
 | BR-LEASE-023 | BR-LEASE-022 — Notice and the Real Termination Date |
 | **BR-LEASE-024** | BR-LEASE-024 — Ending a Lease for a Violation |
 | BR-LEASE-025 | BR-LEASE-024 — Ending a Lease for a Violation |
-| **BR-LEASE-026** | BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30 |
-| BR-LEASE-027 | BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30 |
-| BR-LEASE-028 | BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30 |
-| BR-LEASE-029 | BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30 |
-| BR-LEASE-030 | BR-LEASE-026 — Unpaid Rent: Day 20 and Day 30 |
+| **BR-LEASE-026** | BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30 |
+| BR-LEASE-027 | BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30 |
+| BR-LEASE-028 | BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30 |
+| BR-LEASE-029 | BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30 |
+| BR-LEASE-030 | BR-LEASE-026 — Unpaid Rent: Notices on Day 10, 20 and 25, Termination Letter on Day 30 |
 | **BR-MOVEOUT-001** | BR-MOVEOUT-001 — The Move-out |
 | BR-MOVEOUT-002 | BR-MOVEOUT-001 — The Move-out |
 | BR-MOVEOUT-003 | BR-MOVEOUT-001 — The Move-out |

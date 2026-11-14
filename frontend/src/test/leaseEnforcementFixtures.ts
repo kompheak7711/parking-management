@@ -39,11 +39,23 @@ export function assessment(voided = false): FinancialObject {
     invoice_status: voided ? "VOID" : "UNPAID",
     remaining_rent: { currency: "USD", minor_units: voided ? 0 : 80000 },
     source_applicable: !voided,
+    // DL-237: notices on day 10, 20 and 25; the day-30 step waits for the three notices.
+    ten_day_notice_eligible: !voided,
     twenty_day_warning_eligible: !voided,
-    thirty_day_default_eligible: !voided,
+    twenty_five_day_notice_eligible: !voided,
+    thirty_day_default_eligible: false,
     cure_eligible: false,
+    ten_day_notice_recorded: false,
     warning_recorded: false,
+    twenty_five_day_notice_recorded: false,
     serious_default_recorded: false,
+    telegram_linked: false,
+    step_days: {
+      TEN_DAY_NOTICE: "2026-08-10",
+      TWENTY_DAY_WARNING: "2026-08-20",
+      TWENTY_FIVE_DAY_NOTICE: "2026-08-25",
+      THIRTY_DAY_SERIOUS_DEFAULT: "2026-08-30",
+    },
   };
 }
 export function source(voided = false): FinancialObject {

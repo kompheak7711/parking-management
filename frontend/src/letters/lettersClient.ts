@@ -1,16 +1,32 @@
 // V1-058 R3: what the Letters screen reads and records (the lease enforcement routes): unpaid
-// Rent after day 20, the letters on each case, and the Lease rule warnings of each Lease.
+// Rent from day 10, the letters on each case, and the Lease rule warnings of each Lease.
+// DL-237: notices on day 10, 20 and 25 of the billed month, the termination letter on day 30.
+
+export type LetterKind =
+  | "TEN_DAY_NOTICE"
+  | "TWENTY_DAY_WARNING"
+  | "TWENTY_FIVE_DAY_NOTICE"
+  | "THIRTY_DAY_SERIOUS_DEFAULT";
 
 export interface RentAssessment {
   business_date: string;
   remaining_rent: { currency: "USD"; minor_units: number };
+  ten_day_notice_eligible: boolean;
   twenty_day_warning_eligible: boolean;
+  twenty_five_day_notice_eligible: boolean;
+  /** Day 30 has come and the three notices are on the case. */
   thirty_day_default_eligible: boolean;
+  ten_day_notice_recorded: boolean;
   warning_recorded: boolean;
+  twenty_five_day_notice_recorded: boolean;
   serious_default_recorded: boolean;
+  /** The tenant has a live Tenant-bot link: the three notices go by themselves at 09:00. */
+  telegram_linked: boolean;
+  /** The first day of each step: day N of the month, and never before the Due Date passed. */
+  step_days: Record<LetterKind, string> | null;
 }
 
-/** One unpaid Rent line from day 20 of its month on. */
+/** One unpaid Rent line from its first notice day on. */
 export interface RentAlert {
   rent_invoice_line_id: string;
   invoice_id: string;
@@ -26,8 +42,6 @@ export interface RentAlerts {
   items: RentAlert[];
   business_date: string;
 }
-
-export type LetterKind = "TWENTY_DAY_WARNING" | "THIRTY_DAY_SERIOUS_DEFAULT";
 
 export interface RentLetterEvent {
   id: string;

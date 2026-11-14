@@ -113,30 +113,51 @@ function alert(
     assessment: {
       business_date: BUSINESS_DATE,
       remaining_rent: { currency: "USD", minor_units: 50000 },
+      ten_day_notice_eligible: false,
       twenty_day_warning_eligible: false,
+      twenty_five_day_notice_eligible: false,
       thirty_day_default_eligible: false,
+      ten_day_notice_recorded: false,
       warning_recorded: false,
+      twenty_five_day_notice_recorded: false,
       serious_default_recorded: false,
+      telegram_linked: false,
+      // Due on the 5th: each step falls on day N of the month.
+      step_days: {
+        TEN_DAY_NOTICE: `${due.slice(0, 8)}10`,
+        TWENTY_DAY_WARNING: `${due.slice(0, 8)}20`,
+        TWENTY_FIVE_DAY_NOTICE: `${due.slice(0, 8)}25`,
+        THIRTY_DAY_SERIOUS_DEFAULT: `${due.slice(0, 8)}30`,
+      },
       ...flags,
     },
   };
 }
 
+const ALL_DUE = {
+  ten_day_notice_eligible: true,
+  twenty_day_warning_eligible: true,
+  twenty_five_day_notice_eligible: true,
+};
+const ALL_GIVEN = {
+  ten_day_notice_recorded: true,
+  warning_recorded: true,
+  twenty_five_day_notice_recorded: true,
+};
+
+// DL-237. None of these tenants has a Tenant-bot link, so people give the notices.
 const ALERTS: RentAlert[] = [
-  // November Rent, day 25: the day-20 letter is due.
-  alert("U101", "2026-11-05", null, { twenty_day_warning_eligible: true }),
-  // November Rent, day-20 letter given: wait for day 30.
-  alert("U102", "2026-11-05", "case-U102", { warning_recorded: true }),
-  // October Rent, both letters given: a Termination notice may follow.
+  // November Rent, day 25: the three notices are due and none is given.
+  alert("U101", "2026-11-05", null, ALL_DUE),
+  // November Rent, the three notices given: wait for day 30.
+  alert("U102", "2026-11-05", "case-U102", ALL_GIVEN),
+  // October Rent, the notices and the termination letter given: the Lease may be ended.
   alert("U103", "2026-10-05", "case-U103", {
-    warning_recorded: true,
+    ...ALL_GIVEN,
     serious_default_recorded: true,
   }),
-  // October Rent, both days passed and no letter.
-  alert("U104", "2026-10-05", null, {
-    twenty_day_warning_eligible: true,
-    thirty_day_default_eligible: true,
-  }),
+  // October Rent, day 30 passed and no notice: the termination letter waits for them.
+  alert("U104", "2026-10-05", null, ALL_DUE),
 ];
 
 function letter(
@@ -157,19 +178,28 @@ function letter(
 const EVENTS: Record<string, RentLetterEvent[]> = {
   "case-U102": [
     letter(
+      "TEN_DAY_NOTICE",
+      "2026-11-10",
+      "Sent by Telegram: by the Tenant bot, by itself",
+      "TG-INV26U102-1",
+    ),
+    letter(
       "TWENTY_DAY_WARNING",
       "2026-11-20",
       "Handed to the tenant: signed our copy",
       "L-020",
     ),
+    letter("TWENTY_FIVE_DAY_NOTICE", "2026-11-25", "Sent by email", "L-025"),
   ],
   "case-U103": [
+    letter("TEN_DAY_NOTICE", "2026-10-10", "Handed to the tenant", "L-010"),
     letter(
       "TWENTY_DAY_WARNING",
       "2026-10-21",
       "Sent by Telegram: chat photo kept",
       "L-011",
     ),
+    letter("TWENTY_FIVE_DAY_NOTICE", "2026-10-25", "Sent by WhatsApp", "L-012"),
     letter(
       "THIRTY_DAY_SERIOUS_DEFAULT",
       "2026-10-30",
@@ -248,8 +278,8 @@ function setup(
       Promise.resolve(warning("U101", source.warning_sequence)),
     ),
     notices: vi.fn<LettersApi["notices"]>(() => Promise.resolve([])),
-    recordNotice: vi.fn<LettersApi["recordNotice"]>(() =>
-      Promise.reject(new Error("not used")),
+    recordNotice: vi.fn<LettersApi["recordNotice"]>((_property, leaseId) =>
+      Promise.resolve({ id: "notice-new", lease_id: leaseId } as never),
     ),
   };
   tweak?.(api);
@@ -282,21 +312,22 @@ function rowOf(unit: string): HTMLElement {
 }
 
 describe("Letters page (V1-058 R3)", () => {
-  it("TEST-FE-862 Rent letters show each unpaid Rent month with its letters, the counts and the next step", async () => {
+  it("TEST-FE-862 Rent letters show each unpaid Rent month with its four steps, the counts and the next step", async () => {
     setup();
-    await screen.findByText("Unpaid Rent after day 20");
+    await screen.findByText("Unpaid Rent after day 10");
     expect(screen.getByText(/as of 25\/11\/2026/)).toBeTruthy();
-    // Cards: due (U101 day 20, U104 day 20), day-20 given and waiting (U102), day-30 given (U103).
+    // Cards: a person must give a notice (U101, U104), notices given and waiting (U102),
+    // termination letter sent (U103).
     expect(
-      screen.getByRole("button", { name: /^Letters due: 2\./ }),
+      screen.getByRole("button", { name: /^Letters to give: 2\./ }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: /^Day-20 letter given: 1\./ }),
+      screen.getByRole("button", { name: /^Notices given: 1\./ }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: /^Day-30 letter given: 1\./ }),
+      screen.getByRole("button", { name: /^Termination letter sent: 1\./ }),
     ).toBeTruthy();
-    // Both days passed with no letter.
+    // Day 30 passed and the three notices are not all given.
     expect(screen.getByRole("alert").textContent).toContain("U104");
 
     const u101 = rowOf("U101");
@@ -304,13 +335,22 @@ describe("Letters page (V1-058 R3)", () => {
     expect(within(u101).getByText(/INV26U101 · Day 25/)).toBeTruthy();
     expect(within(u101).getByText("$500.00 Rent owed")).toBeTruthy();
     expect(within(u101).getByText("Due Date 05/11/2026")).toBeTruthy();
+    expect(
+      ["Day 10", "Day 20", "Day 25", "Day 30"].every(
+        (day) => within(u101).queryByText(day) !== null,
+      ),
+    ).toBe(true);
+    expect(within(u101).getByText("Due since 10/11/2026")).toBeTruthy();
     expect(within(u101).getByText("Due since 20/11/2026")).toBeTruthy();
+    expect(within(u101).getByText("Due since 25/11/2026")).toBeTruthy();
     expect(within(u101).getByText("On 30/11/2026")).toBeTruthy();
     expect(
       within(u101).getByRole("button", { name: /Record letter/ }),
     ).toBeTruthy();
 
     const u102 = rowOf("U102");
+    expect(within(u102).getByText("Given 10/11/2026")).toBeTruthy();
+    expect(u102.textContent).toContain("Sent by Telegram · TG-INV26U102-1");
     expect(within(u102).getByText("Given 20/11/2026")).toBeTruthy();
     expect(u102.textContent).toContain("Handed to the tenant · L-020");
     expect(within(u102).getByText("Wait for day 30 (30/11/2026)")).toBeTruthy();
@@ -321,41 +361,38 @@ describe("Letters page (V1-058 R3)", () => {
     expect(
       within(u103).getByText("Left at the Parking with a witness"),
     ).toBeTruthy();
-    const notice = within(u103).getByRole("link", {
-      name: /Termination notice/,
-    });
-    expect(notice.textContent).toContain("MANAGER");
-    expect(notice.getAttribute("href")).toBe("#/leases/terminate%3Alease-U103");
+    const ending = within(u103).getByRole("link", { name: /End the Lease/ });
+    expect(ending.textContent).toContain("MANAGER");
+    expect(ending.getAttribute("href")).toBe("#/leases/terminate%3Alease-U103");
 
     // A card filters the table.
     fireEvent.click(
-      screen.getByRole("button", { name: /^Day-30 letter given/ }),
+      screen.getByRole("button", { name: /^Termination letter sent/ }),
     );
-    expect(screen.getByText("Showing: Day-30 letter given")).toBeTruthy();
+    expect(screen.getByText("Showing: Termination letter sent")).toBeTruthy();
     expect(screen.queryByText("INV26U101 · Day 25")).toBeNull();
-    // Only cases with a case read their letters.
     expect(screen.getAllByRole("row")).toHaveLength(2);
   });
 
-  it("TEST-FE-863 Record letter opens the case once, needs a letter number for day 20, and sends the very same request on Try again", async () => {
+  it("TEST-FE-863 Record letter opens the case once, needs a letter number for each notice, and sends the very same request on Try again", async () => {
     const { api } = setup();
-    await screen.findByText("Unpaid Rent after day 20");
+    await screen.findByText("Unpaid Rent after day 10");
     fireEvent.click(
       within(rowOf("U101")).getByRole("button", { name: /Record letter/ }),
     );
     const dialog = await screen.findByRole("dialog", {
       name: "Record a Rent letter · U101",
     });
-    // Day 20 is chosen; day 30 is not due yet.
-    const day20 = within(dialog).getByRole<HTMLInputElement>("radio", {
-      name: /Day-20 warning letter/,
-    });
-    expect(day20.checked).toBe(true);
+    // The oldest notice not given is chosen. The termination letter is not in this dialog.
     expect(
       within(dialog).getByRole<HTMLInputElement>("radio", {
-        name: /Day-30 default notice/,
-      }).disabled,
+        name: /Notice 1 \(day 10\)/,
+      }).checked,
     ).toBe(true);
+    expect(within(dialog).getAllByRole("radio")).toHaveLength(3);
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /Notice 2 \(day 20\)/ }),
+    );
     expect(within(dialog).getByText(/Today, 25\/11\/2026/)).toBeTruthy();
 
     fireEvent.click(
@@ -365,7 +402,7 @@ describe("Letters page (V1-058 R3)", () => {
     expect(within(dialog).getByText("Write the details.")).toBeTruthy();
     expect(
       within(dialog).getByText(
-        "Write the letter number. The day-20 letter needs one.",
+        "Write the letter number. Each notice needs one.",
       ),
     ).toBeTruthy();
     expect(api.openCase).not.toHaveBeenCalled();
@@ -400,7 +437,7 @@ describe("Letters page (V1-058 R3)", () => {
     );
     await within(dialog).findByText(/No answer came back/);
     fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
-    await screen.findByText("Day-20 warning letter recorded for U101.");
+    await screen.findByText("Notice 2 (day 20) recorded for U101.");
 
     expect(api.openCase).toHaveBeenCalledTimes(1);
     expect(api.openCase).toHaveBeenCalledWith(
@@ -424,53 +461,46 @@ describe("Letters page (V1-058 R3)", () => {
     });
   });
 
-  it("TEST-FE-864 the day-30 letter goes on the open case without a number, and a change meanwhile reads the list again", async () => {
-    const { api } = setup();
-    await screen.findByText("Unpaid Rent after day 20");
-    // U104: both letters due; day 20 comes first.
-    fireEvent.click(
-      within(rowOf("U104")).getByRole("button", { name: /Record letter/ }),
-    );
-    let dialog = await screen.findByRole("dialog");
-    expect(
-      within(dialog).getByRole<HTMLInputElement>("radio", {
-        name: /Day-20 warning letter/,
-      }).checked,
-    ).toBe(true);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-
-    // U102 has its case and its day-20 letter; on day 30 only the day-30 letter is left.
-    api.alerts.mockResolvedValue({
-      items: [
-        alert("U102", "2026-11-05", "case-U102", {
-          warning_recorded: true,
-          thirty_day_default_eligible: true,
-        }),
-      ],
-      business_date: "2026-11-30",
+  it("TEST-FE-864 a notice goes on the open case, a given notice cannot be chosen again, and a change meanwhile reads the list again", async () => {
+    const { api } = setup(null, (mocks) => {
+      // U102 has its case and notice 1; notices 2 and 3 are due.
+      mocks.alerts.mockResolvedValue({
+        items: [
+          alert("U102", "2026-11-05", "case-U102", {
+            ...ALL_DUE,
+            ten_day_notice_eligible: false,
+            ten_day_notice_recorded: true,
+          }),
+        ],
+        business_date: BUSINESS_DATE,
+      });
     });
-    // Going to the other tab and back reads the list again.
-    window.location.hash = "#/letters/warnings";
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-    await screen.findByText("Smoking inside");
-    window.location.hash = "#/letters";
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-    await screen.findByText(/as of 30\/11\/2026/);
+    await screen.findByText("Unpaid Rent after day 10");
     fireEvent.click(
       within(rowOf("U102")).getByRole("button", { name: /Record letter/ }),
     );
-    dialog = await screen.findByRole("dialog");
-    const day20 = within(dialog).getByRole<HTMLInputElement>("radio", {
-      name: /Day-20 warning letter/,
+    const dialog = await screen.findByRole("dialog");
+    const first = within(dialog).getByRole<HTMLInputElement>("radio", {
+      name: /Notice 1 \(day 10\)/,
     });
-    expect(day20.disabled).toBe(true);
+    expect(first.disabled).toBe(true);
     expect(within(dialog).getByText(/already recorded/)).toBeTruthy();
-    expect(within(dialog).getByText("Optional")).toBeTruthy();
+    expect(
+      within(dialog).getByRole<HTMLInputElement>("radio", {
+        name: /Notice 2 \(day 20\)/,
+      }).checked,
+    ).toBe(true);
+    fireEvent.click(
+      within(dialog).getByRole("radio", { name: /Notice 3 \(day 25\)/ }),
+    );
     fireEvent.change(within(dialog).getByLabelText(/How it was given/), {
       target: { value: "DOOR" },
     });
     fireEvent.change(within(dialog).getByLabelText(/Details/), {
       target: { value: "Witness Sok Dara" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+      target: { value: "L-025" },
     });
     api.recordLetter.mockRejectedValueOnce(new LettersConflictError());
     fireEvent.click(
@@ -482,10 +512,11 @@ describe("Letters page (V1-058 R3)", () => {
     expect(api.recordLetter).toHaveBeenCalledWith(
       "case-U102",
       {
-        event_kind: "THIRTY_DAY_SERIOUS_DEFAULT",
-        reason: "Day-30 default notice given",
+        event_kind: "TWENTY_FIVE_DAY_NOTICE",
+        reason: "Day-25 notice given",
         communication_record:
-          "Left at the Parking with a witness: Witness Sok Dara",
+          "Left at the Unit with a witness: Witness Sok Dara",
+        notice_document_reference: "L-025",
       },
       expect.any(String),
     );
@@ -493,12 +524,10 @@ describe("Letters page (V1-058 R3)", () => {
 
   it("TEST-FE-865 a person without the letter rights sees the letters but cannot record or give notice", async () => {
     setup(new Set(["rent_nonpayment.read", "leases.read"]));
-    await screen.findByText("Unpaid Rent after day 20");
+    await screen.findByText("Unpaid Rent after day 10");
     expect(screen.queryByRole("button", { name: /Record letter/ })).toBeNull();
     expect(within(rowOf("U101")).getByText("Record letter")).toBeTruthy();
-    expect(
-      screen.queryByRole("link", { name: /Termination notice/ }),
-    ).toBeNull();
+    expect(screen.queryByRole("link", { name: /End the Lease/ })).toBeNull();
     expect(within(rowOf("U103")).getByText("Nothing to do now")).toBeTruthy();
     // The warnings tab has no Record warning without leases.warn.
     window.location.hash = "#/letters/warnings";
@@ -518,6 +547,238 @@ describe("Letters page (V1-058 R3)", () => {
     setup(new Set(["units.read"]));
     expect(
       await screen.findByText("You are not allowed to see this list."),
+    ).toBeTruthy();
+  });
+
+  it("TEST-FE-2252 a tenant with Telegram gets the notices from the Tenant bot at 09:00, and a person may still record one by hand", async () => {
+    const { api } = setup(null, (mocks) => {
+      mocks.alerts.mockResolvedValue({
+        items: [
+          // Notice 1 went by itself; notice 2 and 3 are due today.
+          alert("U101", "2026-11-05", "case-U102", {
+            ...ALL_DUE,
+            ten_day_notice_eligible: false,
+            ten_day_notice_recorded: true,
+            telegram_linked: true,
+          }),
+          // A Due Date on the 28th: no notice before the 29th.
+          {
+            ...alert("U104", "2026-11-28", null, { telegram_linked: true }),
+            assessment: {
+              ...alert("U104", "2026-11-28", null, {}).assessment,
+              telegram_linked: true,
+              step_days: {
+                TEN_DAY_NOTICE: "2026-11-29",
+                TWENTY_DAY_WARNING: "2026-11-29",
+                TWENTY_FIVE_DAY_NOTICE: "2026-11-29",
+                THIRTY_DAY_SERIOUS_DEFAULT: "2026-11-30",
+              },
+            },
+          },
+        ],
+        business_date: BUSINESS_DATE,
+      });
+    });
+    await screen.findByText("Unpaid Rent after day 10");
+    // Nobody has to give a letter by hand.
+    expect(
+      screen.getByRole("button", { name: /^Letters to give: 0\./ }),
+    ).toBeTruthy();
+    const u101 = rowOf("U101");
+    expect(u101.textContent).toContain("Sent by Telegram · TG-INV26U102-1");
+    expect(
+      within(u101).getByText("The Tenant bot sends notice 2 at 09:00."),
+    ).toBeTruthy();
+    expect(
+      within(u101).queryByRole("button", { name: /^Record letter$/ }),
+    ).toBeNull();
+    const u104 = rowOf("U104");
+    expect(within(u104).getAllByText("On 29/11/2026")).toHaveLength(3);
+    expect(within(u104).getByText("Wait for day 10 (29/11/2026)")).toBeTruthy();
+
+    // The bot could not send (for example the office computer was off): record it by hand.
+    fireEvent.click(
+      within(u101).getByRole("button", { name: "Record by hand" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Record a Rent letter · U101",
+    });
+    fireEvent.change(within(dialog).getByLabelText(/How it was given/), {
+      target: { value: "HAND" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Details/), {
+      target: { value: "signed our copy" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+      target: { value: "L-020" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Record letter" }),
+    );
+    await screen.findByText("Notice 2 (day 20) recorded for U101.");
+    expect(api.recordLetter.mock.calls[0]?.[1].event_kind).toBe(
+      "TWENTY_DAY_WARNING",
+    );
+  });
+
+  it("TEST-FE-2253 on day 30 a Manager sends the termination letter: the day-30 step and the termination notice with its end date, the very same requests on Try again", async () => {
+    const ready = (linked: boolean) => ({
+      items: [
+        alert("U102", "2026-10-05", "case-U102", {
+          ...ALL_GIVEN,
+          thirty_day_default_eligible: true,
+          telegram_linked: linked,
+        }),
+      ],
+      business_date: BUSINESS_DATE,
+    });
+    const { api } = setup(null, (mocks) => {
+      mocks.alerts.mockResolvedValue(ready(true));
+    });
+    await screen.findByText("Unpaid Rent after day 10");
+    expect(
+      screen.getByRole("button", { name: /^Letters to give: 1\./ }),
+    ).toBeTruthy();
+    const open = within(rowOf("U102")).getByRole("button", {
+      name: /Termination letter/,
+    });
+    expect(open.textContent).toContain("MANAGER");
+    fireEvent.click(open);
+    const dialog = await screen.findByRole("dialog", {
+      name: "Termination letter · U102",
+    });
+    // Ready: the end date 30 days from today and the number. The termination letter is always
+    // given on paper, also to a linked tenant: the paper letter is the official copy and the
+    // Tenant bot sends a copy. So how the paper was given is never filled in by the app.
+    const ends = addDays(today, 30);
+    expect(
+      within(dialog).getByText(
+        /Print the letter and give it on paper\. The paper letter is the official copy\. The Tenant bot also sends a copy in Telegram/,
+      ),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByLabelText<HTMLSelectElement>(/How it was given/)
+        .value,
+    ).toBe("");
+    expect(
+      within(dialog).getByLabelText<HTMLInputElement>(/Letter number/).value,
+    ).toBe("TL-INV26U102");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Send termination letter" }),
+    );
+    expect(within(dialog).getByText("Choose how it was given.")).toBeTruthy();
+    expect(api.recordLetter).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText(/How it was given/), {
+      target: { value: "HAND" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Details/), {
+      target: { value: " the tenant signed our copy " },
+    });
+    api.recordNotice.mockRejectedValueOnce(new LettersUnavailableError());
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Send termination letter" }),
+    );
+    await within(dialog).findByText(/No answer came back/);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await screen.findByText("Termination letter recorded for U102.");
+
+    expect(api.openCase).not.toHaveBeenCalled();
+    expect(api.recordLetter).toHaveBeenCalledTimes(2);
+    expect(api.recordLetter.mock.calls[0]).toEqual(
+      api.recordLetter.mock.calls[1],
+    );
+    expect(api.recordLetter.mock.calls[0]?.[0]).toBe("case-U102");
+    expect(api.recordLetter.mock.calls[0]?.[1]).toEqual({
+      event_kind: "THIRTY_DAY_SERIOUS_DEFAULT",
+      reason: "Termination letter sent",
+      communication_record: "Handed to the tenant: the tenant signed our copy",
+      notice_document_reference: "TL-INV26U102",
+    });
+    expect(api.recordNotice).toHaveBeenCalledTimes(2);
+    expect(api.recordNotice.mock.calls[0]).toEqual(
+      api.recordNotice.mock.calls[1],
+    );
+    const [property, leaseId, notice] = api.recordNotice.mock.calls[0] ?? [];
+    expect([property, leaseId]).toEqual(["property-1", "lease-U102"]);
+    expect(notice).toMatchObject({
+      expected_lease_version: 3,
+      notice_date: today,
+      intended_termination_date: ends,
+      governing_lease_provision:
+        "Signed Lease: Rent not paid after the notices of day 10, day 20 and day 25 (BR-LEASE-026)",
+      approved_grounds:
+        "Rent unpaid on day 30 after the three notices (DL-237)",
+      evidence_reference: "TL-INV26U102",
+      communication_record: "Handed to the tenant: the tenant signed our copy",
+    });
+    expect(notice?.notice_text).toContain("U102");
+    cleanup();
+
+    // No Telegram link: the paper letter, and how it was given must be written.
+    window.location.hash = "#/letters";
+    const paper = setup(null, (mocks) => {
+      mocks.alerts.mockResolvedValue(ready(false));
+    });
+    await screen.findByText("Unpaid Rent after day 10");
+    fireEvent.click(
+      within(rowOf("U102")).getByRole("button", {
+        name: /Termination letter/,
+      }),
+    );
+    const second = await screen.findByRole("dialog");
+    expect(
+      within(second).getByText(/has no Telegram link\. Print the letter/),
+    ).toBeTruthy();
+    fireEvent.change(within(second).getByLabelText(/The Lease ends on/), {
+      target: { value: addDays(today, -1) },
+    });
+    fireEvent.click(
+      within(second).getByRole("button", { name: "Send termination letter" }),
+    );
+    expect(within(second).getByText("Choose how it was given.")).toBeTruthy();
+    expect(within(second).getByText("Write the details.")).toBeTruthy();
+    expect(
+      within(second).getByText("The end date cannot be before today."),
+    ).toBeTruthy();
+    expect(paper.api.recordLetter).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-2254 without the right to end a Lease the termination letter is shown as waiting for a Manager, and it waits for the three notices", async () => {
+    setup(
+      new Set([
+        "rent_nonpayment.read",
+        "rent_nonpayment.case_manage",
+        "rent_nonpayment.event_post",
+      ]),
+      (mocks) => {
+        mocks.alerts.mockResolvedValue({
+          items: [
+            alert("U102", "2026-10-05", "case-U102", {
+              ...ALL_GIVEN,
+              thirty_day_default_eligible: true,
+            }),
+            alert("U104", "2026-10-05", null, ALL_DUE),
+          ],
+          business_date: BUSINESS_DATE,
+        });
+      },
+    );
+    await screen.findByText("Unpaid Rent after day 10");
+    const u102 = rowOf("U102");
+    expect(
+      within(u102).queryByRole("button", { name: /Termination letter/ }),
+    ).toBeNull();
+    expect(
+      within(u102).getByText(
+        "Termination letter ready: a Manager or the Owner sends it",
+      ),
+    ).toBeTruthy();
+    // Day 30 passed with no notice: the notices come first, and staff may record them.
+    expect(screen.getByRole("alert").textContent).toContain(
+      "U104 · Day 30 has passed and the three notices are not all given.",
+    );
+    expect(
+      within(rowOf("U104")).getByRole("button", { name: /Record letter/ }),
     ).toBeTruthy();
   });
 
@@ -648,7 +909,7 @@ describe("Letters page (V1-058 R3)", () => {
 
   it("TEST-FE-868 Cancel after the case was opened reads the list again, and Leases that cannot be warned get no Record warning button", async () => {
     const { api } = setup();
-    await screen.findByText("Unpaid Rent after day 20");
+    await screen.findByText("Unpaid Rent after day 10");
     fireEvent.click(
       within(rowOf("U101")).getByRole("button", { name: /Record letter/ }),
     );

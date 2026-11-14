@@ -45,7 +45,6 @@ from property_rental.lease_deposit_forfeiture import (
     lease_deposit_forfeiture_draft_id,
 )
 from property_rental.lease_enforcement import (
-    NonpaymentEventKind,
     RecordLeaseWarning,
     enforcement_request_digest,
 )
@@ -72,8 +71,7 @@ from test_move_in_migration import runtime_database_url
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import designated as allocation_designated
 from test_payment_allocation_migration import service as allocation_service
-from test_rent_nonpayment_recurring_only_migration import enforcement, open_case
-from test_rent_nonpayment_recurring_only_migration import record as record_nonpayment_event
+from test_rent_nonpayment_recurring_only_migration import enforcement, open_case, record_default
 from test_reservation_migration import (
     create_reservation,
     reservation_business_date,
@@ -587,9 +585,7 @@ def test_thirty_day_default_ground_forfeits_with_a_recorded_serious_default_even
         )
     flow = enforcement()
     case = open_case(flow, prop, lease, line, human)
-    record_nonpayment_event(
-        flow, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
-    )
+    record_default(flow, prop, lease, case, human)
     terminate_on(
         url,
         human,

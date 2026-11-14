@@ -49,6 +49,9 @@ INLINE_BALANCE = (
     f"{SPEED.OWED_BALANCE} AS inline FROM app.invoice_lines AS line\n{SPEED.OWED_JOINS}"
 )
 
+# The exact, slow filter the fast alert page must match. DL-237: an unpaid Rent line is listed
+# from its first notice day, which is day 10 and never before the Due Date has passed (before:
+# day 20).
 OLD_ALERT_LINES = """
     SELECT line.id
     FROM app.invoice_lines line JOIN app.invoices i ON i.id=line.invoice_id
@@ -56,7 +59,8 @@ OLD_ALERT_LINES = """
     WHERE u.property_id=%s AND line.category='RENT' AND line.source_lease_id=l.id
         AND i.status NOT IN ('DRAFT','VOID') AND i.issued_at<=statement_timestamp()
         AND i.rent_billing_kind='RECURRING'
-        AND timezone('Asia/Phnom_Penh',statement_timestamp())::date-app.rent_nonpayment_day_zero(i.id)>=20
+        AND timezone('Asia/Phnom_Penh',statement_timestamp())::date-app.rent_nonpayment_day_zero(i.id)>=10
+        AND timezone('Asia/Phnom_Penh',statement_timestamp())::date>i.due_date
         AND app.invoice_line_outstanding_at(line.id,statement_timestamp())>0
 """
 

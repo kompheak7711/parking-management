@@ -101,7 +101,7 @@ export interface ReceiptsPage {
 /** A late Rent letter or Lease warning and who got it on Telegram (DL-217). */
 export interface TelegramWarning {
   id: string;
-  /** LEASE_WARNING, RENT_20 or RENT_30. */
+  /** LEASE_WARNING, or RENT_10, RENT_20, RENT_25, RENT_30 (DL-237). */
   kind: string;
   unit_number: string;
   customer: string;

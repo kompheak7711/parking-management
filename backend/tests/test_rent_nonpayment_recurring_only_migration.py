@@ -25,6 +25,7 @@ from property_rental.late_payment import (
 from property_rental.lease_enforcement import (
     NONPAYMENT_OPEN,
     NONPAYMENT_READ,
+    RENT_NOTICE_KINDS,
     LeaseEnforcementAuthorizationError,
     LeaseEnforcementConflictError,
     NonpaymentEventKind,
@@ -79,7 +80,7 @@ def record(
         uuid4(),
         kind,
         "Authorized documented action",
-        "Notice-001" if kind is NonpaymentEventKind.TWENTY_DAY_WARNING else None,
+        "Notice-001" if kind in RENT_NOTICE_KINDS else None,
         "Delivered to Customer",
         "Management instruction" if kind is NonpaymentEventKind.AUTHORIZED_FOLLOW_UP else None,
     )
@@ -87,6 +88,27 @@ def record(
         prop, lease, case, request, actor=staff(human, prop), request_id="event"
     )
     return cast(dict[str, object], result.body["data"])
+
+
+def record_default(
+    flow: Any, prop: UUID, lease: UUID, case: UUID, human: UUID
+) -> dict[str, object]:
+    """DL-237: the day-30 step, after the notices of day 10, 20 and 25 not yet on the case."""
+    given = {
+        str(cast(dict[str, object], item)["event_kind"])
+        for item in cast(
+            list[object],
+            flow.read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["items"],
+        )
+    }
+    for kind in (
+        NonpaymentEventKind.TEN_DAY_NOTICE,
+        NonpaymentEventKind.TWENTY_DAY_WARNING,
+        NonpaymentEventKind.TWENTY_FIVE_DAY_NOTICE,
+    ):
+        if kind.value not in given:
+            record(flow, prop, lease, case, human, kind)
+    return record(flow, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
 
 
 def open_case(flow: Any, prop: UUID, lease: UUID, line: UUID, human: UUID) -> UUID:
@@ -295,7 +317,7 @@ def test_day_thirty_default_changes_no_lease_unit_or_occupancy(migrated_database
     flow = enforcement()
     case = open_case(flow, prop, lease, line, human)
     record(flow, prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
-    record(flow, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    record_default(flow, prop, lease, case, human)
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(TENANCY, (lease,)).fetchone() == before
         assert (
@@ -481,9 +503,18 @@ def test_forward_upgrade_keeps_recorded_history_and_limits_initial_cases(
             flow, i_prop, i_lease, i_case, i_human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP
         )
         assert follow_up["event_kind"] == "AUTHORIZED_FOLLOW_UP"
-        record(
-            flow, r_prop, r_lease, r_case, r_human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
-        )
+        # A case kept from before DL-237 holds the day-20 notice only: the day-30 step
+        # waits for the other two notices.
+        with pytest.raises(LeaseEnforcementConflictError):
+            record(
+                flow,
+                r_prop,
+                r_lease,
+                r_case,
+                r_human,
+                NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT,
+            )
+        record_default(flow, r_prop, r_lease, r_case, r_human)
 
 
 def test_recurring_only_rent_nonpayment_migration_is_forward_only() -> None:

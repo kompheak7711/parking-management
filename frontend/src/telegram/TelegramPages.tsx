@@ -1004,7 +1004,9 @@ function ReceiptsOnTelegram({
 // Warnings on Telegram (DL-217): who got each late Rent letter and Lease warning.
 
 const WARNING_KINDS = {
+  RENT_10: "warn_RENT_10",
   RENT_20: "warn_RENT_20",
+  RENT_25: "warn_RENT_25",
   RENT_30: "warn_RENT_30",
   LEASE_WARNING: "warn_LEASE_WARNING",
 } as const;

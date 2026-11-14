@@ -306,6 +306,7 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "settings/serviceSettingsClient.test.ts",
         "leases/leaseServices.test.ts",
         "shell/buttons.test.ts",
+        "letters/lettersData.test.ts",
     ):
         executable_ids.update(
             identifier

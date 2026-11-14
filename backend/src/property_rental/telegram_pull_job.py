@@ -456,6 +456,15 @@ def run_pull(
     return result
 
 
+def queue_warnings(store: TelegramStore) -> None:
+    """The messages about unpaid Rent and Lease warnings of this run."""
+    # The unpaid-Rent notice of day 10, 20 or 25, by itself from 09:00 (DL-237). It comes
+    # first, so the same run queues its message.
+    store.rent_notices_run()
+    # Each Rent notice, termination letter and Lease warning, to the Lease's links (DL-217).
+    store.warnings_queue()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Pull what waits in the Telegram relay")
     parser.add_argument("--config", required=True, type=Path)
@@ -517,8 +526,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         store.invoice_reminders()
         # Each new Receipt to the people linked to its Lease or stay (DL-215).
         store.receipts_queue()
-        # Each late Rent letter and Lease warning staff record, to the Lease's links (DL-217).
-        store.warnings_queue()
+        queue_warnings(store)
         store.visit_requests_remove_old()
         # The 18:00 summary of the staff checklists for the Authorizers, once a day.
         store.staff_daily_summary()

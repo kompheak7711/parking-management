@@ -335,13 +335,22 @@ const TEXT = {
     "Initial Rent Due Date set",
     "បានកំណត់ថ្ងៃផុតកំណត់ថ្លៃឈ្នួលដំបូង",
   ],
+  // DL-237: notices on day 10, 20 and 25, the termination letter on day 30.
+  "e_lease.rent_nonpayment_ten_day_notice": [
+    "Rent notice 1 (day 10) recorded",
+    "បានកត់ត្រាលិខិតជូនដំណឹងថ្លៃឈ្នួលទី១ (ថ្ងៃទី 10)",
+  ],
   "e_lease.rent_nonpayment_twenty_day_warning": [
-    "Day-20 Rent letter recorded",
-    "បានកត់ត្រាលិខិតថ្លៃឈ្នួលថ្ងៃទី 20",
+    "Rent notice 2 (day 20) recorded",
+    "បានកត់ត្រាលិខិតជូនដំណឹងថ្លៃឈ្នួលទី២ (ថ្ងៃទី 20)",
+  ],
+  "e_lease.rent_nonpayment_twenty_five_day_notice": [
+    "Rent notice 3 (day 25) recorded",
+    "បានកត់ត្រាលិខិតជូនដំណឹងថ្លៃឈ្នួលទី៣ (ថ្ងៃទី 25)",
   ],
   "e_lease.rent_nonpayment_thirty_day_serious_default": [
-    "Day-30 Rent letter recorded",
-    "បានកត់ត្រាលិខិតថ្លៃឈ្នួលថ្ងៃទី 30",
+    "Termination letter (day 30) recorded",
+    "បានកត់ត្រាលិខិតបញ្ចប់កិច្ចសន្យា (ថ្ងៃទី 30)",
   ],
   "e_lease.rent_nonpayment_cure": [
     "Unpaid Rent paid after a letter",
@@ -861,8 +870,8 @@ const TEXT = {
   nt_new: ["Record termination notice", "កត់ត្រាការជូនដំណឹងបញ្ចប់"],
   nt_t: ["Termination notice · {0}", "ការជូនដំណឹងបញ្ចប់ · {0}"],
   nt_note: [
-    "The third letter after the day-20 and day-30 letters (DL-073). Recording it does not end the Lease; Terminate does, once its period is over.",
-    "លិខិតទីបី បន្ទាប់ពីលិខិតថ្ងៃទី២០ និងថ្ងៃទី៣០។ ការកត់ត្រាវាមិនបញ្ចប់កិច្ចសន្យាទេ។ ប៊ូតុងបញ្ចប់ធ្វើវា ពេលរយៈពេលរបស់វាផុត។",
+    "The termination letter of day 30, after the notices of day 10, 20 and 25 (DL-237). The Letters screen records it when a Manager sends it; record it here only if that was not done. Recording it does not end the Lease; Terminate does, once its period is over.",
+    "លិខិតបញ្ចប់កិច្ចសន្យាថ្ងៃទី៣០ បន្ទាប់ពីលិខិតជូនដំណឹងថ្ងៃទី១០ ទី២០ និងទី២៥។ អេក្រង់លិខិតកត់ត្រាវា ពេលអ្នកគ្រប់គ្រងផ្ញើ។ សូមកត់ត្រានៅទីនេះ តែពេលមិនទាន់បានធ្វើ។ ការកត់ត្រាវាមិនបញ្ចប់កិច្ចសន្យាទេ។ ប៊ូតុងបញ្ចប់ធ្វើវា ពេលរយៈពេលរបស់វាផុត។",
   ],
   nt_date: ["Date given", "ថ្ងៃផ្តល់"],
   nt_ends: ["Lease ends on", "កិច្ចសន្យាបញ្ចប់នៅ"],
@@ -879,8 +888,8 @@ const TEXT = {
   nt_text: ["What the letter says", "ខ្លឹមសារលិខិត"],
   nt_text_e: ["Write what the letter says.", "សូមសរសេរខ្លឹមសារលិខិត។"],
   nt_text_default: [
-    "The Lease of {0} ends on {1} because the Rent is still unpaid after the day-20 warning letter and the day-30 default notice.",
-    "កិច្ចសន្យា {0} បញ្ចប់នៅ {1} ព្រោះថ្លៃឈ្នួលនៅមិនទាន់បង់ បន្ទាប់ពីលិខិតព្រមានថ្ងៃទី២០ និងលិខិតថ្ងៃទី៣០។",
+    "The Lease of {0} ends on {1} because the Rent is still unpaid after the notices of day 10, day 20 and day 25.",
+    "កិច្ចសន្យា {0} បញ្ចប់នៅ {1} ព្រោះថ្លៃឈ្នួលនៅមិនទាន់បង់ បន្ទាប់ពីលិខិតជូនដំណឹងថ្ងៃទី១០ ទី២០ និងទី២៥។",
   ],
   nt_how_e: ["Choose how it was given.", "សូមជ្រើសរើសរបៀបផ្តល់។"],
   nt_details: ["Details", "ព័ត៌មានលម្អិត"],

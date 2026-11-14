@@ -17,7 +17,13 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from property_rental import telegram_relay_client
 from property_rental.operations_status import evaluate_warnings
 from property_rental.telegram_phone import normalize_phone
-from property_rental.telegram_pull_job import ITEMS_EVERY_SECONDS, items_due, note_items, run_pull
+from property_rental.telegram_pull_job import (
+    ITEMS_EVERY_SECONDS,
+    items_due,
+    note_items,
+    queue_warnings,
+    run_pull,
+)
 from property_rental.telegram_relay_client import RelayClient, RelayError, signature
 from property_rental.telegram_seal import seal_for_tests
 from property_rental.telegram_send_job import load_bot_tokens, run_send
@@ -135,6 +141,7 @@ class FakeStore:
         self.invoice_reminder_runs = 0
         self.receipt_runs = 0
         self.warning_runs = 0
+        self.rent_steps: list[str] = []
         self.blocked = False
         # The Staff bot (migration 20270620_331); None is a job given no service actor.
         self.staff_ready = True
@@ -238,8 +245,13 @@ class FakeStore:
         self.receipt_runs += 1
         return 0
 
+    def rent_notices_run(self) -> int:
+        self.rent_steps.append("notices")
+        return 0
+
     def warnings_queue(self) -> int:
         self.warning_runs += 1
+        self.rent_steps.append("queue")
         return 0
 
     def visit_requests_remove_old(self) -> int:
@@ -476,6 +488,13 @@ def test_pull_saves_each_item_once_keeps_photos_and_confirms(
     again = run_pull(client=_client(relay), key=office_key, store=store, media_directory=tmp_path)
     assert (again.saved, again.repeated) == (0, 1)
     assert len(store.queued) == 1
+
+
+def test_each_run_makes_the_rent_notices_before_it_queues_the_messages() -> None:
+    # DL-237: the notice the app records by itself goes to the tenant in the same run.
+    store = FakeStore()
+    queue_warnings(store)
+    assert store.rent_steps == ["notices", "queue"]
 
 
 def test_an_item_that_cannot_be_opened_or_whose_photo_changed_stays_in_the_relay(
