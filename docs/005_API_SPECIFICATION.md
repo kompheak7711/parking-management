@@ -2260,6 +2260,8 @@ Added by DL-118 (V1.1 part 2; migration `20270421_271`, DB-BS-001). `GET /api/v1
 
 Added by DL-221 (migration `20270716_390`, DB-BS-002). `GET /api/v1/properties/{property_id}/invoice-types` lists only the types in use: `RENT`, `UTILITIES`, `SHORT_STAY`, `PRODUCTS`, `DAMAGE`, `MISCELLANEOUS` ("Other charges"). `PUT .../invoice-types/{code}` for `FIRST_RENT` or `SERVICES` answers 404 (no Invoice type in use has this code). The Invoice reads, the Receive payment list and the Receipt lines add `invoice_type` (one of the six codes); `short_stay` stays as before.
 
+Amended by DL-231 (2026-11-14, migration `20270728_394`, DB-BS-009): `invoice_type` is now the type kept on the Invoice. It is set when the Invoice is made and never changes. No request or response field changes. A seventh code, `LATE_PAYMENT`, is kept for the late-payment charge as an Invoice (not built yet): no Invoice has it, `GET .../invoice-types` does not list it and `PUT .../invoice-types/LATE_PAYMENT` answers 404.
+
 Follow-up on branch `ui-v81` (migration `20270713_364`, DB-BS-002; comes to main with design v81, PR #14): the Payments list summary groups "Paid for" by the kinds `RENT`, `UTIL`, `SVC`, `LATE`, `DEPOSIT`, `SHORT_STAY`, `PRODUCTS`, `DAMAGE`, `OTHER` ("Other charges") and `CREDIT`; the old kind `MOVEOUT` ("Move-out charges") is gone. Each `INVOICE` line of a Receipt read adds `parts`, the money paid to that Invoice by line category (`RENT`, `SERVICE_CHARGES`, `UTILITIES`, `DAMAGE_CHARGES`, `MISCELLANEOUS_CHARGES`). Read only; no new decision (follows DL-221).
 
 ### API-RS-001 Reservation rules on the Reservation reads — 2026-11-03

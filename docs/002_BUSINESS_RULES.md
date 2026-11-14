@@ -666,7 +666,7 @@ Decisions: DL-071, DL-118.
 
 Every Invoice has one main category and every line has one category: Rent, Utilities, Service Charges, Damage Charges or Miscellaneous Charges. An Invoice holds lines of another category only where a rule says so: the Service lines on a Rent Invoice. Each line keeps its own category, source, rate, calculation and amount, and a Service line is never counted as Rent. The category of an Invoice or a line never changes after issue.
 
-The Invoice type shown to people and used by Settings › Invoice types is worked out from the Invoice: Rent (Rent and its Services), Utilities, Short stay, Products (an Invoice from a signed Quotation), Damage (short-stay damage too), and Other charges (the Unit cleaning charge at move-out, an extra charge after move-out, money to pay back after a wrong Refund).
+Every Invoice keeps one Invoice type. The type is set when the Invoice is made and never changes. It is the type shown to people and used by Settings › Invoice types. There are seven types: Rent (Rent and its Services), Utilities, Short stay, Products (an Invoice from a signed Quotation), Damage (short-stay damage too), Late-payment, and Other charges (the Unit cleaning charge at move-out, an extra charge after move-out, money to pay back after a wrong Refund). No Invoice has the type Late-payment yet and Settings does not list it: it starts when the late-payment charge becomes an Invoice (Appendix B, L1).
 
 Every Invoice comes from a real business event:
 
@@ -677,7 +677,7 @@ Every Invoice comes from a real business event:
 - Other charges: their own rule (BR-MOVEOUT-013 and the correction rules).
 
 Replaces: BR-INV-006, BR-INV-008, BR-INV-039, BR-INV-040, BR-INV-041, BR-INV-042.
-Decisions: DL-020, DL-103, DL-123, DL-221.
+Decisions: DL-020, DL-103, DL-123, DL-221, DL-231.
 
 ### BR-INV-015 — Invoice Status
 
@@ -1826,11 +1826,10 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
 | L1 | BR-LATE-001: the late-payment charge is its own debt, not an Invoice | The late-payment charge becomes an Invoice of the type "Late-payment", which never gets a late-payment charge itself |
-| T1 | BR-INV-016: the Invoice type is worked out from the category each time | Seven types are kept on the Invoice: Rent, Utilities, Short stay, Products, Damage, Late-payment, Other charges. The line keeps its category |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

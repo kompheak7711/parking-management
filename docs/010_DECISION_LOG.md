@@ -3234,6 +3234,20 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-075, DL-105, DL-226; BR-UTIL-014.
 - **Decision date:** 2026-11-12 (the owner's decision Q3); built 2026-11-13.
 
+## DL-231 — The seven Invoice types are kept on the Invoice (T1 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is kept.
+- **Source.** The owner on 12 Nov 2026 (DL-226, "Invoice type stored in DB", and "yes" to the seven types): Rent, Utilities, Short stay, Products, Damage, Late-payment, Other charges. The line keeps its category.
+- **Before** (BR-INV-016, DL-221). The type was worked out from the Invoice's category and its links (a short stay, a signed Quotation) each time it was read.
+- **Now.** Every Invoice keeps its type. It is set when the Invoice is made and never changes. Every Invoice that existed got the type the old rule gave it; nothing else of an Invoice was touched.
+- **Late-payment.** The seventh type is in the list, with late payment No. No Invoice gets it yet and Settings does not show it. It starts when the late-payment charge becomes an Invoice (L1), which is its own step.
+- **Nothing changes for people.** The screens, the printed Invoice, the Receipt and the late-payment switch of each type show and do what they did.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The type of the category is the usual one. Only the database's own flows state the three types a category cannot tell (Products, Short stay, Damage for short-stay damage); no app role can state a type. A Quotation and each short-stay record may only name an Invoice of their own type. A type that does not fit the category is refused.
+- **Why first.** Two later steps need a kept type: a missed amount keeps the type of what was missed (D3), and the Late-payment Invoice (L1). Both give an Invoice a type its category cannot tell.
+- **Database:** migration `20270728_394` (DB-BS-009), forward-only; no data is deleted. **API:** no field changes; the amendment of DL-231 in docs/005. **Screen:** no change.
+- **Links:** DL-221, DL-226; BR-INV-016.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
+
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 
 - **Type:** `OWNER DECISION`.

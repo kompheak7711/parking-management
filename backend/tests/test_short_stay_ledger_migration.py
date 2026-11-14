@@ -108,7 +108,7 @@ def test_migration_350_names_short_stay_invoices() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision("20270610_350")
     assert revision is not None and revision.down_revision == REVISION
-    assert scripts.get_heads() == ["20270727_379"]
+    assert scripts.get_heads() == ["20270728_394"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 
@@ -226,10 +226,12 @@ def test_short_stay_money_posts_to_rent_damage_cash_and_bank(
 
         # DL-221 (owner 11/11/2026): a stay is the type Short stay (late payment No) and its
         # damage is the type Damage, with the Damage switch.
+        # DL-231 (T1): the type is kept on the Invoice from the moment it is made.
         def invoice_type(invoice_id: object) -> tuple[object, object, object]:
             found = connection.execute(
                 "SELECT app.invoice_resource_snapshot(%s) ->> 'invoice_type', "
-                "app.invoice_type_of(%s), app.invoice_type_late_payment(%s)",
+                "(SELECT invoice_type FROM app.invoices WHERE id = %s), "
+                "app.invoice_type_late_payment(%s)",
                 (invoice_id, invoice_id, invoice_id),
             ).fetchone()
             assert found is not None

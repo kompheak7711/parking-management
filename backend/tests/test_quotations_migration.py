@@ -451,11 +451,13 @@ def test_customer_signed_issues_the_invoice_and_a_void_puts_the_items_back(
         ).fetchall()
         assert ("PRODUCT_CHARGES",) in kinds
         # DL-221 (owner 11/11/2026): an Invoice from a Quotation is the type Products.
+        # DL-231 (T1): the type is kept on the Invoice from the moment it is made.
         assert connection.execute(
             "SELECT app.invoice_resource_snapshot(%s) ->> 'invoice_type', "
-            "app.invoice_type_late_payment(%s)",
-            (signed["invoice_id"], signed["invoice_id"]),
-        ).fetchone() == ("PRODUCTS", True)
+            "app.invoice_type_late_payment(%s), "
+            "(SELECT invoice_type FROM app.invoices WHERE id = %s)",
+            (signed["invoice_id"], signed["invoice_id"], signed["invoice_id"]),
+        ).fetchone() == ("PRODUCTS", True, "PRODUCTS")
         version = int(invoice[5])
     # Signed once only.
     refused(

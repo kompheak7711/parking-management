@@ -6119,3 +6119,16 @@ Added by DL-230 (owner, 12 Nov 2026, Q3; migration `20270727_379` on `20270726_4
 - The answer keeps its keys (`rate_id`, `rate_effective_date`, `rate_usd_per_unit`, `amount_usd_cents`, `generation_date`).
 
 Tests: `backend/tests/test_v12_utility_rate_period_start_migration.py`.
+
+## DB-BS-009 — The Invoice type is kept on the Invoice (DL-231)
+
+Added by DL-231 (owner, 12 Nov 2026, T1; migration `20270728_394` on `20270727_379`, forward-only). No row is deleted.
+
+- `app.invoices.invoice_type` (text, never empty, a code of `app.invoice_types`). Every Invoice that existed got the type the rule of DL-221 gave it. Only this new column was written: no number, amount, status, date or version of an Invoice changed.
+- `app.keep_invoice_type` (trigger `invoices_10_invoice_type`, before insert and update): a new Invoice without a stated type gets the type of its category (`RENT` for Rent and Service Charges, `UTILITIES`, `DAMAGE` for Damage Charges, `MISCELLANEOUS` for Miscellaneous Charges). A stated type must fit the category: a Miscellaneous Charges Invoice may also be `SHORT_STAY`, `PRODUCTS` or `DAMAGE`; anything else is refused with "The Invoice type does not fit the Invoice category" (SQLSTATE 23514). A change of the type is refused with "The Invoice type is kept as it was made" (SQLSTATE 55000). A Draft whose category is changed and that had the usual type of its category gets the usual type of the new category.
+- Who states a type. `app.create_items_invoice_draft_of_type` (the body of `app.create_items_invoice_draft` with one more parameter) and `app.short_stay_invoice` with eight parameters. No app role may call them. `app.sign_quotation` states `PRODUCTS`; `app.decide_short_stay_charge` and `app.decide_short_stay_damage` state `DAMAGE`; the other short-stay Invoices are `SHORT_STAY`. `app.create_items_invoice_draft` and the seven-parameter `app.short_stay_invoice` keep their signature, owner and grants and call the new functions with `MISCELLANEOUS` and `SHORT_STAY`.
+- The links are checked. Trigger `invoice_type_of_link` (`app.check_invoice_type_of_link`) on `app.quotations` (`PRODUCTS`), `app.short_stay_bookings`, `app.short_stay_extra_invoices` and `app.short_stay_credit_ends` (`SHORT_STAY`) and `app.short_stay_damages` (`DAMAGE`): a row may only name an Invoice of that type ("The Invoice is not of the type …", SQLSTATE 23514).
+- `app.invoice_type_of(invoice)` (same signature and grants) now reads the kept type, so the Invoice reads, the Receive payment list, the Receipt lines and every late-payment check use it. `app.invoice_type_from_links(invoice)` is the rule of DL-221 under a new name; the tests use it to show that no Invoice changed its type.
+- `app.invoice_types` gets the seventh row `LATE_PAYMENT` ("Late-payment", late payment No, `in_use` No, shown between Damage and Other charges). No Invoice gets it yet, Settings does not list it and it cannot be switched. It starts with the late-payment charge as an Invoice (Appendix B of docs/002, L1).
+
+Tests: `backend/tests/test_v12_invoice_type_stored_migration.py`.

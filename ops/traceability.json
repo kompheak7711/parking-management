@@ -68099,6 +68099,64 @@
       "test_path": "backend/tests/test_v12_utility_rate_period_start_migration.py",
       "status": "implemented",
       "notes": "With no rate of the kind the preview is refused with SQLSTATE P0002 and the words the API names UTILITY_RATE_NOT_IN_EFFECT."
+    },
+    {
+      "test_id": "test_the_type_migration_follows_the_rate_migration_and_is_forward_only",
+      "upstream_ids": [
+        "DL-231",
+        "DB-BS-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270728_394 follows 20270727_379, is forward-only and deletes nothing."
+    },
+    {
+      "test_id": "test_every_invoice_keeps_the_type_its_category_and_links_say",
+      "upstream_ids": [
+        "DL-231",
+        "DB-BS-009",
+        "BR-INV-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
+      "status": "implemented",
+      "notes": "The type column is never empty and names a kept type; at the end of the whole list no Invoice has another type than the rule of DL-221 gave, and every read gives the kept type."
+    },
+    {
+      "test_id": "test_a_new_invoice_gets_its_type_when_it_is_made_and_the_type_never_changes",
+      "upstream_ids": [
+        "DL-231",
+        "DB-BS-009",
+        "BR-INV-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
+      "status": "implemented",
+      "notes": "An Invoice made from typed items is Other charges from the start; a change of the type is refused (SQLSTATE 55000), and a type that does not fit the category is refused when the Invoice is made (SQLSTATE 23514)."
+    },
+    {
+      "test_id": "test_only_the_database_states_a_type_and_a_link_checks_it",
+      "upstream_ids": [
+        "DL-231",
+        "DB-BS-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
+      "status": "implemented",
+      "notes": "No app role may call the two functions that state a type; a Quotation and each short-stay record carry the check that the Invoice they name is of their own type."
+    },
+    {
+      "test_id": "test_late_payment_is_the_seventh_type_and_is_not_in_use_yet",
+      "upstream_ids": [
+        "DL-231",
+        "DB-BS-009",
+        "BR-INV-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
+      "status": "implemented",
+      "notes": "Late-payment is in the type list between Damage and Other charges, with late payment No, and is not in use yet."
     }
   ]
 }

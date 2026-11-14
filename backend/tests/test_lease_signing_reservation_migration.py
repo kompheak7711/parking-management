@@ -261,8 +261,10 @@ def snapshot(url: str) -> dict[str, Any]:
         return {
             table: connection.execute(
                 # V1-059 part B adds invoices.draft_reference and customers.id_document_number
-                # (NULL on earlier rows); every other value must stay as it was.
+                # (NULL on earlier rows), and DL-231 adds invoices.invoice_type (filled from
+                # the category); every other value must stay as it was.
                 "SELECT COALESCE(jsonb_agg(to_jsonb(t)-'draft_reference'-'id_document_number'"
+                "-'invoice_type'"
                 f"{'-' + UNIT_SETUP_COLUMNS if table == 'units' else ''} "
                 "ORDER BY t.id),'[]'::jsonb) "
                 f"FROM app.{table} t"
@@ -300,6 +302,11 @@ def test_forward_upgrade_keeps_earlier_leases_reservations_deposits_and_invoices
         before = snapshot(temporary)
         alembic_command.upgrade(config, "head")
         assert snapshot(temporary) == before
+        # DL-231: an Invoice from before the upgrade got its type, and nothing else changed.
+        with psycopg.connect(temporary) as connection:
+            assert connection.execute(
+                "SELECT DISTINCT primary_category, invoice_type FROM app.invoices"
+            ).fetchall() == [("RENT", "RENT")]
 
 
 def test_lease_signing_reservation_migration_is_forward_only() -> None:
