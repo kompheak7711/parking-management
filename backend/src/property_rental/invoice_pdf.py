@@ -103,11 +103,14 @@ def _period(value: Any) -> str | None:
     return None if start is None or end is None else f"{day_text(start)} - {day_text(end)}"
 
 
-def _khmer(line: Mapping[str, Any], short_stay: Any) -> str:
+def _khmer(line: Mapping[str, Any], short_stay: Any, invoice_type: Any = None) -> str:
     if short_stay == "SHORT_STAY":
         return "ថ្លៃស្នាក់នៅ"
     if short_stay == "SHORT_STAY_DAMAGE":
         return "ថ្លៃខូចខាត"
+    # L1 (DL-233): the late-payment charge is an Invoice of the type Late-payment.
+    if invoice_type == "LATE_PAYMENT":
+        return "ថ្លៃពិន័យបង់យឺត"
     evidence = line.get("calculation_evidence") or {}
     if line.get("category") == "UTILITIES":
         kind = evidence.get("utility_type")
@@ -188,7 +191,7 @@ def invoice_html(
         detail = _detail(line)
         rows.append(
             '<tr><td><div class="cat"><span class="kh">'
-            f"{_khmer(line, invoice.get('short_stay'))}</span>"
+            f"{_khmer(line, invoice.get('short_stay'), invoice.get('invoice_type'))}</span>"
             f"{e(str(line.get('description') or ''))}"
             "</div>"
             + (f'<div class="det">{e(detail)}</div>' if detail else "")

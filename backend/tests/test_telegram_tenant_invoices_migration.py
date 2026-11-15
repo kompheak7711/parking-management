@@ -139,6 +139,58 @@ def test_an_issued_invoice_goes_to_the_linked_tenant_once(
     assert page["rules"] == {"remind_days": 3, "days": 45}
 
 
+def test_a_late_payment_invoice_goes_to_the_linked_tenant(
+    invoice_database: HrDatabase, lease: dict[str, Any]
+) -> None:
+    """L1 (DL-233): the late-payment charge is an Invoice, issued by the Property's billing
+    service, so the tenant gets it like every issued Invoice."""
+    db = invoice_database
+    rent = invoice(db, lease, 6, issue=True)
+    day = lease["day"]
+    earlier = datetime.now().astimezone() - timedelta(days=3)
+    with psycopg.connect(db.owner_url) as owner:
+        owner.execute("ALTER TABLE app.invoices DISABLE TRIGGER USER")
+        owner.execute(
+            "UPDATE app.invoices SET invoice_date = %s, due_date = %s, created_at = %s, "
+            "issued_at = %s, updated_at = %s WHERE id = %s",
+            (day - timedelta(days=3), day - timedelta(days=1), earlier, earlier, earlier, rent),
+        )
+        owner.execute("ALTER TABLE app.invoices ENABLE TRIGGER USER")
+        service = uuid.uuid4()
+        owner.execute(
+            "INSERT INTO app.billing_service_principals(actor_id,property_id,capability,"
+            "lifecycle_state,created_by) VALUES (%s,%s,'billing.generate','active',%s)",
+            (service, db.property_id, db.owner),
+        )
+        # The last finished pass was on the Due Date, so this pass covers today.
+        owner.execute(
+            "INSERT INTO app.late_payment_charge_runs(property_id,business_date,system_actor_id,"
+            "recorded_at,charged_count,no_amount_count,skipped_count) "
+            "VALUES (%s,%s,%s,clock_timestamp(),0,0,0)",
+            (db.property_id, day - timedelta(days=1), service),
+        )
+    late = uuid.uuid4()
+    outcome = run(
+        db.owner_url,
+        "SELECT app.record_automatic_late_payment_charge(%s,%s,%s,%s,%s,%s)",
+        db.property_id,
+        service,
+        rent,
+        uuid.uuid4(),
+        late,
+        uuid.uuid4(),
+    )
+    assert outcome["outcome"] == "CHARGED"
+    sent = messages(db, late)
+    assert [(kind, code, chat) for kind, code, chat, _ in sent] == [
+        ("ISSUED", "tenant.invoice", TENANT)
+    ]
+    details = sent[0][3]
+    assert details["total"] == details["to_pay"] == "$80.00"
+    assert details["list"].startswith("• Late-payment charge of Invoice ")
+    assert details["list"].endswith(": $80.00")
+
+
 def test_a_draft_is_never_sent(invoice_database: HrDatabase, lease: dict[str, Any]) -> None:
     db = invoice_database
     draft = invoice(db, lease, 3, issue=False)

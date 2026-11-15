@@ -106,7 +106,11 @@ export function AdjustDialog({
     (left, right) => left.sequence - right.sequence,
   );
   const [lineId, setLineId] = useState(lines[0]?.id ?? "");
-  const [direction, setDirection] = useState<"CREDIT" | "DEBIT" | null>(null);
+  // L1 (DL-233): a Late-payment Invoice only goes down (BR-LATE-001).
+  const onlyLower = invoice.invoice_type === "LATE_PAYMENT";
+  const [direction, setDirection] = useState<"CREDIT" | "DEBIT" | null>(
+    onlyLower ? "CREDIT" : null,
+  );
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [source, setSource] = useState("");
@@ -220,19 +224,21 @@ export function AdjustDialog({
             ["CREDIT", "adj_credit"],
             ["DEBIT", "adj_debit"],
           ] as const
-        ).map(([value, key]) => (
-          <label className="ui-chk" key={value}>
-            <input
-              checked={direction === value}
-              name="adj-dir"
-              onChange={() => {
-                setDirection(value);
-              }}
-              type="radio"
-            />
-            {ivt(language, key)}
-          </label>
-        ))}
+        )
+          .filter(([value]) => !onlyLower || value === "CREDIT")
+          .map(([value, key]) => (
+            <label className="ui-chk" key={value}>
+              <input
+                checked={direction === value}
+                name="adj-dir"
+                onChange={() => {
+                  setDirection(value);
+                }}
+                type="radio"
+              />
+              {ivt(language, key)}
+            </label>
+          ))}
         {problems.has("dir") && (
           <Problem id="adj-dir-err" text={ivt(language, "adj_err_dir")} />
         )}

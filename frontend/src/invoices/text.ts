@@ -40,6 +40,8 @@ const TEXT = {
   MISCELLANEOUS_CHARGES: ["Other charges", "ថ្លៃផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
   PRODUCTS: ["Products", "ផលិតផល"],
+  // L1 (DL-233): the late-payment charge is an Invoice of this type.
+  LATE_PAYMENT: ["Late-payment", "ថ្លៃពិន័យបង់យឺត"],
   // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
   SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
   SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],
@@ -450,6 +452,11 @@ const TEXT = {
   ],
   // new
   missed_of: ["Missed amount of Invoice {0}", "ចំនួនដែលខ្វះនៃវិក្កយបត្រ {0}"],
+  // L1 (DL-233): on a Late-payment Invoice, the Invoice that was late.
+  late_of: [
+    "Late-payment charge of Invoice {0}",
+    "ថ្លៃពិន័យបង់យឺតនៃវិក្កយបត្រ {0}",
+  ],
   // new
   void_t: ["Void {0}?", "ទុក {0} ជាមោឃៈ?"],
   // new
@@ -533,6 +540,11 @@ const TEXT = {
   lt_sep: [
     "A separate charge, payable now. It is not an Invoice and does not change {0}.",
     "ថ្លៃដាច់ដោយឡែក ត្រូវបង់ភ្លាម។ វាមិនមែនជាវិក្កយបត្រ ហើយមិនប្តូរ {0} ទេ។",
+  ],
+  // L1 (DL-233): the charge is an Invoice of its own; {0} is the link to it.
+  lt_inv: [
+    "This charge is a Late-payment Invoice. Receive money for it, lower it or make it Void on that Invoice:",
+    "ថ្លៃពិន័យនេះជាវិក្កយបត្រថ្លៃពិន័យបង់យឺត។ ទទួលប្រាក់ កាត់បន្ថយ ឬទុកជាមោឃៈ នៅលើវិក្កយបត្រនោះ៖",
   ],
   lt_pay: ["Receive payment", "ទទួលការបង់ប្រាក់"],
   lt_fix: ["Reduce or waive", "កាត់បន្ថយ ឬលើកលែង"],
@@ -676,6 +688,7 @@ export const INVOICE_TYPE_TEXT: Record<InvoiceTypeCode, InvoicesTextKey> = {
   SHORT_STAY: "SHORT_STAY",
   PRODUCTS: "PRODUCTS",
   DAMAGE: "DAMAGE_CHARGES",
+  LATE_PAYMENT: "LATE_PAYMENT",
   MISCELLANEOUS: "MISCELLANEOUS_CHARGES",
 };
 

@@ -3254,7 +3254,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Source.** The owner on 12 Nov 2026 (DL-226, D3, "all yes"): the new charge keeps the type of what was missed. The reason given then: missed Rent showed as Other charges income.
 - **Before** (BR-INV-021). A debit Adjustment is refused on a fully paid line. The screen told staff to bill the missed amount "with Create Invoice", which made an Other charges Invoice. The Invoices page no longer had a way to make that Invoice.
 - **Now.** When a raise is refused because the line is paid in full, the Adjust dialog offers "Bill the missed amount". It makes a Draft Invoice for the same Customer and Lease, with the amount, the reason and what approves it as typed. The Draft names the Invoice where the amount was missed and keeps its type. Staff check the Draft and issue it as any Draft.
-- **How the build read the rest (asked to the owner with the pull request).**
+- **How the build read the rest.** These points were asked with the pull request, and the owner said yes to all four on 15 Nov 2026 (card "Yes to all four, merge when green"); pull request #40 was merged that day.
   1. The new Invoice has the type of the first Invoice (Rent, Utilities and so on), so the late-payment switch of that type is the one it follows.
   2. It is a one-time charge: its Due Date is the issue date plus the one-time charge days of Settings, not the 5th.
   3. The income report and the General Ledger count it as what was missed (missed Rent is Rent income), in the month of the new Invoice, not in the month that was missed.
@@ -3263,6 +3263,24 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270729_395` (DB-BS-010), forward-only; no data is changed or deleted. **API:** `missed_on_invoice_line_id` in the request and `missed_on` in the Invoice (the amendment of DL-232 in docs/005). **Screen:** the Adjust dialog and one line on the Invoice page (TEST-FE-2248, TEST-FE-2249, TEST-FE-2256).
 - **Open:** the native Khmer check of the new screen text.
 - **Links:** DL-226, DL-231; BR-INV-021, BR-INV-016, BR-INV-018.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
+
+## DL-233 — The late-payment charge is an Invoice of the type Late-payment (L1 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, L1): the late-payment charge becomes an Invoice of the type "Late-payment", which never gets a late-payment charge itself.
+- **Before** (BR-LATE-001, BR-LATE-004). The charge was a debt of its own, not an Invoice: its own table, its own payment target, its own correction with three fixed reasons, its own Ledger account, and it was not sent to the tenant.
+- **Now.** At 00:00 on the first day after the Due Date the app writes the same decision as before and, in the same step, makes and issues a Late-payment Invoice for the Customer and the Lease of the late Invoice. The amount, the rate, the cases with no charge and "one charge for an Invoice, for ever" do not change (BR-LATE-001).
+- **How the build read the rest (asked to the owner with the pull request).**
+  1. The Due Date is the day the Invoice is made: it is owed at once, as a charge before. Example: Rent of $800.00 unpaid after 5 November gives a Late-payment Invoice of $80.00 on 6 November with the Due Date 6 November.
+  2. It is lowered by a credit Adjustment and cancelled by Void, with a reason text, by the people who may adjust an Invoice or make it Void (the right "Approve financial records", the same right bundle that holds the correction of a charge today). The three fixed reasons are no longer asked. It is never raised. The Invoice that was late cannot be made Void while its Late-payment Invoice stands.
+  3. A tenant with a Tenant-bot link gets the Late-payment Invoice by Telegram, like every issued Invoice. A charge was not sent before.
+  4. With no name from the payer it is paid in the order of its own Due Date, like every Invoice. In almost every case that is the same place as before: after the Invoice that was late (due the 5th) and before the next Rent Invoice (due the 5th of the next month).
+  5. Charges made before stay as they were made, with their own screens and corrections. Nothing is deleted or changed.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** New charges only: 148 database functions read the old charge table (payment, Credit, Deposit, the Final Settlement and its corrections, the Ledger), so the old kind stays readable and correctable, and taking that code out is a later step after a check that no old charge is open. The link from the Invoice to its decision never changes, and only the billing service of an automatic decision can make such an Invoice. The Ledger posts the debt to `1100` like every Invoice and the income to `4050` as before; the income report keeps the line "Late-payment charges".
+- **Database:** migration `20270730_396` (DB-BS-011), forward-only; no data is changed or deleted. **API:** `late_payment_of` in the Invoice and `late_invoice` in the late-payment card (the amendment of DL-233 in docs/005). **Screen:** the Invoice page of a Late-payment Invoice, the late-payment card of the late Invoice, the type name on the Invoices list, Receive payment, the Receipt and the printed Invoice, and Settings › Invoice types (TEST-FE-2257, TEST-FE-2258, TEST-FE-2259, TEST-FE-2270).
+- **Open:** the native Khmer check of the new screen text; taking out the code of the old charge kind (a later step).
+- **Links:** DL-226, DL-231, DL-076, DL-086; BR-LATE-001, BR-LATE-004, BR-INV-016, BR-PAY-021.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager

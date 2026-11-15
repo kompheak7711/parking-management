@@ -544,16 +544,23 @@ export function BusinessTab({
                         )}
                       </td>
                       <td>
-                        <button
-                          aria-label={`${sst(language, "it_change")}: ${nameOf(language, type)}`}
-                          className="ui-btn link"
-                          onClick={() => {
-                            openWith({ kind: "type", type });
-                          }}
-                          type="button"
-                        >
-                          {sst(language, "it_change")}
-                        </button>
+                        {type.code === "LATE_PAYMENT" ? (
+                          // L1 (DL-233): a Late-payment Invoice never gets a charge.
+                          <span className="ui-muted ui-small">
+                            {sst(language, "it_fixed")}
+                          </span>
+                        ) : (
+                          <button
+                            aria-label={`${sst(language, "it_change")}: ${nameOf(language, type)}`}
+                            className="ui-btn link"
+                            onClick={() => {
+                              openWith({ kind: "type", type });
+                            }}
+                            type="button"
+                          >
+                            {sst(language, "it_change")}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

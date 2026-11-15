@@ -6,6 +6,10 @@ charge of 10 percent of the amount unpaid at that moment, rounded half-up to the
 already late on the pass's first day gets none; a missed day is caught up with the balance of its
 own midnight. Recurring Rent is due on the 5th, so every charge day here is a 6th.
 
+Since L1 (DL-233, migration 20270730_396) the charge is an Invoice of the type Late-payment: the
+pass writes the same decision and issues that Invoice in the same step. ``charge_of`` reads its
+amount. ``record_old_kind`` writes a charge of the kind made before, for the tests of such charges.
+
 An Invoice is issued now by the shared helper; a test that needs it issued before its charge
 moment backdates the issue (and any earlier Adjustment) as the table owner with the table's own
 triggers off for that one statement, as other tests backdate rows they cannot reach otherwise.
@@ -173,6 +177,74 @@ def record(case: dict[str, Any], invoice: UUID | None = None) -> dict[str, Any]:
     return cast(dict[str, Any], row[0])
 
 
+OLD_KIND_FACTS = (
+    "SELECT invoice.customer_id,invoice.due_date,invoice.lease_id,facts.at,"
+    "(SELECT COALESCE(sum(app.invoice_line_outstanding_at(line.id,facts.at)),0) "
+    "FROM app.invoice_lines line WHERE line.invoice_id=invoice.id),"
+    "app.late_payment_rate_basis_points(property.id,invoice.due_date+1),clock_timestamp() "
+    "FROM app.invoices invoice JOIN app.properties property ON property.id=%s "
+    "CROSS JOIN LATERAL (SELECT app.late_payment_charge_moment("
+    "invoice.due_date,property.timezone_name) AS at) facts WHERE invoice.id=%s"
+)
+OLD_KIND_DECISION = (
+    "INSERT INTO app.late_payment_decisions(id,source_invoice_id,customer_id,source_due_date,"
+    "overdue_balance_at_assessment_usd_cents,default_rate_basis_points,"
+    "calculated_default_amount_usd_cents,decision_outcome,approved_amount_usd_cents,"
+    "assessed_at,finalized_at,finalized_by_service,reason,authorization_reference,"
+    "calculation_trace) VALUES (%s,%s,%s,%s,%s,%s,%s,'CONFIRMED_DEFAULT',%s,%s,%s,%s,%s,%s,%s)"
+)
+OLD_KIND_CHARGE = (
+    "INSERT INTO app.late_payment_charges(id,customer_id,source_invoice_id,"
+    "late_payment_decision_id,original_amount_usd_cents,payable_at,created_at,"
+    "created_by_service) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
+)
+
+
+def record_old_kind(url: str, case: dict[str, Any], invoice: UUID | None = None) -> dict[str, Any]:
+    """A late-payment charge of the kind made before the Late-payment Invoice (L1, DL-233,
+    migration 20270730_396): the decision and the charge row that the pass wrote then, with the
+    same amounts. Such charges stay in force, so the tests of their payments, corrections and
+    settlement make them here."""
+    source = invoice or case["invoice"]
+    decision, charge = uuid4(), uuid4()
+    with psycopg.connect(url) as owner:
+        facts = owner.execute(OLD_KIND_FACTS, (case["prop"], source)).fetchone()
+        assert facts is not None
+        customer, due, _lease, at, balance, rate, now = facts
+        amount = owner.execute(
+            "SELECT app.late_payment_amount(%s::smallint,%s::bigint)", (rate, balance)
+        ).fetchone()
+        assert amount is not None and amount[0] > 0
+        trace = Jsonb({"formula": "unpaid_balance_at_charge_moment_x_settings_rate"})
+        owner.execute(
+            OLD_KIND_DECISION,
+            (
+                decision,
+                source,
+                customer,
+                due,
+                balance,
+                rate,
+                amount[0],
+                amount[0],
+                at,
+                now,
+                case["service"],
+                REASON,
+                AUTOMATIC,
+                trace,
+            ),
+        )
+        owner.execute(
+            OLD_KIND_CHARGE,
+            (charge, customer, source, decision, amount[0], now, now, case["service"]),
+        )
+        owner.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        shown = owner.execute("SELECT app.late_payment_charge_snapshot(%s)", (charge,)).fetchone()
+    assert shown is not None
+    return {"outcome": "CHARGED", "charge": cast(dict[str, Any], shown[0])}
+
+
 def switch_first_rent(url: str, actor: UUID, *, on: bool) -> None:
     """Turn late payment for the Rent Invoice type on or off; since DL-221 (migration 20270716_390)
     the first Rent follows the Rent switch."""
@@ -217,12 +289,19 @@ def decision_of(url: str, invoice: UUID) -> tuple[Any, ...] | None:
 
 
 def charge_of(url: str, invoice: UUID) -> int | None:
+    """The amount of the Late-payment Invoice of an Invoice (L1, DL-233: the pass makes an
+    Invoice, not a charge of the old kind)."""
     with psycopg.connect(url) as connection:
         row = connection.execute(
-            "SELECT original_amount_usd_cents FROM app.late_payment_charges "
-            "WHERE source_invoice_id=%s",
+            "SELECT late.original_total_usd_cents FROM app.invoices late "
+            "JOIN app.late_payment_decisions decision ON decision.id=late.late_payment_decision_id "
+            "WHERE decision.source_invoice_id=%s",
             (invoice,),
         ).fetchone()
+        old = connection.execute(
+            "SELECT count(*) FROM app.late_payment_charges WHERE source_invoice_id=%s", (invoice,)
+        ).fetchone()
+    assert old == (0,)
     return None if row is None else cast(int, row[0])
 
 
@@ -327,9 +406,9 @@ def test_the_charge_is_ten_percent_of_the_amount_unpaid_at_midnight_rounded_half
         assert charge_of(url, case["invoice"]) is None
         return
     assert outcome["outcome"] == "CHARGED"
-    assert outcome["charge"]["original_amount"] == {"currency": "USD", "minor_units": expected}
-    # The snapshots name the service as the actor.
-    assert outcome["charge"]["created_by"] == str(case["service"])
+    # L1 (DL-233): the charge is a Late-payment Invoice, issued by the service.
+    assert outcome["invoice"]["invoice_type"] == "LATE_PAYMENT"
+    assert outcome["invoice"]["late_payment_of"]["invoice_id"] == str(case["invoice"])
     assert decision_of(url, case["invoice"]) == (
         unpaid,
         1000,
@@ -347,24 +426,16 @@ def test_the_charge_is_ten_percent_of_the_amount_unpaid_at_midnight_rounded_half
         assert connection.execute(
             "SELECT actor_id,action,source,outcome,authorization_reference,"
             "authorization_evidence->>'principal_capability' FROM app.audit_events "
-            "WHERE entity_type='late_payment_charge' AND entity_id=("
-            "SELECT id FROM app.late_payment_charges WHERE source_invoice_id=%s)",
-            (case["invoice"],),
+            "WHERE entity_type='invoice' AND entity_id=%s ORDER BY action",
+            (outcome["invoice"]["id"],),
         ).fetchall() == [
-            (
-                case["service"],
-                "late_payment.charge_added",
-                "SCHEDULED",
-                "SUCCEEDED",
-                AUTOMATIC,
-                "billing.generate",
-            )
+            (case["service"], action, "SCHEDULED", "SUCCEEDED", AUTOMATIC, "billing.generate")
+            for action in ("invoice.created", "invoice.issued")
         ]
         assert connection.execute(
-            "SELECT created_by FROM app.late_payment_charge_financial_position "
-            "WHERE source_invoice_id=%s",
-            (case["invoice"],),
-        ).fetchone() == (case["service"],)
+            "SELECT original_total_usd_cents,created_by,issued_by FROM app.invoices WHERE id=%s",
+            (outcome["invoice"]["id"],),
+        ).fetchone() == (expected, case["service"], case["service"])
     # One charge per Invoice: a second try adds nothing, and the Invoice leaves the candidates.
     assert record(case) == {"outcome": "ALREADY_ASSESSED"}
     assert case["invoice"] not in candidates(case)
@@ -468,7 +539,8 @@ def test_two_passes_at_once_add_one_charge(migrated_database_url: str) -> None:
     assert outcomes == ["ALREADY_ASSESSED", "CHARGED"]
     with psycopg.connect(url) as connection:
         assert connection.execute(
-            "SELECT count(*) FROM app.late_payment_charges WHERE source_invoice_id=%s",
+            "SELECT count(*) FROM app.invoices late JOIN app.late_payment_decisions decision "
+            "ON decision.id=late.late_payment_decision_id WHERE decision.source_invoice_id=%s",
             (case["invoice"],),
         ).fetchone() == (1,)
 

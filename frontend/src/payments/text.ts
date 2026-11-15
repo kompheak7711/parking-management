@@ -391,6 +391,8 @@ const TEXT = {
   MISCELLANEOUS_CHARGES: ["Other charges", "ថ្លៃផ្សេងៗ"],
   DAMAGE_CHARGES: ["Damage", "ការខូចខាត"],
   PRODUCTS: ["Products", "ផលិតផល"],
+  // L1 (DL-233): a Late-payment Invoice.
+  LATE_PAYMENT: ["Late-payment", "ថ្លៃពិន័យបង់យឺត"],
   // new (owner test 05/11/2026): a daily or weekly stay, and its damage.
   SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
   SHORT_STAY_DAMAGE: ["Short-stay damage", "ការខូចខាតស្នាក់នៅខ្លី"],

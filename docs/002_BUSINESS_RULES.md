@@ -647,7 +647,7 @@ A Service is not worked out by days just because the people leave during a month
 
 ### BR-INV-002 — Every Amount Owed Is an Invoice, With One Customer
 
-Every amount a Customer owes for something the Property gave or charged is an Invoice. The one exception today is the late-payment charge (BR-LATE-001). A Security Deposit or a Pet Deposit is money held for the Customer. It is never an Invoice and never an Invoice type.
+Every amount a Customer owes for something the Property gave or charged is an Invoice. The late-payment charge is an Invoice too (BR-LATE-001); only a charge made before 14 November 2026 is still a debt of its own (BR-LATE-004). A Security Deposit or a Pet Deposit is money held for the Customer. It is never an Invoice and never an Invoice type.
 
 Every Invoice belongs to exactly one Customer, from the day it is made and for ever. A Customer may have many Invoices.
 
@@ -666,7 +666,7 @@ Decisions: DL-071, DL-118.
 
 Every Invoice has one main category and every line has one category: Rent, Utilities, Service Charges, Damage Charges or Miscellaneous Charges. An Invoice holds lines of another category only where a rule says so: the Service lines on a Rent Invoice. Each line keeps its own category, source, rate, calculation and amount, and a Service line is never counted as Rent. The category of an Invoice or a line never changes after issue.
 
-Every Invoice keeps one Invoice type. The type is set when the Invoice is made and never changes. It is the type shown to people and used by Settings › Invoice types. There are seven types: Rent (Rent and its Services), Utilities, Short stay, Products (an Invoice from a signed Quotation), Damage (short-stay damage too), Late-payment, and Other charges (the Unit cleaning charge at move-out, an extra charge after move-out, money to pay back after a wrong Refund). No Invoice has the type Late-payment yet and Settings does not list it: it starts when the late-payment charge becomes an Invoice (Appendix B, L1).
+Every Invoice keeps one Invoice type. The type is set when the Invoice is made and never changes. It is the type shown to people and used by Settings › Invoice types. There are seven types: Rent (Rent and its Services), Utilities, Short stay, Products (an Invoice from a signed Quotation), Damage (short-stay damage too), Late-payment, and Other charges (the Unit cleaning charge at move-out, an extra charge after move-out, money to pay back after a wrong Refund). Only the app makes an Invoice of the type Late-payment, for a late-payment charge (BR-LATE-001); no person can. Settings lists the type with late payment No, and that cannot be changed.
 
 Every Invoice comes from a real business event:
 
@@ -772,25 +772,35 @@ Late-payment charge = amount of the Invoice still unpaid at that moment × the S
 
 - The rate is a whole percent from 0 to 10, set in Settings (default 10%). Settings refuse more than 10% and refuse a part of a percent such as 7.5%: the signed Lease allows at most 10% (Article 2.3). A new rate starts with the next billing month and is used for charges added after the change.
 - The charge is worked out once, on the whole Invoice, not line by line. Money already paid is not charged. The result is rounded half up to the cent. A charge that rounds to zero is not written.
-- One charge for an Invoice, for ever. It never repeats, never grows, and money paid later does not change it. A late-payment charge never gets a late-payment charge.
+- One charge for an Invoice, for ever. It never repeats, never grows, and money paid later does not change it. A Late-payment Invoice never gets a late-payment charge.
 - No charge for: an Invoice that was already late on the day the automatic charge first ran; an Invoice issued after its charge moment; an Invoice of a Lease whose Final Settlement is closed. A missed day is caught up by the next run with the amount unpaid at that day's 00:00.
 - An Adjustment recorded before the charge is counted in it. A debit Adjustment after the charge is allowed and not counted. A credit Adjustment never changes the charge.
 
-The charge is its own debt, not an Invoice and not a line. It belongs to the Customer of its Invoice and is linked to that Invoice. It is owed at once, with no Due Date. It is part of what the Customer owes, and it never changes the amount, the lines, the balance or the status of its Invoice.
+The charge is an Invoice of the type Late-payment. The app makes and issues it in the same step. It has one line, "Late-payment charge of Invoice" with the number of the Invoice that was late, and it names that Invoice. It is for the same Customer and the same Lease. Its Due Date is the day it is made: it is owed at once. A tenant with a Tenant-bot link gets it by Telegram, like every issued Invoice. It is part of what the Customer owes, and it never changes the amount, the lines, the balance or the status of the Invoice that was late.
+
+Example: Rent of $800.00 is unpaid after 5 November. At 00:00 on 6 November the app makes a Late-payment Invoice of $80.00 with the Due Date 6 November.
+
+The Invoice that was late cannot be made Void while its Late-payment Invoice stands: first the Late-payment Invoice is made Void (BR-INV-046).
 
 Replaces: BR-INV-052, BR-INV-053, BR-INV-054, BR-INV-055, BR-LATE-002, BR-LATE-003, BR-LATE-006, BR-RENT-029.
-Decisions: DL-075, DL-076, DL-085, DL-118, DL-226.
+Decisions: DL-075, DL-076, DL-085, DL-118, DL-226, DL-233.
 
 ### BR-LATE-004 — Balance and Correction of a Late-payment Charge
 
-The first amount of a charge stays in the history. What is still owed is that amount minus valid payment allocations and Customer Credit uses, changed only by an authorized reversal or correction. It never goes below zero. At zero the charge is settled.
+A Late-payment Invoice is paid and settled like every Invoice: by a Payment, by Customer Credit, or by a Deposit in the Final Settlement. With no name from the payer, it is paid in the order of its own Due Date (BR-PAY-021).
 
-The Owner or a Manager (`late_payment.charge_correction`) may lower or cancel a charge only after the Customer complains that it is wrong because of a staff mistake. The reason is one of three ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") with a "What happened" text. The amount only goes down. The first charge and every change stay in the history.
+It is corrected like every Invoice, by the people who may adjust an Invoice or make it Void (the right "Approve financial records": by default the Owner and a Manager), only after the Customer complains that it is wrong because of a staff mistake, with a reason:
 
-A paid charge may still be lowered or cancelled. Money paid above the new amount is given back at once: Payment money becomes Customer Credit of the charge's Customer (BR-CREDIT-002), and Credit that was used returns to its Credit. A charge that a Deposit paid cannot be corrected this way. After the Lease's Final Settlement is closed, a charge is corrected only by a correction after settlement (BR-SETTLE-012).
+- Lower it: a credit Adjustment (BR-INV-021). Money paid above the new amount becomes Customer Credit at once (BR-CREDIT-002).
+- Cancel it: Void when it has received no money and has no Adjustment (BR-INV-046). If money was received, a credit Adjustment takes it down to zero and what was paid becomes Customer Credit.
+- The amount only goes down. A debit Adjustment on a Late-payment Invoice is refused.
+
+The first amount and every change stay in the history. A cancelled Late-payment Invoice is not made again: there is one charge for an Invoice, for ever (BR-LATE-001).
+
+Charges made before 14 November 2026 are not Invoices. Each stays as it was made, a debt of its own that is owed at once with no Due Date. What is still owed is its first amount minus valid payment allocations and Customer Credit uses. The Owner or a Manager (`late_payment.charge_correction`) may lower or cancel such a charge after a staff mistake, with one of three reasons ("Staff recorded the payment on the wrong Invoice", "Paid on time but recorded late", "Other staff mistake") and a "What happened" text. Money paid above the new amount becomes Customer Credit at once, and Credit that was used returns to its Credit. A charge that a Deposit paid cannot be corrected this way. After the Lease's Final Settlement is closed, a charge is corrected only by a correction after settlement (BR-SETTLE-012).
 
 Replaces: BR-LATE-005.
-Decisions: DL-076, DL-086, DL-087.
+Decisions: DL-076, DL-086, DL-087, DL-233.
 
 ---
 
@@ -884,7 +894,7 @@ When the payer names nothing, the proposal for the payer's own Payment is:
 
 1. Invoices by oldest Due Date first, until the Payment is used up or everything is paid.
 2. Invoices with the same Due Date: by issue order, then by a stable Invoice number order.
-3. A late-payment charge right after its own Invoice, before newer Invoices. The charge of an Invoice that is already paid keeps the place of that Invoice's Due Date.
+3. A Late-payment Invoice has its own Due Date, the day it was made, and takes its place by it like every Invoice. A late-payment charge made before 14 November 2026 (BR-LATE-004) comes right after its own Invoice, before newer Invoices; the charge of an Invoice that is already paid keeps the place of that Invoice's Due Date.
 4. Inside one Rent Invoice: the Rent line first, then its Service lines. On an Invoice of typed items: from the top down.
 
 The order inside an Invoice never changes the order between Invoices. Example: on $500 Rent plus $10 Trash Collection, $300 goes to Rent; $505 pays Rent in full and $5 of the Service; $510 pays both.
@@ -1386,7 +1396,7 @@ Decisions: DL-074.
 | Type the ABA rate by hand | Authorized user, only when the rate cannot be read automatically |
 | Estimate use for a broken Meter, and correct it | Authorized user. A reading that is only missing can never be made into an estimate |
 | Issue a charge by hand, adjust an issued Invoice, set a Due Date by hand, make an Invoice Void | Authorized user, with a reason |
-| Lower or cancel a late-payment charge | Owner or Manager only (BR-LATE-004) |
+| Lower or cancel a Late-payment Invoice, or a late-payment charge made before 14 November 2026 | Owner or Manager by default (BR-LATE-004) |
 | Receive a Payment, confirm its allocations, reverse an allocation or a Payment | Authorized user. A proposal by the app is never the confirmation |
 | Make Credit from extra money, use Credit | Authorized user; the payer's choice is kept |
 | Refunds, Deposit use, keeping a Deposit, a Payment move, the Final Settlement and its corrections | Draft by Staff, confirmed by `financial.approve` (BR-AUTH-010) |
@@ -1827,11 +1837,10 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 | D4 | BR-DEP-010: the Pet Deposit for a pet kept from the start is due within five days after the Lease Start Date | It is received at Sign Lease, with the Security Deposit and the Initial Rent |
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
-| L1 | BR-LATE-001: the late-payment charge is its own debt, not an Invoice | The late-payment charge becomes an Invoice of the type "Late-payment", which never gets a late-payment charge itself |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

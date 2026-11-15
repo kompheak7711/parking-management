@@ -1373,4 +1373,49 @@ describe("Invoices page (V1-058 R5)", () => {
     ).toBeTruthy();
     expect(screen.queryByText(/Missed amount of Invoice/)).toBeNull();
   });
+
+  it("TEST-FE-2257 A Late-payment Invoice shows the type Late-payment and a link to the Invoice that was late, and Adjust only lowers it", async () => {
+    const late: InvoiceResource = {
+      ...invoice("inv-l1", "INV260007", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        category: "MISCELLANEOUS_CHARGES",
+        issued: "2026-11-06",
+        due: "2026-11-06",
+        total: 8000,
+      }),
+      invoice_type: "LATE_PAYMENT",
+      late_payment_of: { invoice_id: "inv-u1", invoice_number: "INV260003" },
+    };
+    window.location.hash = "#/invoices/inv:inv-l1";
+    show({
+      invoices: invoiceApi([...invoices(), late]),
+      capabilities: new Set(["invoices.adjust"]),
+    });
+    const link = await screen.findByRole("link", {
+      name: "Late-payment charge of Invoice INV260003",
+    });
+    expect(link.getAttribute("href")).toBe("#/invoices/inv%3Ainv-u1");
+    expect(screen.getByText("Late-payment · Sok Dara · U101")).toBeTruthy();
+    // The printed Invoice names its line in Khmer as a late-payment charge.
+    expect(screen.getAllByText("ថ្លៃពិន័យបង់យឺត").length).toBeGreaterThan(0);
+    // The charge only goes down: Adjust offers to lower it, never to raise it.
+    fireEvent.click(screen.getByRole("button", { name: "Adjust" }));
+    const adjust = screen.getByRole("dialog", { name: "Adjust INV260007" });
+    expect(
+      within(adjust).getByRole("radio", { name: "Lower the amount" }),
+    ).toBeTruthy();
+    expect(
+      within(adjust).queryByRole("radio", { name: "Raise the amount" }),
+    ).toBeNull();
+    cleanup();
+
+    // Another Invoice has no such line.
+    window.location.hash = "#/invoices/inv:inv-u1";
+    show();
+    expect(
+      await screen.findByRole("heading", { name: "INV260003" }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Late-payment charge of Invoice/)).toBeNull();
+  });
 });

@@ -48,6 +48,8 @@ function khmerOf(
   if (shortStay === "SHORT_STAY_DAMAGE") return "ថ្លៃខូចខាត";
   // DL-221: an Invoice from a Quotation sells Products.
   if (invoiceType === "PRODUCTS") return "ផលិតផល";
+  // L1 (DL-233): the line of a Late-payment Invoice.
+  if (invoiceType === "LATE_PAYMENT") return "ថ្លៃពិន័យបង់យឺត";
   const type = textOf(line.calculation_evidence.utility_type);
   if (line.category === "UTILITIES")
     return type === "WATER"

@@ -113,4 +113,28 @@ describe("Invoice types (DL-221)", () => {
       }),
     ).toEqual(["ផលិតផល", "Products", "INV260020"]);
   });
+
+  it("TEST-FE-2259 a Late-payment Invoice is a type of its own on the Invoices list, on Receive payment and on the Receipt", () => {
+    const late = {
+      category: "MISCELLANEOUS_CHARGES" as const,
+      invoice_type: "LATE_PAYMENT" as const,
+    };
+    expect(invoiceTypeCode("LATE_PAYMENT")).toBe("LATE_PAYMENT");
+    expect(ivt("en", invoiceType(late))).toBe("Late-payment");
+    expect(ivt("km", invoiceType(late))).toBe("ថ្លៃពិន័យបង់យឺត");
+    expect(typeCategory("LATE_PAYMENT")).toBe("LATE_PAYMENT");
+    expect(pyt("en", "LATE_PAYMENT")).toBe("Late-payment");
+    expect(pyt("km", "LATE_PAYMENT")).toBe("ថ្លៃពិន័យបង់យឺត");
+    expect(
+      lineWords({
+        kind: "INVOICE",
+        invoiceId: "i-2",
+        invoiceNumber: "INV260040",
+        category: "LATE_PAYMENT",
+        dueDate: null,
+        depositType: null,
+        amount: 8000,
+      }),
+    ).toEqual(["ថ្លៃពិន័យបង់យឺត", "Late-payment", "INV260040"]);
+  });
 });

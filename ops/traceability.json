@@ -68147,7 +68147,7 @@
       "notes": "No app role may call the two functions that state a type; a Quotation and each short-stay record carry the check that the Invoice they name is of their own type."
     },
     {
-      "test_id": "test_late_payment_is_the_seventh_type_and_is_not_in_use_yet",
+      "test_id": "test_late_payment_is_the_seventh_type_in_use_since_the_late_payment_invoice",
       "upstream_ids": [
         "DL-231",
         "DB-BS-009",
@@ -68260,6 +68260,194 @@
       "test_path": "frontend/src/invoiceClient.test.ts",
       "status": "implemented",
       "notes": "The client sends missed_on_invoice_line_id only when it is given and reads missed_on of an Invoice (null when absent)."
+    },
+    {
+      "test_id": "test_the_migration_follows_the_missed_amount_step_and_is_forward_only",
+      "upstream_ids": [
+        "DL-233",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270730_396 follows 20270729_395 and is forward-only."
+    },
+    {
+      "test_id": "test_the_pass_makes_a_late_payment_invoice_and_no_charge_of_the_old_kind",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Rent of 800.00 unpaid after its Due Date: the pass writes the decision and a Late-payment Invoice of 80.00 for the same Customer and Lease, issued by the billing service and due on the day it is made, with one line that names the late Invoice; no charge of the old kind; one for an Invoice, for ever."
+    },
+    {
+      "test_id": "test_a_late_payment_invoice_never_gets_a_late_payment_charge",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "BR-INV-016"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The type Late-payment is in use with its switch fixed at No; the pass does not read a Late-payment Invoice and a direct call adds nothing."
+    },
+    {
+      "test_id": "test_only_the_pass_makes_a_late_payment_invoice_and_its_link_never_changes",
+      "upstream_ids": [
+        "DL-233",
+        "BR-INV-016",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The type without a decision is refused, the link never changes, and no app role may state the type."
+    },
+    {
+      "test_id": "test_a_late_payment_invoice_is_paid_and_lowered_like_every_invoice",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-004",
+        "BR-PAY-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The payable list shows the late Invoice and then its Late-payment Invoice; oldest first pays them in that order; a credit Adjustment lowers the Late-payment Invoice and the rest paid makes it Paid; the decision keeps the first amount."
+    },
+    {
+      "test_id": "test_a_late_payment_invoice_is_never_raised",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-004",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A debit Adjustment on a Late-payment Invoice is refused by the command and by the record check; an Invoice of another type is raised as before."
+    },
+    {
+      "test_id": "test_the_late_invoice_is_not_made_void_while_its_late_payment_invoice_stands",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "BR-INV-046"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The late Invoice is not made Void while its Late-payment Invoice is not Void (command and record check); after the Late-payment Invoice is Void, it is."
+    },
+    {
+      "test_id": "test_the_card_of_the_late_invoice_names_its_late_payment_invoice",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-004",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The late-payment card of the late Invoice names the Late-payment Invoice with its status and amounts, has no charge id, and shows zero after a Void; the Late-payment Invoice has no card."
+    },
+    {
+      "test_id": "test_the_income_report_counts_a_late_payment_invoice_as_late_payment_income",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The income report counts the Late-payment Invoice as late-payment charges, not as other charges."
+    },
+    {
+      "test_id": "test_the_ledger_counts_a_late_payment_invoice_as_late_payment_income",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Issue of a Late-payment Invoice posts the debt to 1100 and the income to 4050."
+    },
+    {
+      "test_id": "test_the_ledger_takes_a_lowered_and_a_void_late_payment_invoice_out_of_late_payment_income",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-004",
+        "DB-BS-011"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_late_payment_invoice_ledger_migration.py",
+      "status": "implemented",
+      "notes": "A credit Adjustment and a Void of a Late-payment Invoice take the amount out of 1100 and out of 4050."
+    },
+    {
+      "test_id": "test_a_late_payment_invoice_goes_to_the_linked_tenant",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_telegram_tenant_invoices_migration.py",
+      "status": "implemented",
+      "notes": "A tenant with a Tenant-bot link gets the Late-payment Invoice like every issued Invoice."
+    },
+    {
+      "test_id": "test_a_late_payment_invoice_names_its_line_in_khmer",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_aba_invoice_qr.py",
+      "status": "implemented",
+      "notes": "The Invoice PDF names the line of a Late-payment Invoice in Khmer as a late-payment charge."
+    },
+    {
+      "test_id": "TEST-FE-2257",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "BR-LATE-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "A Late-payment Invoice shows the type Late-payment, a link to the Invoice that was late and the Khmer line name on the printed Invoice; Adjust offers only to lower it; another Invoice shows no such link."
+    },
+    {
+      "test_id": "TEST-FE-2258",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/LateChargeCard.test.tsx",
+      "status": "implemented",
+      "notes": "The late-payment card of a charge that is a Late-payment Invoice links to that Invoice and has no Receive payment or Reduce button of its own; the client reads late_invoice and a null charge id."
+    },
+    {
+      "test_id": "TEST-FE-2270",
+      "upstream_ids": [
+        "DL-233",
+        "BR-LATE-001",
+        "BR-INV-016"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/BusinessTab.test.tsx",
+      "status": "implemented",
+      "notes": "Settings lists the Late-payment type as No with no Change button."
     }
   ]
 }

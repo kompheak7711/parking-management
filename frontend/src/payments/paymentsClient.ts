@@ -151,7 +151,10 @@ export interface LateChargeChange {
 }
 
 export interface LateChargeCard {
-  chargeId: string;
+  /** The id of a charge made before L1 (DL-233); null when the charge is an Invoice. */
+  chargeId: string | null;
+  /** L1 (DL-233): the Late-payment Invoice the charge is, with its status. */
+  lateInvoice: { id: string; number: string; status: string } | null;
   invoiceId: string;
   customerId: string;
   payableAt: string;
@@ -248,6 +251,7 @@ export function typeCategory(value: unknown): string | null {
     SHORT_STAY: "SHORT_STAY",
     PRODUCTS: "PRODUCTS",
     DAMAGE: "DAMAGE_CHARGES",
+    LATE_PAYMENT: "LATE_PAYMENT",
     MISCELLANEOUS: "MISCELLANEOUS_CHARGES",
   }[type];
 }
@@ -430,11 +434,22 @@ const REDUCTION_REASONS = [
   "OTHER_STAFF_MISTAKE",
 ] as const;
 
+function lateInvoiceOf(value: unknown): LateChargeCard["lateInvoice"] {
+  if (value === undefined || value === null) return null;
+  const late = object(value);
+  return {
+    id: text(late.invoice_id),
+    number: text(late.invoice_number),
+    status: text(late.status),
+  };
+}
+
 function lateCardOf(value: unknown): LateChargeCard | null {
   if (value === null) return null;
   const data = object(value);
   return {
-    chargeId: text(data.charge_id),
+    chargeId: maybeText(data.charge_id),
+    lateInvoice: lateInvoiceOf(data.late_invoice),
     invoiceId: text(data.invoice_id),
     customerId: text(data.customer_id),
     payableAt: text(data.payable_at),

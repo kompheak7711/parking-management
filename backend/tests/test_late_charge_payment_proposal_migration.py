@@ -27,7 +27,7 @@ from test_automatic_late_payment_charge_migration import (
     clear_runs,
     due_of,
     moment,
-    record,
+    record_old_kind,
     seed_last_run,
 )
 from test_final_settlement_migration import one
@@ -288,7 +288,7 @@ def test_each_charge_follows_its_own_invoice(migrated_database_url: str) -> None
     case = two_months(url)
     later_due = one(url, "SELECT due_date FROM app.invoices WHERE id=%s", case["later"])[0]
     seed_last_run(url, case["prop"], case["service"], later_due)
-    outcome = record(case, case["later"])
+    outcome = record_old_kind(url, case, case["later"])
     assert outcome["outcome"] == "CHARGED"
     later_charge = str(outcome["charge"]["id"])
     paid_by = payment(case, 2 * (RENT + CHARGE))

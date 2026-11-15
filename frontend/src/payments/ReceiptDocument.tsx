@@ -31,6 +31,7 @@ const CATEGORY: Record<string, [string, string]> = {
   MISCELLANEOUS_CHARGES: ["ថ្លៃផ្សេងៗ", "Other charges"],
   DAMAGE_CHARGES: ["ថ្លៃខូចខាត", "Damage"],
   PRODUCTS: ["ផលិតផល", "Products"],
+  LATE_PAYMENT: ["ថ្លៃពិន័យបង់យឺត", "Late-payment"],
   SHORT_STAY: ["ថ្លៃស្នាក់នៅ", "Short stay"],
   SHORT_STAY_DAMAGE: ["ថ្លៃខូចខាត", "Short-stay damage"],
 };

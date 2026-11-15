@@ -140,6 +140,34 @@ def test_a_part_paid_utility_invoice_shows_what_is_paid_and_the_readings() -> No
     assert "late-payment" not in html  # the note is for recurring Rent only
 
 
+def test_a_late_payment_invoice_names_its_line_in_khmer() -> None:
+    """L1 (DL-233): the late-payment charge is an Invoice of the type Late-payment."""
+    invoice = rent_invoice(
+        invoice_number="INV260030",
+        category="MISCELLANEOUS_CHARGES",
+        invoice_type="LATE_PAYMENT",
+        billing_period=None,
+        adjusted_total=money(8000),
+        outstanding_balance=money(8000),
+        lines=[
+            {
+                "sequence": 1,
+                "category": "MISCELLANEOUS_CHARGES",
+                "description": "Late-payment charge of Invoice INV260015",
+                "adjusted_amount": money(8000),
+                "calculation_evidence": {},
+            }
+        ],
+    )
+    html = page(invoice, 8000)
+    assert '<span class="kh">ថ្លៃពិន័យបង់យឺត</span>' in html
+    assert "Late-payment charge of Invoice INV260015" in html and "$80.00" in html
+    # Another one-time charge keeps its own Khmer name.
+    assert '<span class="kh">ថ្លៃផ្សេងៗ</span>' in page(
+        {**invoice, "invoice_type": "MISCELLANEOUS"}, 8000
+    )
+
+
 def test_names_are_escaped() -> None:
     html = invoice_html(
         rent_invoice(),

@@ -419,6 +419,7 @@ database_test_suites='
   tests/test_v12_hand_back_days_used_migration.py
   tests/test_rent_notice_days_migration.py
   tests/test_v12_missed_amount_type_migration.py
+  tests/test_v12_late_payment_invoice_migration.py
   tests/test_v12_invoice_type_stored_migration.py
 '
 # The General Ledger suites run first, in a pytest run of their own on the new database: the other
@@ -441,6 +442,7 @@ ledger_database_test_suites='
   tests/test_gl_riel_refund_migration.py
   tests/test_v12_gl_method_account_right_migration.py
   tests/test_v12_missed_amount_ledger_migration.py
+  tests/test_v12_late_payment_invoice_ledger_migration.py
 '
 
 for database_test_file in $database_test_suites $ledger_database_test_suites; do

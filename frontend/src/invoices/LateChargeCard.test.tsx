@@ -13,7 +13,11 @@ import {
   type InvoiceApi,
   type InvoiceResource,
 } from "../invoiceClient";
-import type { LateChargeCard, PaymentsApi } from "../payments/paymentsClient";
+import {
+  createPaymentsApi,
+  type LateChargeCard,
+  type PaymentsApi,
+} from "../payments/paymentsClient";
 import { InvoiceDetail } from "./InvoiceDetail";
 import type { InvoicesData } from "./invoicesData";
 
@@ -73,6 +77,7 @@ const DATA: InvoicesData = {
 
 const CARD: LateChargeCard = {
   chargeId: "charge-6",
+  lateInvoice: null,
   invoiceId: "inv-6",
   customerId: "cust-lim",
   payableAt: "2026-10-05T17:00:00Z",
@@ -144,6 +149,96 @@ function card() {
 }
 
 describe("V1-058 R5d late-payment card", () => {
+  it("TEST-FE-2258 a charge that is a Late-payment Invoice shows a link to that Invoice, and no Receive payment or Reduce button of its own", async () => {
+    const late = lateApi({
+      ...CARD,
+      chargeId: null,
+      lateInvoice: { id: "inv-9", number: "INV260040", status: "UNPAID" },
+      stillOwed: 3_530,
+      paid: 0,
+      paidBy: [],
+    });
+    show(
+      late,
+      new Set([
+        "invoices.read",
+        "payments.record",
+        "late_payment.charge_correction",
+      ]),
+    );
+    const section = await screen.findByRole("region", {
+      name: "Late-payment charge",
+    });
+    expect(
+      within(section).getByRole("link", { name: "INV260040" }),
+    ).toHaveAttribute("href", "#/invoices/inv%3Ainv-9");
+    expect(
+      within(section).getByText(
+        /This charge is a Late-payment Invoice\. Receive money for it, lower it or make it Void on that Invoice/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText("Unpaid on 06/10/2026"),
+    ).toBeInTheDocument();
+    expect(within(section).getAllByText("$35.30")).toHaveLength(2);
+    expect(
+      within(section).queryByRole("link", { name: /Receive payment/ }),
+    ).toBeNull();
+    expect(
+      within(section).queryByRole("button", { name: /Reduce or waive/ }),
+    ).toBeNull();
+
+    // The client reads the card the server sends for such a charge: no charge id, the Invoice.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: {
+                charge_id: null,
+                late_invoice: {
+                  invoice_id: "inv-9",
+                  invoice_number: "INV260040",
+                  status: "UNPAID",
+                },
+                invoice_id: "inv-6",
+                customer_id: "cust-1",
+                payable_at: "2026-10-06T00:00:00+07:00",
+                charged_at: "2026-10-06T00:00:00+07:00",
+                decision_outcome: "CONFIRMED_DEFAULT",
+                calculated_default_usd_cents: 3_530,
+                by_app: true,
+                added_by: null,
+                unpaid_at_charge_usd_cents: 35_300,
+                rate_basis_points: 1000,
+                original_usd_cents: 3_530,
+                now_usd_cents: 3_530,
+                still_owed_usd_cents: 3_530,
+                paid_usd_cents: 0,
+                changes: [],
+                paid_by: [],
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        ),
+      ),
+    );
+    try {
+      const read = await createPaymentsApi().lateCharge("property-1", "inv-6");
+      expect(read?.chargeId).toBeNull();
+      expect(read?.lateInvoice).toEqual({
+        id: "inv-9",
+        number: "INV260040",
+        status: "UNPAID",
+      });
+      expect(read?.fullRate).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("TEST-FE-923 shows what was unpaid, the charge the app added, what paid it and what is still owed; a Manager-only change is locked for Staff", async () => {
     const late = lateApi({
       ...CARD,

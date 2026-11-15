@@ -115,9 +115,9 @@ def test_every_document_has_one_number_rule_and_every_invoice_type_starts_at_yes
             ("SHORT_STAY", "Short stay", False, True),
             ("PRODUCTS", "Products", True, True),
             ("DAMAGE", "Damage", True, True),
-            # DL-231 (T1): the seventh type; no Invoice gets it before the late-payment
-            # charge becomes an Invoice (L1).
-            ("LATE_PAYMENT", "Late-payment", False, False),
+            # DL-231 (T1): the seventh type. DL-233 (L1): in use since the late-payment
+            # charge is an Invoice; its switch stays No.
+            ("LATE_PAYMENT", "Late-payment", False, True),
             ("MISCELLANEOUS", "Other charges", True, True),
             ("FIRST_RENT", "First Rent", True, False),
             ("SERVICES", "Services", True, False),

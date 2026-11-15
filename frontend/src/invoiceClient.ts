@@ -54,7 +54,13 @@ export type InvoiceTypeCode =
   | "SHORT_STAY"
   | "PRODUCTS"
   | "DAMAGE"
+  | "LATE_PAYMENT"
   | "MISCELLANEOUS";
+/** L1 (DL-233): the Invoice that was late, on a Late-payment Invoice. */
+export interface LatePaymentOf {
+  invoice_id: string;
+  invoice_number: string;
+}
 /** D3 (DL-232): where the amount of a missed-amount Invoice was missed. */
 export interface MissedOn {
   invoice_id: string;
@@ -74,6 +80,7 @@ export interface InvoiceResource {
   invoice_type?: InvoiceTypeCode | null;
   /** D3 (DL-232): the Invoice and the fully paid line where this amount was missed. */
   missed_on?: MissedOn | null;
+  late_payment_of?: LatePaymentOf | null;
   status: InvoiceStatus;
   invoice_date: string;
   due_date: string | null;
@@ -480,10 +487,20 @@ export const INVOICE_TYPE_CODES: readonly InvoiceTypeCode[] = [
   "SHORT_STAY",
   "PRODUCTS",
   "DAMAGE",
+  "LATE_PAYMENT",
   "MISCELLANEOUS",
 ];
 export function invoiceTypeCode(value: unknown): InvoiceTypeCode | null {
   return INVOICE_TYPE_CODES.find((code) => code === value) ?? null;
+}
+
+function latePaymentOf(value: unknown): LatePaymentOf | null {
+  if (value === undefined || value === null) return null;
+  const row = object(value);
+  return {
+    invoice_id: text(row.invoice_id),
+    invoice_number: text(row.invoice_number),
+  };
 }
 
 function missedOn(value: unknown): MissedOn | null {
@@ -508,6 +525,7 @@ function invoice(value: unknown): InvoiceResource {
     short_stay: shortStayKind(row.short_stay),
     invoice_type: invoiceTypeCode(row.invoice_type),
     missed_on: missedOn(row.missed_on),
+    late_payment_of: latePaymentOf(row.late_payment_of),
     status: choice(row.status, [
       "DRAFT",
       "UNPAID",

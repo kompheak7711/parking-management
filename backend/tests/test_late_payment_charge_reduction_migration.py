@@ -44,7 +44,7 @@ from test_automatic_late_payment_charge_migration import (
     moment,
     months_ago,
     overdue,
-    record,
+    record_old_kind,
     refusal,
     seed_last_run,
 )
@@ -82,10 +82,11 @@ def no_pass_yet(migrated_database_url: str) -> Iterator[None]:
 
 
 def charged(url: str, months: int) -> dict[str, Any]:
-    """An unpaid Rent Invoice of 800.00 and its automatic charge of 80.00."""
+    """An unpaid Rent Invoice of 800.00 and its charge of 80.00 of the kind made before the
+    Late-payment Invoice (L1, DL-233): such a charge stays in force with its own corrections."""
     case = overdue(url, months_ago(url, months))
     seed_last_run(url, case["prop"], case["service"], case["due"])
-    outcome = record(case)
+    outcome = record_old_kind(url, case)
     assert outcome["outcome"] == "CHARGED"
     lease = one(url, "SELECT lease_id FROM app.invoices WHERE id=%s", case["invoice"])[0]
     return {**case, "url": url, "charge": UUID(str(outcome["charge"]["id"])), "lease": lease}
@@ -172,7 +173,7 @@ def apply_credit(case: dict[str, Any], amount: int) -> tuple[UUID, UUID]:
     due = due_of(earlier.replace(day=1))
     backdate_issue(url, invoice, moment(due) - timedelta(days=10))
     seed_last_run(url, prop, case["service"], due)
-    outcome = record(case, invoice)
+    outcome = record_old_kind(url, case, invoice)
     assert outcome["outcome"] == "CHARGED"
     other = {**case, "charge": UUID(str(outcome["charge"]["id"]))}
     pay_charge(other, 8_000)

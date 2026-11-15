@@ -62,11 +62,18 @@ def test_every_invoice_keeps_the_type_its_category_and_links_say(
             "AND conname='invoices_invoice_type_fkey'"
         ).fetchone() == ("app.invoice_types",)
         # No Invoice the tests made, by any way, has another type than the old rule gave it.
-        # Only an Invoice for a missed amount keeps the type of what was missed (D3, DL-232).
+        # Only an Invoice for a missed amount keeps the type of what was missed (D3, DL-232),
+        # and only the Invoice of a late-payment decision is a Late-payment Invoice (L1, DL-233).
         assert connection.execute(
             "SELECT count(*) FROM app.invoices AS invoice "
             "WHERE invoice.invoice_type IS DISTINCT FROM app.invoice_type_from_links(invoice.id) "
-            "AND invoice.missed_on_invoice_line_id IS NULL"
+            "AND invoice.missed_on_invoice_line_id IS NULL "
+            "AND invoice.late_payment_decision_id IS NULL"
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoices AS invoice "
+            "WHERE (invoice.invoice_type='LATE_PAYMENT') "
+            "IS DISTINCT FROM (invoice.late_payment_decision_id IS NOT NULL)"
         ).fetchone() == (0,)
         # Every read gives the kept type.
         assert connection.execute(
@@ -140,13 +147,15 @@ def test_only_the_database_states_a_type_and_a_link_checks_it(
         assert dict(found) == LINKS
 
 
-def test_late_payment_is_the_seventh_type_and_is_not_in_use_yet(
+def test_late_payment_is_the_seventh_type_in_use_since_the_late_payment_invoice(
     migrated_database_url: str,
 ) -> None:
+    """T1 added the type, not in use. L1 (DL-233, migration 20270730_396) put it in use: the
+    late-payment charge is an Invoice of this type. Its late-payment switch stays No."""
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
             "SELECT name_en, late_payment, in_use FROM app.invoice_types WHERE code='LATE_PAYMENT'"
-        ).fetchone() == ("Late-payment", False, False)
+        ).fetchone() == ("Late-payment", False, True)
         assert connection.execute(
             "SELECT array_agg(code ORDER BY sort_order) FROM app.invoice_types "
             "WHERE code NOT IN ('FIRST_RENT','SERVICES')"

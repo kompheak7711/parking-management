@@ -419,6 +419,23 @@ export function InvoiceDetail({
               </a>
             </p>
           )}
+          {invoice.late_payment_of !== undefined &&
+            invoice.late_payment_of !== null && (
+              <p>
+                <a
+                  href={hashForPage(
+                    "invoices",
+                    `inv:${invoice.late_payment_of.invoice_id}`,
+                  )}
+                >
+                  {ivt(
+                    language,
+                    "late_of",
+                    invoice.late_payment_of.invoice_number,
+                  )}
+                </a>
+              </p>
+            )}
         </div>
         <div className="ui-actions">
           {state === "draft" && may("invoices.issue") && (

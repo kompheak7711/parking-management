@@ -702,6 +702,30 @@ describe("Settings: Business", () => {
     );
   });
 
+  it("TEST-FE-2270 the Late-payment type is shown as No and cannot be changed: a Late-payment Invoice never gets a late-payment charge", async () => {
+    const api = apiOf();
+    api.settings.invoiceTypes.mockResolvedValue([
+      ...TYPES,
+      {
+        code: "LATE_PAYMENT",
+        name_en: "Late-payment",
+        name_kh: "ថ្លៃពិន័យបង់យឺត",
+        late_payment: false,
+        version: 2,
+      },
+    ]);
+    show(api);
+    await screen.findByRole("button", { name: "Change: First Rent" });
+    expect(rowsOf(within(card("Invoice types")).getByRole("table"))).toEqual([
+      "First Rent | Yes | Change",
+      "Utilities | No | Change",
+      "Late-payment | No | Cannot change",
+    ]);
+    expect(
+      screen.queryByRole("button", { name: "Change: Late-payment" }),
+    ).toBeNull();
+  });
+
   it("TEST-FE-1136 late payment for an Invoice type changes with a reason; new letters for a document must be 2 to 5 capitals no other document uses and show the next number", async () => {
     const api = show();
     fireEvent.click(

@@ -1001,6 +1001,8 @@ const TEXT = {
   it_type: ["Invoice type", "ប្រភេទវិក្កយបត្រ"],
   it_late: ["Late payment", "ការបង់យឺត"],
   it_change: ["Change", "ប្ដូរ"],
+  // L1 (DL-233): a Late-payment Invoice never gets a late-payment charge.
+  it_fixed: ["Cannot change", "មិនអាចប្ដូរបាន"],
   it_edit_t: ["Late payment: {0}", "ការបង់យឺត៖ {0}"],
   it_on: [
     "Add the late-payment charge to this type",

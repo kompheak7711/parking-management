@@ -177,6 +177,8 @@ function ReduceDialog({
     setBusy(true);
     // "No answer" stays until a definite answer, so the form stays locked.
     setOutcome((current) => (current === "unknown" ? current : null));
+    // Only a charge made before L1 (DL-233) is lowered here.
+    if (card.chargeId === null) return;
     void api
       .reduceLateCharge(card.chargeId, newAmount, reason, what.trim(), key)
       .then(onSaved)
@@ -483,11 +485,23 @@ export function LateChargeSection({
           {usdFromCents(card.stillOwed)}
         </dd>
       </dl>
-      <p className="ui-muted ui-small">
-        {ivt(language, "lt_sep", invoiceNumber)}
-      </p>
+      {card.lateInvoice === null ? (
+        <p className="ui-muted ui-small">
+          {ivt(language, "lt_sep", invoiceNumber)}
+        </p>
+      ) : (
+        <p className="ui-small">
+          {ivt(language, "lt_inv")}{" "}
+          <a
+            className="ui-num"
+            href={hashForPage("invoices", `inv:${card.lateInvoice.id}`)}
+          >
+            {card.lateInvoice.number}
+          </a>
+        </p>
+      )}
       <div className="ui-actions">
-        {card.stillOwed > 0 && mayReceive && (
+        {card.chargeId !== null && card.stillOwed > 0 && mayReceive && (
           <a
             className="ui-btn"
             href={hashForPage(
@@ -499,7 +513,7 @@ export function LateChargeSection({
             {ivt(language, "lt_pay")}
           </a>
         )}
-        {card.now > card.paid && !byDeposit && (
+        {card.chargeId !== null && card.now > card.paid && !byDeposit && (
           <button
             aria-disabled={!mayFix}
             className={mayFix ? "ui-btn" : "ui-btn ui-locked"}
