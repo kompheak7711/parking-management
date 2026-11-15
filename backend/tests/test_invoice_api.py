@@ -458,6 +458,31 @@ def test_items_invoice_route_needs_invoices_create_and_validates_every_item() ->
     assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
 
 
+def test_items_invoice_route_takes_the_line_where_an_amount_was_missed() -> None:
+    """D3 (DL-232): a one-time Invoice may name the fully paid line where its amount was missed."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    path = f"/api/v1/properties/{property_id}/invoices/drafts"
+    client = api(flow, actor(property_id, "invoices.create"))
+    line = uuid4()
+    body = {**_items_body(), "missed_on_invoice_line_id": str(line)}
+    for bad in (
+        {**body, "missed_on_invoice_line_id": "not-a-line"},
+        {**body, "missed_on_invoice_line_id": 5},
+        {**body, "missed_on_invoice_id": str(line)},
+    ):
+        assert client.post(path, headers=mutation_headers(), json=bad).status_code == 422
+    assert flow.commands == []
+    assert client.post(path, headers=mutation_headers(), json=body).status_code == 201
+    command = cast(CreateItemsInvoiceDraftCommand, flow.commands[-1])
+    assert command.missed_on_invoice_line_id == line
+    # A one-time charge that names no line is made as before.
+    assert client.post(path, headers=mutation_headers(), json=_items_body()).status_code == 201
+    command = cast(CreateItemsInvoiceDraftCommand, flow.commands[-1])
+    assert command.missed_on_invoice_line_id is None
+    assert "missed_on_invoice_line_id" not in command.payload()
+
+
 def test_edit_items_route_needs_the_version_and_the_reason_for_the_change() -> None:
     """DL-103: Edit items replaces the items of a DRAFT with one reason for the change."""
     property_id = uuid4()

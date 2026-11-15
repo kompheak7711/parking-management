@@ -722,8 +722,11 @@ Replaces: BR-INV-019, BR-INV-023, BR-INV-025, BR-INV-030, BR-INV-031, BR-INV-032
 
 A correction of the amount of an issued Invoice is a debit or credit Adjustment, linked to the Invoice. The first amount and the Lease terms stay as they were. An Adjustment is recorded on one line and keeps the Invoice, the source, the amount, the reason, the approval, who and when. It follows the Customer and the Lease (or no Lease) of what it corrects.
 
-- A debit Adjustment is allowed only while its line still has an amount unpaid. On a fully paid line it is refused; an amount that was missed there is billed as a new one-time Other charge or Damage charge. If a reversal brings the line back above zero, a debit Adjustment is allowed again.
+- A debit Adjustment is allowed only while its line still has an amount unpaid. On a fully paid line it is refused; an amount that was missed there is billed on a new one-time Invoice. If a reversal brings the line back above zero, a debit Adjustment is allowed again.
+- The new Invoice for a missed amount keeps the Invoice type of the Invoice where the amount was missed: missed Rent is billed as Rent, missed Utilities as Utilities. It names that Invoice. It is for the same Customer and the same Lease (or no Lease). It is a one-time charge with its own Due Date (BR-INV-018), and the late-payment switch of its type is the one it follows. The income report and the General Ledger count it as what was missed, in the month of the new Invoice.
 - A credit Adjustment is allowed on any line of an issued Invoice that is not Void. Credit above what the line still owes becomes Customer Credit of the Invoice Customer (BR-CREDIT-002).
+
+Decisions: DL-232.
 
 Replaces: BR-INV-044, BR-INV-045.
 
@@ -1821,7 +1824,6 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| D3 | BR-INV-021: an amount missed on a fully paid line is billed as an Other charge or a Damage charge | The new charge keeps the type of what was missed |
 | D4 | BR-DEP-010: the Pet Deposit for a pet kept from the start is due within five days after the Lease Start Date | It is received at Sign Lease, with the Security Deposit and the Initial Rent |
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
@@ -1829,7 +1831,7 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

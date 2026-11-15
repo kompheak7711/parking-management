@@ -234,7 +234,10 @@ export function InvoiceDetail({
   lateApi,
 }: {
   language: Language;
-  api: Pick<InvoiceApi, "get" | "issue" | "adjust" | "void">;
+  api: Pick<
+    InvoiceApi,
+    "get" | "issue" | "adjust" | "void" | "createWithItems"
+  >;
   /** The late-payment card read and the Reduce or waive command; none hides the card. */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   /** Something was saved; the list reads again. */
@@ -404,6 +407,18 @@ export function InvoiceDetail({
               .filter((part) => part !== null && part !== "")
               .join(" · ")}
           </p>
+          {invoice.missed_on !== undefined && invoice.missed_on !== null && (
+            <p>
+              <a
+                href={hashForPage(
+                  "invoices",
+                  `inv:${invoice.missed_on.invoice_id}`,
+                )}
+              >
+                {ivt(language, "missed_of", invoice.missed_on.invoice_number)}
+              </a>
+            </p>
+          )}
         </div>
         <div className="ui-actions">
           {state === "draft" && may("invoices.issue") && (
@@ -552,7 +567,17 @@ export function InvoiceDetail({
             },
           };
           return dialog === "adjust" ? (
-            <AdjustDialog {...props} />
+            <AdjustDialog
+              {...props}
+              canBill={may("invoices.create")}
+              onBilled={(draft) => {
+                // D3 (DL-232): open the new Draft, so it can be checked and issued.
+                setDialog(null);
+                onChanged();
+                openPageInAddress("invoices", false, `inv:${draft.id}`);
+              }}
+              propertyId={propertyId}
+            />
           ) : (
             <VoidDialog {...props} />
           );

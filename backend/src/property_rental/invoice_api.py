@@ -250,6 +250,8 @@ class ItemsInvoiceDraftInput(BaseModel):
     reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     evidence_reference: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
     items: list[InvoiceItemInput] = Field(min_length=1, max_length=MAX_INVOICE_ITEMS)
+    # D3 (DL-232): the fully paid Invoice line where this amount was missed.
+    missed_on_invoice_line_id: UUID | None = None
 
 
 class ServiceInvoiceItemInput(BaseModel):
@@ -592,6 +594,7 @@ def create_invoice_router(
                     body.reason,
                     body.evidence_reference,
                     _invoice_items(body.items),
+                    body.missed_on_invoice_line_id,
                 ),
                 actor=actor,
             )

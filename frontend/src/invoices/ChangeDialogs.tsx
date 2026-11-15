@@ -88,10 +88,20 @@ export function AdjustDialog({
   language,
   api,
   invoice,
+  propertyId,
+  canBill,
   onClose,
   onSaved,
   onChanged,
-}: Props & { api: Pick<InvoiceApi, "adjust"> }) {
+  onBilled,
+}: Props & {
+  api: Pick<InvoiceApi, "adjust" | "createWithItems">;
+  propertyId: string;
+  /** May this person make an Invoice (invoices.create)? */
+  canBill: boolean;
+  /** D3 (DL-232): the missed amount was billed on this new Draft Invoice. */
+  onBilled: (draft: InvoiceResource) => void;
+}) {
   const lines = [...invoice.lines].sort(
     (left, right) => left.sequence - right.sequence,
   );
@@ -136,9 +146,44 @@ export function AdjustDialog({
     send(() => api.adjust(invoice.id, input, invoice.version, key));
   };
 
+  // D3 (DL-232): a fully paid line cannot be raised. The missed amount goes on a new Invoice
+  // for the same Customer and Lease. It names this line, so it keeps the type of this Invoice.
+  const {
+    busy: billing,
+    outcome: billOutcome,
+    send: sendBill,
+  } = useSend(onBilled, onChanged);
+  const billMissed = () => {
+    if (busy || billing || line === undefined || typed === null) return;
+    const sent = JSON.stringify([line.id, typed, reason.trim(), source.trim()]);
+    const input = {
+      customer_id: invoice.customer_id,
+      lease_id: invoice.lease_id,
+      reason: reason.trim(),
+      evidence_reference: source.trim(),
+      items: [
+        {
+          charge_id: keyFor(`charge:${sent}`),
+          description: ivt(
+            language,
+            "adj_missed_item",
+            line.description,
+            invoice.invoice_number,
+          ),
+          quantity: 1,
+          unit_price: { currency: "USD" as const, minor_units: typed },
+        },
+      ],
+      missed_on_invoice_line_id: line.id,
+    };
+    const key = keyFor(`bill:${sent}`);
+    sendBill(() => api.createWithItems(propertyId, input, key));
+  };
+  const shown = billOutcome ?? outcome;
+
   return (
     <Dialog
-      busy={busy}
+      busy={busy || billing}
       closeLabel={ivt(language, "cancel")}
       onClose={onClose}
       onSubmit={save}
@@ -266,10 +311,25 @@ export function AdjustDialog({
           <Problem id="adj-src-err" text={ivt(language, "adj_err_src")} />
         )}
       </div>
-      {outcome !== null && (
+      {shown !== null && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
-          <p>{ivt(language, outcome)}</p>
+          <p>{ivt(language, shown)}</p>
+          {outcome === "adj_err_paid" &&
+            canBill &&
+            direction === "DEBIT" &&
+            typed !== null &&
+            reason.trim() !== "" &&
+            source.trim() !== "" && (
+              <button
+                className="ui-btn"
+                disabled={billing}
+                onClick={billMissed}
+                type="button"
+              >
+                {ivt(language, "adj_bill_missed")}
+              </button>
+            )}
         </div>
       )}
     </Dialog>

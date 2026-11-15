@@ -6132,3 +6132,17 @@ Added by DL-231 (owner, 12 Nov 2026, T1; migration `20270728_394` on `20270727_3
 - `app.invoice_types` gets the seventh row `LATE_PAYMENT` ("Late-payment", late payment No, `in_use` No, shown between Damage and Other charges). No Invoice gets it yet, Settings does not list it and it cannot be switched. It starts with the late-payment charge as an Invoice (Appendix B of docs/002, L1).
 
 Tests: `backend/tests/test_v12_invoice_type_stored_migration.py`.
+
+## DB-BS-010 — A missed amount keeps the type of what was missed (DL-232)
+
+Added by DL-232 (owner, 12 Nov 2026, D3; migration `20270729_395` on `20270728_394`, forward-only). No row is changed or deleted.
+
+- `app.invoices.missed_on_invoice_line_id` (uuid, empty on every other Invoice, a row of `app.invoice_lines`; partial index `invoices_missed_on_invoice_line_idx`). It is the fully paid Invoice line where the amount of this one-time Invoice was missed. A change is refused with "The missed line is kept as it was made" (SQLSTATE 55000).
+- `app.create_missed_amount_invoice_draft` (the parameters of `app.create_items_invoice_draft` and the missed line; `prm_financial` only). The line must be on an Invoice that is Unpaid, Partially Paid or Paid, of the same Customer and the same Lease (or no Lease), else "A missed amount follows the Customer and the Lease of an issued Invoice" (SQLSTATE 22023). The line must be fully paid (`app.invoice_line_outstanding` is 0 or less, the same test as the debit Adjustment), else "The Invoice line still has an amount unpaid" (SQLSTATE 22023). An unknown line is SQLSTATE P0002. The new Draft is a Miscellaneous Charges Invoice with the Invoice type of the Invoice of that line. When that Invoice is itself for a missed amount, the new Draft names the first missed line.
+- `app.create_items_invoice_draft_of_type` has one more parameter, the missed line (empty when not given). No app role may call it.
+- `app.keep_invoice_type`: an Invoice that names a missed line must be a Miscellaneous Charges Invoice with the type of the Invoice of that line; an Invoice that names none follows the rule of DB-BS-009.
+- `app.invoice_resource_snapshot` gives `missed_on` (`invoice_id`, `invoice_number`, `line_id`), or null.
+- `app.report_income_facts`: a line of such an Invoice counts with the kind of the missed line (Rent, Utilities, a Regular service, a product and so on), in the month of the new Invoice.
+- `app.gl_app_record_events`: a line of such an Invoice posts to the income account of the missed line: Rent `4010` on the day of the new Invoice (it does not wait in `2050`), Electricity `4030`, Water `4040`, Services `4020`, Damage `4070`, the Unit cleaning charge `4060`, other one-time charges `4080`, and the account of the short stay for a short-stay Invoice.
+
+Tests: `backend/tests/test_v12_missed_amount_type_migration.py`, `backend/tests/test_v12_missed_amount_ledger_migration.py`.

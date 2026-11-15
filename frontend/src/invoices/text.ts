@@ -435,9 +435,21 @@ const TEXT = {
   ],
   // new
   adj_err_paid: [
-    "This line is paid in full, so it cannot be raised. Bill the missed amount with Create Invoice instead.",
-    "បន្ទាត់នេះបានបង់គ្រប់ ដូច្នេះមិនអាចបង្កើនបានទេ។ សូមចេញវិក្កយបត្រសម្រាប់ចំនួនដែលខ្វះ ដោយប្រើបង្កើតវិក្កយបត្រ។",
+    "This line is paid in full, so it cannot be raised. Bill the missed amount on a new Invoice. The new Invoice keeps the type of this Invoice.",
+    "បន្ទាត់នេះបានបង់គ្រប់ ដូច្នេះមិនអាចបង្កើនបានទេ។ សូមចេញវិក្កយបត្រថ្មីសម្រាប់ចំនួនដែលខ្វះ។ វិក្កយបត្រថ្មីរក្សាប្រភេទរបស់វិក្កយបត្រនេះ។",
   ],
+  // new
+  adj_bill_missed: [
+    "Bill the missed amount",
+    "ចេញវិក្កយបត្រសម្រាប់ចំនួនដែលខ្វះ",
+  ],
+  // new
+  adj_missed_item: [
+    "Missed amount: {0} (Invoice {1})",
+    "ចំនួនដែលខ្វះ៖ {0} (វិក្កយបត្រ {1})",
+  ],
+  // new
+  missed_of: ["Missed amount of Invoice {0}", "ចំនួនដែលខ្វះនៃវិក្កយបត្រ {0}"],
   // new
   void_t: ["Void {0}?", "ទុក {0} ជាមោឃៈ?"],
   // new

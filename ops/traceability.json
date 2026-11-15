@@ -68157,6 +68157,109 @@
       "test_path": "backend/tests/test_v12_invoice_type_stored_migration.py",
       "status": "implemented",
       "notes": "Late-payment is in the type list between Damage and Other charges, with late payment No, and is not in use yet."
+    },
+    {
+      "test_id": "test_the_missed_amount_migration_follows_the_type_migration_and_is_forward_only",
+      "upstream_ids": [
+        "DL-232",
+        "DB-BS-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_missed_amount_type_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270729_395 follows 20270728_394, is forward-only and deletes nothing."
+    },
+    {
+      "test_id": "test_a_missed_amount_on_a_fully_paid_rent_line_is_billed_as_rent",
+      "upstream_ids": [
+        "DL-232",
+        "DB-BS-010",
+        "BR-INV-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_missed_amount_type_migration.py",
+      "status": "implemented",
+      "notes": "A one-time Invoice for an amount missed on a fully paid Rent line has the type Rent, names the Invoice and line, follows the late-payment switch of Rent, and is made once for the same request; a one-time charge that names no line stays Other charges."
+    },
+    {
+      "test_id": "test_a_missed_amount_needs_a_fully_paid_line_of_the_same_customer_and_lease",
+      "upstream_ids": [
+        "DL-232",
+        "DB-BS-010",
+        "BR-INV-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_missed_amount_type_migration.py",
+      "status": "implemented",
+      "notes": "A line with an amount unpaid, another Lease and an unknown line are refused and make no Invoice; the missed line never changes; an Invoice cannot state another type than the type of what was missed."
+    },
+    {
+      "test_id": "test_the_income_report_counts_a_missed_amount_with_what_was_missed",
+      "upstream_ids": [
+        "DL-232",
+        "DB-BS-010",
+        "BR-INV-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_missed_amount_type_migration.py",
+      "status": "implemented",
+      "notes": "The income report counts a missed Rent amount as Rent of the month of the new Invoice, not as Other charges."
+    },
+    {
+      "test_id": "test_the_ledger_counts_a_missed_rent_amount_as_rent_income",
+      "upstream_ids": [
+        "DL-232",
+        "DB-BS-010",
+        "BR-INV-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_missed_amount_ledger_migration.py",
+      "status": "implemented",
+      "notes": "The General Ledger posts an issued missed Rent amount to Rent income 4010; a one-time charge that names no line posts to 4080 as before."
+    },
+    {
+      "test_id": "test_items_invoice_route_takes_the_line_where_an_amount_was_missed",
+      "upstream_ids": [
+        "DL-232",
+        "BR-INV-021"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "POST invoices/drafts takes an optional missed_on_invoice_line_id (a UUID; other shapes answer 422) and passes it on; without it the request is as before."
+    },
+    {
+      "test_id": "TEST-FE-2248",
+      "upstream_ids": [
+        "DL-232",
+        "BR-INV-021"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "A raise refused on a fully paid line offers Bill the missed amount: it makes a Draft Invoice for the same Customer and Lease with the typed amount, reason and approval, names the missed line, saves once after no answer, opens the Draft, and needs invoices.create."
+    },
+    {
+      "test_id": "TEST-FE-2249",
+      "upstream_ids": [
+        "DL-232",
+        "BR-INV-021"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "An Invoice for a missed amount shows the type of what was missed and a link to the Invoice where the amount was missed; another Invoice shows no such line."
+    },
+    {
+      "test_id": "TEST-FE-2256",
+      "upstream_ids": [
+        "DL-232",
+        "BR-INV-021"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoiceClient.test.ts",
+      "status": "implemented",
+      "notes": "The client sends missed_on_invoice_line_id only when it is given and reads missed_on of an Invoice (null when absent)."
     }
   ]
 }

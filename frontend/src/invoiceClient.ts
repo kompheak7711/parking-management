@@ -55,6 +55,12 @@ export type InvoiceTypeCode =
   | "PRODUCTS"
   | "DAMAGE"
   | "MISCELLANEOUS";
+/** D3 (DL-232): where the amount of a missed-amount Invoice was missed. */
+export interface MissedOn {
+  invoice_id: string;
+  invoice_number: string;
+  line_id: string;
+}
 export interface InvoiceResource {
   id: string;
   property_id: string;
@@ -66,6 +72,8 @@ export interface InvoiceResource {
   short_stay?: ShortStayInvoiceKind | null;
   /** DL-221: the Invoice's type (absent from an older server). */
   invoice_type?: InvoiceTypeCode | null;
+  /** D3 (DL-232): the Invoice and the fully paid line where this amount was missed. */
+  missed_on?: MissedOn | null;
   status: InvoiceStatus;
   invoice_date: string;
   due_date: string | null;
@@ -201,6 +209,8 @@ export interface ItemsInvoiceInput {
   reason: string;
   evidence_reference: string;
   items: InvoiceItemInput[];
+  /** D3 (DL-232): the fully paid line where this amount was missed; the Invoice keeps its type. */
+  missed_on_invoice_line_id?: string;
 }
 /** DL-115 (I): a Services Invoice; each price comes from Settings › Regular services. */
 export interface ServicesInvoiceInput {
@@ -476,6 +486,16 @@ export function invoiceTypeCode(value: unknown): InvoiceTypeCode | null {
   return INVOICE_TYPE_CODES.find((code) => code === value) ?? null;
 }
 
+function missedOn(value: unknown): MissedOn | null {
+  if (value === undefined || value === null) return null;
+  const row = object(value);
+  return {
+    invoice_id: text(row.invoice_id),
+    invoice_number: text(row.invoice_number),
+    line_id: text(row.line_id),
+  };
+}
+
 function invoice(value: unknown): InvoiceResource {
   const row = object(value);
   return {
@@ -487,6 +507,7 @@ function invoice(value: unknown): InvoiceResource {
     category: choice(row.category, categories),
     short_stay: shortStayKind(row.short_stay),
     invoice_type: invoiceTypeCode(row.invoice_type),
+    missed_on: missedOn(row.missed_on),
     status: choice(row.status, [
       "DRAFT",
       "UNPAID",
@@ -908,6 +929,9 @@ function itemsBody(input: ItemsInvoiceInput) {
       quantity: item.quantity,
       unit_price_usd_cents: requestMoney(item.unit_price).minor_units,
     })),
+    ...(input.missed_on_invoice_line_id === undefined
+      ? {}
+      : { missed_on_invoice_line_id: input.missed_on_invoice_line_id }),
   };
 }
 const resource =

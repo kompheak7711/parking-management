@@ -258,6 +258,50 @@ describe("V1-047 invoice client", () => {
     ]);
     expect(fetcher.mock.calls[1]?.[1]?.method).toBe("PATCH");
   });
+  it("TEST-FE-2256 sends the missed line of a missed-amount Invoice only when it is given, and reads the Invoice where the amount was missed", async () => {
+    const missedOn = {
+      invoice_id: "invoice-first",
+      invoice_number: "INV260003",
+      line_id: "line-first",
+    };
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(() =>
+        Promise.resolve(response({ ...invoice(), missed_on: missedOn })),
+      )
+      .mockImplementation(() => Promise.resolve(response(invoice())));
+    vi.stubGlobal("fetch", fetcher);
+    const input = {
+      customer_id: "customer",
+      lease_id: "lease",
+      reason: "Meter read wrong",
+      evidence_reference: "Owner message",
+      items: [
+        {
+          charge_id: "charge-1",
+          description: "Missed amount: Electricity (Invoice INV260003)",
+          quantity: 1,
+          unit_price: { currency: "USD" as const, minor_units: 1250 },
+        },
+      ],
+    };
+    const missed = await invoiceApi.createWithItems(
+      "property",
+      { ...input, missed_on_invoice_line_id: "line-first" },
+      "k1",
+    );
+    const plain = await invoiceApi.createWithItems("property", input, "k2");
+    const [[, first], [, second]] = fetcher.mock.calls as [
+      [string, RequestInit],
+      [string, RequestInit],
+    ];
+    expect(bodyOf(first)).toMatchObject({
+      missed_on_invoice_line_id: "line-first",
+    });
+    expect(bodyOf(second)).not.toHaveProperty("missed_on_invoice_line_id");
+    expect(missed.missed_on).toEqual(missedOn);
+    expect(plain.missed_on).toBeNull();
+  });
   it("TEST-FE-1067 sends Create Invoice items and Edit items with whole cents, the key, and for Edit items PUT with If-Match and the reason for the change", async () => {
     const fetcher = vi
       .fn<typeof fetch>()

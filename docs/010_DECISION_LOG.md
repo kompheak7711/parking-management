@@ -3248,6 +3248,23 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-221, DL-226; BR-INV-016.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
 
+## DL-232 — An amount missed on a fully paid line keeps the type of what was missed (D3 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, D3, "all yes"): the new charge keeps the type of what was missed. The reason given then: missed Rent showed as Other charges income.
+- **Before** (BR-INV-021). A debit Adjustment is refused on a fully paid line. The screen told staff to bill the missed amount "with Create Invoice", which made an Other charges Invoice. The Invoices page no longer had a way to make that Invoice.
+- **Now.** When a raise is refused because the line is paid in full, the Adjust dialog offers "Bill the missed amount". It makes a Draft Invoice for the same Customer and Lease, with the amount, the reason and what approves it as typed. The Draft names the Invoice where the amount was missed and keeps its type. Staff check the Draft and issue it as any Draft.
+- **How the build read the rest (asked to the owner with the pull request).**
+  1. The new Invoice has the type of the first Invoice (Rent, Utilities and so on), so the late-payment switch of that type is the one it follows.
+  2. It is a one-time charge: its Due Date is the issue date plus the one-time charge days of Settings, not the 5th.
+  3. The income report and the General Ledger count it as what was missed (missed Rent is Rent income), in the month of the new Invoice, not in the month that was missed.
+  4. It can be made only while the line is paid in full. While the line has an amount unpaid, a debit Adjustment is the way, as before.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The link is to the Invoice line and never changes. A missed amount on an Invoice that is itself for a missed amount names the first missed line. The person needs the right to make Invoices (`invoices.create`) and the right to adjust.
+- **Database:** migration `20270729_395` (DB-BS-010), forward-only; no data is changed or deleted. **API:** `missed_on_invoice_line_id` in the request and `missed_on` in the Invoice (the amendment of DL-232 in docs/005). **Screen:** the Adjust dialog and one line on the Invoice page (TEST-FE-2248, TEST-FE-2249, TEST-FE-2256).
+- **Open:** the native Khmer check of the new screen text.
+- **Links:** DL-226, DL-231; BR-INV-021, BR-INV-016, BR-INV-018.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
+
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 
 - **Type:** `OWNER DECISION`.

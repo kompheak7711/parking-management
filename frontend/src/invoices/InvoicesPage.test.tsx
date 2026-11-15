@@ -1108,7 +1108,7 @@ describe("Invoices page (V1-058 R5)", () => {
     );
     expect(
       await within(dialog).findByText(
-        "This line is paid in full, so it cannot be raised. Bill the missed amount with Create Invoice instead.",
+        "This line is paid in full, so it cannot be raised. Bill the missed amount on a new Invoice. The new Invoice keeps the type of this Invoice.",
       ),
     ).toBeTruthy();
     fireEvent.click(
@@ -1233,5 +1233,144 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Adjust" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Void" })).toBeNull();
+  });
+
+  it("TEST-FE-2248 A raise refused on a fully paid line offers Bill the missed amount: it makes a Draft Invoice for the same Customer and Lease that names the missed line, saves once after no answer, opens the Draft, and needs invoices.create", async () => {
+    const draft: InvoiceResource = {
+      ...invoice("inv-m1", "INV260006", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        category: "MISCELLANEOUS_CHARGES",
+        status: "DRAFT",
+        due: null,
+        total: 1250,
+      }),
+      invoice_type: "UTILITIES",
+      missed_on: {
+        invoice_id: "inv-u1",
+        invoice_number: "INV260003",
+        line_id: "inv-u1-line",
+      },
+    };
+    const api = invoiceApi([...invoices(), draft]);
+    api.adjust = vi
+      .fn()
+      .mockRejectedValue(
+        new InvoiceClientError(409, "INVOICE_LINE_FULLY_PAID", false),
+      );
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(null, "NETWORK", true))
+      .mockResolvedValue(draft);
+    api.createWithItems = create;
+    const raise = async () => {
+      fireEvent.click(await screen.findByRole("button", { name: "Adjust" }));
+      const dialog = screen.getByRole("dialog", { name: "Adjust INV260003" });
+      fireEvent.click(within(dialog).getByLabelText("Raise the amount"));
+      fireEvent.change(within(dialog).getByLabelText("Amount"), {
+        target: { value: "12.50" },
+      });
+      fireEvent.change(within(dialog).getByLabelText("Reason"), {
+        target: { value: "Meter read wrong" },
+      });
+      fireEvent.change(within(dialog).getByLabelText("What approves it"), {
+        target: { value: "Owner message 14/11/2026" },
+      });
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Save Adjustment" }),
+      );
+      expect(
+        await within(dialog).findByText(
+          "This line is paid in full, so it cannot be raised. Bill the missed amount on a new Invoice. The new Invoice keeps the type of this Invoice.",
+        ),
+      ).toBeTruthy();
+      return dialog;
+    };
+
+    window.location.hash = "#/invoices/inv:inv-u1";
+    show({ invoices: api, capabilities: new Set(["invoices.adjust"]) });
+    const locked = await raise();
+    expect(
+      within(locked).queryByRole("button", { name: "Bill the missed amount" }),
+    ).toBeNull();
+    cleanup();
+
+    show({
+      invoices: api,
+      capabilities: new Set(["invoices.adjust", "invoices.create"]),
+    });
+    const dialog = await raise();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Bill the missed amount" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "We could not tell if this was saved. Press the button again: it is saved only once.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Bill the missed amount" }),
+    );
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/invoices/inv%3Ainv-m1");
+    });
+    const calls = create.mock.calls as unknown[][];
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual(calls[1]);
+    expect(calls[0]).toEqual([
+      "property-1",
+      {
+        customer_id: "cust-sok",
+        lease_id: "lease-101",
+        reason: "Meter read wrong",
+        evidence_reference: "Owner message 14/11/2026",
+        items: [
+          {
+            charge_id: expect.any(String) as string,
+            description: "Missed amount: Electricity (Invoice INV260003)",
+            quantity: 1,
+            unit_price: { currency: "USD", minor_units: 1250 },
+          },
+        ],
+        missed_on_invoice_line_id: "inv-u1-line",
+      },
+      expect.any(String),
+    ]);
+    expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
+  });
+
+  it("TEST-FE-2249 An Invoice for a missed amount shows the type of what was missed and a link to the Invoice where the amount was missed", async () => {
+    const missed: InvoiceResource = {
+      ...invoice("inv-m1", "INV260006", {
+        customer: "cust-sok",
+        lease: "lease-101",
+        category: "MISCELLANEOUS_CHARGES",
+        issued: "2026-10-25",
+        due: "2026-11-01",
+        total: 1250,
+      }),
+      invoice_type: "UTILITIES",
+      missed_on: {
+        invoice_id: "inv-u1",
+        invoice_number: "INV260003",
+        line_id: "inv-u1-line",
+      },
+    };
+    window.location.hash = "#/invoices/inv:inv-m1";
+    show({ invoices: invoiceApi([...invoices(), missed]) });
+    const link = await screen.findByRole("link", {
+      name: "Missed amount of Invoice INV260003",
+    });
+    expect(link.getAttribute("href")).toBe("#/invoices/inv%3Ainv-u1");
+    expect(screen.getByText("Utilities · Sok Dara · U101")).toBeTruthy();
+    cleanup();
+
+    // Another Invoice has no such line.
+    window.location.hash = "#/invoices/inv:inv-u1";
+    show();
+    expect(
+      await screen.findByRole("heading", { name: "INV260003" }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Missed amount of Invoice/)).toBeNull();
   });
 });

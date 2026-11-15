@@ -505,7 +505,7 @@ def test_forward_upgrade_preserves_existing_warning_and_refuses_downgrade(
                     (
                         "SELECT to_jsonb(w),to_jsonb(i)-ARRAY['due_date_override_reason',"
                         "'due_date_set_by','due_date_set_at','draft_reference',"
-                        "'invoice_type'] "
+                        "'invoice_type','missed_on_invoice_line_id'] "
                         "FROM app.lease_violation_warnings w "
                         "CROSS JOIN app.invoices i WHERE w.id=%s AND i.id=%s"
                     ),

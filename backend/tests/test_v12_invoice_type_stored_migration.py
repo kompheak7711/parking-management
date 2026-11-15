@@ -25,7 +25,7 @@ from test_one_time_charges_migration import invoices
 REVISION = "20270728_394"
 TYPED_DRAFT = (
     "app.create_items_invoice_draft_of_type("
-    "uuid,uuid,uuid,text,uuid,uuid,uuid,uuid,uuid,text,text,jsonb,text)"
+    "uuid,uuid,uuid,text,uuid,uuid,uuid,uuid,uuid,text,text,jsonb,text,uuid)"
 )
 TYPED_STAY = "app.short_stay_invoice(uuid,uuid,uuid,text,text,jsonb,uuid,text)"
 LINKS = {
@@ -62,9 +62,11 @@ def test_every_invoice_keeps_the_type_its_category_and_links_say(
             "AND conname='invoices_invoice_type_fkey'"
         ).fetchone() == ("app.invoice_types",)
         # No Invoice the tests made, by any way, has another type than the old rule gave it.
+        # Only an Invoice for a missed amount keeps the type of what was missed (D3, DL-232).
         assert connection.execute(
             "SELECT count(*) FROM app.invoices AS invoice "
-            "WHERE invoice.invoice_type IS DISTINCT FROM app.invoice_type_from_links(invoice.id)"
+            "WHERE invoice.invoice_type IS DISTINCT FROM app.invoice_type_from_links(invoice.id) "
+            "AND invoice.missed_on_invoice_line_id IS NULL"
         ).fetchone() == (0,)
         # Every read gives the kept type.
         assert connection.execute(

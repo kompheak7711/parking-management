@@ -261,10 +261,11 @@ def snapshot(url: str) -> dict[str, Any]:
         return {
             table: connection.execute(
                 # V1-059 part B adds invoices.draft_reference and customers.id_document_number
-                # (NULL on earlier rows), and DL-231 adds invoices.invoice_type (filled from
-                # the category); every other value must stay as it was.
+                # (NULL on earlier rows), DL-231 adds invoices.invoice_type (filled from the
+                # category) and DL-232 adds invoices.missed_on_invoice_line_id (empty); every
+                # other value must stay as it was.
                 "SELECT COALESCE(jsonb_agg(to_jsonb(t)-'draft_reference'-'id_document_number'"
-                "-'invoice_type'"
+                "-'invoice_type'-'missed_on_invoice_line_id'"
                 f"{'-' + UNIT_SETUP_COLUMNS if table == 'units' else ''} "
                 "ORDER BY t.id),'[]'::jsonb) "
                 f"FROM app.{table} t"

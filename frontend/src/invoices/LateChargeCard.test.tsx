@@ -98,12 +98,16 @@ const CARD: LateChargeCard = {
   ],
 };
 
-function invoiceApi(): Pick<InvoiceApi, "get" | "issue" | "adjust" | "void"> {
+function invoiceApi(): Pick<
+  InvoiceApi,
+  "get" | "issue" | "adjust" | "void" | "createWithItems"
+> {
   return {
     get: vi.fn(() => Promise.resolve(INVOICE)),
     issue: vi.fn(),
     adjust: vi.fn(),
     void: vi.fn(),
+    createWithItems: vi.fn(),
   };
 }
 

@@ -190,24 +190,33 @@ class CreateItemsInvoiceDraftCommand:
     reason: str
     evidence_reference: str
     items: tuple[InvoiceItem, ...]
+    # D3 (DL-232): the fully paid Invoice line where this amount was missed. The new Invoice
+    # then keeps the type of that Invoice.
+    missed_on_invoice_line_id: UUID | None = None
 
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
         _identity(self.customer_id, "customer_id")
         if self.lease_id is not None:
             _identity(self.lease_id, "lease_id")
+        if self.missed_on_invoice_line_id is not None:
+            _identity(self.missed_on_invoice_line_id, "missed_on_invoice_line_id")
         _normalized(self.reason, "reason")
         _normalized(self.evidence_reference, "evidence_reference")
         _items(self.items)
 
     def payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "customer_id": str(self.customer_id),
             "lease_id": str(self.lease_id) if self.lease_id is not None else None,
             "reason": self.reason,
             "evidence_reference": self.evidence_reference,
             "items": [item.payload() for item in self.items],
         }
+        # Only a missed amount names a line, so the digest of every other request stays as it was.
+        if self.missed_on_invoice_line_id is not None:
+            payload["missed_on_invoice_line_id"] = str(self.missed_on_invoice_line_id)
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -807,22 +816,30 @@ class PostgresInvoiceService:
         digest = invoice_request_digest(
             action="create", property_id=property_id, invoice_id=None, payload=payload
         )
+        arguments: tuple[object, ...] = (
+            property_id,
+            self._actor_id(actor),
+            command.idempotency_key,
+            digest,
+            uuid4(),
+            uuid4(),
+            uuid4(),
+            command.customer_id,
+            command.lease_id,
+            command.reason,
+            command.evidence_reference,
+            json.dumps(payload["items"]),
+        )
+        if command.missed_on_invoice_line_id is not None:
+            # D3 (DL-232): the database checks the missed line and gives the Invoice its type.
+            return self._execute(
+                "SELECT app.create_missed_amount_invoice_draft("
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s)",
+                (*arguments, command.missed_on_invoice_line_id),
+            )
         return self._execute(
             "SELECT app.create_items_invoice_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)",
-            (
-                property_id,
-                self._actor_id(actor),
-                command.idempotency_key,
-                digest,
-                uuid4(),
-                uuid4(),
-                uuid4(),
-                command.customer_id,
-                command.lease_id,
-                command.reason,
-                command.evidence_reference,
-                json.dumps(payload["items"]),
-            ),
+            arguments,
         )
 
     def create_services_draft(
