@@ -259,6 +259,10 @@ export interface SigningPreview {
     invoice_id: string | null;
   } | null;
   planned_security_deposit_usd_cents: number | null;
+  /** D4 (DL-234): the draft's terms approve a pet with a Pet Deposit, received at signing. */
+  pet_deposit_required: boolean;
+  /** D4 (DL-234): the draft's Pet Deposit amount; null until it is recorded. */
+  planned_pet_deposit_usd_cents: number | null;
   /** DL-101: the Reservation's Security Deposit a Lease from a Reservation takes over. */
   held_security_deposit: {
     deposit_id: string;
@@ -290,9 +294,13 @@ function signingPreview(data: SettlementRecord): SigningPreview {
     data.held_security_deposit === undefined
       ? null
       : record(data.held_security_deposit);
+  const pet = data.planned_pet_deposit_usd_cents;
   return {
     planned_security_deposit_usd_cents:
       planned === null || planned === undefined ? null : centsField(planned),
+    pet_deposit_required: data.pet_deposit_required === true,
+    planned_pet_deposit_usd_cents:
+      pet === null || pet === undefined ? null : centsField(pet),
     held_security_deposit:
       held === null
         ? null
@@ -424,6 +432,11 @@ export interface SettlementApi {
   // V1-060 B6 (DL-100, DL-101): what a Lease owes at signing and the draft's Security Deposit.
   signingPreview: (leaseId: string) => Promise<SigningPreview>;
   planSecurityDeposit: (
+    leaseId: string,
+    form: { plan_id: string; required_usd_cents: number; reason: string },
+  ) => Promise<SettlementRecord>;
+  // D4 (DL-234): the draft's Pet Deposit amount, received at signing.
+  planPetDeposit: (
     leaseId: string,
     form: { plan_id: string; required_usd_cents: number; reason: string },
   ) => Promise<SettlementRecord>;
@@ -618,6 +631,20 @@ export const settlementApi: SettlementApi = {
           init,
         )
       ).data,
+    );
+  },
+  planPetDeposit: async (leaseId, form) => {
+    const init: RequestInit = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken(),
+      },
+      body: JSON.stringify(form),
+    };
+    return record(
+      (await send(`/api/v1/leases/${id(leaseId)}/planned-pet-deposit`, init))
+        .data,
     );
   },
   signWithPayment: async (propertyId, leaseId, version, body, key) =>

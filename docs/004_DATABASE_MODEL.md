@@ -6165,3 +6165,16 @@ Added by DL-233 (owner, 12 Nov 2026, L1; migration `20270730_396` on `20270729_3
 - Not changed: `app.payment_allocation_proposal` and `app.receive_payment_payable`. A Late-payment Invoice is listed and paid by its own Due Date like every Invoice.
 
 Tests: `backend/tests/test_v12_late_payment_invoice_migration.py`, `backend/tests/test_v12_late_payment_invoice_ledger_migration.py`, `backend/tests/test_automatic_late_payment_charge_migration.py`, `backend/tests/test_telegram_tenant_invoices_migration.py`.
+
+## DB-BS-012 — The Pet Deposit for a pet kept from the start is received at Sign Lease (DL-234)
+
+Added by DL-234 (owner, 12 Nov 2026, D4; migration `20270731_397` on `20270730_396`, forward-only). No row is changed or deleted.
+
+- `app.lease_planned_pet_deposits` (append-only like `app.lease_planned_security_deposits`; update, delete and truncate are refused; no direct grant): each save of a draft's Pet Deposit amount (`required_usd_cents` 1 to 9,000,000,000,000,000), its reason, the person, the audit event and the moment. The latest row wins (`app.lease_planned_pet_deposit(lease_id)`).
+- `app.lease_signing_pet_approval_id(lease_id)`: the latest pet approval of a Lease that is not a renewal, when its terms ask for a Pet Deposit (`deposit_required_by_signed_terms`); empty when the signing takes no Pet Deposit. `app.lease_signing_pet_terms(lease_id)` gives `pet_deposit_required` and `planned_pet_deposit_usd_cents`.
+- `app.set_lease_planned_pet_deposit(property, lease, id, actor, required_usd_cents, reason, 'leases.draft')` (SECURITY DEFINER, EXECUTE to `prm_runtime` only): an active user; the same id again answers the amount if the save is the same, else "This Pet Deposit save was already used for another amount" (23505). Refused: "Planned Pet Deposit evidence is invalid" (22023), "Only a drafted Lease takes a planned Pet Deposit", "A renewal Lease takes no Pet Deposit at signing" and "The Lease terms ask for no Pet Deposit" (55000). The same amount again writes nothing; a new amount writes one row and the audit event `lease.pet_deposit.planned`.
+- `app.lease_signing_preview` adds `pet_deposit_required` and `planned_pet_deposit_usd_cents`.
+- `app.sign_lease_with_payment` (same parameters): the total due at signing is the Initial Rent + the Security Deposit still to pay + the Pet Deposit. With a pet approval that asks for a Pet Deposit it refuses "Record the Pet Deposit on the draft first" (55000) when no amount is recorded, and "A Pet Deposit made at signing needs deposits.manage" (42501) without that right. After the Security Deposit step it makes the Pet Deposit for that approval at the recorded amount (`app.create_pet_deposit_v2`, the required date is the later of the Property's day and the approval date) and receives it in full from the same Payment (`app.record_lease_deposit_receipt`). The answer adds `pet_deposit_usd_cents` (0 when none), `pet_deposit_id` and `pet_deposit_receipt_id`.
+- Not changed: a renewal and a pet approved after the signing keep the step by hand.
+
+Tests: `backend/tests/test_v12_pet_deposit_at_signing_migration.py`, `backend/tests/test_lease_signing_api.py`.

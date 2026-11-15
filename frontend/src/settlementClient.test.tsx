@@ -402,4 +402,63 @@ describe("settlementClient", () => {
       `/api/v1/properties/${PROPERTY}/final-settlements`,
     );
   });
+
+  it("TEST-FE-2274 reads the draft's Pet Deposit at signing and saves its amount (D4, DL-234)", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        answer(
+          {
+            data: {
+              initial: null,
+              planned_security_deposit_usd_cents: 50_000,
+              held_security_deposit: null,
+              pet_deposit_required: true,
+              planned_pet_deposit_usd_cents: 10_000,
+            },
+            meta: {},
+          },
+          200,
+        ),
+      )
+      .mockResolvedValueOnce(
+        answer(
+          {
+            data: {
+              initial: null,
+              planned_security_deposit_usd_cents: null,
+              held_security_deposit: null,
+            },
+            meta: {},
+          },
+          200,
+        ),
+      )
+      .mockResolvedValueOnce(
+        answer(
+          { data: { planned_pet_deposit_usd_cents: 10_000 }, meta: {} },
+          200,
+        ),
+      );
+    expect(await settlementApi.signingPreview(KEY)).toMatchObject({
+      pet_deposit_required: true,
+      planned_pet_deposit_usd_cents: 10_000,
+    });
+    // An older answer without the fields asks for no Pet Deposit.
+    expect(await settlementApi.signingPreview(KEY)).toMatchObject({
+      pet_deposit_required: false,
+      planned_pet_deposit_usd_cents: null,
+    });
+    const form = {
+      plan_id: SETTLEMENT,
+      required_usd_cents: 10_000,
+      reason: "Draft terms",
+    };
+    await settlementApi.planPetDeposit(KEY, form);
+    const { path, init, headers } = sent(fetchMock, 2);
+    expect(path).toBe(`/api/v1/leases/${KEY}/planned-pet-deposit`);
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(form);
+    expect(headers.get("X-CSRF-Token")).toBe("csrf-value");
+  });
 });

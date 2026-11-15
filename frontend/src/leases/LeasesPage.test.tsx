@@ -281,6 +281,7 @@ function signing(
   preview: Partial<NonNullable<SigningPreview["initial"]>> | null = {},
   planned: number | null = 50_000,
   held: SigningPreview["held_security_deposit"] = null,
+  pet: { required?: boolean; planned?: number | null } = {},
 ) {
   const calls = {
     signingPreview: vi.fn<SettlementApi["signingPreview"]>().mockResolvedValue({
@@ -303,9 +304,14 @@ function signing(
             },
       planned_security_deposit_usd_cents: planned,
       held_security_deposit: held,
+      pet_deposit_required: pet.required ?? false,
+      planned_pet_deposit_usd_cents: pet.planned ?? null,
     }),
     planSecurityDeposit: vi
       .fn<SettlementApi["planSecurityDeposit"]>()
+      .mockResolvedValue({}),
+    planPetDeposit: vi
+      .fn<SettlementApi["planPetDeposit"]>()
       .mockResolvedValue({}),
     signWithPayment: vi
       .fn<SettlementApi["signWithPayment"]>()
@@ -1661,6 +1667,154 @@ describe("Lease actions", () => {
     expect(late.signWithPayment).not.toHaveBeenCalled();
   });
 
+  it("TEST-FE-2271 Sign Lease on a draft with an approved pet takes the Pet Deposit with the Security Deposit and the Initial Rent in one request; Print draft shows the same total; no amount yet signs nothing (D4, DL-234)", async () => {
+    const withPet = {
+      ...signable,
+      pet_deposit_required: true,
+      pet_description: "One small dog",
+    };
+    window.location.hash = "#/leases/lease-sign";
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    const money = signing({}, 50_000, null, {
+      required: true,
+      planned: 10_000,
+    });
+    show(
+      api({ get: vi.fn().mockResolvedValue(withPet) }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Print draft" }));
+    const sheet = within(
+      screen.getByRole("dialog", { name: "Print draft · U301" }),
+    ).getByRole("article", { name: "Draft Lease sheet" });
+    expect(
+      await within(sheet).findByText("Total to receive"),
+    ).toBeInTheDocument();
+    expect(sheet).toHaveTextContent("Pet Deposit$100.00");
+    expect(sheet).toHaveTextContent("Total to receive$954.84");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    print.mockRestore();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Sign Lease/ }));
+    const dialog = screen.getByRole("dialog", { name: "Sign Lease · U301" });
+    await checked(dialog);
+    expect(dialog).toHaveTextContent("Security Deposit$500.00");
+    expect(dialog).toHaveTextContent("Pet Deposit$100.00");
+    expect(dialog).toHaveTextContent("Total to receive$954.84");
+    for (const box of within(dialog).getAllByRole("checkbox"))
+      fireEvent.click(box);
+    fireEvent.change(
+      await within(dialog).findByLabelText("How the money came"),
+      { target: { value: "method-cash" } },
+    );
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Receive $954.84 and sign" }),
+    );
+    await waitFor(() => {
+      expect(money.signWithPayment).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      money.signWithPayment.mock.calls[0]?.[3].payment.amount.minor_units,
+    ).toBe(95_484);
+    cleanup();
+
+    window.location.hash = "#/leases/lease-sign";
+    const missing = signing({}, 50_000, null, {
+      required: true,
+      planned: null,
+    });
+    show(
+      api({ get: vi.fn().mockResolvedValue(withPet) }),
+      deposits(),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      missing,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /^Sign Lease/ }));
+    const blocked = screen.getByRole("dialog");
+    expect(
+      await within(blocked).findByText(
+        "This draft has an approved pet but no Pet Deposit amount yet. Add it with Edit draft first.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(blocked).queryByLabelText("How the money came")).toBeNull();
+    for (const box of within(blocked).getAllByRole("checkbox"))
+      fireEvent.click(box);
+    fireEvent.click(
+      within(blocked).getByRole("button", { name: /^Receive .* and sign$/ }),
+    );
+    expect(missing.signWithPayment).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-2272 Edit draft of a draft with an approved pet shows its Pet Deposit, needs an amount and saves a new one after the draft (D4, DL-234)", async () => {
+    const withPet = {
+      ...signable,
+      pet_deposit_required: true,
+      pet_description: "One small dog",
+    };
+    window.location.hash = "#/leases/lease-sign";
+    const update = vi.fn().mockResolvedValue(withPet);
+    const money = signing({}, 50_000, null, { required: true, planned: null });
+    show(
+      api({ get: vi.fn().mockResolvedValue(withPet), update }),
+      deposits({
+        leaseDeposits: vi.fn(() =>
+          Promise.resolve({ items: [], can_manage: false }),
+        ),
+      } as unknown as Partial<DepositApi>),
+      null,
+      undefined,
+      undefined,
+      {},
+      {},
+      {},
+      undefined,
+      money,
+    );
+    expect(
+      await screen.findByText(
+        "Pet approved: One small dog. No Pet Deposit amount yet; add it with Edit draft.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit draft" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit draft · U301" });
+    const box = within(dialog).getByLabelText("Pet Deposit (USD)");
+    expect(box).toHaveValue("");
+    fireEvent.change(within(dialog).getByLabelText("End Date"), {
+      target: { value: "2027-12-31" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Why it changed/), {
+      target: { value: "Pet Deposit agreed" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(dialog).toHaveTextContent("Type the Pet Deposit, more than 0.");
+    expect(update).not.toHaveBeenCalled();
+    fireEvent.change(box, { target: { value: "150" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("The draft was saved.")).toBeInTheDocument();
+    expect(money.planPetDeposit.mock.calls[0]?.[0]).toBe("lease-sign");
+    expect(money.planPetDeposit.mock.calls[0]?.[1]).toMatchObject({
+      required_usd_cents: 15_000,
+      reason: "Pet Deposit agreed",
+    });
+    expect(update.mock.invocationCallOrder[0] ?? 0).toBeLessThan(
+      money.planPetDeposit.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
   it("TEST-FE-1021 a draft from a Booking shows its Security Deposit as a Lease term with the money received, prints it, and Edit draft never goes below the money received (DL-101)", async () => {
     window.location.hash = "#/leases/lease-sign";
     const update = vi.fn().mockResolvedValue(bookingDraft);
@@ -2085,6 +2239,10 @@ describe("New Lease and Renew", () => {
         target: { value: "One small cat" },
       });
     }
+    // D4 (DL-234): a new Lease with a pet records its Pet Deposit too.
+    fireEvent.change(screen.getByLabelText("Pet Deposit (USD)"), {
+      target: { value: "100" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     const dialog = screen.getByRole("dialog", {
       name: "Save the draft · U402?",
@@ -2127,6 +2285,77 @@ describe("New Lease and Renew", () => {
     expect(money.planSecurityDeposit.mock.calls[0]?.[1]).toMatchObject({
       required_usd_cents: 31_000,
       reason: "Security Deposit on the New Lease form",
+    });
+  });
+
+  it("TEST-FE-2273 New Lease: a pet kept from the start needs its Pet Deposit, shown in the bill and saved after the draft and its Security Deposit (D4, DL-234)", async () => {
+    const create = vi
+      .fn<LeaseApi["create"]>()
+      .mockImplementation((_property, source) =>
+        Promise.resolve(
+          lease("U402", { lease_id: source.lease_id, status: "DRAFTED" }),
+        ),
+      );
+    const money = signing();
+    show(
+      api({ create }),
+      deposits(),
+      null,
+      undefined,
+      people(),
+      units,
+      {},
+      {},
+      undefined,
+      money,
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
+    await screen.findByLabelText("Unit");
+    pickIn("Unit", "unit-U402");
+    pickIn("Primary Tenant", "customer-a");
+    fireEvent.change(screen.getByLabelText("Start Date"), {
+      target: { value: "2026-12-22" },
+    });
+    fireEvent.change(screen.getByLabelText("Monthly Rent"), {
+      target: { value: "310" },
+    });
+    expect(screen.queryByLabelText("Pet Deposit (USD)")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "A pet is approved" }),
+    );
+    fireEvent.change(screen.getByLabelText("Which pet"), {
+      target: { value: "One small dog" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(
+      screen.getByText("Type the Pet Deposit, more than 0."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Pet Deposit (USD)"), {
+      target: { value: "100" },
+    });
+    expect(
+      screen.getByRole("region", { name: "What will be billed" }),
+    ).toHaveTextContent("Pet Deposit: $100.00, paid when the Lease is signed.");
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Save the draft · U402?",
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    await waitFor(() => {
+      expect(money.planPetDeposit).toHaveBeenCalledTimes(1);
+    });
+    const leaseId = create.mock.calls[0]?.[1].lease_id;
+    expect(money.planPetDeposit.mock.calls[0]?.[0]).toBe(leaseId);
+    expect(money.planPetDeposit.mock.calls[0]?.[1]).toMatchObject({
+      required_usd_cents: 10_000,
+      reason: "Pet Deposit on the New Lease form",
+    });
+    expect(
+      money.planSecurityDeposit.mock.invocationCallOrder[0] ?? 0,
+    ).toBeLessThan(money.planPetDeposit.mock.invocationCallOrder[0] ?? 0);
+    await waitFor(() => {
+      expect(window.location.hash).toBe(`#/leases/${leaseId ?? ""}`);
     });
   });
 

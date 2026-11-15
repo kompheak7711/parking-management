@@ -13,6 +13,7 @@ from property_rental.api_refusals import RefusedRequest
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_signing_api import (
+    REFUSALS,
     SIGN_REFUSALS,
     LeaseSigningConflict,
     LeaseSigningNotFound,
@@ -32,6 +33,7 @@ MONEY = ("leases.sign", "payments.record", "payments.allocate")
 class MemoryFlow:
     def __init__(self) -> None:
         self.plans: list[tuple[UUID, UUID, UUID, UUID, int, str]] = []
+        self.pet_plans: list[tuple[UUID, UUID, UUID, UUID, int, str]] = []
         self.signed: list[tuple[UUID, UUID, SignWithPaymentCommand, UUID, bool]] = []
         self.failure: Exception | None = None
 
@@ -57,6 +59,22 @@ class MemoryFlow:
         reason: str,
     ) -> int:
         self.plans.append((property_id, lease_id, plan_id, actor_id, required_usd_cents, reason))
+        return required_usd_cents
+
+    def set_planned_pet_deposit(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        plan_id: UUID,
+        actor_id: UUID,
+        required_usd_cents: int,
+        reason: str,
+    ) -> int:
+        if self.failure is not None:
+            raise self.failure
+        self.pet_plans.append(
+            (property_id, lease_id, plan_id, actor_id, required_usd_cents, reason)
+        )
         return required_usd_cents
 
     def sign_with_payment(
@@ -135,6 +153,45 @@ def test_the_planned_security_deposit_is_saved_with_lease_draft_only() -> None:
         == 404
     )
     assert len(flow.plans) == 1
+
+
+def test_the_planned_pet_deposit_is_saved_with_lease_draft_only() -> None:
+    """D4 (DL-234): the draft's Pet Deposit amount, saved like its Security Deposit."""
+    flow = MemoryFlow()
+    lease, plan = uuid4(), uuid4()
+    http, actor = client(flow, "leases.draft")
+    path = f"/api/v1/leases/{lease}/planned-pet-deposit"
+    body = {"plan_id": str(plan), "required_usd_cents": 10_000, "reason": "Draft Lease terms"}
+    reply = http.put(path, json=body, headers=mutation_headers())
+    assert reply.status_code == 200
+    assert reply.json()["data"] == {"planned_pet_deposit_usd_cents": 10_000}
+    assert flow.pet_plans == [(PROPERTY, lease, plan, actor, 10_000, "Draft Lease terms")]
+    for bad in (
+        {**body, "required_usd_cents": 0},
+        {**body, "required_usd_cents": "100"},
+        {**body, "reason": ""},
+        {**body, "extra": 1},
+    ):
+        assert http.put(path, json=bad, headers=mutation_headers()).status_code == 422
+    signer, _ = client(flow, "leases.sign")
+    assert signer.put(path, json=body, headers=mutation_headers()).status_code == 404
+    flow.failure = RefusedRequest(REFUSALS["The Lease terms ask for no Pet Deposit"])
+    refused = http.put(path, json=body, headers=mutation_headers())
+    assert refused.status_code == 409
+    assert refused.json()["error"]["code"] == "PLANNED_PET_DEPOSIT_NOT_IN_TERMS"
+    assert len(flow.pet_plans) == 1
+
+
+def test_a_draft_without_its_pet_deposit_or_the_right_is_not_signed() -> None:
+    """D4 (DL-234): the database's words for a missing Pet Deposit amount or right."""
+    for message, code in (
+        ("Record the Pet Deposit on the draft first", "SIGNING_PET_DEPOSIT_MISSING"),
+        ("A Pet Deposit made at signing needs deposits.manage", "SIGNING_NO_DEPOSIT_RIGHT"),
+    ):
+        with pytest.raises(RefusedRequest) as caught:
+            _sign_error(_raised("55000" if "Record" in message else "42501", message))
+        assert caught.value.refusal.code == code
+        assert "Nothing was saved" in caught.value.refusal.message
 
 
 def _signing(signers: list[str] | None = None, **payment: object) -> dict[str, object]:

@@ -69,6 +69,11 @@ export function LeaseDraftPrint({
     renewal || planned === null
       ? null
       : Math.max(0, planned - (held?.received_usd_cents ?? 0));
+  // D4 (DL-234): the Pet Deposit of a pet approved on the draft is received at signing too.
+  const petDue =
+    !renewal && loaded?.pet_deposit_required === true
+      ? loaded.planned_pet_deposit_usd_cents
+      : null;
   const others = lease.signers.filter((signer) => !signer.is_primary_tenant);
   const rows: [string, string][] = [
     [lt(language, "lp_unit"), lease.unit_number],
@@ -164,6 +169,12 @@ export function LeaseDraftPrint({
                   <td>{usdFromCents(depositDue)}</td>
                 </tr>
               )}
+              {petDue !== null && (
+                <tr>
+                  <td>{lt(language, "dep_pet")}</td>
+                  <td>{usdFromCents(petDue)}</td>
+                </tr>
+              )}
               <tr>
                 <td>
                   {lt(
@@ -198,7 +209,11 @@ export function LeaseDraftPrint({
               {depositDue !== null && (
                 <tr>
                   <th scope="row">{lt(language, "sp_total")}</th>
-                  <th>{usdFromCents(depositDue + initial.total_usd_cents)}</th>
+                  <th>
+                    {usdFromCents(
+                      depositDue + (petDue ?? 0) + initial.total_usd_cents,
+                    )}
+                  </th>
                 </tr>
               )}
             </tbody>

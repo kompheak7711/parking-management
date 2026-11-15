@@ -561,6 +561,56 @@ const TEXT = {
   ],
   // new
   err_pet: ["Say which pet.", "សូមប្រាប់សត្វចិញ្ចឹមអ្វី។"],
+  // D4 (DL-234): the Pet Deposit of a pet kept from the start is received at signing.
+  pet_deposit_box: ["Pet Deposit (USD)", "ប្រាក់កក់សត្វចិញ្ចឹម (ដុល្លារ)"],
+  pet_deposit_help: [
+    "Received at signing, with the Security Deposit and the Initial Rent.",
+    "ទទួលនៅពេលចុះហត្ថលេខា ជាមួយប្រាក់កក់សុវត្ថិភាព និងថ្លៃឈ្នួលដំបូង។",
+  ],
+  pet_help_new: [
+    "Type its Pet Deposit below.",
+    "សូមវាយប្រាក់កក់សត្វចិញ្ចឹមរបស់វានៅខាងក្រោម។",
+  ],
+  err_pet_deposit: [
+    "Type the Pet Deposit, more than 0.",
+    "សូមវាយប្រាក់កក់សត្វចិញ្ចឹម ធំជាង 0។",
+  ],
+  pv_pet_new: [
+    "Pet Deposit: {0}, paid when the Lease is signed.",
+    "ប្រាក់កក់សត្វចិញ្ចឹម៖ {0} បង់នៅពេលចុះហត្ថលេខាលើកិច្ចសន្យា។",
+  ],
+  dep_pet_term: [
+    "Pet approved: {0}. Pet Deposit on this Lease: {1}, paid when the Lease is signed.",
+    "សត្វចិញ្ចឹមបានអនុម័ត៖ {0}។ ប្រាក់កក់សត្វចិញ្ចឹមលើកិច្ចសន្យានេះ៖ {1} បង់នៅពេលចុះហត្ថលេខា។",
+  ],
+  dep_pet_none: [
+    "Pet approved: {0}. No Pet Deposit amount yet; add it with Edit draft.",
+    "សត្វចិញ្ចឹមបានអនុម័ត៖ {0}។ មិនទាន់មានចំនួនប្រាក់កក់សត្វចិញ្ចឹមទេ សូមបន្ថែមវាដោយកែសេចក្តីព្រាង។",
+  ],
+  sp_pet_missing: [
+    "This draft has an approved pet but no Pet Deposit amount yet. Add it with Edit draft first.",
+    "សេចក្តីព្រាងនេះមានសត្វចិញ្ចឹមដែលបានអនុញ្ញាត ប៉ុន្តែមិនទាន់មានចំនួនប្រាក់កក់សត្វចិញ្ចឹមនៅឡើយទេ។ សូមបន្ថែមវាដោយកែសេចក្តីព្រាងជាមុនសិន។",
+  ],
+  sp_no_pet_right: [
+    "The Pet Deposit needs the right to manage deposits. Ask the Owner.",
+    "ប្រាក់កក់សត្វចិញ្ចឹម ត្រូវការសិទ្ធិគ្រប់គ្រងប្រាក់កក់។ សូមសួរម្ចាស់។",
+  ],
+  form_pet_part_saved: [
+    "The draft is saved, but its Pet Deposit is not. {0} Try again saves only what is missing. Close opens the draft, where Edit draft can add it.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ ប៉ុន្តែប្រាក់កក់សត្វចិញ្ចឹមរបស់វាមិនទាន់ទេ។ {0} «ព្យាយាមម្តងទៀត» រក្សាទុកតែអ្វីដែលខ្វះប៉ុណ្ណោះ។ «បិទ» បើកសេចក្តីព្រាង ដែល «កែសេចក្តីព្រាង» អាចបន្ថែមវាបាន។",
+  ],
+  form_pet_part_unknown: [
+    "The draft is saved. No answer came back for its Pet Deposit, so it is not known whether it was saved. Try again sends the same one; it is saved only once. Close opens the draft.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ។ មិនមានចម្លើយសម្រាប់ប្រាក់កក់សត្វចិញ្ចឹមរបស់វាទេ ដូច្នេះមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើប្រាក់កក់ដដែល វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។ «បិទ» បើកសេចក្តីព្រាង។",
+  ],
+  edit_pet_part_saved: [
+    "The draft is saved, but the Pet Deposit is not. {0} Try again saves only what is missing.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ ប៉ុន្តែប្រាក់កក់សត្វចិញ្ចឹមមិនទាន់ទេ។ {0} «ព្យាយាមម្តងទៀត» រក្សាទុកតែអ្វីដែលខ្វះប៉ុណ្ណោះ។",
+  ],
+  edit_pet_part_unknown: [
+    "The draft is saved. No answer came back for the Pet Deposit, so it is not known whether it was saved. Try again sends the same one; it is saved only once.",
+    "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ។ មិនមានចម្លើយសម្រាប់ប្រាក់កក់សត្វចិញ្ចឹមទេ ដូច្នេះមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើប្រាក់កក់ដដែល វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។",
+  ],
   // new
   err_unit: ["Choose the Parking.", "សូមជ្រើសចំណត។"],
   // new

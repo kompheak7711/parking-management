@@ -102,6 +102,29 @@ REFUSALS: Final[dict[str, Refusal]] = {
         "PLANNED_DEPOSIT_SAVE_REUSED",
         "This save was already used for another amount. Close the form and save again.",
     ),
+    # D4 (DL-234): the draft's Pet Deposit amount.
+    "Only a drafted Lease takes a planned Pet Deposit": Refusal(
+        409,
+        "PLANNED_PET_DEPOSIT_NOT_DRAFT",
+        "Only a draft Lease takes a Pet Deposit amount.",
+    ),
+    "A renewal Lease takes no Pet Deposit at signing": Refusal(
+        409,
+        "PLANNED_PET_DEPOSIT_RENEWAL",
+        "A renewal Lease takes no Pet Deposit at signing.",
+        ("BR-DEP-010",),
+    ),
+    "The Lease terms ask for no Pet Deposit": Refusal(
+        409,
+        "PLANNED_PET_DEPOSIT_NOT_IN_TERMS",
+        "This draft has no approved pet with a Pet Deposit. Tick the pet first with Edit draft.",
+        ("BR-DEP-010",),
+    ),
+    "This Pet Deposit save was already used for another amount": Refusal(
+        409,
+        "PLANNED_PET_DEPOSIT_SAVE_REUSED",
+        "This save was already used for another amount. Close the form and save again.",
+    ),
 }
 PARTIAL_SERVICE = Refusal(
     409,
@@ -152,6 +175,18 @@ SIGN_REFUSALS: Final[dict[str, Refusal]] = {
         "SIGNING_NO_DEPOSIT_RIGHT",
         "A walk-in Lease's Security Deposit needs the right to manage deposits. Ask the Owner. "
         "Nothing was saved.",
+    ),
+    "Record the Pet Deposit on the draft first": Refusal(
+        409,
+        "SIGNING_PET_DEPOSIT_MISSING",
+        "This draft has an approved pet but no Pet Deposit amount yet. Add it with Edit draft "
+        "first. Nothing was saved.",
+        ("BR-DEP-010",),
+    ),
+    "A Pet Deposit made at signing needs deposits.manage": Refusal(
+        403,
+        "SIGNING_NO_DEPOSIT_RIGHT",
+        "The Pet Deposit needs the right to manage deposits. Ask the Owner. Nothing was saved.",
     ),
     "The money due at signing changed": Refusal(
         409,
@@ -266,6 +301,15 @@ class LeaseSigningFlow(Protocol):
         required_usd_cents: int,
         reason: str,
     ) -> int: ...
+    def set_planned_pet_deposit(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        plan_id: UUID,
+        actor_id: UUID,
+        required_usd_cents: int,
+        reason: str,
+    ) -> int: ...
 
     def sign_with_payment(
         self,
@@ -285,6 +329,17 @@ class UnavailableLeaseSigningFlow:
         raise LeaseSigningUnavailable(str(lease_id))
 
     def set_planned_deposit(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        plan_id: UUID,
+        actor_id: UUID,
+        required_usd_cents: int,
+        reason: str,
+    ) -> int:
+        raise LeaseSigningUnavailable(str(lease_id))
+
+    def set_planned_pet_deposit(
         self,
         property_id: UUID,
         lease_id: UUID,
@@ -396,6 +451,36 @@ class PostgresLeaseSigningFlow:
             with self._connect(self._database_url) as connection:
                 row = connection.execute(
                     "SELECT app.set_lease_planned_security_deposit(%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        property_id,
+                        lease_id,
+                        plan_id,
+                        actor_id,
+                        required_usd_cents,
+                        reason,
+                        LEASE_DRAFT_CAPABILITY,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            self._raise(exc)
+            raise
+        if row is None or row[0] is None:
+            raise LeaseSigningUnavailable
+        return int(str(row[0]))
+
+    def set_planned_pet_deposit(
+        self,
+        property_id: UUID,
+        lease_id: UUID,
+        plan_id: UUID,
+        actor_id: UUID,
+        required_usd_cents: int,
+        reason: str,
+    ) -> int:
+        try:
+            with self._connect(self._database_url) as connection:
+                row = connection.execute(
+                    "SELECT app.set_lease_planned_pet_deposit(%s,%s,%s,%s,%s,%s,%s)",
                     (
                         property_id,
                         lease_id,
@@ -610,6 +695,31 @@ def create_lease_signing_router(
             raise _translate(exc) from exc
         return {
             "data": {"planned_security_deposit_usd_cents": amount},
+            "meta": {"request_id": request.state.request_id},
+        }
+
+    @router.put("/leases/{lease_id}/planned-pet-deposit")
+    def planned_pet_deposit(
+        lease_id: UUID, source: PlannedDepositSource, request: Request
+    ) -> dict[str, object]:
+        """D4 (DL-234): the draft's Pet Deposit amount, received at Sign Lease."""
+        actor = _actor(request, resolver)
+        try:
+            property_id = flow.property_of(lease_id)
+            _require(actor, property_id, LEASE_DRAFT_CAPABILITY)
+            require_browser_mutation(request, settings)
+            amount = flow.set_planned_pet_deposit(
+                property_id,
+                lease_id,
+                source.plan_id,
+                _actor_id(actor),
+                source.required_usd_cents,
+                source.reason,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        return {
+            "data": {"planned_pet_deposit_usd_cents": amount},
             "meta": {"request_id": request.state.request_id},
         }
 

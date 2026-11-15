@@ -140,6 +140,7 @@ export function EditDraftDialog({
   onSaved,
   onConflict,
   planned,
+  petPlanned,
   held = null,
   signingApi,
   unitApi,
@@ -149,7 +150,10 @@ export function EditDraftDialog({
   planned?: number | null;
   /** DL-101: the Reservation's Security Deposit of a draft from a Booking. */
   held?: { required: number; received: number } | null;
-  signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
+  /** D4 (DL-234): the draft's Pet Deposit when its terms approve a pet with one; undefined
+   * hides the box. */
+  petPlanned?: number | null;
+  signingApi?: Pick<SettlementApi, "planSecurityDeposit" | "planPetDeposit">;
   /** V1-061 (DL-110): reads the Unit's default Rent; left out, only the server checks it. */
   unitApi?: Pick<UnitApi, "get">;
   /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null when not known. */
@@ -186,6 +190,12 @@ export function EditDraftDialog({
     if (!typedDeposit.current)
       setDeposit(firstDeposit === null ? "" : (firstDeposit / 100).toFixed(2));
   }, [firstDeposit]);
+  const takesPet = petPlanned !== undefined && signingApi !== undefined;
+  const [petDeposit, setPetDeposit] = useState(
+    petPlanned === undefined || petPlanned === null
+      ? ""
+      : (petPlanned / 100).toFixed(2),
+  );
   const [start, setStart] = useState(lease.start_date ?? "");
   const [end, setEnd] = useState(lease.end_date ?? "");
   const [rent, setRent] = useState(
@@ -202,13 +212,14 @@ export function EditDraftDialog({
   // V1-060 B7: the dates and Rent are saved first, then the Security Deposit. When only the
   // first is saved, the dialog stays and Try again saves only the Security Deposit.
   const [depositIssue, setDepositIssue] = useState<
-    { unknown: true } | { refused: string } | null
+    (({ unknown: true } | { refused: string }) & { pet?: boolean }) | null
   >(null);
   const saved = useRef<{ fingerprint: string; lease: LeaseResource } | null>(
     null,
   );
   const updateIdentity = useValuesIdentity();
   const planIdentity = useValuesIdentity();
+  const petPlanIdentity = useValuesIdentity();
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -239,6 +250,9 @@ export function EditDraftDialog({
         "err_deposit_below",
         usdFromCents(held.received),
       );
+    const petCents = takesPet ? centsOf(petDeposit) : null;
+    if (takesPet && petCents === null)
+      found.petDeposit = lt(language, "err_pet_deposit");
     if (reason.trim() === "") found.reason = lt(language, "err_reason");
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
@@ -253,6 +267,9 @@ export function EditDraftDialog({
     const update = updateIdentity(fingerprint);
     const plan = planIdentity(
       JSON.stringify({ depositCents, reason: source.reason }),
+    );
+    const petPlan = petPlanIdentity(
+      JSON.stringify({ petCents, reason: source.reason }),
     );
     setBusy(true);
     setOutcome(null);
@@ -293,6 +310,29 @@ export function EditDraftDialog({
             outcomeOf(error) === "unknown"
               ? { unknown: true }
               : {
+                  refused:
+                    error instanceof SettlementRequestError
+                      ? serverWords(language, error)
+                      : lt(language, "part_refused"),
+                },
+          );
+          return;
+        }
+      }
+      // D4 (DL-234): then the Pet Deposit, received at signing.
+      if (takesPet && petCents !== null && petCents !== petPlanned) {
+        try {
+          await signingApi.planPetDeposit(lease.lease_id, {
+            plan_id: petPlan.id,
+            required_usd_cents: petCents,
+            reason: source.reason,
+          });
+        } catch (error: unknown) {
+          setDepositIssue(
+            outcomeOf(error) === "unknown"
+              ? { unknown: true, pet: true }
+              : {
+                  pet: true,
                   refused:
                     error instanceof SettlementRequestError
                       ? serverWords(language, error)
@@ -400,6 +440,22 @@ export function EditDraftDialog({
           />,
           problems.deposit,
         )}
+      {takesPet &&
+        field(
+          "lease-edit-pet-deposit",
+          lt(language, "pet_deposit_box"),
+          <input
+            aria-invalid={problems.petDeposit !== undefined}
+            id="lease-edit-pet-deposit"
+            inputMode="decimal"
+            onChange={(event) => {
+              setPetDeposit(event.currentTarget.value);
+            }}
+            value={petDeposit}
+          />,
+          problems.petDeposit,
+          lt(language, "pet_deposit_help"),
+        )}
       <div className="ui-field">
         <label htmlFor="lease-edit-reason">
           {lt(language, "why_change")}
@@ -429,8 +485,19 @@ export function EditDraftDialog({
           <Icon name="alert" />
           <p>
             {"unknown" in depositIssue
-              ? lt(language, "edit_part_unknown")
-              : lt(language, "edit_part_saved", depositIssue.refused)}
+              ? lt(
+                  language,
+                  depositIssue.pet === true
+                    ? "edit_pet_part_unknown"
+                    : "edit_part_unknown",
+                )
+              : lt(
+                  language,
+                  depositIssue.pet === true
+                    ? "edit_pet_part_saved"
+                    : "edit_part_saved",
+                  depositIssue.refused,
+                )}
           </p>
         </div>
       )}

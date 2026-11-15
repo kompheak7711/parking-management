@@ -3271,7 +3271,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Source.** The owner on 12 Nov 2026 (DL-226, L1): the late-payment charge becomes an Invoice of the type "Late-payment", which never gets a late-payment charge itself.
 - **Before** (BR-LATE-001, BR-LATE-004). The charge was a debt of its own, not an Invoice: its own table, its own payment target, its own correction with three fixed reasons, its own Ledger account, and it was not sent to the tenant.
 - **Now.** At 00:00 on the first day after the Due Date the app writes the same decision as before and, in the same step, makes and issues a Late-payment Invoice for the Customer and the Lease of the late Invoice. The amount, the rate, the cases with no charge and "one charge for an Invoice, for ever" do not change (BR-LATE-001).
-- **How the build read the rest (asked to the owner with the pull request).**
+- **How the build read the rest.** These points were asked with the pull request, and the owner said yes to all five on 15 Nov 2026 (card "Yes to all five, merge when green"); pull request #41 was merged that day.
   1. The Due Date is the day the Invoice is made: it is owed at once, as a charge before. Example: Rent of $800.00 unpaid after 5 November gives a Late-payment Invoice of $80.00 on 6 November with the Due Date 6 November.
   2. It is lowered by a credit Adjustment and cancelled by Void, with a reason text, by the people who may adjust an Invoice or make it Void (the right "Approve financial records", the same right bundle that holds the correction of a charge today). The three fixed reasons are no longer asked. It is never raised. The Invoice that was late cannot be made Void while its Late-payment Invoice stands.
   3. A tenant with a Tenant-bot link gets the Late-payment Invoice by Telegram, like every issued Invoice. A charge was not sent before.
@@ -3282,6 +3282,23 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open:** the native Khmer check of the new screen text; taking out the code of the old charge kind (a later step).
 - **Links:** DL-226, DL-231, DL-076, DL-086; BR-LATE-001, BR-LATE-004, BR-INV-016, BR-PAY-021.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-14.
+
+## DL-234 — The Pet Deposit for a pet kept from the start is received at Sign Lease (D4 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, D4, "all yes"): the Pet Deposit for a pet kept from the start is received at Sign Lease, with the Security Deposit and the Initial Rent.
+- **Before** (BR-DEP-010). It was due within five days after the Lease Start Date. The draft kept only a tick "A pet is approved" and which pet; staff made the Pet Deposit and received it by hand after the signing.
+- **Now.** The draft records the Pet Deposit amount beside the pet, as it records the Security Deposit (DL-101). Sign Lease takes the full total in one payment and makes the Pet Deposit with its receipt in the same step. A draft with an approved pet and no amount is not signed until the amount is recorded.
+- **How the build read the rest (asked to the owner with the pull request).**
+  1. The amount is typed on the draft for each Lease; Settings has no fixed Pet Deposit amount.
+  2. Sign Lease takes the full total, no part payment. Example: Initial Rent $110 + Security Deposit $300 + Pet Deposit $100 = $510.
+  3. A pet that comes later stays as before: paid before or when the pet starts to stay.
+  4. A renewal takes no Pet Deposit at signing, as it takes no Security Deposit (DL-066); a pet on a renewal is handled by hand as before.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The amount is kept in its own append-only table with its history, like the Security Deposit of the draft. Saving it needs the right to make drafts (`leases.draft`); making the Pet Deposit at signing needs the right to manage deposits, like the Security Deposit of a walk-in Lease. The required date of the Pet Deposit is the signing day (or the approval date when later).
+- **Database:** migration `20270731_397` (DB-BS-012), forward-only; no data is changed or deleted. **API:** `PUT /leases/{lease_id}/planned-pet-deposit` and the new fields (the amendment of DL-234 in docs/005). **Screen:** New Lease and Edit draft have a box "Pet Deposit (USD)" for a draft with a pet; the Lease page, Print draft and Sign Lease show the Pet Deposit and the total (TEST-FE-2271, TEST-FE-2272, TEST-FE-2273, TEST-FE-2274).
+- **Open:** the native Khmer check of the new screen text.
+- **Links:** DL-226, DL-100, DL-101, DL-066; BR-DEP-010, BR-DEP-006.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 

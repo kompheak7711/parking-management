@@ -1012,6 +1012,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/occupancies/{occupancy_id}/end": {"post"},
         "/api/v1/leases/{lease_id}/signing-preview": {"get"},
         "/api/v1/leases/{lease_id}/planned-security-deposit": {"put"},
+        # D4 (DL-234): the draft's Pet Deposit amount, received at Sign Lease.
+        "/api/v1/leases/{lease_id}/planned-pet-deposit": {"put"},
         "/api/v1/leases/{lease_id}/sign-with-payment": {"post"},
         "/api/v1/leases/{lease_id}/renew": {"post"},
         "/api/v1/leases/{lease_id}/cancel": {"post"},

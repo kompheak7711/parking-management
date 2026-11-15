@@ -269,9 +269,11 @@ Decisions: DL-101.
 
 ## BR-DEP-006 — The Rest Is Received at Sign Lease
 
-Sign Lease first receives, in full, the Security Deposit still to pay and the total of the Initial Rent Invoice. Then the Lease is signed. There is no part payment at signing, for a walk-in Lease and for a Lease from a Reservation alike. So both are paid before the move-in.
+Sign Lease first receives, in full, the Security Deposit still to pay, the Pet Deposit of a pet kept from the start (BR-DEP-010) and the total of the Initial Rent Invoice. Then the Lease is signed. There is no part payment at signing, for a walk-in Lease and for a Lease from a Reservation alike. So all of it is paid before the move-in.
 
-Decisions: DL-100.
+Example: Initial Rent $110 + Security Deposit $300 + Pet Deposit $100 = $510, received in one payment.
+
+Decisions: DL-100, DL-234.
 
 ---
 
@@ -375,7 +377,7 @@ Parking Step 4 (owner, 2026-10-30). A Lease of a Parking holds one vehicle at a 
 
 When a Lease is signed, in one step: its Reservation, if it has one, becomes Completed; the Unit becomes `OCCUPIED`; the Security Deposit stays with the Lease.
 
-The move-in is recorded later, when it really happens. It needs: a Signed Lease; its Reservation, if any, Completed with this Lease; a Unit that is not `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`; and a valid move-in date. The Occupancy then starts on the real Move-in Date (BR-OCC-002). The move-in does not change the Reservation or the Unit status. An unpaid Pet Deposit never stops a move-in (BR-DEP-010).
+The move-in is recorded later, when it really happens. It needs: a Signed Lease; its Reservation, if any, Completed with this Lease; a Unit that is not `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`; and a valid move-in date. The Occupancy then starts on the real Move-in Date (BR-OCC-002). The move-in does not change the Reservation or the Unit status. An unpaid Pet Deposit of a pet that came later never stops a move-in (BR-DEP-010).
 
 Replaces: BR-LEASE-016.
 Decisions: DL-100.
@@ -398,10 +400,11 @@ While the Lease runs, the Customer pays a valid pet charge directly. The Pet Dep
 
 ## BR-DEP-010 — When the Pet Deposit Is Due
 
-- A pet kept from the start: the Pet Deposit is due within five days after the Lease Start Date. An unpaid Pet Deposit never stops the move-in.
-- A pet that comes later: the Customer must tell Property Management. If the pet is approved and the Lease asks for a Pet Deposit, it is paid before or when the pet starts to stay in the Unit.
+- A pet kept from the start: the draft Lease records the pet and its Pet Deposit amount, typed for each Lease. The Pet Deposit is received at Sign Lease, with the Security Deposit and the Initial Rent (BR-DEP-006). A draft with an approved pet and no Pet Deposit amount is not signed until the amount is recorded.
+- A renewal takes no Pet Deposit at signing. A pet on a renewal follows the next point.
+- A pet that comes later: the Customer must tell Property Management. If the pet is approved and the Lease asks for a Pet Deposit, it is paid before or when the pet starts to stay in the Unit. An unpaid Pet Deposit of this kind never stops the move-in.
 
-Replaces: BR-DEP-020.
+Replaces: BR-DEP-020. Decisions: DL-234.
 
 ---
 
@@ -1834,13 +1837,12 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| D4 | BR-DEP-010: the Pet Deposit for a pet kept from the start is due within five days after the Lease Start Date | It is received at Sign Lease, with the Security Deposit and the Initial Rent |
 | D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

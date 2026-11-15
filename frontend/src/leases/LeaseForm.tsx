@@ -154,7 +154,7 @@ export interface LeaseFormProps {
   customerCreateApi?: CustomerApi;
   customerGate?: CustomerCommandGate;
   /** V1-060 B6 (DL-100, DL-101): saves the draft's Security Deposit; the real server when not given. */
-  signingApi?: Pick<SettlementApi, "planSecurityDeposit">;
+  signingApi?: Pick<SettlementApi, "planSecurityDeposit" | "planPetDeposit">;
   /** V1-061 (DL-110): may agree a Rent below the Unit's default Rent; null when not known. */
   mayLowerRent?: boolean | null;
 }
@@ -215,6 +215,10 @@ export function LeaseForm({
   // A new Service keeps its id until the server confirms it, so a resend never adds two.
   const newServiceId = useRef<string | null>(null);
   const [petText, setPetText] = useState("");
+  // D4 (DL-234): the Pet Deposit of a pet kept from the start is a Lease term, received at
+  // signing.
+  const [petDeposit, setPetDeposit] = useState("");
+  const [plannedPetCents, setPlannedPetCents] = useState<number | null>(null);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<LeaseDraftSource | null>(null);
   const [busy, setBusy] = useState(false);
@@ -226,10 +230,11 @@ export function LeaseForm({
   // draft (Edit draft can add it there).
   const [savedId, setSavedId] = useState<string | null>(null);
   const [depositIssue, setDepositIssue] = useState<
-    { unknown: true } | { refused: string } | null
+    (({ unknown: true } | { refused: string }) & { pet?: boolean }) | null
   >(null);
   // A Security Deposit save keeps its id while its values stay the same.
   const plan = useRef<{ fingerprint: string; id: string } | null>(null);
+  const petPlan = useRef<{ fingerprint: string; id: string } | null>(null);
   // The Lease and its Signers keep their ids for the life of the form, so a second save after
   // an unknown result can never make a second draft.
   const ids = useRef({
@@ -630,6 +635,9 @@ export function LeaseForm({
     if (depositChanged && depositReason.trim() === "")
       found.depositReason = lt(language, "err_deposit_reason");
     if (pet && petText.trim() === "") found.pet = lt(language, "err_pet");
+    const petCents = takesDeposit && pet ? centsOf(petDeposit) : null;
+    if (takesDeposit && pet && petCents === null)
+      found.petDeposit = lt(language, "err_pet_deposit");
     if (services === null || services === "failed")
       found.services = lt(language, "err_svc_wait");
     else if (picked.some((choice) => choice.approvalPeriodId === null))
@@ -644,6 +652,7 @@ export function LeaseForm({
     setProblems(found);
     if (cents === null || Object.keys(found).length > 0) return;
     setPlannedCents(depositCents);
+    setPlannedPetCents(petCents);
     setPlannedReason(
       depositChanged
         ? depositReason.trim()
@@ -706,32 +715,50 @@ export function LeaseForm({
     });
   }
 
-  /** Saves the draft's Security Deposit; false (with what to show) when it did not save. */
+  /** Saves the draft's Security Deposit, then its Pet Deposit (D4); false (with what to show)
+   * when one did not save. */
   async function planDeposit(leaseId: string): Promise<boolean> {
-    if (plannedCents === null) return true;
-    const body = { required_usd_cents: plannedCents, reason: plannedReason };
-    const fingerprint = JSON.stringify(body);
-    if (plan.current?.fingerprint !== fingerprint)
-      plan.current = { fingerprint, id: crypto.randomUUID() };
-    try {
-      await signingApi.planSecurityDeposit(leaseId, {
-        plan_id: plan.current.id,
-        ...body,
-      });
-      return true;
-    } catch (error: unknown) {
-      setDepositIssue(
-        outcomeOf(error) === "unknown"
-          ? { unknown: true }
-          : {
-              refused:
-                error instanceof SettlementRequestError
-                  ? serverWords(language, error)
-                  : lt(language, "part_refused"),
-            },
-      );
-      return false;
+    const parts: {
+      cents: number | null;
+      reason: string;
+      kept: typeof plan;
+      pet: boolean;
+    }[] = [
+      { cents: plannedCents, reason: plannedReason, kept: plan, pet: false },
+      {
+        cents: plannedPetCents,
+        reason: "Pet Deposit on the New Lease form",
+        kept: petPlan,
+        pet: true,
+      },
+    ];
+    for (const part of parts) {
+      if (part.cents === null) continue;
+      const body = { required_usd_cents: part.cents, reason: part.reason };
+      const fingerprint = JSON.stringify(body);
+      if (part.kept.current?.fingerprint !== fingerprint)
+        part.kept.current = { fingerprint, id: crypto.randomUUID() };
+      const save = part.pet
+        ? signingApi.planPetDeposit
+        : signingApi.planSecurityDeposit;
+      try {
+        await save(leaseId, { plan_id: part.kept.current.id, ...body });
+      } catch (error: unknown) {
+        setDepositIssue(
+          outcomeOf(error) === "unknown"
+            ? { unknown: true, pet: part.pet }
+            : {
+                pet: part.pet,
+                refused:
+                  error instanceof SettlementRequestError
+                    ? serverWords(language, error)
+                    : lt(language, "part_refused"),
+              },
+        );
+        return false;
+      }
     }
+    return true;
   }
 
   /** The draft is saved: its Security Deposit next, then the draft opens. */
@@ -1065,7 +1092,24 @@ export function LeaseForm({
                 value={petText}
               />,
               problems.pet,
-              lt(language, "pet_help"),
+              lt(language, takesDeposit ? "pet_help_new" : "pet_help"),
+            )}
+          {pet &&
+            takesDeposit &&
+            field(
+              "lease-form-pet-deposit",
+              lt(language, "pet_deposit_box"),
+              <input
+                aria-invalid={problems.petDeposit !== undefined}
+                id="lease-form-pet-deposit"
+                inputMode="decimal"
+                onChange={(event) => {
+                  setPetDeposit(event.currentTarget.value);
+                }}
+                value={petDeposit}
+              />,
+              problems.petDeposit,
+              lt(language, "pet_deposit_help"),
             )}
           <ServicesField
             added={addDone}
@@ -1172,7 +1216,17 @@ export function LeaseForm({
                       )}
                 </li>
               ))}
-              {pet && <li>{lt(language, "pv_pet")}</li>}
+              {pet && (
+                <li>
+                  {takesDeposit && centsOf(petDeposit) !== null
+                    ? lt(
+                        language,
+                        "pv_pet_new",
+                        usdFromCents(centsOf(petDeposit) ?? 0),
+                      )
+                    : lt(language, "pv_pet")}
+                </li>
+              )}
               <li>{lt(language, "pv_end", dayText(end))}</li>
             </ul>
           )}
@@ -1342,8 +1396,19 @@ export function LeaseForm({
               <Icon name="alert" />
               <p>
                 {"unknown" in depositIssue
-                  ? lt(language, "form_part_unknown")
-                  : lt(language, "form_part_saved", depositIssue.refused)}
+                  ? lt(
+                      language,
+                      depositIssue.pet === true
+                        ? "form_pet_part_unknown"
+                        : "form_part_unknown",
+                    )
+                  : lt(
+                      language,
+                      depositIssue.pet === true
+                        ? "form_pet_part_saved"
+                        : "form_part_saved",
+                      depositIssue.refused,
+                    )}
               </p>
             </div>
           )}

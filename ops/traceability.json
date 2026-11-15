@@ -68448,6 +68448,150 @@
       "test_path": "frontend/src/settings/BusinessTab.test.tsx",
       "status": "implemented",
       "notes": "Settings lists the Late-payment type as No with no Change button."
+    },
+    {
+      "test_id": "test_the_migration_follows_the_late_payment_invoice_step_and_is_forward_only",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270731_397 follows 20270730_396 and cannot be downgraded."
+    },
+    {
+      "test_id": "test_sign_lease_receives_the_pet_deposit_with_the_security_deposit_and_the_initial_rent",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "Sign Lease receives Initial Rent, Security Deposit and Pet Deposit in one Payment, makes the Pet Deposit for the approved pet and receives it in full; the same press again saves nothing new."
+    },
+    {
+      "test_id": "test_a_draft_with_a_pet_deposit_in_its_terms_is_not_signed_without_the_amount_or_the_right",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "No amount, an old total or no deposits right signs nothing and saves nothing."
+    },
+    {
+      "test_id": "test_a_draft_without_a_pet_deposit_in_its_terms_is_signed_as_before",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "A draft with no pet, or a pet whose terms ask for no Pet Deposit, signs as before."
+    },
+    {
+      "test_id": "test_the_pet_deposit_amount_is_recorded_only_on_a_draft_whose_terms_ask_for_it",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "The draft's Pet Deposit amount: only on a drafted Lease whose terms ask for it; history kept, the latest wins, replay only of the same save, records never change, only the runtime role saves."
+    },
+    {
+      "test_id": "test_a_renewal_takes_no_pet_deposit_at_signing",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_pet_deposit_at_signing_migration.py",
+      "status": "implemented",
+      "notes": "A renewal takes no Pet Deposit at signing and signs with its Initial Rent only."
+    },
+    {
+      "test_id": "test_the_planned_pet_deposit_is_saved_with_lease_draft_only",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "PUT planned-pet-deposit needs leases.draft, a strict body, and answers the database refusal with its code."
+    },
+    {
+      "test_id": "test_a_draft_without_its_pet_deposit_or_the_right_is_not_signed",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_signing_api.py",
+      "status": "implemented",
+      "notes": "The database words for a missing Pet Deposit amount or right become SIGNING_PET_DEPOSIT_MISSING and SIGNING_NO_DEPOSIT_RIGHT, and say nothing was saved."
+    },
+    {
+      "test_id": "TEST-FE-2271",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Sign Lease and Print draft show the Pet Deposit and the total with it; the request holds the whole total; no amount yet signs nothing."
+    },
+    {
+      "test_id": "TEST-FE-2272",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "The Lease page says the draft has no Pet Deposit amount yet; Edit draft needs one and saves it after the draft."
+    },
+    {
+      "test_id": "TEST-FE-2273",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leases/LeasesPage.test.tsx",
+      "status": "implemented",
+      "notes": "New Lease with a pet needs the Pet Deposit, shows it in the bill and saves it after the draft and its Security Deposit."
+    },
+    {
+      "test_id": "TEST-FE-2274",
+      "upstream_ids": [
+        "DL-234",
+        "BR-DEP-010",
+        "BR-DEP-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settlementClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client reads pet_deposit_required and planned_pet_deposit_usd_cents and saves the amount with PUT planned-pet-deposit."
     }
   ]
 }

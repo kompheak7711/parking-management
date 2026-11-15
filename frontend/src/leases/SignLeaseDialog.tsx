@@ -197,7 +197,16 @@ export function SignDialog({
   // The Initial Rent Invoice cannot be issued after its Due Date (BR-RENT-009).
   const duePassed = initial !== null && initial.due_date < today;
   const rentDue = initial?.total_usd_cents ?? 0;
-  const total = depositDue + rentDue;
+  // D4 (DL-234): a pet approved on the draft brings its Pet Deposit, received at signing too.
+  const petRequired =
+    !renewal && preview.state === "done" && preview.value.pet_deposit_required;
+  const petPlanned =
+    preview.state === "done"
+      ? preview.value.planned_pet_deposit_usd_cents
+      : null;
+  const petMissing = petRequired && petPlanned === null;
+  const petDue = petRequired ? (petPlanned ?? 0) : 0;
+  const total = depositDue + petDue + rentDue;
   const ready =
     preview.state === "done" &&
     reservation.state !== "loading" &&
@@ -207,8 +216,9 @@ export function SignDialog({
     !bookingUnknown &&
     !belowReceived &&
     !depositMissing &&
+    !petMissing &&
     mayCollect &&
-    (!walkIn || mayCreateDeposit);
+    ((!walkIn && !petRequired) || mayCreateDeposit);
   const blocker =
     preview.state === "failed"
       ? lt(language, "sp_failed")
@@ -228,13 +238,19 @@ export function SignDialog({
                   )
                 : depositMissing && reservation.state === "done"
                   ? lt(language, "sp_deposit_missing")
-                  : !mayCollect
-                    ? lt(language, "sp_no_rights")
-                    : walkIn &&
-                        !mayCreateDeposit &&
-                        reservation.state === "done"
-                      ? lt(language, "sp_no_deposit_right")
-                      : null;
+                  : petMissing && reservation.state === "done"
+                    ? lt(language, "sp_pet_missing")
+                    : !mayCollect
+                      ? lt(language, "sp_no_rights")
+                      : walkIn &&
+                          !mayCreateDeposit &&
+                          reservation.state === "done"
+                        ? lt(language, "sp_no_deposit_right")
+                        : petRequired &&
+                            !mayCreateDeposit &&
+                            reservation.state === "done"
+                          ? lt(language, "sp_no_pet_right")
+                          : null;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -409,6 +425,12 @@ export function SignDialog({
                       : lt(language, "sp_deposit")}
                   </td>
                   <td>{depositMissing ? "—" : usdFromCents(depositDue)}</td>
+                </tr>
+              )}
+              {petRequired && (
+                <tr>
+                  <td>{lt(language, "dep_pet")}</td>
+                  <td>{petMissing ? "—" : usdFromCents(petDue)}</td>
                 </tr>
               )}
               <tr>

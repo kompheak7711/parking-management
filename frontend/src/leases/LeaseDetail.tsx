@@ -108,7 +108,10 @@ export interface LeaseDetailProps {
   terminateOnOpen?: boolean;
   /** V1-060 B6: Receive Security Deposit, the draft's planned deposit and signing with money. */
   settlementApi?: SigningApi &
-    Pick<SettlementApi, "planSecurityDeposit" | "receiveSecurityDeposit">;
+    Pick<
+      SettlementApi,
+      "planSecurityDeposit" | "planPetDeposit" | "receiveSecurityDeposit"
+    >;
   paymentsApi?: PaymentsApi;
   /** V1-060 B6 (DL-102): New Customer from Add occupant; left out, the button is not shown. */
   customerCreateApi?: CustomerApi;
@@ -166,6 +169,11 @@ export function LeaseDetail({
   // V1-060 B6 (DL-100, DL-101): the draft's recorded Security Deposit and, for a draft from a
   // Booking, the Reservation's Security Deposit; undefined until read.
   const [planned, setPlanned] = useState<number | null | undefined>(undefined);
+  // D4 (DL-234): the draft's Pet Deposit amount when its terms approve a pet with a Pet
+  // Deposit; undefined when they do not, or until read.
+  const [petPlanned, setPetPlanned] = useState<number | null | undefined>(
+    undefined,
+  );
   const [held, setHeld] = useState<{
     required: number;
     received: number;
@@ -195,6 +203,11 @@ export function LeaseDetail({
       .then((found) => {
         if (!live) return;
         setPlanned(found.planned_security_deposit_usd_cents);
+        setPetPlanned(
+          found.pet_deposit_required
+            ? found.planned_pet_deposit_usd_cents
+            : undefined,
+        );
         setPreview("shown");
         const reservation = found.held_security_deposit;
         setHeld(
@@ -210,6 +223,7 @@ export function LeaseDetail({
         if (!live) return;
         // V1-060 B7: not known is not "none": Edit draft then hides the deposit box.
         setPlanned(undefined);
+        setPetPlanned(undefined);
         setHeld(null);
         setPreview("failed");
       });
@@ -1140,11 +1154,24 @@ export function LeaseDetail({
                   <>
                     <h3>{lt(language, "dep_pet")}</h3>
                     <p className="ui-muted">
-                      {lt(
-                        language,
-                        "pet_approved",
-                        lease.pet_description ?? "",
-                      )}
+                      {petPlanned === undefined
+                        ? lt(
+                            language,
+                            "pet_approved",
+                            lease.pet_description ?? "",
+                          )
+                        : petPlanned === null
+                          ? lt(
+                              language,
+                              "dep_pet_none",
+                              lease.pet_description ?? "",
+                            )
+                          : lt(
+                              language,
+                              "dep_pet_term",
+                              lease.pet_description ?? "",
+                              usdFromCents(petPlanned),
+                            )}
                     </p>
                   </>
                 ) : PET_DEPOSIT ? (
@@ -1402,6 +1429,7 @@ export function LeaseDetail({
           {...dialogProps}
           lease={lease}
           planned={depositDraft && planned !== undefined ? planned : undefined}
+          petPlanned={depositDraft ? petPlanned : undefined}
           held={held}
           mayLowerRent={
             capabilities === null
