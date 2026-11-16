@@ -105,12 +105,10 @@
     gap: 10px;
   }
 
-  .rp-cards > li {
-    grid-column: span 3;
-  }
-
+  /* Reports review fix 6 (owner 16/11/2026): one card per row on a phone. */
+  .rp-cards > li,
   .rp-cards > :nth-child(odd):last-child {
-    grid-column: span 6;
+    grid-column: 1 / -1;
   }
 }
 
@@ -523,4 +521,84 @@ table.ui-table.rp-xtab tbody th[scope="row"] {
 
 table.ui-table.rp-xtab td.tot {
   font-weight: 700;
+}
+
+/* Reports review fix 6: the whole card opens the report; the arrow sits at the right end. */
+.rp-card-foot > .shell-icon:last-child {
+  margin-left: auto;
+  color: var(--link);
+}
+
+/* Reports review fix 2 (owner 16/11/2026): an amount in the Summary never wraps; its label
+   wraps instead. */
+.rp-side .ui-kv {
+  grid-template-columns: minmax(0, auto) minmax(max-content, 1fr);
+}
+
+.rp-side .ui-kv dd.ui-num {
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  /* Reports review fix 4: the period switch in equal parts, two per row; the Unit choice and
+     Export share one row. */
+  .shell-view .rp-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+  }
+
+  .shell-view .rp-filters > .ui-seg {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .shell-view .rp-filters > select.ui-sel {
+    width: 100%;
+  }
+
+  .shell-view .rp-filters > .ui-push {
+    justify-content: center;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .shell-view .rp-filters > .rp-range,
+  .shell-view .rp-filters > form {
+    grid-column: 1 / -1;
+  }
+
+  /* The Unit or Floor choice and Export come first, side by side; then the period. */
+  .shell-view .rp-filters > select.ui-sel {
+    order: 0;
+  }
+
+  .shell-view .rp-filters > .ui-push {
+    order: 1;
+  }
+
+  .shell-view .rp-filters > .ui-seg {
+    order: 2;
+  }
+
+  .shell-view .rp-filters > .rp-range,
+  .shell-view .rp-filters > form {
+    order: 3;
+  }
+
+  .shell-view .rp-filters:not(:has(> select)) > .ui-push {
+    grid-column: 1 / -1;
+  }
+
+  /* Reports review fix 5: the total line is a card too. */
+  table.ui-table.ui-rowcards.rp-cardtab tfoot {
+    display: block;
+  }
 }

@@ -71,6 +71,7 @@ import {
   shortStaysApi,
 } from "../shortstays/shortStaysClient";
 import { WeekReport } from "../shortstays/WeekReport";
+import { PageHeader } from "../shell/layouts";
 import { PageHead } from "../shell/pageHead";
 
 export interface ReportApi {
@@ -211,18 +212,16 @@ export function ReportsPage({
   if (detail === WEEK_REPORT && mayWeek) {
     return (
       <>
-        <BackLink language={language} parent="reports" />
-        <PageHead>
-          <div>
-            <div className="ui-hrow">
-              <h2>{rpt(language, "r_short_stay_week")}</h2>
-              <Chip icon="lock" tone="info">
-                {rpt(language, "tag")}
-              </Chip>
-            </div>
-            <p>{rpt(language, "d_short_stay_week")}</p>
-          </div>
-        </PageHead>
+        <PageHeader
+          back={<BackLink language={language} parent="reports" />}
+          badge={
+            <Chip icon="lock" tone="info">
+              {rpt(language, "tag")}
+            </Chip>
+          }
+          summary={rpt(language, "d_short_stay_week")}
+          title={rpt(language, "r_short_stay_week")}
+        />
         <WeekReport
           api={stayApi}
           key={propertyId}
@@ -333,9 +332,7 @@ function ReportsList({
                         {def.tagged && (
                           <span className="rp-tag">{rpt(language, "tag")}</span>
                         )}
-                        <span className="rp-card-open">
-                          {rpt(language, "open")}
-                        </span>
+                        <Icon name="chevron" small />
                       </span>
                     </a>
                   </li>
@@ -363,7 +360,7 @@ function ReportsList({
                 </span>
                 <span className="rp-card-foot">
                   <span className="rp-tag">{rpt(language, "tag")}</span>
-                  <span className="rp-card-open">{rpt(language, "open")}</span>
+                  <Icon name="chevron" small />
                 </span>
               </a>
             </li>
@@ -540,20 +537,20 @@ function ReportView({
 
   const head = (
     <>
-      <BackLink language={language} parent="reports" />
-      <PageHead>
-        <div>
-          <div className="ui-hrow">
-            <h2>{name}</h2>
-            {def.tagged && (
-              <Chip icon="lock" tone="info">
-                {rpt(language, "tag")}
-              </Chip>
-            )}
-          </div>
-          <p>{rpt(language, descriptionKey(def.key))}</p>
-        </div>
-      </PageHead>
+      {/* Reports review fix 3 (owner 16/11/2026): one head: Back to Reports on top, then the
+          report's name with its tag and the short sub-line; no second "Reports" title. */}
+      <PageHeader
+        back={<BackLink language={language} parent="reports" />}
+        badge={
+          def.tagged ? (
+            <Chip icon="lock" tone="info">
+              {rpt(language, "tag")}
+            </Chip>
+          ) : undefined
+        }
+        summary={rpt(language, descriptionKey(def.key))}
+        title={name}
+      />
     </>
   );
 
@@ -796,7 +793,7 @@ function ParameterBar({
     onParams({ ...params, period, from: first, to: last });
   };
   return (
-    <div className="ui-filters">
+    <div className="ui-filters rp-filters">
       {scope}
       {periodApplies(def.key) ? (
         <>

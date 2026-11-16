@@ -346,7 +346,7 @@ describe("Totals by Parking and month", () => {
     openReports({ hash: "#/reports/total_water" });
     await screen.findByRole("table", { name: "Total Water" });
     expect(
-      screen.getByRole("heading", { level: 2, name: "Total Water" }),
+      screen.getByRole("heading", { level: 1, name: "Total Water" }),
     ).toBeTruthy();
     expect(
       screen.getByText(
@@ -359,11 +359,12 @@ describe("Totals by Parking and month", () => {
         "Generated 28/10/2026, 10:30 · Phnom Penh time · amounts in USD; riel shown as information only",
       ),
     ).toBeTruthy();
+    // Reports review fix 7 (owner 16/11/2026): the money note is said once, in the Generated line.
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Amounts in USD. Riel payments are shown with their riel amount and rate; never added to USD.",
       ),
-    ).toBeTruthy();
+    ).toBeNull();
     expect(
       screen.getByRole("button", { name: "Back to Reports" }),
     ).toBeInTheDocument();

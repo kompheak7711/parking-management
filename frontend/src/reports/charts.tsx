@@ -162,29 +162,33 @@ export function StackedBars({
           </span>
         ))}
       </div>
-      <table className="ui-sr">
-        <caption>{title}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{head}</th>
-            {series.map((name) => (
-              <th key={name} scope="col">
-                {name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {columns.map((column, index) => (
-            <tr key={`${String(index)}:${column.tip}`}>
-              <th scope="row">{column.tip}</th>
-              {series.map((name, part) => (
-                <td key={name}>{format(column.values[part] ?? 0)}</td>
+      {/* Owner 16/11/2026 (Reports review): a table ignores the 1 px width of ui-sr, so its
+          screen-reader copy made the page scroll sideways on a phone; the box holds it. */}
+      <div className="ui-sr">
+        <table>
+          <caption>{title}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{head}</th>
+              {series.map((name) => (
+                <th key={name} scope="col">
+                  {name}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {columns.map((column, index) => (
+              <tr key={`${String(index)}:${column.tip}`}>
+                <th scope="row">{column.tip}</th>
+                {series.map((name, part) => (
+                  <td key={name}>{format(column.values[part] ?? 0)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

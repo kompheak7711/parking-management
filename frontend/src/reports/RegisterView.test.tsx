@@ -953,4 +953,26 @@ describe("Registers", () => {
     ).toBeTruthy();
     expect(screen.queryByText(/Security and Pet Deposits/)).toBeNull();
   });
+
+  it("TEST-FE-2234 on a phone each register row is a small card: every cell after the first says its column, and a chart's screen-reader table sits in a hidden box (Reports review, owner 16/11/2026)", async () => {
+    openReports({ hash: "#/reports/payments" });
+    const table = await screen.findByRole("table", {
+      name: "Payments and allocations",
+    });
+    expect(table).toHaveClass("ui-rowcards");
+    const heads = within(table)
+      .getAllByRole("columnheader")
+      .map((cell) => cell.textContent);
+    const first = within(table).getAllByRole("row")[1];
+    expect(first).toBeDefined();
+    const cells = Array.from(first?.children ?? []);
+    expect(cells[0]).not.toHaveAttribute("data-label");
+    cells.slice(1).forEach((cell, index) => {
+      const label = heads[index + 1] ?? "";
+      if (label !== "") expect(cell).toHaveAttribute("data-label", label);
+    });
+    for (const hidden of document.querySelectorAll("figure table")) {
+      expect(hidden.parentElement).toHaveClass("ui-sr");
+    }
+  });
 });

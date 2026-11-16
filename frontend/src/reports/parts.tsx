@@ -2,7 +2,13 @@
 // with its headline numbers, small side table and chart, the report table with its footer total
 // and Generated line, and the links from a row to the record's own page.
 
-import { Fragment, type ReactNode, useId } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useId,
+  useLayoutEffect,
+  useRef,
+} from "react";
 
 import { dayText } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
@@ -111,7 +117,6 @@ export function SummaryCard({
       </div>
       <div className="rp-chartrow">{chart}</div>
       {after}
-      <p className="ui-small ui-muted">{rpt(language, "currency")}</p>
     </section>
   );
 }
@@ -160,6 +165,20 @@ export function ReportTable({
   grid?: boolean;
 }) {
   const id = useId();
+  const table = useRef<HTMLTableElement>(null);
+  // Reports review fix 5 (owner 16/11/2026): on a phone each row is a small card, so every cell
+  // after the first says which column it is (its heading), read from the column list.
+  useLayoutEffect(() => {
+    if (grid || table.current === null) return;
+    for (const row of table.current.querySelectorAll("tbody tr, tfoot tr")) {
+      Array.from(row.children).forEach((cell, index) => {
+        const label = columns[index]?.label ?? "";
+        if (index === 0 || label === "" || !(cell instanceof HTMLElement))
+          return;
+        cell.dataset.label = label;
+      });
+    }
+  });
   return (
     <section aria-labelledby={id} className="ui-card pad0">
       <div className="ui-chead pad">
@@ -171,7 +190,12 @@ export function ReportTable({
       <div className="ui-tablewrap">
         <table
           aria-labelledby={id}
-          className={grid ? "ui-table ui-grid rp-xtab" : "ui-table"}
+          className={
+            grid
+              ? "ui-table ui-grid rp-xtab"
+              : "ui-table ui-rowcards rp-cardtab"
+          }
+          ref={table}
         >
           <thead>
             <tr>

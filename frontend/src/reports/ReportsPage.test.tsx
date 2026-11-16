@@ -65,7 +65,7 @@ function stubSave() {
 }
 
 describe("Reports list", () => {
-  it("TEST-FE-1030 lists every report in two groups in the owner's order, each with its line, the Owner and Manager tag on the money and audit reports, and Open report; a card opens its report", async () => {
+  it("TEST-FE-1030 lists every report in two groups in the owner's order, each with its line, the Owner and Manager tag on the money and audit reports, and an arrow (no Open report words); a card opens its report", async () => {
     const page = openReports();
     expect(cardNames("Totals by Parking and month")).toEqual(TOTALS_NAMES);
     expect(cardNames("Registers and lists")).toEqual([
@@ -87,7 +87,8 @@ describe("Reports list", () => {
       ),
     ).toBeTruthy();
     expect(within(income).getByText("Owner and Manager")).toBeTruthy();
-    expect(within(income).getByText("Open report")).toBeTruthy();
+    // Reports review fix 6 (owner 16/11/2026): the whole card opens; no "Open report" words.
+    expect(within(income).queryByText("Open report")).toBeNull();
     expect(
       within(
         screen.getByRole("link", { name: /^Parking occupancy/ }),
@@ -99,7 +100,7 @@ describe("Reports list", () => {
       screen.getByRole("link", { name: /^Short stays weekly report/ }),
     ).toHaveAttribute("href", "#/reports/short_stay_week");
     expect(screen.getAllByText("Owner and Manager")).toHaveLength(11);
-    expect(screen.getAllByText("Open report")).toHaveLength(14);
+    expect(screen.queryAllByText("Open report")).toHaveLength(0);
     expect(
       screen.getByText(/^Staff see the operational reports only\./),
     ).toBeTruthy();
@@ -108,7 +109,7 @@ describe("Reports list", () => {
 
     fireEvent.click(income);
     expect(
-      await screen.findByRole("heading", { level: 2, name: "Total Income" }),
+      await screen.findByRole("heading", { level: 1, name: "Total Income" }),
     ).toBeTruthy();
     await screen.findByRole("table", { name: "Total Income" });
     expect(page.totals).toHaveBeenCalledTimes(1);
@@ -168,7 +169,7 @@ describe("Report states", () => {
       capabilities: STAFF,
     });
     expect(
-      screen.getByRole("heading", { level: 2, name: "Total Income" }),
+      screen.getByRole("heading", { level: 1, name: "Total Income" }),
     ).toBeTruthy();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Your account cannot see this report. Ask the Owner if you need it.",
@@ -528,14 +529,14 @@ describe("Language and parameters", () => {
       screen.getByRole("region", { name: "សរុបតាមចំណត និងខែ" }),
     ).toBeTruthy();
     expect(cardNames("សរុបតាមបន្ទប់ និងខែ")[0]).toBe("ចំណូលសរុប");
-    expect(screen.getAllByText("បើករបាយការណ៍")).toHaveLength(14);
+    expect(screen.queryAllByText("បើករបាយការណ៍")).toHaveLength(0);
     cleanup();
 
     const page = openReports({ hash: "#/reports/total_income" });
     await screen.findByRole("table", { name: "Total Income" });
     page.rerender({ language: "km" });
     expect(
-      screen.getByRole("heading", { level: 2, name: "ចំណូលសរុប" }),
+      screen.getByRole("heading", { level: 1, name: "ចំណូលសរុប" }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: /^ត្រឡប់ទៅ / })).toBeTruthy();
     const table = screen.getByRole("table", { name: "ចំណូលសរុប" });
@@ -638,7 +639,7 @@ describe("Language and parameters", () => {
     });
     expect(
       screen.getByRole("heading", {
-        level: 2,
+        level: 1,
         name: "Short stays weekly report",
       }),
     ).toBeTruthy();

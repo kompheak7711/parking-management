@@ -71559,6 +71559,16 @@
       "test_path": "frontend/src/shell/ledgerGroups.test.tsx",
       "status": "implemented",
       "notes": "Ledger tab groups (owner 16/11/2026, card): the 11 Ledger pages show as 5 tabs (Spending, Books, Reports, Assets and cash, Month-end close), the side menu lists the same 5, and a person who may open only Expense requests sees no group tabs."
+    },
+    {
+      "test_id": "TEST-FE-2234",
+      "upstream_ids": [
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/reports/RegisterView.test.tsx",
+      "status": "implemented",
+      "notes": "Reports review (owner 16/11/2026, all 7): on a phone each register row is a small card whose cells after the first carry their column heading, and a chart's screen-reader table sits in a hidden box so it never widens the page."
     }
   ]
 }
