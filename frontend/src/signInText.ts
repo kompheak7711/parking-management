@@ -16,7 +16,7 @@ const text = {
   ],
   // Changed: staff who can change settings use the code too (DL-081).
   au_fact2: [
-    "Owner, Managers and staff who can change settings also type a code from their phone.",
+    "Owner, Managers and staff who can change settings also enter a code from their phone.",
     "ម្ចាស់ អ្នកគ្រប់គ្រង និងបុគ្គលិកដែលអាចប្តូរការកំណត់ វាយលេខកូដពីទូរស័ព្ទបន្ថែម។",
   ],
   au_fact3: [
@@ -36,8 +36,8 @@ const text = {
   au_show_l: ["Show password", "បង្ហាញពាក្យសម្ងាត់"],
   au_hide_l: ["Hide password", "លាក់ពាក្យសម្ងាត់"],
   au_forgot: ["Forgot your password?", "ភ្លេចពាក្យសម្ងាត់?"],
-  au_e_user: ["Type your username.", "សូមវាយឈ្មោះអ្នកប្រើ។"],
-  au_e_pw: ["Type your password.", "សូមវាយពាក្យសម្ងាត់។"],
+  au_e_user: ["Enter your username.", "សូមវាយឈ្មោះអ្នកប្រើ។"],
+  au_e_pw: ["Enter your password.", "សូមវាយពាក្យសម្ងាត់។"],
   au_e_wrong: [
     "The username or password is not right. Check both and try again.",
     "ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។ សូមពិនិត្យទាំងពីរ ហើយសាកម្តងទៀត។",
@@ -45,7 +45,7 @@ const text = {
   au_signed_out: ["You are signed out.", "អ្នកបានចាកចេញហើយ។"],
   au_code_t: ["Two-step sign-in", "ការចូលពីរជំហាន"],
   au_code_s: [
-    "Open the authenticator app on your phone and type the 6-digit code for CHETANA.",
+    "Open the authenticator app on your phone and enter the 6-digit code for CHETANA.",
     "បើកកម្មវិធីផ្ទៀងផ្ទាត់ក្នុងទូរស័ព្ទ ហើយវាយលេខកូដ ៦ ខ្ទង់សម្រាប់ CHETANA។",
   ],
   au_code: ["6-digit code", "លេខកូដ ៦ ខ្ទង់"],
@@ -54,11 +54,11 @@ const text = {
     "លេខកូដប្តូររៀងរាល់ ៣០ វិនាទី។",
   ],
   au_e_code: [
-    "Type the 6 digits from your phone.",
+    "Enter the 6 digits from your phone.",
     "សូមវាយលេខ ៦ ខ្ទង់ពីទូរស័ព្ទ។",
   ],
   au_e_code_bad: [
-    "That code is not right. Type the newest code from your phone.",
+    "That code is not right. Enter the newest code from your phone.",
     "លេខកូដនោះមិនត្រឹមត្រូវ។ សូមវាយលេខកូដថ្មីបំផុតពីទូរស័ព្ទ។",
   ],
   au_use_rc: [
@@ -72,7 +72,7 @@ const text = {
     "លេខកូដមួយក្នុងចំណោម ១០ ដែលអ្នកបានកត់ទុក ដូចជា 7KQ4-M2XD-9PRT។ លេខកូដនីមួយៗប្រើបានតែម្តង។",
   ],
   au_e_rc: [
-    "Type a recovery code, like 7KQ4-M2XD-9PRT.",
+    "Enter a recovery code, like 7KQ4-M2XD-9PRT.",
     "សូមវាយលេខកូដសង្គ្រោះ ដូចជា 7KQ4-M2XD-9PRT។",
   ],
   au_e_rc_bad: [
@@ -100,7 +100,7 @@ const text = {
   au_fg_owner: ["Owner", "ម្ចាស់"],
   // Changed: no reset with a recovery code (the Owner's reset is the emergency procedure).
   au_fg_owner_s: [
-    "Forgot your password? Only the server emergency procedure can help. It is done on the office computer itself, by the person who set the app up.",
+    "Forgot your password? Only the emergency reset can help. It is done on the office computer itself, by the person who set up the app.",
     "ភ្លេចពាក្យសម្ងាត់? មានតែនីតិវិធីបន្ទាន់លើម៉ាស៊ីនមេប៉ុណ្ណោះ។ វាធ្វើនៅលើកុំព្យូទ័រការិយាល័យផ្ទាល់ ដោយអ្នកដែលបានដំឡើងកម្មវិធី។",
   ],
   // New.
@@ -114,7 +114,7 @@ const text = {
     "អ្នកបានចូលដោយពាក្យសម្ងាត់ប្រើម្តង។ សូមជ្រើសពាក្យសម្ងាត់ផ្ទាល់ខ្លួនឥឡូវ។",
   ],
   au_new: ["New password", "ពាក្យសម្ងាត់ថ្មី"],
-  au_new2: ["Type the new password again", "វាយពាក្យសម្ងាត់ថ្មីម្តងទៀត"],
+  au_new2: ["Enter the new password again", "វាយពាក្យសម្ងាត់ថ្មីម្តងទៀត"],
   au_np_h: [
     "Use a short sentence you can remember, like “my blue door opens at seven”. Spaces are fine. A password manager is fine.",
     "ប្រើប្រយោគខ្លីដែលអ្នកចាំបាន ដូចជា “my blue door opens at seven”។ ដកឃ្លាបាន។ កម្មវិធីរក្សាពាក្យសម្ងាត់ក៏បាន។",
@@ -167,11 +167,11 @@ const text = {
     "កូដ QR សម្រាប់កម្មវិធីផ្ទៀងផ្ទាត់",
   ],
   au_su_key: [
-    "Cannot scan? Type this key instead:",
+    "Cannot scan? Enter this key instead:",
     "ស្កេនមិនបាន? វាយលេខសោនេះជំនួស៖",
   ],
   au_su_3: [
-    "Type the 6-digit code the app shows.",
+    "Enter the 6-digit code the app shows.",
     "វាយលេខកូដ ៦ ខ្ទង់ដែលកម្មវិធីបង្ហាញ។",
   ],
   au_rcs_t: ["Your recovery codes", "លេខកូដសង្គ្រោះរបស់អ្នក"],

@@ -142,6 +142,30 @@ def create_reports_router(
         return {"data": page, "meta": {"request_id": request.state.request_id}}
 
     @router.get(
+        "/properties/{property_id}/birthdays",
+        summary="The coming birthdays of the tenants and occupants of active Leases",
+    )
+    def birthdays(property_id: UUID, request: Request, response: Response) -> dict[str, object]:
+        _no_query(request)
+        actor = _actor(request, resolver)
+        page = _call(lambda: service.birthdays(actor, property_id))
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": page, "meta": {"request_id": request.state.request_id}}
+
+    @router.get(
+        "/properties/{property_id}/customers/{customer_id}/paid-on-time",
+        summary="One Customer's Invoices of the last 12 months paid by their Due Date",
+    )
+    def customer_paid_on_time(
+        property_id: UUID, customer_id: UUID, request: Request, response: Response
+    ) -> dict[str, object]:
+        _no_query(request)
+        actor = _actor(request, resolver)
+        page = _call(lambda: service.customer_paid_on_time(actor, property_id, customer_id))
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"data": page, "meta": {"request_id": request.state.request_id}}
+
+    @router.get(
         "/properties/{property_id}/reports/totals/{report}",
         summary="A Totals by Parking and month report",
     )

@@ -322,6 +322,22 @@ export const businessSettingsApi: BusinessSettingsApi = {
 };
 
 /** A whole-number rule value as the screen shows it (USD_CENTS money, PERCENT in hundredths). */
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st (English). */
+export function ordinalEn(n: number): string {
+  const tens = n % 100;
+  const suffix =
+    tens >= 11 && tens <= 13
+      ? "th"
+      : n % 10 === 1
+        ? "st"
+        : n % 10 === 2
+          ? "nd"
+          : n % 10 === 3
+            ? "rd"
+            : "th";
+  return `${String(n)}${suffix}`;
+}
+
 export function ruleValueText(
   unit: RuleUnit,
   value: number,
@@ -339,7 +355,10 @@ export function ruleValueText(
     case "DAYS":
       return km ? `${String(value)} ថ្ងៃ` : `${String(value)} days`;
     case "DAY_OF_MONTH":
-      return km ? `ថ្ងៃទី ${String(value)}` : `Day ${String(value)}`;
+      // UI v81 round 4 (owner 08/11/2026): "25th of each month", not "Day 25".
+      return km
+        ? `ថ្ងៃទី ${String(value)} នៃខែនីមួយៗ`
+        : `${ordinalEn(value)} of each month`;
     case "MINUTES":
       return km ? `${String(value)} នាទី` : `${String(value)} minutes`;
     case "HOURS":

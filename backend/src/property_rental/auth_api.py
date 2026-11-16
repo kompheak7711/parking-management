@@ -47,6 +47,9 @@ class SessionView:
     reauthenticated_at: datetime | None
     # The signed-in person's display name, for the shell (login sub-slice L3a-1).
     display_name: str | None = None
+    # UI v81 (owner 08/11/2026, side menu): the account's class, shown as the role on the menu's
+    # user card ("Kompheak · Owner"). Display only: every route still checks the capability.
+    account_class: Literal["owner", "manager", "staff"] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -406,6 +409,7 @@ class SessionData(BaseModel):
     mfa_assurance: Literal["none", "totp", "recovery_code"]
     reauthenticated_at: datetime | None
     display_name: str | None = None
+    account_class: Literal["owner", "manager", "staff"] | None = None
 
 
 class AuthenticationData(BaseModel):

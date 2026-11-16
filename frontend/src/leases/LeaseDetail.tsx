@@ -1,10 +1,22 @@
 // V1-058 R3: the Lease page (DESIGN.md "Leases (round 2)"): the head with the chip, period and
 // Rent; notices for drafts, Leases without a move-in and Leases ending soon; the Lease facts,
-// Signers, Occupants, Rent and services, Deposits, Termination and History. The actions come
-// with the next step; until then they stay in the earlier forms under the page.
+// Signers, Occupants, Rent and services, Deposits, Termination and History.
+// UI v81 pilot (owner 08/11/2026 06:55): drawn with the shared PageHeader (Back link, title,
+// status chip, summary, the buttons on the right with "Manager only" as text beside Terminate
+// Lease) and DetailLayout (about 60 / 40); the Lease facts in columns; the Customer card under
+// Deposits (design v81).
 
 import { PET_DEPOSIT } from "./parking";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  LatestNote,
+  RecordViewPage,
+  ViewAllButton,
+  latestOf,
+  rvt,
+  useHashView,
+} from "../shell/recordViews";
+import { BackLink } from "../shell/backNav";
 
 import type { DepositApi, DepositResource } from "../depositClient";
 import {
@@ -22,7 +34,6 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
 import { TelegramQrCard } from "../telegram/TelegramQrCard";
@@ -59,14 +70,28 @@ import {
   type SettlementApi,
 } from "../settlementClient";
 import { ReceiveDepositDialog } from "./ReceiveDepositDialog";
-import { daysBetween, initialRent, kindOf } from "./leasesData";
-import { PEOPLE_MOVE_IN } from "./parking";
+import {
+  daysBetween,
+  initialPeriodEnd,
+  initialRent,
+  kindOf,
+  leaseNo,
+} from "./leasesData";
 import { hasLeaseText, lt } from "./text";
 import {
   ChangeVehicleDialog,
   MoveInVehicleDialog,
   VehicleCard,
 } from "./VehicleDialogs";
+import {
+  DetailLayout,
+  FactList,
+  PageHeader,
+  RightNote,
+} from "../shell/layouts";
+import type { CustomerLedgerApi } from "../customerLedgerClient";
+import type { reportsApi } from "../reportsClient";
+import { LeaseCustomerCard } from "./LeaseCustomerCard";
 
 function Kv({ rows }: { rows: [string, ReactNode][] }) {
   return (
@@ -78,6 +103,48 @@ function Kv({ rows }: { rows: [string, ReactNode][] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * One step of the Lease History (owner 08/11/2026): the step with the person's name, as in
+ * design v81 ("Draft made by Chan Sophea", "Signed by Keo Vannak"), the note under it, then the
+ * time. A Signer step names the Customer too; the person who recorded it goes under it.
+ */
+function HistoryStep({
+  event,
+  language,
+}: {
+  event: LeaseTimelineEvent;
+  language: Language;
+}) {
+  const what = eventName(language, event.event_kind);
+  const actor = event.actor_name ?? null;
+  const subject = event.subject_name ?? null;
+  const signed = event.event_kind === "lease.signer.sign" && subject !== null;
+  const title = signed
+    ? lt(language, "h_signed_by", subject)
+    : actor === null
+      ? what
+      : lt(language, "h_by", what, actor);
+  const lines = [
+    ...(signed && actor !== null
+      ? [lt(language, "h_recorded_by", actor)]
+      : !signed && subject !== null
+        ? [subject]
+        : []),
+    ...(event.reason.trim() === "" ? [] : [event.reason]),
+  ];
+  return (
+    <div>
+      {title}
+      {lines.map((line, index) => (
+        <span className="ui-sub2" key={index}>
+          {line}
+        </span>
+      ))}
+      <small className="ui-num">{momentText(event.occurred_at)}</small>
+    </div>
   );
 }
 
@@ -118,6 +185,11 @@ export interface LeaseDetailProps {
   customerGate?: CustomerCommandGate;
   /** V1-061 (DL-110): Edit draft reads the Unit's default Rent. */
   unitApi?: Pick<UnitApi, "get">;
+  /** UI v81 pilot: the Customer card's Credit and Unpaid Invoices (the ledger position) and
+   *  "Paid on time"; left out, those rows say they could not be read. */
+  ledgerApi?: Pick<CustomerLedgerApi, "read">;
+  actorId?: string;
+  reports?: Pick<typeof reportsApi, "customerPaidOnTime">;
 }
 
 export function LeaseDetail({
@@ -136,7 +208,11 @@ export function LeaseDetail({
   customerCreateApi,
   customerGate,
   unitApi,
+  ledgerApi,
+  actorId,
+  reports,
 }: LeaseDetailProps) {
+  const view = useHashView();
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
   const [deposits, setDeposits] = useState<DepositsState>({
@@ -144,6 +220,8 @@ export function LeaseDetail({
   });
   const [missing, setMissing] = useState(false);
   const [successorId, setSuccessorId] = useState<string | null>(null);
+  // UI v81 (owner 08/11/2026): the Lease before and after this one, read for their numbers.
+  const [linked, setLinked] = useState<Record<string, LeaseResource>>({});
   const [historyIncomplete, setHistoryIncomplete] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [dialog, setDialog] = useState<
@@ -314,18 +392,24 @@ export function LeaseDetail({
     load();
   }, [load]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("leases");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {lt(language, "back")}
-    </button>
-  );
+  const predecessorId = lease?.predecessor_lease_id ?? null;
+  useEffect(() => {
+    let live = true;
+    for (const id of [predecessorId, successorId]) {
+      if (id === null) continue;
+      void Promise.resolve()
+        .then(() => api.get(id))
+        .then((found) => {
+          if (live) setLinked((previous) => ({ ...previous, [id]: found }));
+        })
+        .catch(() => undefined);
+    }
+    return () => {
+      live = false;
+    };
+  }, [api, predecessorId, successorId]);
+
+  const back = <BackLink language={language} parent="leases" />;
   const failure = loadFailed && (
     <div className="ui-notice warn" role="status">
       <Icon name="alert" />
@@ -339,7 +423,7 @@ export function LeaseDetail({
   if (missing) {
     return (
       <>
-        {back}
+        <PageHeader back={back} title={lt(language, "details")} />
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
           <p>{lt(language, "missing")}</p>
@@ -353,7 +437,7 @@ export function LeaseDetail({
   if (lease === null) {
     return (
       <>
-        {back}
+        <PageHeader back={back} title={lt(language, "details")} />
         {failure || (
           <p className="ui-muted" role="status">
             {lt(language, "loading_one")}
@@ -381,6 +465,10 @@ export function LeaseDetail({
   const initial =
     lease.start_date !== null && rent !== null
       ? initialRent(lease.start_date, rent)
+      : null;
+  const periodEnd =
+    initial !== null && lease.start_date !== null
+      ? initialPeriodEnd(lease.start_date, initial)
       : null;
   const security =
     deposits.state === "shown"
@@ -476,6 +564,15 @@ export function LeaseDetail({
       {lt(language, "from_to", dayText(from), dayText(to))}
     </span>
   );
+  /** The period of a linked Lease (design v81 "Renewal of"), once it is read. */
+  const linkedPeriod = (id: string) => {
+    const other = linked[id];
+    return other === undefined ? undefined : (
+      <span className="ui-num">
+        {dayText(other.start_date)} – {dayText(other.end_date)}
+      </span>
+    );
+  };
 
   // Letters opens "#/leases/terminate:<id>"; once the dialog is done a reload shows the Lease.
   function leaveTerminateAddress() {
@@ -552,26 +649,153 @@ export function LeaseDetail({
     ];
   }
 
+  if (view === "history") {
+    const name = lt(language, "title", leaseNo(lease));
+    return (
+      <RecordViewPage
+        language={language}
+        parent="leases"
+        parentDetail={leaseId}
+        recordName={name}
+        title={rvt(language, "history_title", name)}
+      >
+        {historyIncomplete && (
+          <p className="ui-small ui-muted">
+            {lt(language, "history_incomplete")}
+          </p>
+        )}
+        {history.length === 0 ? (
+          <p className="ui-muted">{lt(language, "h_none")}</p>
+        ) : (
+          <ol className="ui-timeline">
+            {history.map((event) => (
+              <li key={event.event_id}>
+                <HistoryStep event={event} language={language} />
+              </li>
+            ))}
+          </ol>
+        )}
+      </RecordViewPage>
+    );
+  }
+
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">
-              {lt(language, "title", lease.unit_number)}
-            </h2>
-            <LeaseChip kind={kind} language={language} />
-          </div>
-          <p>
+      <PageHeader
+        actions={
+          <>
+            {lease.status === "DRAFTED" && lease.can_sign && (
+              <button
+                className="ui-btn primary"
+                onClick={() => {
+                  open("sign");
+                }}
+                type="button"
+              >
+                <Icon name="lease" />
+                {lt(language, "sign")}
+              </button>
+            )}
+            {lease.status === "DRAFTED" && lease.can_edit && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  open("edit");
+                }}
+                type="button"
+              >
+                <Icon name="pen" />
+                {lt(language, "edit_draft")}
+              </button>
+            )}
+            {lease.status === "DRAFTED" && lease.can_edit && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  open("cancel");
+                }}
+                type="button"
+              >
+                <Icon name="x" />
+                {lt(language, "cancel_draft")}
+              </button>
+            )}
+            {lease.status === "DRAFTED" && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  open("print");
+                }}
+                type="button"
+              >
+                <Icon name="print" />
+                {lt(language, "lp_button")}
+              </button>
+            )}
+            {signed && lease.can_renew && successorId === null && (
+              <a
+                className="ui-btn"
+                href={hashForPage("leases", `renew:${lease.lease_id}`)}
+              >
+                <Icon name="pen" />
+                {lt(language, "renew")}
+              </a>
+            )}
+            {mayTerminate && (
+              <>
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    setDraft(terminateDraft(null));
+                    open("terminate");
+                  }}
+                  type="button"
+                >
+                  <Icon name="x" />
+                  {lt(language, "terminate")}
+                </button>
+                <RightNote>{lt(language, "mgr_only")}</RightNote>
+              </>
+            )}
+            {/* A renewal continues the earlier Lease's Occupancies, and a move-in is recorded
+                from the Start Date, so neither shows the button. */}
+            {signed &&
+              lease.can_move_in &&
+              !movedIn &&
+              lease.actual_termination_date === null &&
+              lease.predecessor_lease_id === null &&
+              lease.start_date !== null &&
+              lease.start_date <= today && (
+                <button
+                  className="ui-btn primary"
+                  onClick={() => {
+                    open("movein");
+                  }}
+                  type="button"
+                >
+                  <Icon name="home" />
+                  {lt(language, "record_move_in")}
+                </button>
+              )}
+            {stepOf(lease, today, successorId !== null) !== null && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage("moveout", lease.lease_id)}
+              >
+                <Icon name="moveout" />
+                {lt(language, "open_moveout")}
+              </a>
+            )}
+          </>
+        }
+        back={back}
+        badge={<LeaseChip kind={kind} language={language} />}
+        numeric
+        summary={
+          <>
             {lease.primary_tenant_name} ·{" "}
             <span className="ui-num">
-              {lt(
-                language,
-                "from_to",
-                dayText(lease.start_date),
-                dayText(lease.end_date),
-              )}
+              {dayText(lease.start_date)} – {dayText(lease.end_date)}
             </span>
             {rent !== null && (
               <>
@@ -581,107 +805,10 @@ export function LeaseDetail({
                 </span>
               </>
             )}
-          </p>
-        </div>
-        <div className="ui-actions">
-          {lease.status === "DRAFTED" && lease.can_sign && (
-            <button
-              className="ui-btn primary"
-              onClick={() => {
-                open("sign");
-              }}
-              type="button"
-            >
-              <Icon name="lease" />
-              {lt(language, "sign")}
-            </button>
-          )}
-          {lease.status === "DRAFTED" && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                open("print");
-              }}
-              type="button"
-            >
-              <Icon name="print" />
-              {lt(language, "lp_button")}
-            </button>
-          )}
-          {lease.status === "DRAFTED" && lease.can_edit && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                open("edit");
-              }}
-              type="button"
-            >
-              {lt(language, "edit_draft")}
-            </button>
-          )}
-          {lease.status === "DRAFTED" && lease.can_edit && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                open("cancel");
-              }}
-              type="button"
-            >
-              {lt(language, "cancel_draft")}
-            </button>
-          )}
-          {signed && lease.can_renew && successorId === null && (
-            <a
-              className="ui-btn"
-              href={hashForPage("leases", `renew:${lease.lease_id}`)}
-            >
-              {lt(language, "renew")}
-            </a>
-          )}
-          {mayTerminate && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setDraft(terminateDraft(null));
-                open("terminate");
-              }}
-              type="button"
-            >
-              {lt(language, "terminate")}
-              <span className="ui-badge">{lt(language, "manager")}</span>
-            </button>
-          )}
-          {/* A renewal continues the earlier Lease's Occupancies, and a move-in is recorded
-              from the Start Date, so neither shows the button. */}
-          {signed &&
-            lease.can_move_in &&
-            !movedIn &&
-            lease.actual_termination_date === null &&
-            lease.predecessor_lease_id === null &&
-            lease.start_date !== null &&
-            lease.start_date <= today && (
-              <button
-                className="ui-btn primary"
-                onClick={() => {
-                  open("movein");
-                }}
-                type="button"
-              >
-                <Icon name="home" />
-                {lt(language, "record_move_in")}
-              </button>
-            )}
-          {stepOf(lease, today, successorId !== null) !== null && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("moveout", lease.lease_id)}
-            >
-              <Icon name="moveout" />
-              {lt(language, "open_moveout")}
-            </a>
-          )}
-        </div>
-      </div>
+          </>
+        }
+        title={lt(language, "title", leaseNo(lease))}
+      />
       {failure}
       {warning !== null && (
         <div className="ui-notice warn" role="alert">
@@ -726,169 +853,198 @@ export function LeaseDetail({
           <p>{lt(language, "renewed_banner")}</p>
         </div>
       )}
-      <div className="ui-split">
-        <div className="ui-stack">
-          <section aria-labelledby="lease-facts" className="ui-card">
-            <h2 id="lease-facts">{lt(language, "details")}</h2>
-            <Kv
-              rows={[
-                [
-                  lt(language, "unit"),
-                  may("units.read") ? (
-                    <a
-                      className="ui-no ui-num"
-                      href={hashForPage("units", lease.unit_id)}
-                    >
-                      {lease.unit_number}
-                    </a>
-                  ) : (
-                    lease.unit_number
-                  ),
-                ],
-                [
-                  lt(language, "primary"),
-                  customerLink(
-                    lease.primary_tenant_id,
-                    lease.primary_tenant_name,
-                  ),
-                ],
-                [
-                  lt(language, "start"),
-                  <span className="ui-num ui-nowrap">
-                    {dayText(lease.start_date)}
-                  </span>,
-                ],
-                [
-                  lt(language, "end"),
-                  <span>
-                    <span className="ui-num ui-nowrap">
-                      {dayText(lease.end_date)}
-                    </span>
-                    {lease.actual_termination_date !== null && (
-                      <span className="ui-sub2 warn">
-                        {lt(
-                          language,
-                          "ended_on",
-                          dayText(lease.actual_termination_date),
-                        )}
+      <DetailLayout
+        main={
+          <>
+            <section aria-labelledby="lease-facts" className="ui-card">
+              <h2 id="lease-facts">{lt(language, "details")}</h2>
+              <FactList
+                facts={[
+                  {
+                    key: "unit",
+                    label: lt(language, "unit"),
+                    value: may("units.read") ? (
+                      <a
+                        className="ui-no ui-num"
+                        href={hashForPage("units", lease.unit_id)}
+                      >
+                        {lease.unit_number}
+                      </a>
+                    ) : (
+                      <span className="ui-num">{lease.unit_number}</span>
+                    ),
+                  },
+                  {
+                    key: "primary",
+                    label: lt(language, "primary"),
+                    value: customerLink(
+                      lease.primary_tenant_id,
+                      lease.primary_tenant_name,
+                    ),
+                  },
+                  {
+                    key: "start",
+                    label: lt(language, "start"),
+                    value: (
+                      <span className="ui-num ui-nowrap">
+                        {dayText(lease.start_date)}
                       </span>
-                    )}
-                  </span>,
-                ],
-                [
-                  lt(language, "rent"),
-                  rent === null ? (
-                    <span className="ui-muted">
-                      {lt(language, "not_recorded")}
-                    </span>
-                  ) : (
+                    ),
+                  },
+                  {
+                    key: "end",
+                    label: lt(language, "end"),
+                    value: (
+                      <span className="ui-num ui-nowrap">
+                        {dayText(lease.end_date)}
+                      </span>
+                    ),
+                    note:
+                      lease.actual_termination_date !== null ? (
+                        <span className="ui-sub2 warn">
+                          {lt(
+                            language,
+                            "ended_on",
+                            dayText(lease.actual_termination_date),
+                          )}
+                        </span>
+                      </span>
+                      <span className="ui-small">
+                        {lt(language, "in_pending")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : lease.occupancies.length === 0 ? (
+                <p className="ui-muted">
+                  {lease.planned_occupant_customer_ids.length > 0
+                    ? lt(
+                        language,
+                        "planned",
+                        lease.planned_occupant_customer_ids.length,
+                      )
+                    : lt(language, "no_movein_yet")}
+                </p>
+              ) : (
+                <ul className="ui-plain">
+                  {lease.occupancies.map((occupancy) => (
+                    <li className="ui-line" key={occupancy.occupancy_id}>
+                      {customerLink(
+                        occupancy.customer_id,
+                        occupancy.customer_name,
+                      ) : undefined,
+                  },
+                  {
+                    key: "rent",
+                    label: lt(language, "rent"),
+                    value:
+                      rent === null ? (
+                        <span className="ui-muted">
+                          {lt(language, "not_recorded")}
+                        </span>
+                      ) : (
+                        <span className="ui-num">{usdFromCents(rent)}</span>
+                      ),
+                    note:
+                      rent !== null && signed
+                        ? lt(language, "rent_fixed")
+                        : undefined,
+                  },
+                  {
+                    key: "signed",
+                    label: lt(language, "signed_on"),
+                    value:
+                      lease.signed_at === null ? (
+                        <span className="ui-muted">
+                          {lt(language, "not_signed")}
+                        </span>
+                      ) : (
+                        <span className="ui-num ui-nowrap">
+                          {momentText(lease.signed_at)}
+                        </span>
+                      ),
+                  },
+                  ...(lease.predecessor_lease_id !== null
+                    ? [
+                        {
+                          key: "renewal_of",
+                          label: lt(language, "renewal_of"),
+                          value: (
+                            <a
+                              className="ui-no ui-num"
+                              href={hashForPage(
+                                "leases",
+                                lease.predecessor_lease_id,
+                              )}
+                            >
+                              {leaseNo(
+                                linked[lease.predecessor_lease_id] ?? lease,
+                              )}
+                            </a>
+                          ),
+                          note: linkedPeriod(lease.predecessor_lease_id),
+                        },
+                      ]
+                    : []),
+                  ...(successorId !== null
+                    ? [
+                        {
+                          key: "renewed_by",
+                          label: lt(language, "renewed_by"),
+                          value: (
+                            <a
+                              className="ui-no ui-num"
+                              href={hashForPage("leases", successorId)}
+                            >
+                              {leaseNo(linked[successorId] ?? lease)}
+                            </a>
+                          ),
+                          note: linkedPeriod(successorId),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+              {signed && (
+                <p className="ui-small ui-muted">{lt(language, "end_note")}</p>
+              )}
+            </section>
+            <section aria-labelledby="lease-signers" className="ui-card">
+              <h2 id="lease-signers">{lt(language, "signers")}</h2>
+              <ul className="ui-plain">
+                {lease.signers.map((signer) => (
+                  <li className="ui-line" key={signer.signer_id}>
                     <span>
-                      <span className="ui-num">{usdFromCents(rent)}</span>
-                      {signed && (
+                      {customerLink(signer.customer_id, signer.customer_name)}
+                      {signer.is_primary_tenant && (
                         <span className="ui-sub2">
-                          {lt(language, "rent_fixed")}
+                          {lt(language, "primary_tag")}
                         </span>
                       )}
                     </span>
-                  ),
-                ],
-                [
-                  lt(language, "signed_on"),
-                  lease.signed_at === null ? (
-                    <span className="ui-muted">
-                      {lt(language, "not_signed")}
-                    </span>
-                  ) : (
-                    <span className="ui-num ui-nowrap">
-                      {momentText(lease.signed_at)}
-                    </span>
-                  ),
-                ],
-                ...(lease.predecessor_lease_id !== null
-                  ? ([
-                      [
-                        lt(language, "renewal_of"),
-                        <a
-                          className="ui-no"
-                          href={hashForPage(
-                            "leases",
-                            lease.predecessor_lease_id,
-                          )}
-                        >
-                          {lt(language, "title", lease.unit_number)}
-                        </a>,
-                      ],
-                    ] as [string, ReactNode][])
-                  : []),
-                ...(successorId !== null
-                  ? ([
-                      [
-                        lt(language, "renewed_by"),
-                        <a
-                          className="ui-no"
-                          href={hashForPage("leases", successorId)}
-                        >
-                          {lt(language, "title", lease.unit_number)}
-                        </a>,
-                      ],
-                    ] as [string, ReactNode][])
-                  : []),
-              ]}
-            />
-            {signed && (
-              <p className="ui-small ui-muted">{lt(language, "end_note")}</p>
-            )}
-          </section>
-          <section aria-labelledby="lease-signers" className="ui-card">
-            <h2 id="lease-signers">{lt(language, "signers")}</h2>
-            <ul className="ui-plain">
-              {lease.signers.map((signer) => (
-                <li className="ui-line" key={signer.signer_id}>
-                  <span>
-                    {customerLink(signer.customer_id, signer.customer_name)}
-                    {signer.is_primary_tenant && (
-                      <span className="ui-sub2">
-                        {lt(language, "primary_tag")}
-                      </span>
-                    )}
-                  </span>
-                  {signer.signed_at !== null ? (
-                    <Chip icon="check" tone="ok">
-                      {lt(
-                        language,
-                        "signed_at",
-                        dayText(todayInPhnomPenh(new Date(signer.signed_at))),
-                      )}
-                    </Chip>
-                  ) : lease.status === "DRAFTED" ? (
-                    <Chip tone="warn">{lt(language, "to_sign")}</Chip>
-                  ) : lease.signed_at !== null ? (
-                    <Chip icon="check" tone="ok">
-                      {lt(language, "signed")}
-                    </Chip>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            <p className="ui-small ui-muted">
-              {lt(language, "signers_note")}{" "}
-              {lease.status === "DRAFTED" && lt(language, "signers_draft")}
-            </p>
-          </section>
-          {/* Parking Step 4: the vehicle takes the Occupants card; the people card stays
-              behind PEOPLE_MOVE_IN. */}
-          {!PEOPLE_MOVE_IN && (
-            <VehicleCard
-              customerLink={customerLink}
-              language={language}
-              lease={lease}
-              mayChange={mayChangeVehicle}
-              onChange={() => {
-                open("vehicle");
-              }}
-            />
-          )}
-          {PEOPLE_MOVE_IN && (
+                    {signer.signed_at !== null ? (
+                      <Chip icon="check" tone="ok">
+                        {lt(
+                          language,
+                          "signed_at",
+                          dayText(todayInPhnomPenh(new Date(signer.signed_at))),
+                        )}
+                      </Chip>
+                    ) : lease.status === "DRAFTED" ? (
+                      <Chip tone="warn">{lt(language, "to_sign")}</Chip>
+                    ) : lease.signed_at !== null ? (
+                      <Chip icon="check" tone="ok">
+                        {lt(language, "signed")}
+                      </Chip>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <p className="ui-small ui-muted">
+                {lt(language, "signers_note")}{" "}
+                {lease.status === "DRAFTED" && lt(language, "signers_draft")}
+              </p>
+            </section>
             <section aria-labelledby="lease-occupants" className="ui-card">
               <div className="ui-chead">
                 <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
@@ -990,265 +1146,302 @@ export function LeaseDetail({
                 {lt(language, "occupants_note")}
               </p>
             </section>
-          )}
-          <section aria-labelledby="lease-rent" className="ui-card">
-            <h2 id="lease-rent">{lt(language, "rent_t")}</h2>
-            {initial !== null &&
-              rent !== null &&
-              lease.status !== "CANCELLED" && (
-                <Kv
-                  rows={[
-                    [
-                      lt(language, "initial_rent"),
-                      <span>
-                        <span className="ui-num">
-                          {initial.days === initial.daysInMonth
-                            ? lt(language, "full_month", usdFromCents(rent))
-                            : lt(
-                                language,
-                                "prorated",
-                                usdFromCents(rent),
-                                initial.days,
-                                initial.daysInMonth,
-                                usdFromCents(initial.firstPart),
-                              )}
-                        </span>
-                        {initial.nextMonth > 0 && (
-                          <span className="ui-sub2 ui-num">
-                            {lt(
-                              language,
-                              "plus_next",
-                              usdFromCents(initial.nextMonth),
+            <section aria-labelledby="lease-rent" className="ui-card">
+              <h2 id="lease-rent">{lt(language, "rent_t")}</h2>
+              {/* Design v81: one label column (Initial Rent, Period, Due date, Then,
+                  Services) with the worked-out figures as notes under the values. */}
+              <Kv
+                rows={[
+                  ...(initial !== null &&
+                  rent !== null &&
+                  lease.status !== "CANCELLED"
+                    ? ([
+                        [
+                          lt(language, "initial_rent"),
+                          <span>
+                            <b className="ui-num">
+                              {usdFromCents(initial.total)}
+                            </b>
+                            <span className="ui-sub2 ui-num">
+                              {initial.days === initial.daysInMonth
+                                ? lt(language, "full_month", usdFromCents(rent))
+                                : lt(
+                                    language,
+                                    "prorated",
+                                    usdFromCents(rent),
+                                    initial.days,
+                                    initial.daysInMonth,
+                                    usdFromCents(initial.firstPart),
+                                  )}
+                            </span>
+                            {initial.nextMonth > 0 && (
+                              <span className="ui-sub2 ui-num">
+                                {lt(
+                                  language,
+                                  "plus_next",
+                                  usdFromCents(initial.nextMonth),
+                                )}
+                              </span>
                             )}
-                          </span>
-                        )}
-                        <b className="ui-sub2 ui-num">
-                          {dueChanged
-                            ? lt(
+                          </span>,
+                        ],
+                        [
+                          lt(language, "period"),
+                          <span className="ui-num">
+                            {dayText(lease.start_date)} – {dayText(periodEnd)}
+                          </span>,
+                        ],
+                        [
+                          lt(language, "due_t"),
+                          dueChanged ? (
+                            <span className="ui-num">
+                              {lt(
                                 language,
                                 "initial_total_changed",
                                 usdFromCents(initial.total),
-                              )
-                            : lt(
-                                language,
-                                "initial_total",
-                                usdFromCents(initial.total),
-                                dayText(initial.due),
                               )}
-                        </b>
-                        {!dueChanged && (
-                          <span className="ui-sub2">
-                            {lt(language, "initial_due_note")}
-                          </span>
-                        )}
-                      </span>,
-                    ],
-                  ]}
-                />
-              )}
-            <p className="ui-small">
-              <b>{lt(language, "then")}:</b> {lt(language, "recurring")}
-            </p>
-            <h3>{lt(language, "services")}</h3>
-            {lease.service_terms.length === 0 ? (
-              <p className="ui-muted">{lt(language, "no_services")}</p>
-            ) : (
-              <ul className="ui-plain">
-                {lease.service_terms.map((term) => (
-                  <li className="ui-line" key={term.term_id}>
-                    {term.service_name}
-                    <span className="ui-small">
-                      {term.applicable_through === null
-                        ? lt(
-                            language,
-                            "from_date",
-                            dayText(term.applicable_from),
-                          )
-                        : period(term.applicable_from, term.applicable_through)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="ui-small ui-muted">{lt(language, "services_note")}</p>
-          </section>
-        </div>
-        <div className="ui-stack">
-          {signed &&
-            lease.end_date !== null &&
-            today <= lease.end_date &&
-            may("leases.sign") && (
-              // DL-214: a one-time Telegram QR for the people on the Lease.
-              <TelegramQrCard
-                key={`tg:${lease.lease_id}`}
-                language={language}
-                propertyId={propertyId}
-                stay={{ lease_id: lease.lease_id }}
-              />
-            )}
-          <section aria-labelledby="lease-deposits" className="ui-card">
-            <h2 id="lease-deposits">{lt(language, "deposits")}</h2>
-            {deposits.state === "hidden" && (
-              <p className="ui-muted">{lt(language, "deposits_hidden")}</p>
-            )}
-            {deposits.state === "failed" && (
-              <p className="ui-muted">{lt(language, "deposits_failed")}</p>
-            )}
-            {deposits.state === "shown" && (
-              <>
-                {mayReceiveDeposit && (
-                  <div className="ui-actions">
-                    <button
-                      className="ui-btn primary"
-                      onClick={() => {
-                        open("deposit");
-                      }}
-                      type="button"
-                    >
-                      <Icon name="plus" small />
-                      {lt(language, "rd_button")}
-                    </button>
-                  </div>
-                )}
-                <h3>{lt(language, "dep_sec")}</h3>
-                {security === null && depositDraft && preview !== "shown" ? (
-                  <p className="ui-muted" role="status">
-                    {lt(
-                      language,
-                      preview === "reading"
-                        ? "dep_term_reading"
-                        : "dep_term_failed",
-                    )}
-                  </p>
-                ) : security === null &&
-                  depositDraft &&
-                  draftDeposit !== null ? (
-                  <>
-                    <p>
-                      {lt(language, "dep_term", usdFromCents(draftDeposit))}
-                    </p>
-                    {held !== null && (
-                      <p className="ui-muted">
-                        {held.received >= draftDeposit
-                          ? lt(language, "dep_term_paid")
-                          : lt(
-                              language,
-                              "dep_term_booking",
-                              usdFromCents(held.received),
-                              usdFromCents(draftDeposit - held.received),
-                            )}
-                      </p>
-                    )}
-                  </>
-                ) : security === null ? (
-                  <p className="ui-muted">{lt(language, "no_deposit")}</p>
-                ) : (
-                  <Kv rows={depositRows(security)} />
-                )}
-                {pet !== null ? (
-                  <>
-                    <h3>{lt(language, "dep_pet")}</h3>
-                    <Kv rows={depositRows(pet)} />
-                  </>
-                ) : lease.pet_deposit_required ? (
-                  <>
-                    <h3>{lt(language, "dep_pet")}</h3>
-                    <p className="ui-muted">
-                      {petPlanned === undefined
-                        ? lt(
-                            language,
-                            "pet_approved",
-                            lease.pet_description ?? "",
-                          )
-                        : petPlanned === null
-                          ? lt(
-                              language,
-                              "dep_pet_none",
-                              lease.pet_description ?? "",
-                            )
-                          : lt(
-                              language,
-                              "dep_pet_term",
-                              lease.pet_description ?? "",
-                              usdFromCents(petPlanned),
-                            )}
-                    </p>
-                  </>
-                ) : PET_DEPOSIT ? (
-                  // Parking Step 5: no pet on Parking, so no line about one.
-                  <p className="ui-muted">{lt(language, "no_pet")}</p>
-                ) : null}
-              </>
-            )}
-            <div className="ui-notice">
-              <Icon name="info" />
-              <p>{lt(language, "dep_note")}</p>
-            </div>
-          </section>
-          {lease.status === "TERMINATED" && (
-            <section aria-labelledby="lease-termination" className="ui-card">
-              <h2 id="lease-termination">{lt(language, "term_t")}</h2>
-              <Kv
-                rows={[
+                            </span>
+                          ) : (
+                            <span>
+                              <b className="ui-num">{dayText(initial.due)}</b>
+                              <span className="ui-sub2">
+                                {lt(language, "initial_due_note")}
+                              </span>
+                            </span>
+                          ),
+                        ],
+                      ] as [string, ReactNode][])
+                    : []),
+                  [lt(language, "then"), <b>{lt(language, "recurring")}</b>],
                   [
-                    lt(language, "term_date"),
-                    <span className="ui-num ui-nowrap">
-                      {dayText(lease.actual_termination_date)}
-                    </span>,
-                  ],
-                  [
-                    lt(language, "term_recorded"),
-                    <span className="ui-num ui-nowrap">
-                      {momentText(lease.terminated_at)}
-                    </span>,
-                  ],
-                  [
-                    lt(language, "moveout_on"),
-                    stillIn || movedOut === undefined ? (
-                      <span className="ui-muted">
-                        {stillIn
-                          ? lt(language, "still_in")
-                          : lt(language, "no_movein_yet")}
+                    lt(language, "services"),
+                    <div>
+                      {lease.service_terms.length === 0 ? (
+                        <span className="ui-muted">
+                          {lt(language, "no_services")}
+                        </span>
+                      ) : (
+                        <ul className="ui-plain">
+                          {lease.service_terms.map((term) => (
+                            <li className="ui-line" key={term.term_id}>
+                              {term.service_name}
+                              <span className="ui-small">
+                                {term.applicable_through === null
+                                  ? lt(
+                                      language,
+                                      "from_date",
+                                      dayText(term.applicable_from),
+                                    )
+                                  : period(
+                                      term.applicable_from,
+                                      term.applicable_through,
+                                    )}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <span className="ui-sub2">
+                        {lt(language, "services_note")}
                       </span>
-                    ) : (
-                      <span className="ui-num ui-nowrap">
-                        {dayText(movedOut)}
-                      </span>
-                    ),
+                    </div>,
                   ],
                 ]}
               />
             </section>
-          )}
-          <section aria-labelledby="lease-history" className="ui-card">
-            <h2 id="lease-history">{lt(language, "history")}</h2>
-            {historyIncomplete && (
-              <p className="ui-small ui-muted">
-                {lt(language, "history_incomplete")}
-              </p>
-            )}
-            {history.length === 0 ? (
-              <p className="ui-muted">{lt(language, "h_none")}</p>
-            ) : (
-              <ol className="ui-timeline">
-                {history.map((event) => (
-                  <li key={event.event_id}>
-                    <div>
-                      {eventName(language, event.event_kind)}
-                      {event.reason.trim() !== "" && (
-                        <span className="ui-sub2">{event.reason}</span>
-                      )}
-                      <small className="ui-num">
-                        {momentText(event.occurred_at)}
-                      </small>
+          </>
+        }
+        side={
+          <>
+            <section aria-labelledby="lease-deposits" className="ui-card">
+              <h2 id="lease-deposits">{lt(language, "deposits")}</h2>
+              {deposits.state === "hidden" && (
+                <p className="ui-muted">{lt(language, "deposits_hidden")}</p>
+              )}
+              {deposits.state === "failed" && (
+                <p className="ui-muted">{lt(language, "deposits_failed")}</p>
+              )}
+              {deposits.state === "shown" && (
+                <>
+                  {mayReceiveDeposit && (
+                    <div className="ui-actions">
+                      <button
+                        className="ui-btn primary"
+                        onClick={() => {
+                          open("deposit");
+                        }}
+                        type="button"
+                      >
+                        <Icon name="plus" small />
+                        {lt(language, "rd_button")}
+                      </button>
                     </div>
-                  </li>
-                ))}
-              </ol>
+                  )}
+                  <h3>{lt(language, "dep_sec")}</h3>
+                  {security === null && depositDraft && preview !== "shown" ? (
+                    <p className="ui-muted" role="status">
+                      {lt(
+                        language,
+                        preview === "reading"
+                          ? "dep_term_reading"
+                          : "dep_term_failed",
+                      )}
+                    </p>
+                  ) : security === null &&
+                    depositDraft &&
+                    draftDeposit !== null ? (
+                    <>
+                      <p>
+                        {lt(language, "dep_term", usdFromCents(draftDeposit))}
+                      </p>
+                      {held !== null && (
+                        <p className="ui-muted">
+                          {held.received >= draftDeposit
+                            ? lt(language, "dep_term_paid")
+                            : lt(
+                                language,
+                                "dep_term_booking",
+                                usdFromCents(held.received),
+                                usdFromCents(draftDeposit - held.received),
+                              )}
+                        </p>
+                      )}
+                    </>
+                  ) : security === null ? (
+                    <p className="ui-muted">{lt(language, "no_deposit")}</p>
+                  ) : (
+                    <Kv rows={depositRows(security)} />
+                  )}
+                  {pet !== null ? (
+                    <>
+                      <h3>{lt(language, "dep_pet")}</h3>
+                      <Kv rows={depositRows(pet)} />
+                    </>
+                  ) : lease.pet_deposit_required ? (
+                    <>
+                      <h3>{lt(language, "dep_pet")}</h3>
+                      <p className="ui-muted">
+                        {petPlanned === undefined
+                          ? lt(
+                              language,
+                              "pet_approved",
+                              lease.pet_description ?? "",
+                            )
+                          : petPlanned === null
+                            ? lt(
+                                language,
+                                "dep_pet_none",
+                                lease.pet_description ?? "",
+                              )
+                            : lt(
+                                language,
+                                "dep_pet_term",
+                                lease.pet_description ?? "",
+                                usdFromCents(petPlanned),
+                              )}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="ui-muted">{lt(language, "no_pet")}</p>
+                  )}
+                </>
+              )}
+              <p className="ui-small ui-muted">{lt(language, "dep_note")}</p>
+            </section>
+            <LeaseCustomerCard
+              actorId={actorId}
+              customerApi={customerApi}
+              kind={kind}
+              language={language}
+              lease={lease}
+              ledgerApi={ledgerApi}
+              mayCustomers={may("customers.read")}
+              mayInvoices={may("invoices.read")}
+              propertyId={propertyId}
+              reports={reports}
+            />
+            {signed &&
+              lease.end_date !== null &&
+              today <= lease.end_date &&
+              may("leases.sign") && (
+                // DL-214: a one-time Telegram QR for the people on the Lease.
+                <TelegramQrCard
+                  key={`tg:${lease.lease_id}`}
+                  language={language}
+                  propertyId={propertyId}
+                  stay={{ lease_id: lease.lease_id }}
+                />
+              )}
+            {lease.status === "TERMINATED" && (
+              <section aria-labelledby="lease-termination" className="ui-card">
+                <h2 id="lease-termination">{lt(language, "term_t")}</h2>
+                <Kv
+                  rows={[
+                    [
+                      lt(language, "term_date"),
+                      <span className="ui-num ui-nowrap">
+                        {dayText(lease.actual_termination_date)}
+                      </span>,
+                    ],
+                    [
+                      lt(language, "term_recorded"),
+                      <span className="ui-num ui-nowrap">
+                        {momentText(lease.terminated_at)}
+                      </span>,
+                    ],
+                    [
+                      lt(language, "moveout_on"),
+                      stillIn || movedOut === undefined ? (
+                        <span className="ui-muted">
+                          {stillIn
+                            ? lt(language, "still_in")
+                            : lt(language, "no_movein_yet")}
+                        </span>
+                      ) : (
+                        <span className="ui-num ui-nowrap">
+                          {dayText(movedOut)}
+                        </span>
+                      ),
+                    ],
+                  ]}
+                />
+              </section>
             )}
-          </section>
-        </div>
-      </div>
+            <section aria-labelledby="lease-history" className="ui-card">
+              <h2 id="lease-history">{lt(language, "history")}</h2>
+              {historyIncomplete && (
+                <p className="ui-small ui-muted">
+                  {lt(language, "history_incomplete")}
+                </p>
+              )}
+              <LatestNote
+                language={language}
+                shown={Math.min(5, history.length)}
+                total={history.length}
+              />
+              {history.length === 0 ? (
+                <p className="ui-muted">{lt(language, "h_none")}</p>
+              ) : (
+                <ol className="ui-timeline">
+                  {latestOf(history).map((event) => (
+                    <li key={event.event_id}>
+                      <HistoryStep event={event} language={language} />
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {/* Owner 08/11/2026: the History button is always there, with its count. */}
+              {history.length > 0 && (
+                <ViewAllButton
+                  label={rvt(language, "history_btn")}
+                  total={history.length}
+                  view="history"
+                />
+              )}
+            </section>
+          </>
+        }
+      />
       {dialog === "sign" && lease.status === "DRAFTED" && (
         <SignDialog
           language={language}

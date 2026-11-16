@@ -119,7 +119,7 @@ describe("Receive Security Deposit (V1-060 B6; V1-061 one request)", () => {
       within(dialog).getByRole("button", { name: "Save the deposit" }),
     );
     expect(
-      within(dialog).getByText("Type the bank reference for this method."),
+      within(dialog).getByText("Enter the bank reference for this method."),
     ).toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText("Bank or ABA reference"), {
       target: { value: "ABA 123456" },
@@ -175,7 +175,7 @@ describe("Receive Security Deposit (V1-060 B6; V1-061 one request)", () => {
     );
     expect(
       within(dialog).getByText(
-        "Type the money received, more than 0 and not more than what is still to receive.",
+        "Enter the money received, more than 0 and not more than what is still to receive.",
       ),
     ).toBeInTheDocument();
     expect(all.receive).not.toHaveBeenCalled();

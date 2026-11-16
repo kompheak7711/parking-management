@@ -60,6 +60,7 @@ class TelegramStore(Protocol):
     def receipts_queue(self) -> int: ...
 
     def rent_notices_run(self) -> int: ...
+    def short_stay_notices_run(self) -> int: ...
 
     def warnings_queue(self) -> int: ...
 
@@ -111,6 +112,10 @@ class TelegramStore(Protocol):
     def staff_who(self, user: int) -> dict[str, Any]: ...
 
     def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]: ...
+
+    def staff_task_tap(
+        self, inbound_id: str, user: int, chat: int, data: str
+    ) -> dict[str, Any]: ...
 
     def staff_check(self, user: int, scan: dict[str, Any], at: str) -> dict[str, Any]: ...
 
@@ -340,6 +345,12 @@ class PostgresTelegramStore:
         """Record today's unpaid-Rent notice of each linked Lease, from 09:00 (DL-237)."""
         return int(self._one("SELECT app.rent_notices_run(%s, %s)", self._property, self._actor))
 
+    def short_stay_notices_run(self) -> int:
+        """Record the guest notices that are due and send them to the booking's links (DL-238)."""
+        return int(
+            self._one("SELECT app.short_stay_notices_run(%s, %s)", self._property, self._actor)
+        )
+
     def warnings_queue(self) -> int:
         """Queue the warnings staff recorded in the last days, once per linked tenant (DL-217)."""
         return int(
@@ -515,6 +526,18 @@ class PostgresTelegramStore:
             "SELECT app.telegram_staff_who(%s, %s, %s, %s)",
             self._property,
             user,
+            self._staff(),
+            self._actor,
+        )
+
+    def staff_task_tap(self, inbound_id: str, user: int, chat: int, data: str) -> dict[str, Any]:
+        return self._staff_dict(
+            "SELECT app.telegram_staff_task_tap(%s, %s, %s, %s, %s, %s, %s)",
+            self._property,
+            inbound_id,
+            user,
+            chat,
+            data,
             self._staff(),
             self._actor,
         )

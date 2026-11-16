@@ -81,7 +81,7 @@ def test_linking_asks_for_the_own_phone_then_name_then_unit() -> None:
     linked = say(store, "305")
     assert codes(linked) == [("tenant.linked", "tenant.menu")]
     assert linked[0]["details"] == {"name": "Dara Kim", "unit": "305"}
-    assert codes(say(store, "Problem report")) == [("tenant.report_kind", "tenant.report_kind")]
+    assert codes(say(store, "Report a problem")) == [("tenant.report_kind", "tenant.report_kind")]
     assert codes(say(store, "FAQ")) == [("tenant.faq_none", "tenant.menu")]
     assert codes(say(store, "anything")) == [("tenant.menu", "tenant.menu")]
 
@@ -331,7 +331,7 @@ def test_my_requests_lists_each_report_with_its_state_and_visit() -> None:
     assert details["list"] == (
         "UP260009 · Water: Visit planned\n"
         "   Visit: 06/11/2026 at 09:00, Sok Khen\n"
-        "BP260003 · Electricity: joined to BP260001\n"
+        "BP260003 · Electricity: merged with BP260001\n"
         "UP260002 · Door: Closed"
     )
     text = render("tenant.my_requests", "en", details)

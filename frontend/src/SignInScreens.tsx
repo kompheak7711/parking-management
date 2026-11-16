@@ -345,12 +345,9 @@ export function SignInScreens({
     heldResult.current = null;
     setEnrollment(null);
     setRecoveryCodes(null);
-    const displayName = result.session?.display_name?.trim() ?? "";
-    const name = displayName.length > 0 ? displayName : username.trim();
-    const message = [
-      t("au_welcome", name),
-      ...noteKeys.map((key) => t(key)),
-    ].join(" ");
+    // UI v81 round 2 (owner 07/11/2026): no "Signed in as" banner; the menu shows the name.
+    // Only a note that needs the person's attention (a password that expires soon) is passed on.
+    const message = noteKeys.map((key) => t(key)).join(" ");
     onAuthenticated(result, message);
   }
 

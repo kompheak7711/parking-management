@@ -4,6 +4,7 @@
 // meter need utility_meters.manage (Owner and Manager by default) and are hidden from others.
 // A meter is never deleted.
 
+import { BackLink } from "../shell/backNav";
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import {
@@ -13,7 +14,9 @@ import {
 import { DateInput, isDay } from "../shell/DateInput";
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
+import { PageHeader, RightNote } from "../shell/layouts";
 import { hashForPage } from "../shell/navigation";
+import { PageHead } from "../shell/pageHead";
 import { Chip, CountCard, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitResource } from "../unitClient";
@@ -99,15 +102,17 @@ function ManagerButton({
   primary?: boolean;
 }) {
   return (
-    <button
-      className={`ui-btn${primary ? " primary" : ""}`}
-      onClick={onClick}
-      type="button"
-    >
-      <Icon name={icon} />
-      {label}
-      <span className="ui-badge">{utt(language, "manager")}</span>
-    </button>
+    <>
+      <button
+        className={`ui-btn${primary ? " primary" : ""}`}
+        onClick={onClick}
+        type="button"
+      >
+        <Icon name={icon} />
+        {label}
+      </button>
+      <RightNote>{utt(language, "manager_only")}</RightNote>
+    </>
   );
 }
 
@@ -158,6 +163,18 @@ export function MetersTab({
       }) ||
       left.utility_type.localeCompare(right.utility_type),
   );
+  // One group for each Unit, in the order of its first (most urgent) meter.
+  const groups: { unitId: string; meters: UtilityMeter[] }[] = [];
+  for (const meter of rows) {
+    const group = groups.find((item) => item.unitId === meter.unit_id);
+    if (group === undefined)
+      groups.push({ unitId: meter.unit_id, meters: [meter] });
+    else group.meters.push(meter);
+  }
+  const TYPES_SHOWN: readonly UtilityType[] =
+    card === "ELECTRICITY" || card === "WATER"
+      ? [card]
+      : ["ELECTRICITY", "WATER"];
   const cardName = (value: Card) =>
     value === "ELECTRICITY"
       ? utt(language, "mt_c_el")
@@ -167,20 +184,24 @@ export function MetersTab({
 
   return (
     <>
-      {canManage && (
-        <div className="ui-actions">
-          <ManagerButton
-            icon="plus"
-            label={utt(language, "mt_add")}
-            language={language}
-            onClick={() => {
-              setToast(null);
-              setAdding(true);
-            }}
-            primary
-          />
-        </div>
-      )}
+      {/* UI v81 Utilities batch: Add meter is the page's button, on the right of the head. */}
+      <PageHead
+        actions={
+          canManage ? (
+            <ManagerButton
+              icon="plus"
+              label={utt(language, "mt_add")}
+              language={language}
+              onClick={() => {
+                setToast(null);
+                setAdding(true);
+              }}
+              primary
+            />
+          ) : undefined
+        }
+        sub={<p>{utt(language, "sub")}</p>}
+      />
       <div className="ui-filters">
         <UnitBox
           customers={data.customers}
@@ -218,11 +239,11 @@ export function MetersTab({
             icon={type === "ELECTRICITY" ? "zap" : "drop"}
             key={type}
             label={cardName(type)}
-            note={`${utt(language, "mt_c_inuse")} · ${
+            note={
               broken(type) > 0
                 ? utt(language, "mt_c_nbroken", broken(type))
-                : utt(language, "mt_c_allok")
-            }`}
+                : undefined
+            }
             onPress={() => {
               setCard(card === type ? "all" : type);
             }}
@@ -237,7 +258,7 @@ export function MetersTab({
           note={
             broken() > 0
               ? utt(language, "mt_c_before", dayText(nextReadingDay(today)))
-              : utt(language, "mt_c_none")
+              : undefined
           }
           onPress={() => {
             setCard(card === "broken" ? "all" : "broken");
@@ -267,78 +288,81 @@ export function MetersTab({
         ) : (
           <>
             <div className="ui-tablewrap">
-              <table className="ui-table ui-meters">
+              {/* Operations fix 6 (owner 13/11/2026): one row for each Unit, its Electricity
+                  and Water meters side by side; Units with a broken meter come first. */}
+              <table className="ui-table ui-meters ui-meters-unit">
                 <thead>
                   <tr>
-                    <th scope="col">{utt(language, "meter_kind")}</th>
-                    <th className="ui-wide" scope="col">
-                      {utt(language, "col_type")}
-                    </th>
-                    <th className="ui-wide" scope="col">
-                      {utt(language, "mt_installed")}
-                    </th>
-                    <th className="r" scope="col">
-                      {utt(language, "mt_last")}
-                    </th>
-                    <th scope="col">{utt(language, "col_status")}</th>
+                    <th scope="col">{utt(language, "unit")}</th>
+                    {TYPES_SHOWN.map((type) => (
+                      <th key={type} scope="col">
+                        <Icon
+                          name={type === "ELECTRICITY" ? "zap" : "drop"}
+                          small
+                        />{" "}
+                        {utt(language, type)}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((meter) => {
-                    const owner = units.get(meter.unit_id);
-                    const last = data.readings.get(meter.id)?.[0];
+                  {groups.map(({ unitId, meters }) => {
+                    const owner = units.get(unitId);
                     const who =
                       owner === undefined
                         ? null
                         : whoText(language, data, owner);
                     return (
-                      <tr key={meter.id}>
+                      <tr key={unitId}>
                         <td>
-                          <a
-                            className="ui-no ui-num"
-                            href={hashForPage("utilities", `meter:${meter.id}`)}
-                          >
-                            {meter.serial_number}
-                          </a>
-                          <span className="ui-sub2">
-                            {owner?.unit_number ?? "—"}
-                            {who !== null && !who.muted && ` · ${who.text}`}
-                          </span>
-                        </td>
-                        <td className="ui-wide">
-                          <Icon
-                            name={
-                              meter.utility_type === "ELECTRICITY"
-                                ? "zap"
-                                : "drop"
-                            }
-                            small
-                          />{" "}
-                          {utt(language, meter.utility_type)}
-                        </td>
-                        <td className="ui-num ui-wide">
-                          {dayText(meter.installed_date)}
-                        </td>
-                        <td className="r">
-                          {last === undefined ? (
-                            "—"
-                          ) : (
-                            <>
-                              <span className="ui-num">
-                                {amountText(last.effective_value)}{" "}
-                                {measurementUnitLabel(
-                                  meter.measurement_unit_code,
-                                )}
-                              </span>
-                              <span className="ui-sub2 ui-num">
-                                {dayText(last.reading_date)}
-                              </span>
-                            </>
+                          <b className="ui-num">{owner?.unit_number ?? "—"}</b>
+                          {who !== null && !who.muted && (
+                            <span className="ui-sub2">{who.text}</span>
                           )}
                         </td>
-                        <td>
-                          <StateChip language={language} meter={meter} />
-                        </td>
+                        {TYPES_SHOWN.map((type) => {
+                          const cell = meters.filter(
+                            (meter) => meter.utility_type === type,
+                          );
+                          return (
+                            <td key={type}>
+                              {cell.length === 0 ? (
+                                <span className="ui-muted">—</span>
+                              ) : (
+                                cell.map((meter) => {
+                                  const last = data.readings.get(meter.id)?.[0];
+                                  return (
+                                    <div
+                                      className="ui-metercell"
+                                      key={meter.id}
+                                    >
+                                      <a
+                                        className="ui-no ui-num"
+                                        href={hashForPage(
+                                          "utilities",
+                                          `meter:${meter.id}`,
+                                        )}
+                                      >
+                                        {meter.serial_number}
+                                      </a>
+                                      <span className="ui-sub2 ui-num">
+                                        {last === undefined
+                                          ? "—"
+                                          : `${amountText(last.effective_value)} ${measurementUnitLabel(
+                                              meter.measurement_unit_code,
+                                            )} · ${dayText(last.reading_date)}`}
+                                      </span>
+                                      <StateChip
+                                        language={language}
+                                        meter={meter}
+                                      />
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}
@@ -409,10 +433,12 @@ export function MeterDetail({
     null,
   );
   const back = (
-    <a className="ui-crumb" href={hashForPage("utilities", "meters")}>
-      <Icon name="back" small />
-      {utt(language, "back")}
-    </a>
+    <BackLink
+      language={language}
+      parent="utilities"
+      parentDetail="meters"
+      parentLabel={utt(language, "tab_meters")}
+    />
   );
   const meter = data.meters.find((item) => item.id === meterId);
   if (meter === undefined) {
@@ -488,36 +514,44 @@ export function MeterDetail({
 
   return (
     <>
-      {back}
-      <div className="ui-hrow">
-        <h2 className="ui-num">{meter.serial_number}</h2>
-        <StateChip language={language} meter={meter} />
-        {canManage && meter.current && readings.length > 0 && (
-          <div className="ui-actions">
-            {meterState(meter) === "working" && (
+      {/* UI v81 Utilities batch: the shared record head, Back on top, the serial as the
+          page's heading and the buttons on the right with "Manager only" beside them. */}
+      <PageHeader
+        actions={
+          canManage &&
+          meter.current &&
+          readings.length > 0 && (
+            <>
+              {meterState(meter) === "working" && (
+                <ManagerButton
+                  icon="alert"
+                  label={utt(language, "mt_report")}
+                  language={language}
+                  onClick={() => {
+                    setToast(null);
+                    setReporting(true);
+                  }}
+                />
+              )}
               <ManagerButton
-                icon="alert"
-                label={utt(language, "mt_report")}
+                icon="swap"
+                label={utt(language, "replace")}
                 language={language}
                 onClick={() => {
                   setToast(null);
-                  setReporting(true);
+                  setReplacing(true);
                 }}
+                primary={meterState(meter) === "broken"}
               />
-            )}
-            <ManagerButton
-              icon="swap"
-              label={utt(language, "replace")}
-              language={language}
-              onClick={() => {
-                setToast(null);
-                setReplacing(true);
-              }}
-              primary={meterState(meter) === "broken"}
-            />
-          </div>
-        )}
-      </div>
+            </>
+          )
+        }
+        back={back}
+        badge={<StateChip language={language} meter={meter} />}
+        numeric
+        summary={`${utt(language, meter.utility_type)} · ${owner?.unit_number ?? "—"}${who !== null && !who.muted ? ` · ${who.text}` : ""}`}
+        title={meter.serial_number}
+      />
       {toast !== null && (
         <div className={`ui-notice ${toast.ok ? "ok" : "warn"}`} role="status">
           <Icon name={toast.ok ? "check" : "alert"} />
@@ -772,13 +806,21 @@ export function AddMeterDialog({
 }) {
   const [unitId, setUnitId] = useState(preset?.unitId ?? "");
   const [type, setType] = useState<UtilityType>(preset?.type ?? "ELECTRICITY");
-  const [serial, setSerial] = useState("");
+  // Owner 16/11/2026: the serial fills itself from Type and the year of Installed on with the next
+  // free number (MEL2026001) until the staff member types their own.
+  const [typedSerial, setTypedSerial] = useState<string | null>(null);
   const [installed, setInstalled] = useState(today);
   const [first, setFirst] = useState("0");
   const [problems, setProblems] = useState<Record<string, string>>({});
   const { busy, outcome, send } = useMeterSend();
   const unit = data.units.find((item) => item.unit_id === unitId);
-  const code = `${type === "ELECTRICITY" ? "EL" : "WA"}-${unit?.unit_number ?? data.units[0]?.unit_number ?? "U101"}`;
+  const serial =
+    typedSerial ??
+    autoSerial(
+      type,
+      installed,
+      data.meters.map((meter) => meter.serial_number),
+    );
   // V1-060 B6 (owner, 28/10/2026): only Units without a current meter of this kind are offered;
   // a broken meter is changed with Replace meter on its page.
   const hasMeter = (id: string, kind: UtilityType) =>
@@ -926,27 +968,6 @@ export function AddMeterDialog({
         <FieldError id="add-unit" text={problems.unit} />
       </div>
       <div className="ui-field">
-        <label htmlFor="add-serial">
-          {utt(language, "mt_serial")}
-          <span className="req">{utt(language, "required")}</span>
-        </label>
-        <input
-          aria-describedby={
-            problems.serial === undefined ? undefined : "add-serial-err"
-          }
-          aria-invalid={problems.serial !== undefined}
-          autoComplete="off"
-          id="add-serial"
-          maxLength={200}
-          onChange={(event) => {
-            setSerial(event.currentTarget.value);
-          }}
-          value={serial}
-        />
-        <p className="help">{utt(language, "mt_serial_help", code)}</p>
-        <FieldError id="add-serial" text={problems.serial} />
-      </div>
-      <div className="ui-field">
         <label htmlFor="add-day">{utt(language, "mt_installed")}</label>
         <DateInput
           language={language}
@@ -962,6 +983,27 @@ export function AddMeterDialog({
           value={installed}
         />
         <FieldError id="add-day" text={problems.installed} />
+      </div>
+      <div className="ui-field">
+        <label htmlFor="add-serial">
+          {utt(language, "mt_serial")}
+          <span className="req">{utt(language, "required")}</span>
+        </label>
+        <input
+          aria-describedby={
+            problems.serial === undefined ? undefined : "add-serial-err"
+          }
+          aria-invalid={problems.serial !== undefined}
+          autoComplete="off"
+          id="add-serial"
+          maxLength={200}
+          onChange={(event) => {
+            setTypedSerial(event.currentTarget.value);
+          }}
+          value={serial}
+        />
+        <p className="help">{utt(language, "mt_serial_help")}</p>
+        <FieldError id="add-serial" text={problems.serial} />
       </div>
       <div className="ui-field">
         <label htmlFor="add-first">{utt(language, "mt_new_start")}</label>
@@ -1353,4 +1395,30 @@ function ReplaceMeterDialog({
       </div>
     </Dialog>
   );
+}
+
+/**
+ * Owner 16/11/2026: the serial the Add meter dialog fills in: "M" for meter, "EL" or "WA", the
+ * year it was installed and a running number of three digits or more, one after the highest
+ * serial of that kind and year already saved (the first electricity meter of 2026 is
+ * "MEL2026001"). Empty while the day is not a whole day yet. The server still refuses a serial in
+ * use, so two people adding a meter at once cannot both keep the same one.
+ */
+export function autoSerial(
+  type: UtilityType,
+  installed: string,
+  taken: readonly string[],
+): string {
+  if (!isDay(installed)) return "";
+  const prefix = `M${type === "ELECTRICITY" ? "EL" : "WA"}${installed.slice(0, 4)}`;
+  let last = 0;
+  for (const serial of taken) {
+    const match = /^(\d{3,})$/.exec(
+      serial.toUpperCase().startsWith(prefix)
+        ? serial.slice(prefix.length)
+        : "",
+    );
+    if (match !== null) last = Math.max(last, Number(match[1]));
+  }
+  return `${prefix}${String(last + 1).padStart(3, "0")}`;
 }

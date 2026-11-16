@@ -37,6 +37,7 @@ import {
   type SupplierBill,
 } from "./spendingClient";
 import { type LedgerTextKey, lt } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export type SpendingTab = "exreqs" | "expenses" | "bills";
 
@@ -648,7 +649,7 @@ function RequestsTab({
   const days = formData?.report_days ?? 3;
   const rows = list.data;
   const header = (
-    <div className="ui-head">
+    <PageHead>
       <div>
         <h2>{lt(language, "er_t")}</h2>
         <p>{lt(language, "er_sub")}</p>
@@ -662,10 +663,12 @@ function RequestsTab({
               setDone(null);
               setDialog({ kind: "new", urgent: true });
             }}
+            aria-label={lt(language, "er_new_rep")}
+            title={lt(language, "er_new_rep")}
             type="button"
           >
             <Icon name="plus" small />
-            {lt(language, "er_new_rep")}
+            {lt(language, "b_report")}
           </button>
           <button
             className="ui-btn primary"
@@ -674,14 +677,16 @@ function RequestsTab({
               setDone(null);
               setDialog({ kind: "new", urgent: false });
             }}
+            aria-label={lt(language, "er_new")}
+            title={lt(language, "er_new")}
             type="button"
           >
             <Icon name="plus" small />
-            {lt(language, "er_new")}
+            {lt(language, "b_request")}
           </button>
         </span>
       )}
-    </div>
+    </PageHead>
   );
   const abilities: string[] = [];
   if (rights.overLimit) abilities.push(lt(language, "er_can_all"));
@@ -812,7 +817,6 @@ function RequestsTab({
           <CountCard
             icon="customers"
             label={lt(language, "er_c_owed")}
-            note={lt(language, "er_c_owed_s")}
             onPress={() => {
               choose("owed");
             }}
@@ -1063,10 +1067,12 @@ function RequestDetailView({
   return (
     <>
       {back}
-      <div className="ui-head">
+      <PageHead>
         <div>
           <div className="ui-hrow">
-            <h2 className="ui-num">{data.request_number}</h2>
+            <h2 className="ui-num" data-record-title="">
+              {data.request_number}
+            </h2>
             <StatusChip language={language} request={data} />
             <MoreChips language={language} request={data} />
           </div>
@@ -1097,7 +1103,7 @@ function RequestDetailView({
               ))}
           </span>
         )}
-      </div>
+      </PageHead>
       <div className="ui-split">
         <section aria-labelledby="er-details" className="ui-card">
           <h2 id="er-details">{lt(language, "er_details")}</h2>
@@ -1851,29 +1857,32 @@ function ExpensesTab({
   return (
     <>
       <Done text={done} />
-      <section aria-labelledby="ex-title" className="ui-card pad0">
-        <div className="ui-head pad">
-          <div>
-            <h2 id="ex-title">{lt(language, "x_title")}</h2>
-            <p>{lt(language, "x_sub")}</p>
-          </div>
-          {rights.pay && (
-            <span className="ui-actions">
-              <button
-                className="ui-btn primary"
-                disabled={formData === null}
-                onClick={() => {
-                  setDone(null);
-                  setOpen(true);
-                }}
-                type="button"
-              >
-                <Icon name="plus" small />
-                {lt(language, "x_new")}
-              </button>
-            </span>
-          )}
+      {/* Owner 16/11/2026: the button sits under the tab row like the other Ledger tabs. */}
+      <PageHead active={active}>
+        <div>
+          <h2 id="ex-title">{lt(language, "x_title")}</h2>
+          <p>{lt(language, "x_sub")}</p>
         </div>
+        {rights.pay && (
+          <span className="ui-actions">
+            <button
+              className="ui-btn primary"
+              disabled={formData === null}
+              onClick={() => {
+                setDone(null);
+                setOpen(true);
+              }}
+              aria-label={lt(language, "x_new")}
+              title={lt(language, "x_new")}
+              type="button"
+            >
+              <Icon name="plus" small />
+              {lt(language, "b_expense")}
+            </button>
+          </span>
+        )}
+      </PageHead>
+      <section aria-labelledby="ex-title" className="ui-card pad0">
         {rows === null ? (
           <div className="pad">
             <Waiting
@@ -2602,7 +2611,7 @@ function BillsTab({
   const lateDays = (bill: SupplierBill) =>
     today === "" ? 0 : daysBetween(bill.due_date, today);
   const header = (
-    <div className="ui-head">
+    <PageHead>
       <div>
         <h2 id="sb-title">{lt(language, "sb_t")}</h2>
         <p>{lt(language, "sb_sub")}</p>
@@ -2616,14 +2625,16 @@ function BillsTab({
               setDone(null);
               setAdding(true);
             }}
+            aria-label={lt(language, "sb_new")}
+            title={lt(language, "sb_new")}
             type="button"
           >
             <Icon name="plus" small />
-            {lt(language, "sb_new")}
+            {lt(language, "b_bill")}
           </button>
         </span>
       )}
-    </div>
+    </PageHead>
   );
   const reloadAll = (text: string) => {
     setAdding(false);
@@ -2743,7 +2754,6 @@ function BillsTab({
           <CountCard
             icon="check"
             label={lt(language, "sb_c_paid")}
-            note={lt(language, "sb_c_paid_s")}
             onPress={() => {
               setFilter(filter === "paid" ? "open" : "paid");
             }}

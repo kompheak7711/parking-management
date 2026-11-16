@@ -1143,6 +1143,8 @@ export interface OpenOptions {
   register?: RegisterCall;
   exportFile?: ReportApi["exportFile"];
   download?: ReportApi["download"];
+  /** The Short stays weekly report's reads (Leasing thread, owner 13/11/2026). */
+  stayApi?: ReportsPageProps["stayApi"];
 }
 
 /** Opens the Reports page on an address, with the fixture pages unless a test gives others. */
@@ -1183,6 +1185,7 @@ export function openReports(options: OpenOptions = {}) {
     propertyId: PROPERTY,
     today: TODAY,
     units,
+    ...(options.stayApi === undefined ? {} : { stayApi: options.stayApi }),
   };
   const view = render(<ReportsPage {...props} />);
   return {

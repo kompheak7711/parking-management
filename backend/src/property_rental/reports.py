@@ -56,6 +56,8 @@ HOME_SECTIONS: Final[Mapping[str, tuple[str, ...]]] = {
     "readings": ("utility.read",),
     "letters": ("rent_nonpayment.read",),
     "settlements": ("final_settlements.prepare", "financial.approve"),
+    # UI v81 round 4 (owner 08/11/2026): the Birthdays card (migration 20270710_361).
+    "birthdays": ("customers.read",),
 }
 TODO_GROUPS: Final = ("overdue", "today", "this_week", "later")
 # Items dated by when a wait began (not a due day) stay under Today while they wait; the screen
@@ -135,6 +137,8 @@ REPORT_READS: Final = frozenset(
         "report_income_facts",
         "report_payment_facts",
         "report_utility_facts",
+        "customer_birthdays",
+        "customer_paid_on_time",
         *REGISTER_READS.values(),
     }
 )
@@ -300,6 +304,29 @@ class ReportService:
             raise ReportForbiddenError("Home page needs a read right")
         page = self.store.home_page(report_actor(actor), property_id, sections)
         return {**group_home_page(page), "sections": list(sections)}
+
+    def birthdays(self, actor: AuthenticatedActor, property_id: UUID) -> dict[str, object]:
+        """UI v81 round 4: the coming birthdays of the Primary Tenants and Occupants of active
+        Leases, for the Customers page (migration 20270710_361). Never the year or the age."""
+        if not has_capability(actor, "customers.read", property_id):
+            raise ReportForbiddenError("Birthdays need customers.read")
+        rows = self.store.rows("customer_birthdays", report_actor(actor), property_id)
+        return {"items": rows}
+
+    def customer_paid_on_time(
+        self, actor: AuthenticatedActor, property_id: UUID, customer_id: UUID
+    ) -> dict[str, object]:
+        """UI v81 pilot: the Lease page's Customer card, "Paid on time" for one Customer
+        (migration 20270711_362): the Customer's Invoices of the last 12 months whose Due Date
+        has passed, and how many were paid in full by the end of that date."""
+        if not has_capability(actor, "invoices.read", property_id):
+            raise ReportForbiddenError("Paid on time needs invoices.read")
+        rows = self.store.rows(
+            "customer_paid_on_time", report_actor(actor), property_id, (customer_id,)
+        )
+        if len(rows) != 1:
+            raise ReportUnavailableError("Paid on time answer is invalid")
+        return {"on_time": rows[0]["on_time"], "invoice_count": rows[0]["invoice_count"]}
 
     def totals(
         self,

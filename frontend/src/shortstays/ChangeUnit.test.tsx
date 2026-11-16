@@ -363,7 +363,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     const change = await card();
     fireEvent.click(change.getByRole("button", { name: "Change Unit" }));
     expect(
-      await change.findByText("The free Units could not be read just now."),
+      await change.findByText("The free Units could not be loaded."),
     ).toBeInTheDocument();
     fireEvent.click(change.getByRole("button", { name: "Try again" }));
     expect(
@@ -488,7 +488,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
       special.getByRole("button", { name: "Give the special discount" }),
     );
     expect(
-      special.getByText("Type an amount less than the stay and a reason."),
+      special.getByText("Enter an amount less than the stay and a reason."),
     ).toBeInTheDocument();
     fireEvent.change(special.getByLabelText(/Discount/), {
       target: { value: "10" },

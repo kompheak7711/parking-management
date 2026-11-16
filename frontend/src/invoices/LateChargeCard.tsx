@@ -525,8 +525,13 @@ export function LateChargeSection({
           >
             {!mayFix && <Icon name="lock" small />}
             {ivt(language, "lt_fix")}
-            <span className="ui-badge">{ivt(language, "mgr_badge")}</span>
           </button>
+        )}
+        {/* UI v81 (owner 07/11): the role is a hint beside the button, never inside it. */}
+        {card.now > card.paid && !byDeposit && (
+          <span className="ui-small ui-muted ui-role-hint">
+            {ivt(language, "mgr_badge")}
+          </span>
         )}
       </div>
       {byDeposit && card.now > card.paid && (

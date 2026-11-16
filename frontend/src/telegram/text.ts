@@ -4,16 +4,17 @@
 // earlier rounds. Khmer marked "new" is not in the mock-up and needs the native check.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
-  failed: ["This could not be read just now.", "មិនអាចអានបានទេឥឡូវនេះ។"],
+  failed: ["This could not be loaded. Try again.", "មិនអាចអានបានទេឥឡូវនេះ។"],
   retry_read: ["Try again", "សាកម្តងទៀត"],
   no_property: ["Choose a Property first.", "សូមជ្រើសអចលនទ្រព្យជាមុន។"],
   cancel: ["Cancel", "បោះបង់"],
   hours: ["{0} hours", "{0} ម៉ោង"],
   e_403: [
-    "You do not have the right to do this.",
+    "You do not have permission to do this.",
     // new
     "អ្នកមិនមានសិទ្ធិធ្វើការនេះទេ។",
   ],
@@ -51,27 +52,27 @@ const TEXT = {
     "មិនទាន់មានអ្នកជួលភ្ជាប់នៅឡើយទេ។",
   ],
   tries_t: [
-    "Link tries that did not match: {0} Telegram accounts.",
+    "Failed link attempts: {0} Telegram accounts.",
     "ការភ្ជាប់មិនត្រូវ៖ គណនីតេឡេក្រាម {0}។",
   ],
-  tries_h: ["Link tries that did not match", "ការភ្ជាប់ដែលមិនត្រូវ"],
+  tries_h: ["Failed link attempts", "ការភ្ជាប់ដែលមិនត្រូវ"],
   c_phone: ["Phone", "ទូរស័ព្ទ"],
   c_name: ["Name typed", "ឈ្មោះដែលវាយ"],
   c_unit_t: ["Unit typed", "បន្ទប់ដែលវាយ"],
-  c_tries: ["Tries", "ចំនួនដង"],
+  c_tries: ["Attempts", "ចំនួនដង"],
   c_last: [
-    "Last try",
+    "Last attempt",
     // new
     "ការព្យាយាមចុងក្រោយ",
   ],
   blocked: ["Blocked until {0}", "បិទរហូតដល់ {0}"],
-  left: ["{0} tries left", "នៅសល់ {0} ដង"],
+  left: ["{0} attempts left", "នៅសល់ {0} ដង"],
   tries_n: [
-    "The bot never says which part was wrong. {0} failed tries block linking for {1}. Tries are kept 90 days.",
+    "The bot never says which detail was wrong. After {0} failed attempts, linking is blocked for {1}. Attempts are kept for 90 days.",
     "បូតមិនដែលប្រាប់ថាផ្នែកណាខុសទេ។ ខុស {0} ដង បិទការភ្ជាប់ {1}។ រក្សាទុកការព្យាយាម ៩០ ថ្ងៃ។",
   ],
   none_tries: [
-    "No link tries failed in the last 24 hours.",
+    "No failed link attempts in the last 24 hours.",
     // new
     "គ្មានការភ្ជាប់មិនត្រូវក្នុង ២៤ ម៉ោងចុងក្រោយទេ។",
   ],
@@ -82,7 +83,7 @@ const TEXT = {
     "{0} ថ្ងៃចុងក្រោយ។",
   ],
   c_end: ["Ended on", "បញ្ចប់នៅ"],
-  c_why: ["Why", "ហេតុអ្វី"],
+  c_why: ["Reason", "ហេតុអ្វី"],
   end_LEASE_ENDED: ["The Lease ended", "កិច្ចសន្យាបានបញ្ចប់"],
   end_STAY_ENDED: [
     "The stay ended",
@@ -116,7 +117,7 @@ const TEXT = {
     "ឧទាហរណ៍៖ បាត់ទូរស័ព្ទ ឬមនុស្សខុស",
   ],
   rm_n: [
-    "It stops working in the bot within a minute. The link stays in the history.",
+    "The link stops working in the bot within a minute. It stays in the history.",
     "វាឈប់ដំណើរការក្នុងបូតក្នុងមួយនាទី។ ការភ្ជាប់នៅក្នុងប្រវត្តិ។",
   ],
   rm_done: ["Link of {0} removed.", "បានដកការភ្ជាប់របស់ {0}។"],
@@ -126,36 +127,36 @@ const TEXT = {
     "សូមវាយមូលហេតុ។",
   ],
   e_rm_409: [
-    "This link has already ended. The list is read again.",
+    "This link has already ended. The list has been refreshed.",
     // new
     "ការភ្ជាប់នេះបានបញ្ចប់រួចហើយ។ បញ្ជីត្រូវបានអានម្ដងទៀត។",
   ],
   // Telegram health
   h_sub: [
-    "Is everything going in and out? The app pulls from the relay every minute.",
+    "Check that bot messages are being received and sent. The app checks for new messages every minute.",
     "តើអ្វីៗចូល និងចេញបានល្អទេ? កម្មវិធីទាញពីរ៉េឡេរៀងរាល់មួយនាទី។",
   ],
   h_lock: [
     "Only the Owner and the Manager see this page.",
     "មានតែម្ចាស់ និងអ្នកគ្រប់គ្រងទេដែលឃើញទំព័រនេះ។",
   ],
-  k_pull: ["Last relay pull", "ការទាញពីរ៉េឡេចុងក្រោយ"],
-  k_pull_s: ["{0} items saved", "បានរក្សាទុក {0}"],
+  k_pull: ["Last message check", "ការទាញពីរ៉េឡេចុងក្រោយ"],
+  k_pull_s: ["{0} received", "បានរក្សាទុក {0}"],
   k_pull_none: [
-    "Not pulled yet",
+    "Not checked yet",
     // new
     "មិនទាន់បានទាញទេ",
   ],
   k_wait: ["Waiting to send", "រង់ចាំផ្ញើ"],
   k_wait_s: [
-    "The app tries again by itself",
+    "The app retries automatically",
     "កម្មវិធីព្យាយាមម្ដងទៀតដោយខ្លួនឯង",
   ],
   k_bad: ["Failed to send", "ផ្ញើមិនបាន"],
   k_bad_s: ["Failing for 12 hours or more", "មិនបានជាង ១២ ម៉ោង"],
-  k_old: ["Not pulled after 7 days", "មិនបានទាញក្រោយ ៧ ថ្ងៃ"],
+  k_old: ["Not received within 7 days", "មិនបានទាញក្រោយ ៧ ថ្ងៃ"],
   k_old_s: [
-    "The relay deletes them; check if above 0",
+    "These messages are deleted and lost. This should be 0.",
     "រ៉េឡេលុបវាចោល សូមពិនិត្យបើលើសពី ០",
   ],
   last_err: ["Last error at {0}: {1}.", "កំហុសចុងក្រោយនៅ {0}៖ {1}។"],
@@ -164,7 +165,7 @@ const TEXT = {
   c_in: ["Last message in", "សារចូលចុងក្រោយ"],
   c_out: ["Last message out", "សារចេញចុងក្រោយ"],
   c_state: [
-    "State",
+    "Status",
     // new
     "ស្ថានភាព",
   ],
@@ -191,7 +192,7 @@ const TEXT = {
     "បូតបុគ្គលិក",
   ],
   keys: [
-    "No bot keys are ever shown here. The keys are files on the office computer, never in the app, a log or a screenshot.",
+    "Bot access keys are never shown here. They are kept only on the office computer, never in the app, logs or screenshots.",
     "មិនដែលបង្ហាញសោបូតនៅទីនេះទេ។ សោជាឯកសារនៅលើកុំព្យូទ័រការិយាល័យ មិនដែលនៅក្នុងកម្មវិធី កំណត់ហេតុ ឬរូបថតអេក្រង់ឡើយ។",
   ],
   outbox: ["Messages not sent yet", "សារមិនទាន់ផ្ញើ"],
@@ -204,7 +205,7 @@ const TEXT = {
     "ការជជែកតេឡេក្រាម",
   ],
   st_WAITING: [
-    "The app tries again",
+    "Retrying",
     // new
     "កម្មវិធីកំពុងព្យាយាមម្ដងទៀត",
   ],
@@ -225,12 +226,12 @@ const TEXT = {
     "{0}៖ សាររង់ចាំផ្ញើម្ដងទៀត។ វានឹងចេញក្នុងមួយនាទី។",
   ],
   e_retry_409: [
-    "This message was already sent again, or it is still being tried. The list is read again.",
+    "This message was already resent or is still being sent. The list has been refreshed.",
     // new
     "សារនេះបានផ្ញើម្ដងទៀតរួចហើយ ឬកំពុងព្យាយាមនៅឡើយ។ បញ្ជីត្រូវបានអានម្ដងទៀត។",
   ],
   outbox_n: [
-    "Every message waits in the outbox first, so nothing is lost if Telegram is slow.",
+    "Every message is queued before sending, so nothing is lost if Telegram is slow.",
     "សារនីមួយៗរង់ចាំក្នុងប្រអប់ចេញជាមុន ដូច្នេះគ្មានអ្វីបាត់ទេ បើតេឡេក្រាមយឺត។",
   ],
   none_outbox: [
@@ -252,12 +253,12 @@ const TEXT = {
     "តេឡេក្រាមសុំឱ្យកម្មវិធីផ្ញើយឺតបន្តិច",
   ],
   err_relay_unreachable: [
-    "The relay did not answer; tried again next minute",
+    "The message server did not respond. The app tried again a minute later.",
     "រ៉េឡេមិនឆ្លើយ ហើយបានព្យាយាមម្ដងទៀតនៅនាទីបន្ទាប់",
   ],
-  pulls: ["Last relay pulls", "ការទាញពីរ៉េឡេចុងក្រោយ"],
+  pulls: ["Recent message checks", "ការទាញពីរ៉េឡេចុងក្រោយ"],
   c_at: ["Time", "ម៉ោង"],
-  c_items: ["Items", "ចំនួន"],
+  c_items: ["Received", "ចំនួន"],
   c_res: ["Result", "លទ្ធផល"],
   pull_OK: ["OK", "ល្អ"],
   pull_FAILED: [
@@ -266,7 +267,7 @@ const TEXT = {
     "មិនបាន",
   ],
   none_pulls: [
-    "The app has not pulled from the relay yet.",
+    "The app has not checked for messages yet.",
     // new
     "កម្មវិធីមិនទាន់បានទាញពីរ៉េឡេនៅឡើយទេ។",
   ],
@@ -305,7 +306,7 @@ const TEXT = {
   call_done: ["{0}: saved.", "{0}៖ បានរក្សាទុក។"],
   ans_TELEGRAM: ["Replied by {0}, {1}", "ឆ្លើយដោយ {0}, {1}"],
   ans_PHONE: ["Phoned by {0}, {1}", "ទូរស័ព្ទដោយ {0}, {1}"],
-  e_text: ["Please write this.", "សូមសរសេរ។"],
+  e_text: ["Type a message or note first.", "សូមសរសេរ។"],
   none_waiting: [
     "No message is waiting.",
     // new
@@ -317,7 +318,7 @@ const TEXT = {
     "គ្មានសារដែលបានឆ្លើយក្នុងរយៈពេល ៩០ ថ្ងៃចុងក្រោយទេ។",
   ],
   e_answered: [
-    "Someone already answered this message. The list was read again.",
+    "This message has already been answered. The list has been refreshed.",
     // new
     "មានគេបានឆ្លើយសារនេះរួចហើយ។ បញ្ជីត្រូវបានអានម្ដងទៀត។",
   ],
@@ -351,7 +352,7 @@ const TEXT = {
     "បូតរក្សាកំណែចាស់ រហូតដល់ម្ចាស់អនុម័តកំណែនេះ។",
   ],
   faq_save_ok: ["Save and use", "រក្សាទុក និងប្រើ"],
-  faq_save: ["Send to the Owner", "ផ្ញើទៅម្ចាស់"],
+  faq_save: ["Send for approval", "ផ្ញើទៅម្ចាស់"],
   faq_done_ok: [
     "Question {0}: the bots use the new version.",
     "សំណួរ {0}៖ បូតប្រើកំណែថ្មី។",
@@ -401,7 +402,7 @@ const TEXT = {
     "មានតែម្ចាស់ និងអ្នកគ្រប់គ្រងទេដែលកែសំណួរញឹកញាប់។",
   ],
   e_faq_stale: [
-    "This question changed meanwhile. The list was read again.",
+    "Someone else changed this question. The list has been refreshed.",
     // new
     "សំណួរនេះបានប្ដូររួចហើយ។ បញ្ជីត្រូវបានអានម្ដងទៀត។",
   ],
@@ -415,15 +416,15 @@ const TEXT = {
     "Customers send a request from the Telegram bot. They choose how we contact them: Telegram, email, phone call or SMS, or WhatsApp. A new request from the same phone joins the open one and keeps its place.",
     "អតិថិជនផ្ញើសំណើពី Telegram bot។ ពួកគេជ្រើសរបៀបទាក់ទង៖ Telegram អ៊ីមែល ទូរស័ព្ទ ឬ SMS ឬ WhatsApp។ សំណើថ្មីពីលេខទូរស័ព្ទដដែល ភ្ជាប់ទៅសំណើដែលកំពុងបើក ហើយរក្សាលំដាប់ដដែល។",
   ],
-  vr_title: ["Visit requests", "សំណើមកមើលបន្ទប់"],
+  vr_title: ["Viewing requests", "សំណើមកមើលបន្ទប់"],
   vr_n: ["{0} requests", "សំណើ {0}"],
-  vr_none: ["No visit requests here.", "គ្មានសំណើមកមើលបន្ទប់នៅទីនេះទេ។"],
+  vr_none: ["No viewing requests here.", "គ្មានសំណើមកមើលបន្ទប់នៅទីនេះទេ។"],
   vr_col_req: ["Request", "សំណើ"],
   vr_col_who: ["Customer", "អតិថិជន"],
   vr_col_ch: ["Contact by", "ទាក់ទងតាម"],
   vr_col_wants: ["Wants", "ចង់បាន"],
   vr_col_pref: ["Prefers", "ចូលចិត្ត"],
-  vr_col_note: ["Note from the person", "កំណត់សម្គាល់ពីអ្នកសុំ"],
+  vr_col_note: ["Customer note", "កំណត់សម្គាល់ពីអ្នកសុំ"],
   vr_col_status: ["Status", "ស្ថានភាព"],
   vr_movein: ["move in {0}", "ចូលនៅ {0}"],
   vr_later: ["Later", "ពេលក្រោយ"],
@@ -433,7 +434,7 @@ const TEXT = {
     "មិនទាន់កំណត់ថ្ងៃ",
   ],
   vr_joins: [
-    "joins {0}",
+    "merged with {0}",
     // new
     "ភ្ជាប់ទៅ {0}",
   ],
@@ -444,23 +445,24 @@ const TEXT = {
   part_MORNING: ["Morning", "ព្រឹក"],
   part_AFTERNOON: ["Afternoon", "រសៀល"],
   vst_NEW: ["New", "ថ្មី"],
-  vst_JOINED: ["Joined", "បានភ្ជាប់"],
+  vst_JOINED: ["Merged", "បានភ្ជាប់"],
   // Step 3b (DL-172): working a request, words from the CRM mock-up (owner 28 Oct 2026). All
   // the Khmer below is new and needs the native check.
   vst_CONTACTED: ["Contacted", "បានទាក់ទង"],
-  vst_VISIT_BOOKED: ["Visit booked", "បានកក់ការមកមើល"],
-  vst_VISITED: ["Visited", "បានមកមើល"],
+  vst_VISIT_BOOKED: ["Viewing booked", "បានកក់ការមកមើល"],
+  vst_VISITED: ["Viewing done", "បានមកមើល"],
   vst_NO_SHOW: ["No-show", "មិនបានមក"],
-  vst_CLOSED: ["Not interested", "មិនចាប់អារម្មណ៍"],
+  vst_CLOSED: ["Closed", "មិនចាប់អារម្មណ៍"],
   vst_CANCELLED: ["Cancelled", "បានបោះបង់"],
   vst_SPAM: ["Spam", "សារឥតបានការ"],
-  vst_LATE: ["Late", "យឺត"],
-  vr_c_waiting: ["Waiting now", "កំពុងរង់ចាំ"],
-  vr_c_waiting_s: ["New, nobody took it yet", "ថ្មី មិនទាន់មាននរណាយក"],
-  vr_c_late: ["Late", "យឺត"],
+  vst_LATE: ["Overdue", "យឺត"],
+  // UI v81 round 2: the design's card names (C7, C8).
+  vr_c_waiting: ["Awaiting first contact", "រង់ចាំការទាក់ទងដំបូង"],
+  vr_c_waiting_s: ["New, not yet assigned", "ថ្មី មិនទាន់មាននរណាយក"],
+  vr_c_late: ["Response overdue", "ការឆ្លើយតបហួសពេល"],
   vr_c_late_s: ["Over 2 working hours", "លើស 2 ម៉ោងធ្វើការ"],
-  vr_c_booked: ["Visits booked", "ការមកមើលដែលបានកក់"],
-  vr_c_booked_s: ["Waiting for the visit", "កំពុងរង់ចាំការមកមើល"],
+  vr_c_booked: ["Viewings booked", "ការមកមើលដែលបានកក់"],
+  vr_c_booked_s: ["Upcoming viewings", "កំពុងរង់ចាំការមកមើល"],
   vr_c_mine: ["Mine", "របស់ខ្ញុំ"],
   vr_c_mine_s: ["Open requests you have", "សំណើបើកដែលអ្នកកាន់"],
   vr_showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
@@ -469,24 +471,24 @@ const TEXT = {
   vr_col_staff: ["Staff", "បុគ្គលិក"],
   vr_wait_hm: ["{0} h {1} min", "{0} ម៉ោង {1} នាទី"],
   vr_answered: ["answered", "បានឆ្លើយ"],
-  vr_nobody: ["Nobody yet", "មិនទាន់មាន"],
+  vr_nobody: ["Unassigned", "មិនទាន់មាន"],
   vr_open: ["Open {0}", "បើក {0}"],
-  sbh_title: ["Send by hand today", "ផ្ញើដោយដៃថ្ងៃនេះ"],
+  sbh_title: ["Send manually today", "ផ្ញើដោយដៃថ្ងៃនេះ"],
   sbh_sub: [
-    "These customers do not use Telegram. Send the words on their channel, then tap Mark sent.",
+    "These customers do not use Telegram. Send the message by their chosen contact method, then tap Mark as sent.",
     "អតិថិជនទាំងនេះមិនប្រើ Telegram ទេ។ សូមផ្ញើពាក្យទាំងនេះតាមមធ្យោបាយរបស់ពួកគេ រួចចុច សម្គាល់ថាបានផ្ញើ។",
   ],
-  what_CONFIRMATION: ["Visit confirmation", "ការបញ្ជាក់ការមកមើល"],
-  what_REMINDER: ["Reminder: visit tomorrow", "ការរំលឹក៖ មកមើលថ្ងៃស្អែក"],
+  what_CONFIRMATION: ["Viewing confirmation", "ការបញ្ជាក់ការមកមើល"],
+  what_REMINDER: ["Viewing reminder (tomorrow)", "ការរំលឹក៖ មកមើលថ្ងៃស្អែក"],
   sbh_copy: ["Copy text", "ចម្លងអត្ថបទ"],
   sbh_copied: ["Copied", "បានចម្លង"],
-  sbh_sent: ["Mark sent", "សម្គាល់ថាបានផ្ញើ"],
+  sbh_sent: ["Mark as sent", "សម្គាល់ថាបានផ្ញើ"],
   msg_conf: [
-    "Your visit is booked.\nDate: {0} at {1}\nAddress: {2}\nStaff: {3}\nTo change the time, reply to this message.",
+    "Your viewing is booked.\nDate: {0} at {1}\nAddress: {2}\nStaff: {3}\nTo change the time, reply to this message.",
     "ការមកមើលរបស់អ្នកត្រូវបានកក់។\nថ្ងៃ៖ {0} ម៉ោង {1}\nអាសយដ្ឋាន៖ {2}\nបុគ្គលិក៖ {3}\nបើចង់ប្ដូរម៉ោង សូមឆ្លើយតបសារនេះ។",
   ],
   msg_rem: [
-    "Reminder: your visit to CHETANA Residence is tomorrow, {0} at {1}. See you soon.",
+    "Reminder: your viewing at CHETANA Residence is tomorrow, {0} at {1}. See you soon.",
     "រំលឹក៖ ការមកមើល CHETANA Residence របស់អ្នកគឺនៅថ្ងៃស្អែក {0} ម៉ោង {1}។ ជួបគ្នាឆាប់ៗ។",
   ],
   wd_1: ["Monday", "ថ្ងៃច័ន្ទ"],
@@ -498,27 +500,27 @@ const TEXT = {
   wd_7: ["Sunday", "ថ្ងៃអាទិត្យ"],
   d_phone: ["Phone", "ទូរស័ព្ទ"],
   d_arrived: ["Arrived", "មកដល់"],
-  d_visit: ["Visit", "ការមកមើល"],
+  d_visit: ["Viewing", "ការមកមើល"],
   d_shown_by: ["{0}, shown by {1}", "{0} បង្ហាញដោយ {1}"],
-  d_calls: ["Call tries", "ការហៅ"],
-  d_reason: ["Why it closed", "មូលហេតុបិទ"],
-  d_take: ["Take", "យក"],
+  d_calls: ["Call attempts", "ការហៅ"],
+  d_reason: ["Closing reason", "មូលហេតុបិទ"],
+  d_take: ["Assign to me", "យក"],
   d_has: [
-    "{0} has this request. Only {0} or a Manager can work on it.",
+    "This request is assigned to {0}. Only {0} or a Manager can update it.",
     "{0} កាន់សំណើនេះ។ មានតែ {0} ឬអ្នកគ្រប់គ្រងទេ ដែលអាចធ្វើការលើវា។",
   ],
   d_call: ["Record a call", "កត់ត្រាការហៅ"],
   d_answered: ["Answered", "បានឆ្លើយ"],
   d_no_answer: ["No answer", "មិនឆ្លើយ"],
   d_no_days: ["No-answer days: {0} of 3", "ថ្ងៃមិនឆ្លើយ៖ {0} ក្នុង 3"],
-  d_no_reach: ["Close: Could not reach", "បិទ៖ ទាក់ទងមិនបាន"],
-  d_book: ["Book a visit", "កក់ការមកមើល"],
-  d_move: ["Move the visit", "ប្ដូរការមកមើល"],
+  d_no_reach: ["Close: could not reach", "បិទ៖ ទាក់ទងមិនបាន"],
+  d_book: ["Book a viewing", "កក់ការមកមើល"],
+  d_move: ["Reschedule viewing", "ប្ដូរការមកមើល"],
   d_day: ["Day", "ថ្ងៃ"],
   d_time: ["Time", "ម៉ោង"],
-  d_shows: ["Shows the Unit", "អ្នកបង្ហាញបន្ទប់"],
-  d_book_btn: ["Book visit", "កក់ការមកមើល"],
-  d_move_btn: ["Move visit", "ប្ដូរការមកមើល"],
+  d_shows: ["Shown by", "អ្នកបង្ហាញបន្ទប់"],
+  d_book_btn: ["Book viewing", "កក់ការមកមើល"],
+  d_move_btn: ["Reschedule", "ប្ដូរការមកមើល"],
   d_book_help: [
     "Monday to Saturday, 07:00 to 17:00.",
     "ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។",
@@ -528,21 +530,21 @@ const TEXT = {
     "អតិថិជននឹងទទួលការបញ្ជាក់តាម Telegram និងការរំលឹកនៅម៉ោង 08:00 មួយថ្ងៃមុន។",
   ],
   d_hand_sends: [
-    "The confirmation and the reminder go to Send by hand today.",
+    "The confirmation and the reminder go to Send manually today.",
     "ការបញ្ជាក់ និងការរំលឹក នឹងទៅ ផ្ញើដោយដៃថ្ងៃនេះ។",
   ],
   e_day: [
-    "Choose a day from today, not a Sunday.",
+    "Choose today or a later day, except Sunday.",
     "សូមជ្រើសថ្ងៃចាប់ពីថ្ងៃនេះ មិនមែនថ្ងៃអាទិត្យ។",
   ],
-  d_visited: ["Visited", "បានមកមើល"],
+  d_visited: ["Viewing done", "បានមកមើល"],
   d_no_show: ["No-show", "មិនបានមក"],
   d_close: ["Not interested", "មិនចាប់អារម្មណ៍"],
   d_reason_l: ["Reason", "មូលហេតុ"],
   d_close_btn: ["Close request", "បិទសំណើ"],
   d_cancelled: ["Customer cancelled", "អតិថិជនបានបោះបង់"],
   reason_PRICE: ["Price too high", "តម្លៃខ្ពស់ពេក"],
-  reason_TYPE_NOT_FREE: ["Unit Type not free", "ប្រភេទបន្ទប់មិនទំនេរ"],
+  reason_TYPE_NOT_FREE: ["Unit Type unavailable", "ប្រភេទបន្ទប់មិនទំនេរ"],
   reason_LOCATION: ["Location", "ទីតាំង"],
   reason_FOUND_OTHER: ["Found another place", "រកបានកន្លែងផ្សេង"],
   reason_MOVE_IN_FAR: ["Move-in date too far", "ថ្ងៃចូលនៅឆ្ងាយពេក"],
@@ -552,39 +554,39 @@ const TEXT = {
   d_note_l: ["Note", "កំណត់សម្គាល់"],
   e_note: ["Write a note.", "សូមសរសេរកំណត់សម្គាល់។"],
   d_reopen: ["Reopen", "បើកឡើងវិញ"],
-  d_reopen_l: ["Why reopen", "ហេតុអ្វីបើកឡើងវិញ"],
+  d_reopen_l: ["Reason for reopening", "ហេតុអ្វីបើកឡើងវិញ"],
   d_manager: ["Manager", "អ្នកគ្រប់គ្រង"],
-  d_give: ["Give to", "ផ្ដល់ទៅ"],
-  d_spam: ["Mark Spam", "សម្គាល់ថាជាសារឥតបានការ"],
-  d_spam_l: ["Why Spam", "ហេតុអ្វីជាសារឥតបានការ"],
-  d_hist: ["History (kept, never deleted)", "ប្រវត្តិ (រក្សាទុក មិនលុបទេ)"],
-  h_TAKEN: ["{0} took it", "{0} បានយក"],
-  h_GIVEN: ["Given to {0}", "បានផ្ដល់ទៅ {0}"],
+  d_give: ["Assign to", "ផ្ដល់ទៅ"],
+  d_spam: ["Mark as spam", "សម្គាល់ថាជាសារឥតបានការ"],
+  d_spam_l: ["Reason", "ហេតុអ្វីជាសារឥតបានការ"],
+  d_hist: ["History", "ប្រវត្តិ (រក្សាទុក មិនលុបទេ)"],
+  h_TAKEN: ["Assigned to {0}", "{0} បានយក"],
+  h_GIVEN: ["Assigned to {0}", "បានផ្ដល់ទៅ {0}"],
   h_CALL_yes: ["Call: answered", "ការហៅ៖ បានឆ្លើយ"],
   h_CALL_no: ["Call: no answer", "ការហៅ៖ មិនឆ្លើយ"],
-  h_VISIT_BOOKED: ["Visit booked: {0}", "បានកក់ការមកមើល៖ {0}"],
-  h_VISITED: ["Visited", "បានមកមើល"],
+  h_VISIT_BOOKED: ["Viewing booked: {0}", "បានកក់ការមកមើល៖ {0}"],
+  h_VISITED: ["Viewing done", "បានមកមើល"],
   h_NO_SHOW: ["No-show", "មិនបានមក"],
   h_CLOSED: ["Closed: {0}", "បានបិទ៖ {0}"],
   h_REOPENED: ["Reopened", "បានបើកឡើងវិញ"],
-  h_SPAM: ["Marked Spam", "បានសម្គាល់ថាជាសារឥតបានការ"],
-  h_SENT_BY_HAND: ["Sent by hand: {0}", "បានផ្ញើដោយដៃ៖ {0}"],
+  h_SPAM: ["Marked as spam", "បានសម្គាល់ថាជាសារឥតបានការ"],
+  h_SENT_BY_HAND: ["Sent manually: {0}", "បានផ្ញើដោយដៃ៖ {0}"],
   h_REMINDER_DUE: ["Reminder due", "ដល់ពេលរំលឹក"],
   h_bot: ["The bot sent the message.", "បូតបានផ្ញើសារ។"],
   h_by: ["by {0}", "ដោយ {0}"],
   e_vr_stale: [
-    "This request changed meanwhile. It was read again.",
+    "Someone else changed this request. It has been refreshed.",
     "សំណើនេះបានប្ដូររួចហើយ។ វាត្រូវបានអានម្ដងទៀត។",
   ],
   vr_saved: ["Saved.", "បានរក្សាទុក។"],
   close_dlg: ["Close", "បិទ"],
   // Step 3c (DL-173): Make Reservation, Block, the 12-month removal and this month. New Khmer.
-  vst_RESERVED: ["Became Reservation", "បានក្លាយជាការកក់"],
-  h_RESERVED: ["Became a Reservation", "បានក្លាយជាការកក់"],
-  d_make_res: ["Make Reservation", "បង្កើតការកក់"],
+  vst_RESERVED: ["Reserved", "បានក្លាយជាការកក់"],
+  h_RESERVED: ["Reservation made", "បានក្លាយជាការកក់"],
+  d_make_res: ["New Reservation", "បង្កើតការកក់"],
   d_res_open: ["Open the Reservation", "បើកការកក់"],
   d_block: ["Block Telegram account", "បិទគណនី Telegram"],
-  d_block_l: ["Why block", "ហេតុអ្វីបិទ"],
+  d_block_l: ["Reason", "ហេតុអ្វីបិទ"],
   d_unblock: ["Unblock Telegram account", "បើកគណនី Telegram វិញ"],
   d_blocked: [
     "This Telegram account is blocked. It cannot send requests or messages.",
@@ -597,10 +599,10 @@ const TEXT = {
   m_title: ["This month", "ខែនេះ"],
   m_new: ["New requests", "សំណើថ្មី"],
   m_joined: ["Asked again", "សុំម្ដងទៀត"],
-  m_VISIT_BOOKED: ["Visits booked", "ការមកមើលដែលបានកក់"],
-  m_VISITED: ["Visited", "បានមកមើល"],
+  m_VISIT_BOOKED: ["Viewings booked", "ការមកមើលដែលបានកក់"],
+  m_VISITED: ["Viewings done", "បានមកមើល"],
   m_NO_SHOW: ["No-show", "មិនបានមក"],
-  m_RESERVED: ["Became Reservation", "បានក្លាយជាការកក់"],
+  m_RESERVED: ["Reserved", "បានក្លាយជាការកក់"],
   m_CLOSED: ["Closed", "បានបិទ"],
   m_SPAM: ["Spam", "សារឥតបានការ"],
   m_reasons: ["Why requests closed", "ហេតុអ្វីសំណើត្រូវបានបិទ"],
@@ -610,6 +612,12 @@ const TEXT = {
   src_TELEGRAM: ["Telegram bot", "បូត Telegram"],
   // Invoices on Telegram (DL-211, owner 8 Nov 2026). All Khmer here is new and needs the
   // native check.
+  // Administration review fix 7 (13/11/2026): long lists show the 5 newest first. All new: the
+  // Khmer needs the native check.
+  list_some: ["The {0} newest of {1}.", "{0} ថ្មីបំផុត ក្នុងចំណោម {1}។"],
+  list_all: ["All {0}.", "ទាំង {0}។"],
+  show_all: ["Show all {0}", "បង្ហាញទាំង {0}"],
+  show_fewer: ["Show fewer", "បង្ហាញតិចជាងនេះ"],
   inv_h: ["Invoices on Telegram", "វិក្កយបត្រតាមតេឡេក្រាម"],
   inv_sub: [
     "Each issued Invoice goes to the tenants linked to its Lease. A reminder goes {0} days before the due date while it is not fully paid. Invoices of the last {1} days.",
@@ -793,10 +801,12 @@ export function tt(
   ...values: (string | number)[]
 ): string {
   const words: string = TEXT[key][language === "km" ? 1 : 0];
-  return words.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    words.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 /** A server code with its own words; an unknown code shows as it is. */

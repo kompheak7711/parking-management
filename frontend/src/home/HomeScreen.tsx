@@ -1,12 +1,17 @@
 // V1-058 R6: Home (DESIGN.md "Home layout", mock-up v43): the page head with "Receive payment"
-// and "Enter meter readings", up to eight cards, and the "What to do" list. The numbers come
-// from the V1-057 Home read; a card or a to-do kind the person may not read is missing from
-// the answer, so it is not shown.
+// and "Enter meter readings", the cards, and the "What to do" list. The numbers come from the
+// V1-057 Home read; a card or a to-do kind the person may not read is missing from the answer,
+// so it is not shown.
+// Owner 12/11/2026: the cards and their order are Vacant Units, Viewing requests waiting,
+// Leases ending soon, Short stay bookings, Short stays checked in, Pending payment, Paid this
+// month, Overdue, Approvals, Meter readings missing, Notices due, Problem reports, Birthdays,
+// Low stock, Attendance; every card shows its number at the top right, beside its name.
+// Home screen review (owner 14/11/2026): shorter names (Viewing requests, Bookings, Checked in,
+// Missing readings); a card has a note only when it tells something the number does not.
 
 import "../shell/screens.css";
 
 import {
-  Fragment,
   type ReactNode,
   useCallback,
   useEffect,
@@ -23,16 +28,41 @@ import {
 } from "../reportsClient";
 import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
-import { type PageId, hashForPage } from "../shell/navigation";
+import {
+  type PageId,
+  hashForPage,
+  pageName,
+  queryFromHash,
+} from "../shell/navigation";
+import { CardGrid, PageHeader } from "../shell/layouts";
+import { hashForShow } from "../shell/useHashPage";
 import type { Language } from "../signInText";
-import { monthText } from "../utilities/text";
 import {
   type ProblemSummary,
   type ProblemsApi,
   problemsApi as defaultProblemsApi,
 } from "../problems/problemsClient";
 import { costText } from "../problems/RepairCost";
-import { type HomeTextKey, hmt, weekdayText } from "./text";
+import { type HomeTextKey, hmt } from "./text";
+import { type HrApi, hrApi as defaultHrApi } from "../hr/hrClient";
+import {
+  type LedgerApi,
+  ledgerApi as defaultLedgerApi,
+} from "../ledger/ledgerClient";
+import { OwnerMoney, attendanceToCheck } from "./OwnerMoney";
+import {
+  type ProductsApi,
+  productsApi as defaultProductsApi,
+} from "../products/productsClient";
+import {
+  type Booking,
+  type ShortStaysApi,
+  shortStaysApi as defaultShortStaysApi,
+} from "../shortstays/shortStaysClient";
+import {
+  type TelegramApi,
+  telegramApi as defaultTelegramApi,
+} from "../telegram/telegramClient";
 
 export interface HomeApi {
   home: (propertyId: string) => Promise<HomePage>;
@@ -47,16 +77,95 @@ export interface HomeScreenProps {
   capabilities: ReadonlySet<string> | null;
   /** DL-131: the Problem reports card, read only by a person who may see Problem reports. */
   problemsApi?: Pick<ProblemsApi, "summary">;
+  /** UI v81: the Financial summary box (ledger.owner_money and ledger.read). */
+  ledgerApi?: Pick<LedgerApi, "report">;
+  /** UI v81: the Attendance card (hr.attendance.read). */
+  attendanceApi?: Pick<HrApi, "day">;
+  /** UI v81 round 2: the Viewing requests waiting card (visit_requests.read). */
+  visitsApi?: Pick<TelegramApi, "visitRequests">;
+  /** Owner 12/11/2026: the two Short stays cards (short_stays.read). */
+  shortStaysApi?: Pick<ShortStaysApi, "list">;
+  /** Owner 12/11/2026: the Low stock card (products.read). */
+  productsApi?: Pick<ProductsApi, "catalogue">;
+}
+
+/** The two Short stays cards: bookings still to check in, and guests staying now. */
+export interface StaysNow {
+  booked: number;
+  arriveToday: number;
+  checkedIn: number;
+  outToday: number;
+}
+
+/**
+ * Counts the bookings by their status as the server gave it: "Booked" has not checked in yet,
+ * "Checked in" is staying now. `today` is the Property's business date ("yyyy-mm-dd").
+ */
+export function staysNowOf(
+  bookings: readonly {
+    status: string;
+    check_in_on: string;
+    check_out_on: string;
+  }[],
+  today: string,
+): StaysNow {
+  const day = today.slice(0, 10);
+  const booked = bookings.filter((item) => item.status === "BOOKED");
+  const staying = bookings.filter((item) => item.status === "CHECKED_IN");
+  return {
+    booked: booked.length,
+    arriveToday: booked.filter((item) => item.check_in_on.slice(0, 10) === day)
+      .length,
+    checkedIn: staying.length,
+    outToday: staying.filter((item) => item.check_out_on.slice(0, 10) === day)
+      .length,
+  };
+}
+
+/** Products the server marks as low stock (stock at or below the reorder level), still sold. */
+export function lowStockOf(
+  products: readonly { low_stock: boolean; discontinued: boolean }[],
+): number {
+  return products.filter((item) => item.low_stock && !item.discontinued).length;
+}
+
+/** The Viewing requests card: new requests nobody took yet, how many are late, visits this week. */
+export interface VisitsWaiting {
+  waiting: number;
+  late: number;
+  visitsThisWeek: number;
+}
+
+/** Monday to Sunday of the week that holds `today` ("yyyy-mm-dd"), as a "yyyy-mm-dd" pair. */
+function weekOf(today: string): [string, string] {
+  const start = new Date(`${today.slice(0, 10)}T00:00:00Z`);
+  const shift = (start.getUTCDay() + 6) % 7;
+  start.setUTCDate(start.getUTCDate() - shift);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+}
+
+export function visitsWaitingOf(
+  requests: readonly {
+    status: string;
+    late: boolean;
+    visit_local: string | null;
+  }[],
+  today: string,
+): VisitsWaiting {
+  const [from, to] = weekOf(today);
+  return {
+    waiting: requests.filter((item) => item.status === "NEW").length,
+    late: requests.filter((item) => item.status === "NEW" && item.late).length,
+    visitsThisWeek: requests.filter((item) => {
+      const day = item.visit_local?.slice(0, 10) ?? "";
+      return day >= from && day <= to;
+    }).length,
+  };
 }
 
 type Tone = "err" | "warn" | "info" | "neutral" | "ok" | "brand";
-
-const GROUPS: readonly [TodoGroup, Tone][] = [
-  ["overdue", "err"],
-  ["today", "warn"],
-  ["this_week", "info"],
-  ["later", "neutral"],
-];
 
 /** Whole days from `from` to `to`, both "yyyy-mm-dd". */
 function daysBetween(from: string, to: string): number {
@@ -224,6 +333,31 @@ function groupOf(item: TodoItem, today: string): TodoGroup {
   return item.group;
 }
 
+/**
+ * The parts of a note that are above 0, joined with " · " ("1 urgent · 2 late"); no note when
+ * every part is 0 (owner 14/11/2026: "0 urgent · 0 late" says nothing).
+ */
+export function partsText(
+  parts: readonly (readonly [number, string])[],
+): string | undefined {
+  const shown = parts.filter(([count]) => count > 0).map(([, text]) => text);
+  return shown.length === 0 ? undefined : shown.join(" · ");
+}
+
+/**
+ * Meter readings still missing. Before the Reading day no reading is late yet, so the card
+ * shows 0 (Home screen review, owner 14/11/2026; the Utilities page also waits for the
+ * Reading day). `today` and the Reading day are "yyyy-mm-dd".
+ */
+export function readingsMissing(
+  readings: { count: number; reading_date: string },
+  today: string,
+): number {
+  return today.slice(0, 10) < readings.reading_date.slice(0, 10)
+    ? 0
+    : readings.count;
+}
+
 function Card({
   icon,
   tone,
@@ -231,161 +365,118 @@ function Card({
   value,
   note,
   page,
-  meter,
+  show,
+  more,
   empty,
+  money = false,
 }: {
   icon: ShellIcon;
   tone: Tone;
   label: string;
   value: string;
-  note: string;
+  /**
+   * Home screen review (owner 14/11/2026 00:23): a card has a note only when it tells
+   * something the number does not; a line that only says what the card opens, or "nothing",
+   * is not drawn.
+   */
+  note?: string;
   page: PageId;
-  /** 0 to 100 for the bar under the note; none when the card has no bar. */
-  /** "blank" keeps the room of a bar, so the values of the first row stay level. */
-  meter?: number | "blank";
+  /**
+   * UI v81 round 11 (owner 12/11/2026): the part of that page the card counts, so the card
+   * opens it and not the whole list ("#/invoices?show=overdue"). `more` holds further words
+   * ("period=month"). Left out when the page has one view.
+   */
+  show?: string;
+  more?: Record<string, string>;
   empty: boolean;
+  /** An amount of money: it stays at the top right while the name may take two lines. */
+  money?: boolean;
 }) {
   return (
     <a
-      className={`ui-kpi ui-home-kpi ${empty ? "none" : tone}`}
-      href={hashForPage(page)}
+      className={`ui-kpi ui-home-kpi ui-kpi-top${money ? " ui-kpi-amount" : ""} ${empty ? "none" : tone}`}
+      href={
+        show === undefined ? hashForPage(page) : hashForShow(page, show, more)
+      }
     >
-      <span className="ui-kpi-label">
-        <span className="ui-kpi-icon">
-          <Icon name={icon} small />
+      {/* Owner 12/11/2026: the number sits at the top right, beside the name. */}
+      <span className="ui-kpi-head">
+        <span className="ui-kpi-label">
+          <span className="ui-kpi-icon">
+            <Icon name={icon} small />
+          </span>
+          <span>{label}</span>
         </span>
-        {label}
+        <span className="ui-kpi-value ui-num">{value}</span>
       </span>
-      <span className="ui-kpi-value ui-num">{value}</span>
-      <span className="ui-kpi-note">{note}</span>
-      {meter === "blank" && (
-        <span aria-hidden="true" className="ui-home-meter blank" />
-      )}
-      {typeof meter === "number" && (
-        <span aria-hidden="true" className="ui-home-meter">
-          <span
-            style={{ width: `${String(Math.max(0, Math.min(100, meter)))}%` }}
-          />
-        </span>
+      {note !== undefined && note !== "" && (
+        <span className="ui-kpi-note">{note}</span>
       )}
     </a>
   );
 }
 
+/** What the Attendance card shows: lines to check on today's sheet. */
+type AttendanceNow = ReturnType<typeof attendanceToCheck>;
+
 function Cards({
   language,
   cards,
   today,
-  extra,
+  visits,
+  problems,
+  stays,
+  lowStock,
+  attendance,
 }: {
   language: Language;
   cards: HomeCards;
   today: string;
-  /** A card from another read (the Problem reports card). */
-  extra?: ReactNode;
+  /** Cards from other reads; each is null for a person who may not read it. */
+  visits: VisitsWaiting | null;
+  problems: ProblemSummary | null;
+  stays: StaysNow | null;
+  lowStock: number | null;
+  attendance: AttendanceNow | null;
 }) {
+  // Owner 12/11/2026: the order is Vacant Units, Viewing requests waiting, Leases ending soon,
+  // the two Short stays cards, the three money cards, Approvals, Meter readings missing,
+  // Notices due, Problem reports, Birthdays, Low stock, Attendance.
   const shown: ReactNode[] = [];
   const units = cards.units_occupied;
   if (units !== undefined) {
     shown.push(
       <Card
-        empty={units.total === 0}
+        empty={units.vacant === 0}
         icon="units"
-        key="units"
-        label={hmt(language, "k_occ")}
-        meter={units.total > 0 ? (units.occupied * 100) / units.total : 0}
-        note={hmt(language, "k_occ_s", units.reserved, units.vacant)}
+        key="vacant"
+        label={hmt(language, "k_vac")}
+        note={hmt(language, "k_vac_s", units.total, units.reserved)}
         page="units"
+        show="vacant"
         tone="brand"
-        value={`${String(units.occupied)} / ${String(units.total)}`}
+        value={String(units.vacant)}
       />,
     );
   }
-  const pending = cards.pending_payment;
-  if (pending !== undefined) {
+  if (visits !== null) {
     shown.push(
       <Card
-        empty={pending.amount_usd_cents === 0}
-        icon="invoice"
-        key="pending"
-        label={hmt(language, "k_pend")}
-        meter="blank"
-        note={hmt(
-          language,
-          pending.invoice_count === 1 ? "k_pend_s1" : "k_pend_s",
-          pending.invoice_count,
-        )}
-        page="invoices"
-        tone="warn"
-        value={usdFromCents(pending.amount_usd_cents)}
-      />,
-    );
-  }
-  const paid = cards.paid_this_month;
-  if (paid !== undefined) {
-    const label = hmt(
-      language,
-      "k_paid",
-      monthText(language, today).split(" ")[0] ?? "",
-    );
-    if (paid.billed_usd_cents !== undefined) {
-      const billed = paid.billed_usd_cents;
-      const settled = paid.billed_paid_usd_cents ?? 0;
-      const percent = billed > 0 ? Math.floor((settled * 100) / billed) : 0;
-      shown.push(
-        <Card
-          empty={settled === 0}
-          icon="payments"
-          key="paid"
-          label={label}
-          meter={percent}
-          note={
-            billed > 0
-              ? hmt(language, "k_paid_s", percent, usdFromCents(billed))
-              : hmt(language, "k_paid_none")
-          }
-          page="invoices"
-          tone="ok"
-          value={usdFromCents(settled)}
-        />,
-      );
-    } else if (paid.received_usd_cents !== undefined) {
-      shown.push(
-        <Card
-          empty={paid.received_usd_cents === 0}
-          icon="payments"
-          key="paid"
-          label={label}
-          meter="blank"
-          note={hmt(
-            language,
-            paid.payment_count === 1 ? "k_paid_recv1" : "k_paid_recv",
-            paid.payment_count ?? 0,
-          )}
-          page="payments"
-          tone="ok"
-          value={usdFromCents(paid.received_usd_cents)}
-        />,
-      );
-    }
-  }
-  const overdue = cards.overdue;
-  if (overdue !== undefined) {
-    shown.push(
-      <Card
-        empty={overdue.amount_usd_cents === 0}
-        icon="alert"
-        key="overdue"
-        label={hmt(language, "k_over")}
-        meter="blank"
-        note={hmt(
-          language,
-          overdue.invoice_count === 1 ? "k_over_s1" : "k_over_s",
-          overdue.invoice_count,
-        )}
-        page="invoices"
-        tone="err"
-        value={usdFromCents(overdue.amount_usd_cents)}
+        empty={visits.waiting === 0}
+        icon="door"
+        key="visits"
+        label={hmt(language, "n_vr")}
+        note={partsText([
+          [visits.late, hmt(language, "n_vr_late", visits.late)],
+          [
+            visits.visitsThisWeek,
+            hmt(language, "n_vr_week", visits.visitsThisWeek),
+          ],
+        ])}
+        page="visitreqs"
+        show="waiting"
+        tone={visits.late > 0 ? "err" : "brand"}
+        value={String(visits.waiting)}
       />,
     );
   }
@@ -399,8 +490,107 @@ function Cards({
         label={hmt(language, "n_lease")}
         note={hmt(language, "n_lease_s", dayText(renewal.end_on_or_before))}
         page="leases"
+        show="ending"
         tone="info"
         value={String(renewal.count)}
+      />,
+    );
+  }
+  if (stays !== null) {
+    // Only a count above 0 is said ("2 arrive today"); "None arrive today" is not drawn.
+    const countText = (count: number, one: HomeTextKey, many: HomeTextKey) =>
+      count === 0 ? undefined : hmt(language, count === 1 ? one : many, count);
+    shown.push(
+      <Card
+        empty={stays.booked === 0}
+        icon="calendar"
+        key="stays-booked"
+        label={hmt(language, "n_ssb")}
+        note={countText(stays.arriveToday, "n_ssb_s1", "n_ssb_s")}
+        page="shortstays"
+        show="booked"
+        tone="info"
+        value={String(stays.booked)}
+      />,
+      <Card
+        empty={stays.checkedIn === 0}
+        icon="moveout"
+        key="stays-in"
+        label={hmt(language, "n_ssin")}
+        note={countText(stays.outToday, "n_ssin_s1", "n_ssin_s")}
+        page="shortstays"
+        show="checked_in"
+        tone="ok"
+        value={String(stays.checkedIn)}
+      />,
+    );
+  }
+  const pending = cards.pending_payment;
+  if (pending !== undefined) {
+    shown.push(
+      <Card
+        empty={pending.amount_usd_cents === 0}
+        icon="invoice"
+        key="pending"
+        label={hmt(language, "k_pend")}
+        money
+        page="invoices"
+        show="open"
+        tone="warn"
+        value={usdFromCents(pending.amount_usd_cents)}
+      />,
+    );
+  }
+  const paid = cards.paid_this_month;
+  if (paid !== undefined) {
+    const label = hmt(language, "k_paid");
+    // Owner 16/11/2026: "Paid this month" is the money received this month, the same amount as
+    // "Total received" on the Payments page (This month), and it opens that page. Only a person
+    // who cannot read Payments sees the paid part of this month's Invoices instead.
+    if (paid.received_usd_cents !== undefined) {
+      shown.push(
+        <Card
+          empty={paid.received_usd_cents === 0}
+          icon="payments"
+          key="paid"
+          label={label}
+          money
+          page="payments"
+          tone="ok"
+          value={usdFromCents(paid.received_usd_cents)}
+        />,
+      );
+    } else if (paid.billed_usd_cents !== undefined) {
+      const settled = paid.billed_paid_usd_cents ?? 0;
+      shown.push(
+        <Card
+          empty={settled === 0}
+          icon="payments"
+          key="paid"
+          label={label}
+          money
+          more={{ period: "month" }}
+          page="invoices"
+          show="paid"
+          tone="ok"
+          value={usdFromCents(settled)}
+        />,
+      );
+    }
+  }
+  const overdue = cards.overdue;
+  if (overdue !== undefined) {
+    shown.push(
+      <Card
+        empty={overdue.amount_usd_cents === 0}
+        icon="alert"
+        key="overdue"
+        label={hmt(language, "k_over")}
+        money
+        page="invoices"
+        show="overdue"
+        tone="err"
+        value={usdFromCents(overdue.amount_usd_cents)}
       />,
     );
   }
@@ -416,11 +606,10 @@ function Cards({
           waiting.money_out_count > 0
             ? hmt(
                 language,
-                "n_appr_s",
-                waiting.count,
+                "n_appr_m",
                 usdFromCents(waiting.money_out_usd_cents),
               )
-            : hmt(language, "n_appr_c", waiting.count)
+            : undefined
         }
         page="approvals"
         tone="warn"
@@ -430,16 +619,17 @@ function Cards({
   }
   const readings = cards.meter_readings_missing;
   if (readings !== undefined) {
+    const missing = readingsMissing(readings, today);
     shown.push(
       <Card
-        empty={readings.count === 0}
+        empty={missing === 0}
         icon="meter"
         key="readings"
         label={hmt(language, "n_read")}
-        note={hmt(language, "n_read_s", dayText(readings.reading_date))}
         page="utilities"
+        show="missing"
         tone="info"
-        value={String(readings.count)}
+        value={String(missing)}
       />,
     );
   }
@@ -451,36 +641,88 @@ function Cards({
         icon="list"
         key="letters"
         label={hmt(language, "n_letters")}
-        note={hmt(language, "n_letters_s")}
         page="letters"
+        show="due"
         tone="err"
         value={String(letters.count)}
       />,
     );
   }
-  if (extra !== null && extra !== undefined)
-    shown.push(<Fragment key="problems">{extra}</Fragment>);
+  if (problems !== null) {
+    shown.push(
+      <Card
+        empty={problems.open === 0}
+        icon="wrench"
+        key="problems"
+        label={hmt(language, "n_problems")}
+        note={partsText([
+          [
+            problems.urgent,
+            hmt(language, "n_problems_urgent", problems.urgent),
+          ],
+          [problems.late, hmt(language, "n_problems_late", problems.late)],
+        ])}
+        page="problems"
+        show="open"
+        tone={problems.urgent > 0 || problems.late > 0 ? "err" : "info"}
+        value={String(problems.open)}
+      />,
+    );
+  }
+  const birthdays = cards.birthdays;
+  if (birthdays !== undefined) {
+    shown.push(
+      <Card
+        empty={birthdays.count === 0}
+        icon="customers"
+        key="birthdays"
+        label={hmt(language, "n_bday")}
+        note={hmt(language, "n_week_s", dayText(birthdays.to))}
+        page="customers"
+        show="birthdays"
+        tone="info"
+        value={String(birthdays.count)}
+      />,
+    );
+  }
+  if (lowStock !== null) {
+    shown.push(
+      <Card
+        empty={lowStock === 0}
+        icon="box"
+        key="lowstock"
+        label={hmt(language, "n_low")}
+        page="products"
+        show="low"
+        tone="warn"
+        value={String(lowStock)}
+      />,
+    );
+  }
+  if (attendance !== null) {
+    shown.push(
+      <Card
+        empty={attendance.total === 0}
+        icon="staff"
+        key="attendance"
+        label={hmt(language, "at_t")}
+        note={
+          attendance.total > 0
+            ? hmt(language, "at_n", attendance.scans, attendance.noOut)
+            : undefined
+        }
+        page="attendance"
+        show="day"
+        tone={attendance.total > 0 ? "warn" : "ok"}
+        value={String(attendance.total)}
+      />,
+    );
+  }
   if (shown.length === 0) return null;
-  return <div className="ui-kpis ui-home-kpis">{shown}</div>;
-}
-
-function ProblemsCard({
-  language,
-  summary,
-}: {
-  language: Language;
-  summary: ProblemSummary;
-}) {
   return (
-    <Card
-      empty={summary.open === 0}
-      icon="wrench"
-      label={hmt(language, "n_problems")}
-      note={hmt(language, "n_problems_s", summary.urgent, summary.late)}
-      page="problems"
-      tone={summary.urgent > 0 || summary.late > 0 ? "err" : "info"}
-      value={String(summary.open)}
-    />
+    <CardGrid className="ui-home-kpis" five>
+      {shown}
+    </CardGrid>
   );
 }
 
@@ -521,8 +763,39 @@ function CostsToCheck({
   );
 }
 
+// UI v81 round 3 (owner 07/11/2026 17:30): the Tasks are four cards in one row (two by two on a
+// phone): Overdue, Today, This week, Later. Each shows its count and one short line; the chosen
+// card's list opens under the cards, one list at a time, and the chosen card is kept in the
+// address ("#/home?tasks=overdue") so Back returns to it. On open, Overdue is open when it has
+// items; otherwise no list is open.
+const TASK_CARDS: readonly {
+  group: TodoGroup;
+  tone: Tone;
+  icon: ShellIcon;
+  /** The word kept in the address. */
+  word: string;
+}[] = [
+  { group: "overdue", tone: "err", icon: "alert", word: "overdue" },
+  { group: "today", tone: "warn", icon: "check", word: "today" },
+  { group: "this_week", tone: "info", icon: "calendar", word: "week" },
+  { group: "later", tone: "neutral", icon: "list", word: "later" },
+];
+
+/** The Tasks card named in the address ("#/home?tasks=week"), or null. */
+export function tasksFromHash(hash: string): TodoGroup | null {
+  const word = queryFromHash(hash, "tasks");
+  const card = TASK_CARDS.find((candidate) => candidate.word === word);
+  return card === undefined ? null : card.group;
+}
+
+function tasksHash(group: TodoGroup | null): string {
+  const home = hashForPage("home");
+  if (group === null) return home;
+  const card = TASK_CARDS.find((candidate) => candidate.group === group);
+  return card === undefined ? home : `${home}?tasks=${card.word}`;
+}
+
 function TodoList({ language, page }: { language: Language; page: HomePage }) {
-  const [showLater, setShowLater] = useState(false);
   const known = page.todo.filter((item) => rowOf(language, item) !== null);
   const inGroup = (group: TodoGroup) =>
     known.filter((item) => groupOf(item, page.business_date) === group);
@@ -531,99 +804,130 @@ function TodoList({ language, page }: { language: Language; page: HomePage }) {
     today: inGroup("today").length,
     this_week: inGroup("this_week").length,
   };
+  const [chosen, setChosen] = useState<TodoGroup | null>(
+    () =>
+      tasksFromHash(window.location.hash) ??
+      (counts.overdue > 0 ? "overdue" : null),
+  );
+  function choose(group: TodoGroup) {
+    const next = chosen === group ? null : group;
+    setChosen(next);
+    window.history.replaceState(null, "", tasksHash(next));
+  }
+  // The earliest item of a group names its line: "Oldest: 29 days late", "Next: in 2 days".
+  const earliest = (items: TodoItem[]) =>
+    items.reduce((first, item) => (item.date < first.date ? item : first));
+  const lineOf = (group: TodoGroup, items: TodoItem[]) => {
+    // Owner 14/11/2026: no "Nothing overdue", "Nothing here" or "Do them today" line.
+    if (items.length === 0 || group === "today") return "";
+    const when = relativeText(language, earliest(items), page.business_date);
+    return hmt(language, group === "overdue" ? "tk_oldest" : "tk_next", when);
+  };
+  const open = TASK_CARDS.find((card) => card.group === chosen);
+  const openItems = open === undefined ? [] : inGroup(open.group);
   return (
     <section aria-labelledby="home-todo" className="ui-card ui-todo-card">
+      {/* UI v81 round 4 (owner 08/11/2026): no summary line; the four cards say it. */}
       <header>
         <h2 id="home-todo">{hmt(language, "todo_t")}</h2>
-        <p className="ui-muted ui-small">
-          {hmt(
-            language,
-            "todo_sum",
-            counts.overdue,
-            counts.today,
-            counts.this_week,
-          )}
-        </p>
       </header>
-      {GROUPS.map(([group, tone]) => {
-        const items = inGroup(group);
-        const folded = group === "later" && !showLater && items.length > 0;
-        return (
-          <div className="ui-tgroup" key={group}>
+      <CardGrid label={hmt(language, "todo_t")} tasks>
+        {TASK_CARDS.map(({ group, tone, icon }) => {
+          const items = inGroup(group);
+          return (
+            <button
+              aria-controls="home-tasks-list"
+              aria-pressed={chosen === group}
+              className={`ui-kpi ui-kpi-top ${items.length === 0 ? "none" : tone}`}
+              key={group}
+              onClick={() => {
+                choose(group);
+              }}
+              type="button"
+            >
+              <span className="ui-kpi-head">
+                <span className="ui-kpi-label">
+                  <span className="ui-kpi-icon">
+                    <Icon name={icon} small />
+                  </span>
+                  <span>{hmt(language, `g_${group}`)}</span>
+                </span>
+                <span className="ui-kpi-value ui-num">{items.length}</span>
+              </span>
+              {lineOf(group, items) !== "" && (
+                <span className="ui-kpi-note">{lineOf(group, items)}</span>
+              )}
+            </button>
+          );
+        })}
+      </CardGrid>
+      <div
+        className="ui-tasks-list"
+        hidden={open === undefined || openItems.length === 0}
+        id="home-tasks-list"
+      >
+        {open !== undefined && openItems.length > 0 && (
+          <>
             <h3>
-              <span className={`ui-dot ${tone}`} />
-              {hmt(language, `g_${group}`)}
-              <span className="ui-count ui-num">{items.length}</span>
+              <span className={`ui-dot ${open.tone}`} />
+              {hmt(language, `g_${open.group}`)}
+              <span className="ui-count ui-num">{openItems.length}</span>
             </h3>
-            {group === "later" && items.length > 0 && (
-              <button
-                aria-controls="home-later"
-                aria-expanded={showLater}
-                className="ui-btn link ui-tmore"
-                onClick={() => {
-                  setShowLater(!showLater);
-                }}
-                type="button"
-              >
-                {showLater
-                  ? hmt(language, "show_less")
-                  : hmt(language, "show_more", items.length)}
-              </button>
-            )}
-            {items.length === 0 && (
-              <p className={group === "overdue" ? "ui-tnone ok" : "ui-tnone"}>
-                {group === "overdue" && <Icon name="check" small />}
-                {hmt(language, group === "overdue" ? "g_over_none" : "g_none")}
-              </p>
-            )}
-            {items.length > 0 && !folded && (
-              <ul
-                className="ui-todos"
-                id={group === "later" ? "home-later" : undefined}
-              >
-                {items.map((item, index) => {
-                  const row = rowOf(language, item);
-                  if (row === null) return null;
-                  return (
-                    <li
-                      className={`ui-todo ${tone}`}
-                      key={`${item.kind}:${item.date}:${String(index)}`}
+            <ul className="ui-todos">
+              {openItems.map((item, index) => {
+                const row = rowOf(language, item);
+                if (row === null) return null;
+                return (
+                  <li
+                    className={`ui-todo ${open.tone}`}
+                    key={`${item.kind}:${item.date}:${String(index)}`}
+                  >
+                    <span aria-hidden="true" className="ui-todo-icon">
+                      <Icon name={row.icon} />
+                    </span>
+                    <span className="ui-todo-body">
+                      <b>{row.title}</b>
+                      {row.detail !== "" && <span>{row.detail}</span>}
+                    </span>
+                    <span className="ui-when ui-num">
+                      {dayText(item.date)}
+                      <small>
+                        {relativeText(language, item, page.business_date)}
+                      </small>
+                    </span>
+                    <a
+                      aria-label={`${row.tip}: ${row.title}`}
+                      className="ui-iconbtn ui-todo-go"
+                      href={row.href}
+                      title={row.tip}
                     >
-                      <span aria-hidden="true" className="ui-todo-icon">
-                        <Icon name={row.icon} />
-                      </span>
-                      <span className="ui-todo-body">
-                        <b>{row.title}</b>
-                        {row.detail !== "" && <span>{row.detail}</span>}
-                      </span>
-                      <span className="ui-when ui-num">
-                        {dayText(item.date)}
-                        <small>
-                          {relativeText(language, item, page.business_date)}
-                        </small>
-                      </span>
-                      <a
-                        aria-label={`${row.tip}: ${row.title}`}
-                        className="ui-iconbtn ui-todo-go"
-                        href={row.href}
-                        title={row.tip}
-                      >
-                        <Icon name="forward" />
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+                      <Icon name="forward" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+      </div>
     </section>
   );
 }
 
 /** The line under the list that confirms the last automatic jobs (owner, 12/10/2026). */
-function JobsLine({ language, page }: { language: Language; page: HomePage }) {
+function JobsLine({
+  language,
+  page,
+  place,
+}: {
+  language: Language;
+  page: HomePage;
+  /**
+   * Home screen review (owner 14/11/2026): a warning (no billing run, no ABA rate) is a slim
+   * yellow bar under the title; the calm line stays under the Tasks.
+   */
+  place: "top" | "bottom";
+}) {
   const { last_billing_at, rate_updated_at, next_billing_date } = page.jobs;
   const parts = [
     last_billing_at === null
@@ -642,9 +946,17 @@ function JobsLine({ language, page }: { language: Language; page: HomePage }) {
   ].filter(Boolean);
   if (parts.length === 0) return null;
   const quiet = last_billing_at === null || rate_updated_at === null;
+  if (quiet !== (place === "top")) return null;
+  if (quiet)
+    return (
+      <p className="ui-notice warn ui-home-jobs" role="status">
+        <Icon name="alert" small />
+        <span>{parts.join(" · ")}</span>
+      </p>
+    );
   return (
-    <p className={quiet ? "ui-addup ui-warnv" : "ui-addup"}>
-      <Icon name={quiet ? "alert" : "check"} small />
+    <p className="ui-addup">
+      <Icon name="check" small />
       <span>{parts.join(" · ")}</span>
     </p>
   );
@@ -657,13 +969,27 @@ export function HomeScreen({
   homeApi,
   capabilities,
   problemsApi = defaultProblemsApi,
+  ledgerApi = defaultLedgerApi,
+  attendanceApi = defaultHrApi,
+  visitsApi = defaultTelegramApi,
+  shortStaysApi = defaultShortStaysApi,
+  productsApi = defaultProductsApi,
 }: HomeScreenProps) {
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const [page, setPage] = useState<HomePage | null>(null);
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [problems, setProblems] = useState<ProblemSummary | null>(null);
+  const [visits, setVisits] = useState<VisitsWaiting | null>(null);
+  const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [lowStock, setLowStock] = useState<number | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceNow | null>(null);
   const sequence = useRef(0);
+  const seesVisits = capabilities?.has("visit_requests.read") === true;
+  // Owner 12/11/2026: each of these cards is read only by a person known to hold its right.
+  const seesStays = capabilities?.has("short_stays.read") === true;
+  const seesStock = capabilities?.has("products.read") === true;
+  const seesAttendance = capabilities?.has("hr.attendance.read") === true;
   // Only a person known to see Problem reports reads the card.
   const seesProblems = capabilities?.has("problem_reports.read") === true;
   const checksCosts = capabilities?.has("problem_reports.costs") === true;
@@ -695,13 +1021,71 @@ export function HomeScreen({
           // The card is left out; the rest of Home still shows.
           if (operation === sequence.current) setProblems(null);
         });
-  }, [homeApi, problemsApi, propertyId, seesProblems]);
+    if (seesVisits)
+      visitsApi
+        .visitRequests(propertyId)
+        .then((loaded) => {
+          if (operation === sequence.current)
+            setVisits(visitsWaitingOf(loaded.requests, loaded.today));
+        })
+        .catch(() => {
+          if (operation === sequence.current) setVisits(null);
+        });
+    // The Property's business date comes with the Home read, so the "today" notes of the two
+    // Short stays cards are worked out when the cards are drawn.
+    if (seesStays)
+      shortStaysApi
+        .list(propertyId)
+        .then((loaded) => {
+          if (operation === sequence.current) setBookings(loaded);
+        })
+        .catch(() => {
+          if (operation === sequence.current) setBookings(null);
+        });
+    if (seesStock)
+      productsApi
+        .catalogue(propertyId)
+        .then((loaded) => {
+          if (operation === sequence.current)
+            setLowStock(lowStockOf(loaded.products));
+        })
+        .catch(() => {
+          if (operation === sequence.current) setLowStock(null);
+        });
+    if (seesAttendance)
+      attendanceApi
+        .day(propertyId, null)
+        .then((loaded) => {
+          if (operation === sequence.current)
+            setAttendance(attendanceToCheck(loaded));
+        })
+        .catch(() => {
+          if (operation === sequence.current) setAttendance(null);
+        });
+  }, [
+    attendanceApi,
+    homeApi,
+    problemsApi,
+    productsApi,
+    propertyId,
+    seesAttendance,
+    seesProblems,
+    seesStays,
+    seesStock,
+    seesVisits,
+    shortStaysApi,
+    visitsApi,
+  ]);
 
   // Another Property never shows the numbers of the one before.
   useEffect(() => {
     sequence.current++;
     setPage(null);
     setProblems(null);
+    setVisits(null);
+    setBookings(null);
+    setLowStock(null);
+    setAttendance(null);
   }, [propertyId]);
 
   useEffect(() => {
@@ -710,38 +1094,31 @@ export function HomeScreen({
 
   const actions = (may("payments.record") ||
     may("utility_readings.record")) && (
-    <div className="ui-actions">
+    <>
       {may("payments.record") && (
-        <a className="ui-btn primary" href={hashForPage("payments", "receive")}>
+        <a
+          className="ui-btn primary ui-homeact"
+          href={hashForPage("payments", "receive")}
+        >
           <Icon name="payments" />
           {hmt(language, "qa_record")}
         </a>
       )}
       {may("utility_readings.record") && (
-        <a className="ui-btn" href={hashForPage("utilities")}>
+        <a className="ui-btn ui-homeact" href={hashForPage("utilities")}>
           <Icon name="meter" />
           {hmt(language, "qa_readings")}
         </a>
       )}
-    </div>
+    </>
   );
 
   if (propertyId === "") return null;
 
+  // UI v81 round 4 (owner 08/11/2026): no line under the title; only the two buttons beside it.
+  // Home batch (owner 08/11/2026 08:14): drawn with the shared PageHeader.
   const head = (
-    <div className="ui-head">
-      <div>
-        {page !== null && (
-          <p className="ui-num">
-            {[
-              `${weekdayText(language, page.business_date)} ${dayText(page.business_date)}`,
-              hmt(language, "as_of", momentText(page.as_of).slice(11)),
-            ].join(" · ")}
-          </p>
-        )}
-      </div>
-      {actions}
-    </div>
+    <PageHeader actions={actions} title={pageName("home", language)} />
   );
 
   if (failure !== null) {
@@ -770,24 +1147,40 @@ export function HomeScreen({
       </>
     );
   }
+  // UI v81: shown only to a person known to hold the rights (the server checks again).
+  const seesOwnerMoney =
+    capabilities?.has("ledger.owner_money") === true &&
+    capabilities.has("ledger.read");
   return (
     <>
       {head}
+      <JobsLine language={language} page={page} place="top" />
+      {seesOwnerMoney && (
+        <OwnerMoney
+          active={active}
+          api={ledgerApi}
+          language={language}
+          propertyId={propertyId}
+          today={page.business_date}
+        />
+      )}
       <Cards
+        attendance={attendance}
         cards={page.cards}
-        extra={
-          problems === null ? null : (
-            <ProblemsCard language={language} summary={problems} />
-          )
-        }
         language={language}
+        lowStock={lowStock}
+        problems={problems}
+        stays={
+          bookings === null ? null : staysNowOf(bookings, page.business_date)
+        }
         today={page.business_date}
+        visits={visits}
       />
       {problems !== null && checksCosts && (
         <CostsToCheck language={language} summary={problems} />
       )}
       <TodoList language={language} page={page} />
-      <JobsLine language={language} page={page} />
+      <JobsLine language={language} page={page} place="bottom" />
     </>
   );
 }

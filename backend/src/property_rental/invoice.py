@@ -714,18 +714,47 @@ class PostgresInvoiceService:
                 row = connection.execute(
                     "SELECT app.invoice_resource_snapshot(%s)", (invoice_id,)
                 ).fetchone()
+                if row is None or row[0] is None:
+                    raise InvoiceNotFoundError("Invoice was not found")
+                resource = self._resource(row[0])
+                names = self._actor_names(connection, resource)
         except psycopg.Error as exc:
             raise self._map_error(exc) from exc
-        if row is None or row[0] is None:
-            raise InvoiceNotFoundError("Invoice was not found")
-        resource = self._resource(row[0])
         self._authorize(
             actor,
             UUID(str(resource["property_id"])),
             INVOICE_READ_CAPABILITY,
             hide=True,
         )
-        return resource
+        return {**resource, "actor_names": names}
+
+    @staticmethod
+    def _actor_names(
+        connection: psycopg.Connection[tuple[object, ...]], resource: dict[str, object]
+    ) -> dict[str, str]:
+        """UI v81 (History names the person for every step): the account name stored for each
+        person who made, issued, adjusted or voided this Invoice. A step done by the app itself
+        (automatic billing) has no account, so it has no name here. Display only."""
+        ids: set[str] = set()
+        for key in ("created_by", "issued_by"):
+            if isinstance(resource.get(key), str):
+                ids.add(str(resource[key]))
+        events: list[object] = list(cast(list[object], resource.get("adjustments") or []))
+        events.append(resource.get("void_event"))
+        for event in events:
+            if isinstance(event, dict):
+                value = cast(dict[str, object], event).get("actor_id")
+                if isinstance(value, str):
+                    ids.add(value)
+        if not ids:
+            return {}
+        return {
+            str(found[0]): str(found[1])
+            for found in connection.execute(
+                "SELECT actor_id,display_name FROM app.user_accounts WHERE actor_id = ANY(%s)",
+                ([UUID(value) for value in ids],),
+            ).fetchall()
+        }
 
     def property_for_invoice(self, invoice_id: UUID) -> UUID:
         if invoice_id == NIL_UUID:

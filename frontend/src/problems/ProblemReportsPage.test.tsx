@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ProblemReportsPage } from "./ProblemReportsPage";
+import { ProblemReportsPage, whereText } from "./ProblemReportsPage";
 import {
   type FindingSource,
   type ProblemChoices,
@@ -330,6 +330,105 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     ).toBe("#/problems/new");
   });
 
+  it('TEST-FE-2123 (owner 12/11/2026: "check all card is link to correct place") "#/problems?show=open" opens the Open reports of every kind and type, and "?show=late" the Late ones; a tab chosen by hand is kept in the address (Open has the plain address)', async () => {
+    window.location.hash = "#/problems?show=late";
+    show(apiOf(), new Set(["problem_reports.read"]));
+    expect(
+      await screen.findByRole("button", { name: "Late 1", pressed: true }),
+    ).toBeTruthy();
+    expect(screen.getByText("1 report")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Done 1" }));
+    expect(window.location.hash).toBe("#/problems?show=done");
+    fireEvent.click(screen.getByRole("button", { name: "Open 3" }));
+    expect(window.location.hash).toBe("#/problems");
+
+    // Home's card, opened while one kind is chosen: the Open reports of every kind show.
+    fireEvent.change(screen.getByLabelText("Kind"), {
+      target: { value: "BUILDING" },
+    });
+    expect(screen.getByText("1 report")).toBeTruthy();
+    window.location.hash = "#/problems?show=open";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    expect(await screen.findByText("3 reports")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Open 3" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it('TEST-FE-2212 (Property fix 3, owner 14/11/2026) the list has no Kind column, and a building floor reads "floor 3" or the name as typed, never "floor Floor 3"', async () => {
+    show(apiOf(), MANAGER);
+    const table = await screen.findByRole("table");
+    const heads = within(table)
+      .getAllByRole("columnheader")
+      .map((head) => head.textContent);
+    expect(heads).not.toContain("Kind");
+    expect(heads).not.toContain("Source");
+    expect(whereText("en", BP1)).toBe("Lift · floor 3");
+    expect(whereText("en", { ...BP1, floor: "Floor 3" })).toBe(
+      "Lift · Floor 3",
+    );
+    expect(whereText("en", { ...BP1, floor: null })).toBe("Lift");
+  });
+
+  it("TEST-FE-2214 (owner 14/11/2026) the New Problem report form: a long type name takes two boxes, Yes and No sit in one row, and Save is the last button", async () => {
+    window.location.hash = "#/problems/new";
+    const api = apiOf({
+      choices: vi.fn(() =>
+        Promise.resolve({
+          ...CHOICES,
+          types: [
+            WATER,
+            {
+              ...WATER,
+              id: "t-air",
+              code: "AIR_CONDITIONER",
+              name_en: "Air conditioner",
+            },
+            {
+              ...WATER,
+              id: "t-furniture",
+              code: "FURNITURE",
+              name_en: "Furniture/appliance",
+            },
+            SAFETY,
+          ],
+        }),
+      ),
+    });
+    show(api, STAFF);
+    const save = await screen.findByRole("button", { name: "Save report" });
+    // A long name takes two boxes on one line instead of breaking.
+    const tiles = [...document.querySelectorAll(".ui-tile")];
+    expect(
+      tiles.map((tile) => [
+        tile.querySelector(".ui-tile-name > span")?.textContent,
+        tile.className.replace("ui-chk ui-tile", "").trim(),
+      ]),
+    ).toEqual([
+      ["Water", ""],
+      ["Air conditioner", "ui-tile-long"],
+      ["Furniture/appliance", "ui-tile-long"],
+      ["Safety (fire, gas, smoke) Always urgent", "ui-tile-wide"],
+    ]);
+    // Owner 16/11/2026: "Always urgent" runs on after the name, in the same line of text.
+    expect(
+      document.querySelector(".ui-tile-name > span > .ui-sub2")?.textContent,
+    ).toBe("Always urgent");
+    const urgent = screen.getByRole("group", { name: "Is it urgent?" });
+    expect(urgent.classList.contains("ui-radios-row")).toBe(true);
+    expect(within(urgent).getAllByRole("radio")).toHaveLength(2);
+    const buttons = within(element(save.closest(".ui-actions"))).getAllByRole(
+      "button",
+    );
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      "Cancel",
+      "Save report",
+    ]);
+  });
+
   it("TEST-FE-1221 New Problem report checks the form, Safety is always urgent, the Building kind asks for the shared place and floor, and Same problem saves it joined to an open report here", async () => {
     window.location.hash = "#/problems/new";
     const api = apiOf();
@@ -467,10 +566,10 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      within(dialog).getByText("Type the technician's name."),
+      within(dialog).getByText("Enter the technician's name."),
     ).toBeTruthy();
     expect(
-      within(dialog).getByText("Pick a time later than now."),
+      within(dialog).getByText("Choose a time later than now."),
     ).toBeTruthy();
     const times = within(dialog).getByLabelText(/^Time/);
     const options = Array.from(times.querySelectorAll("option")).map(
@@ -568,7 +667,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       target: { value: "abc" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(within(dialog).getByText("Type the amount.")).toBeTruthy();
+    expect(within(dialog).getByText("Enter the amount.")).toBeTruthy();
     expect(within(dialog).getByText("Please write this.")).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/^Amount the tenant pays/), {
       target: { value: "25" },
@@ -596,7 +695,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tenant's answer" }));
     dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByLabelText("Refused"));
+    fireEvent.click(within(dialog).getByLabelText("Rejected"));
     fireEvent.click(within(dialog).getByLabelText("Phone call"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
@@ -739,12 +838,14 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     const cost = vi.fn(() => Promise.resolve(typed));
     show(apiOf({ get: vi.fn(() => Promise.resolve(done)), cost }), STAFF);
     fireEvent.click(
-      await screen.findByRole("button", { name: "Type the cost" }),
+      await screen.findByRole("button", { name: "Enter the cost" }),
     );
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Choose one.")).toBeTruthy();
-    expect(within(dialog).getByText("Type dollars, like 12.50.")).toBeTruthy();
+    expect(
+      within(dialog).getByText("Enter dollars, for example 12.50."),
+    ).toBeTruthy();
     expect(cost).not.toHaveBeenCalled();
     fireEvent.change(within(dialog).getByLabelText("Kind"), {
       target: { value: "PARTS" },
@@ -771,7 +872,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      within(dialog).getByText("Type whole riel, like 40000."),
+      within(dialog).getByText("Enter whole riel, for example 40000."),
     ).toBeTruthy();
     fireEvent.change(within(second).getByLabelText("Amount"), {
       target: { value: "40,000" },
@@ -805,7 +906,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     expect(within(box).getAllByText("$12.50")).toHaveLength(2);
     expect(within(box).getAllByText("40,000 ៛")).toHaveLength(2);
     expect(
-      within(box).getByText("Waiting for a Manager to check the cost."),
+      within(box).getByText("Pending a Manager check of the cost."),
     ).toBeTruthy();
     expect(
       within(box).queryByRole("button", {
@@ -916,9 +1017,9 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     ).toBeTruthy();
     const link = screen.getByRole("link", { name: "ER26000003" });
     expect(link.getAttribute("href")).toContain("ER26000003");
-    expect(screen.getByText(/Waiting for approval/)).toBeTruthy();
+    expect(screen.getByText(/Pending approval/)).toBeTruthy();
     expect(
-      screen.queryByRole("button", { name: "Type the cost again" }),
+      screen.queryByRole("button", { name: "Enter the cost again" }),
     ).toBeNull();
   });
 
@@ -1030,10 +1131,25 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     expect(screen.getByText("1 opened again · 0 not accepted")).toBeTruthy();
     expect(screen.getByText("1 / 2")).toBeTruthy();
     expect(screen.getByText("Normal planned on time: 3 / 3")).toBeTruthy();
+    // Owner 16/11/2026: the damage charges and who pays are the fifth card.
+    expect(screen.getByText("Damage charges")).toBeTruthy();
+    expect(screen.getByText("$25.00")).toBeTruthy();
+    expect(screen.getByText("Who pays: Owner 2 · Tenant 1")).toBeTruthy();
+    // By type and by place are small tables; the number column says "Reports".
+    const byType = screen.getByRole("region", { name: "Reports by type" });
     expect(
-      screen.getByText("Owner pays 2 · Tenant pays 1 · Damage charges $25.00"),
+      within(byType).getByRole("columnheader", { name: "Reports" }),
     ).toBeTruthy();
+    expect(within(byType).getByRole("row", { name: "Water 3" })).toBeTruthy();
+    const byPlace = screen.getByRole("region", { name: "Reports by place" });
+    expect(
+      within(byPlace).getByRole("columnheader", { name: "Place" }),
+    ).toBeTruthy();
+    expect(within(byPlace).getByRole("row", { name: "U101 3" })).toBeTruthy();
     const byUnit = screen.getByRole("region", { name: "Repair cost by Unit" });
+    expect(
+      within(byUnit).getByRole("columnheader", { name: "Unit" }),
+    ).toBeTruthy();
     const u101 = within(byUnit).getByRole("row", { name: /U101/ });
     expect(within(u101).getByText("$14.00 + 40,000 ៛")).toBeTruthy();
     expect(within(u101).getByText("40,000 ៛")).toBeTruthy();
@@ -1059,8 +1175,9 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       ).getByText(/Lobby/),
     ).toBeTruthy();
     expect(
-      within(screen.getByRole("region", { name: "Late now" })).getByText(
-        /Late: the tenant is not contacted yet/,
+      within(screen.getByRole("region", { name: "Late now" })).getByRole(
+        "row",
+        { name: "BP260003 The tenant is not contacted yet" },
       ),
     ).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Month"), {

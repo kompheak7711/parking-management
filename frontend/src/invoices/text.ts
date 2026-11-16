@@ -8,6 +8,7 @@ import type {
   ShortStayInvoiceKind,
 } from "../invoiceClient";
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   inv_sub: ["All Invoices", "វិក្កយបត្រទាំងអស់"],
@@ -16,7 +17,7 @@ const TEXT = {
   loading: ["Loading the Invoices…", "កំពុងផ្ទុកវិក្កយបត្រ…"],
   // new
   failed: [
-    "The Invoices could not be read just now. Check the connection and try again.",
+    "The Invoices could not be loaded. Check the connection and try again.",
     "មិនអាចអានវិក្កយបត្របានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -30,7 +31,7 @@ const TEXT = {
   f_all: ["All", "ទាំងអស់"],
   pc_month: ["This month", "ខែនេះ"],
   pc_last: ["Last month", "ខែមុន"],
-  pm_pick: ["Pick a month", "ជ្រើសខែ"],
+  pm_pick: ["Choose month", "ជ្រើសខែ"],
   type_all: ["All types", "គ្រប់ប្រភេទ"],
   RENT: ["Rent", "ថ្លៃឈ្នួល"],
   UTILITIES: ["Utilities", "ថ្លៃទឹកភ្លើង"],
@@ -153,6 +154,15 @@ const TEXT = {
   h_adjusted: ["Adjusted: {0}", "បានកែតម្រូវ៖ {0}"],
   // new
   h_voided: ["Voided: {0}", "ទុកជាមោឃៈ៖ {0}"],
+  // UI v81 module batch 3 (Invoices): History names the person for every step.
+  h_issued_by: ["Issued by {0}", "ចេញដោយ {0}"], // new
+  h_issued_app: [
+    "Issued by automatic billing",
+    "ចេញដោយការចេញវិក្កយបត្រស្វ័យប្រវត្តិ",
+  ], // new
+  h_draft_by: ["Draft saved by {0}", "សេចក្តីព្រាងរក្សាទុកដោយ {0}"], // new
+  h_adjusted_by: ["Adjusted by {0}: {1}", "កែតម្រូវដោយ {0}៖ {1}"], // new
+  h_voided_by: ["Voided by {0}: {1}", "ទុកជាមោឃៈដោយ {0}៖ {1}"], // new
   cust_t: ["Customer", "អតិថិជន"],
   // new
   open_customer: ["Open Customer", "បើកអតិថិជន"],
@@ -229,12 +239,12 @@ const TEXT = {
     "ថ្ងៃកំណត់បង់តាមច្បាប់ក្នុងការកំណត់សម្រាប់ថ្លៃមួយដង (7 ថ្ងៃក្រោយថ្ងៃចេញ លើកលែងតែបានប្តូរ)។ អ្នកគ្រប់គ្រងអាចជ្រើសថ្ងៃផ្សេង ដោយមានមូលហេតុ។",
   ],
   ni_w4: [
-    "Everything is saved in History.",
+    "Everything is saved in the audit log.",
     "អ្វីៗទាំងអស់រក្សាទុកក្នុងប្រវត្តិ។",
   ],
   ni_dlg_t: ["Save this Draft Invoice?", "រក្សាទុកសេចក្តីព្រាងវិក្កយបត្រនេះ?"],
   ni_dlg_c: [
-    "The Customer does not owe it until a Manager issues it. This is saved in History.",
+    "The Customer does not owe it until a Manager issues it. This is saved in the audit log.",
     "អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។ ការនេះរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   ni_done_t: ["Draft Invoice saved", "បានរក្សាទុកសេចក្តីព្រាងវិក្កយបត្រ"],
@@ -246,10 +256,10 @@ const TEXT = {
   ni_open: ["Open Draft", "បើកសេចក្តីព្រាង"],
   // V1.1 (DL-115 (I); mock-up round 13): Create Invoice › Services.
   sv_svc: ["Regular service", "សេវាធម្មតា"],
-  sv_pick: ["Pick a Regular service…", "ជ្រើសសេវាធម្មតា…"],
+  sv_pick: ["Choose a Regular service…", "ជ្រើសសេវាធម្មតា…"],
   sv_item_n: ["Regular service {0}", "សេវាធម្មតាទី {0}"],
   sv_note: [
-    "The price comes from Settings › Regular services and cannot be typed here. A Manager changes a price only in Settings.",
+    "The price comes from Settings › Regular services and cannot be entered here. A Manager changes a price only in Settings.",
     "តម្លៃមកពី ការកំណត់ › សេវាធម្មតា ហើយមិនអាចវាយនៅទីនេះ។ អ្នកគ្រប់គ្រងប្តូរតម្លៃបានតែក្នុងការកំណត់។",
   ],
   sv_add: ["Add a service", "បន្ថែមសេវា"],
@@ -259,7 +269,7 @@ const TEXT = {
     "មិនទាន់មានសេវាធម្មតា។ អ្នកប្រើដែលមានសិទ្ធិការកំណត់ បន្ថែមវានៅ ការកំណត់ › អត្រា និងសេវា។",
   ],
   sv_failed: [
-    "The Regular services could not be read just now. Check the connection and try again.",
+    "The Regular services could not be loaded. Check the connection and try again.",
     "មិនអាចអានសេវាធម្មតាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   sv_err_svc: [
@@ -267,7 +277,7 @@ const TEXT = {
     "សូមបន្ថែមសេវាធម្មតាយ៉ាងហោចណាស់មួយ។",
   ],
   sv_err_pick: [
-    "Line {0}: pick a Regular service.",
+    "Line {0}: choose a Regular service.",
     "បន្ទាត់ {0}៖ សូមជ្រើសសេវាធម្មតា។",
   ],
   sv_err_qty: [
@@ -349,7 +359,7 @@ const TEXT = {
   ],
   // new
   refused: [
-    "This was not saved. The app did not accept it. Check what you typed, or ask the Owner if you may do this.",
+    "This was not saved. The app did not accept it. Check what you entered, or ask the Owner if you may do this.",
     "ការនេះមិនបានរក្សាទុកទេ។ កម្មវិធីមិនទទួលយក។ សូមពិនិត្យអ្វីដែលបានវាយ ឬសួរម្ចាស់ថាអ្នកអាចធ្វើការនេះបានឬទេ។",
   ],
   // new
@@ -485,6 +495,8 @@ const TEXT = {
   ],
   del_void: ["Void instead", "ទុកជាមោឃៈជំនួសវិញ"],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
+  // UI v81 (owner 08/11/2026): the Lease number where a Lease is named.
+  open_lease_no: ["Open Lease {0}", "បើកកិច្ចសន្យា {0}"],
   // new
   all_for: ["All Invoices for {0}", "វិក្កយបត្រទាំងអស់សម្រាប់ {0}"],
   // new
@@ -551,8 +563,9 @@ const TEXT = {
     "ថ្លៃពិន័យនេះជាវិក្កយបត្រថ្លៃពិន័យបង់យឺត។ ទទួលប្រាក់ កាត់បន្ថយ ឬទុកជាមោឃៈ នៅលើវិក្កយបត្រនោះ៖",
   ],
   lt_pay: ["Receive payment", "ទទួលការបង់ប្រាក់"],
-  lt_fix: ["Reduce or waive", "កាត់បន្ថយ ឬលើកលែង"],
-  mgr_badge: ["MANAGER", "អ្នកគ្រប់គ្រង"],
+  // UI v81 (owner 07/11): short button caption; the role shows beside it.
+  lt_fix: ["Adjust charge", "កែថ្លៃ"], // new
+  mgr_badge: ["Manager only", "សម្រាប់អ្នកគ្រប់គ្រងប៉ុណ្ណោះ"], // new
   // new
   lt_locked: [
     "Only a Manager or the Owner can do this.",
@@ -656,7 +669,7 @@ const TEXT = {
   ],
   // new
   lt_failed: [
-    "The late-payment charge could not be read just now.",
+    "The late-payment charge could not be loaded.",
     "មិនអាចអានថ្លៃពិន័យបានទេឥឡូវនេះ។",
   ],
 } as const satisfies Record<string, readonly [string, string]>;
@@ -711,8 +724,10 @@ export function ivt(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "en" ? 0 : 1];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }

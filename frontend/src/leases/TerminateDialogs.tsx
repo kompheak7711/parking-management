@@ -40,6 +40,7 @@ import {
   useValuesIdentity,
 } from "./LeaseDialogs";
 import { lt } from "./text";
+import { leaseNo } from "./leasesData";
 
 // C1 (DL-240): a Lease is no longer ended for unpaid Initial Rent or Security Deposit; Sign
 // Lease receives that money first.
@@ -298,7 +299,7 @@ export function TerminateDialog({
             ? lt(language, "try_again")
             : lt(language, "tg_ok")
       }
-      title={lt(language, "tg_t", lease.unit_number)}
+      title={lt(language, "tg_t", leaseNo(lease))}
     >
       {evidence.state === "failed" && (
         <div className="ui-notice warn" role="alert">
@@ -595,7 +596,7 @@ export function RecordNoticeDialog({
             ? lt(language, "try_again")
             : lt(language, "nt_new")
       }
-      title={lt(language, "nt_t", lease.unit_number)}
+      title={lt(language, "nt_t", leaseNo(lease))}
     >
       <p className="ui-small">{lt(language, "nt_note")}</p>
       <div className="ui-field">

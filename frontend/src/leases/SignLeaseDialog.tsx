@@ -37,6 +37,7 @@ import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { Problem } from "./LeaseDialogs";
 import { lt } from "./text";
+import { leaseNo } from "./leasesData";
 
 // The reason stored with each signature; the dialog's tick is the person's statement.
 const SIGN_REASON = "Every Signer signed the paper Lease";
@@ -360,7 +361,7 @@ export function SignDialog({
             ? lt(language, "try_again")
             : lt(language, "sp_ok", usdFromCents(total))
       }
-      title={lt(language, "sign_title", lease.unit_number)}
+      title={lt(language, "sign_title", leaseNo(lease))}
       wide
     >
       <p className="ui-small ui-num">

@@ -1,0 +1,13 @@
+/* DL-238: the short-stay guest notices list. On a phone each notice is a card (.ui-pcards); the
+   column headings stay for screen readers, each as small as its row, so none is cut. */
+@media (max-width: 639px) {
+  table.ui-table.ui-pcards.gn-list thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+  }
+}

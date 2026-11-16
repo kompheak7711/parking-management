@@ -180,7 +180,8 @@ LIVE_SESSION: Final = f"""
                   AND {PROOF_COUNTS}),
                'none'
            ),
-           NULL::timestamptz
+           NULL::timestamptz,
+           classification.account_class
     FROM app.browser_sessions AS browser
     JOIN app.user_accounts AS account ON account.actor_id = browser.actor_id
     JOIN app.user_account_classes AS classification ON classification.actor_id = browser.actor_id
@@ -654,6 +655,12 @@ MFA_ASSURANCES: Final[dict[str, Literal["totp", "recovery_code"]]] = {
     "totp": "totp",
     "recovery_code": "recovery_code",
 }
+# UI v81 (owner 08/11/2026, side menu): the account classes the user card names as the role.
+ACCOUNT_CLASSES: Final[dict[str, Literal["owner", "manager", "staff"]]] = {
+    "owner": "owner",
+    "manager": "manager",
+    "staff": "staff",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -708,6 +715,8 @@ def session_view(row: tuple[object, ...]) -> SessionView:
         :8
     ]
     reauthenticated_at = row[8]
+    # UI v81 (owner 08/11/2026, side menu): the account's class names the role on the user card.
+    account_class = row[9] if len(row) > 9 else None
     return SessionView(
         actor_id=str(actor_id),
         authenticated_at=cast(datetime, created_at),
@@ -717,6 +726,7 @@ def session_view(row: tuple[object, ...]) -> SessionView:
         mfa_assurance=MFA_ASSURANCES.get(str(mfa), "none"),
         reauthenticated_at=cast(datetime | None, reauthenticated_at),
         display_name=str(display_name),
+        account_class=ACCOUNT_CLASSES.get(str(account_class)),
     )
 
 

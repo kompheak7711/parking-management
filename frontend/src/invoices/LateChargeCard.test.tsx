@@ -297,7 +297,7 @@ describe("V1-058 R5d late-payment card", () => {
     ).toBeInTheDocument();
 
     const locked = within(section).getByRole("button", {
-      name: /Reduce or waive/,
+      name: /Adjust charge/,
     });
     expect(locked).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(locked);
@@ -315,7 +315,7 @@ describe("V1-058 R5d late-payment card", () => {
     show(late);
     await screen.findByRole("region", { name: "Late-payment charge" });
     fireEvent.click(
-      within(card()).getByRole("button", { name: /Reduce or waive/ }),
+      within(card()).getByRole("button", { name: /Adjust charge/ }),
     );
     const dialog = screen.getByRole("dialog");
     // Something is paid, so Waive is not possible (owner, round 6).
@@ -388,7 +388,7 @@ describe("V1-058 R5d late-payment card", () => {
     show(late);
     await screen.findByRole("region", { name: "Late-payment charge" });
     fireEvent.click(
-      within(card()).getByRole("button", { name: /Reduce or waive/ }),
+      within(card()).getByRole("button", { name: /Adjust charge/ }),
     );
     const dialog = screen.getByRole("dialog");
     fireEvent.click(within(dialog).getByLabelText(/^Waive/));
@@ -503,7 +503,7 @@ describe("V1-058 R5d late-payment card", () => {
       screen.getByText("$10.00 paid to the late-payment charge from Deposit"),
     ).toBeInTheDocument();
     expect(
-      within(section).queryByRole("button", { name: /Reduce or waive/ }),
+      within(section).queryByRole("button", { name: /Adjust charge/ }),
     ).toBeNull();
     expect(
       within(section).getByText(/A Deposit paid part of this charge/),
@@ -528,7 +528,7 @@ describe("V1-058 R5d late-payment card", () => {
     });
     expect(within(waived).getAllByText("Waived")[0]).toHaveClass("ui-chip");
     expect(
-      within(waived).queryByRole("button", { name: /Reduce or waive/ }),
+      within(waived).queryByRole("button", { name: /Adjust charge/ }),
     ).toBeNull();
   });
 });

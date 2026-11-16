@@ -120,12 +120,12 @@ describe("Month-end close", () => {
     expect(screen.getByText("2 to fix")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "2 Expense requests or adjusting entries dated in the month still wait for approval.",
+        "2 Expense requests or adjusting entries dated in this month are still pending approval.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Match the bank book to the ABA statement of 31/10/2026.",
+        "Reconcile the bank account to the ABA statement for 31/10/2026.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "JE260564" })).toBeInTheDocument();

@@ -24,6 +24,7 @@ import {
 import { accountName, money, useRead, Waiting } from "./LedgerPage";
 import { Done, Failure, FieldError, useBusy } from "./SpendingPage";
 import { type LedgerTextKey, lt, monthName, monthShort } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface BudgetPageProps {
   language: Language;
@@ -112,12 +113,12 @@ export function BudgetPage({
   const data = answer.data;
   const header = (
     <section aria-labelledby="bu-title" className="ui-card">
-      <div className="ui-head">
+      <PageHead>
         <div>
           <h2 id="bu-title">{lt(language, "bu_t")}</h2>
           <p>{lt(language, "bu_sub")}</p>
         </div>
-      </div>
+      </PageHead>
     </section>
   );
   if (data === null) {

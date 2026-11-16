@@ -3,6 +3,7 @@
 // "new" are not in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   // DL-237 (owner 13 Nov 2026): notices on day 10, 20 and 25, the termination letter on
@@ -13,13 +14,14 @@ const TEXT = {
   ],
   // new
   as_of: ["as of {0}", "គិតត្រឹម {0}"],
-  tab_rent: ["Rent letters", "លិខិតថ្លៃឈ្នួល"],
-  tab_warn: ["Lease rule warnings", "ការព្រមានវិន័យកិច្ចសន្យា"],
+  // UI v81 round 2: the design's names (sub-tabs and the C26 card). Khmer needs the native check.
+  tab_rent: ["Rent arrears notices", "សេចក្ដីជូនដំណឹងបំណុលថ្លៃឈ្នួល"],
+  tab_warn: ["Lease breach notices", "សេចក្ដីជូនដំណឹងរំលោភកិច្ចសន្យា"],
   // new
   loading: ["Loading the letters…", "កំពុងផ្ទុកលិខិត…"],
   // new
   failed: [
-    "The letters could not be read just now. Check the connection and try again.",
+    "The letters could not be loaded. Check the connection and try again.",
     "មិនអាចអានលិខិតបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -33,7 +35,8 @@ const TEXT = {
     "You are not allowed to see this list.",
     "អ្នកមិនត្រូវបានអនុញ្ញាតឱ្យមើលបញ្ជីនេះទេ។",
   ],
-  c_due: ["Letters to give", "លិខិតត្រូវផ្តល់"],
+  // UI v81: the card keeps the menu's word, "Notices" (the Home card is "Notices due" too).
+  c_due: ["Notices due", "លិខិតត្រូវផ្តល់"],
   c_due_s: [
     "A notice on paper, or the termination letter",
     "លិខិតជូនដំណឹងជាក្រដាស ឬលិខិតបញ្ចប់កិច្ចសន្យា",
@@ -57,7 +60,7 @@ const TEXT = {
   col_30: ["Day-30 letter", "លិខិតថ្ងៃទី៣០"],
   col_next: ["Next step", "ជំហានបន្ទាប់"],
   // new: the mock-up's two letter columns share one, so the table fits an iPad
-  col_letters: ["Letters", "លិខិត"],
+  col_letters: ["Notices", "លិខិត"],
   dayn: ["Day {0}", "ថ្ងៃទី {0}"],
   due_date: ["Due Date {0}", "ថ្ងៃផុតកំណត់ {0}"],
   // new: the mock-up's "Rent still owed" column, as a line under the Customer
@@ -82,7 +85,8 @@ const TEXT = {
     "លិខិតបញ្ចប់កិច្ចសន្យារួចរាល់៖ អ្នកគ្រប់គ្រង ឬម្ចាស់ជាអ្នកផ្ញើ",
   ],
   term: ["End the Lease", "បញ្ចប់កិច្ចសន្យា"],
-  mgr_badge: ["MANAGER", "អ្នកគ្រប់គ្រង"],
+  // UI v81 (owner): the role is text beside the button, "Manager only".
+  mgr_badge: ["Manager only", "សម្រាប់អ្នកគ្រប់គ្រងប៉ុណ្ណោះ"],
   // new
   no_step: ["Nothing to do now", "គ្មានអ្វីត្រូវធ្វើឥឡូវ"],
   none: [
@@ -101,7 +105,7 @@ const TEXT = {
   ],
   // new
   letters_failed: [
-    "The letters of {0} could not be read. Retry before recording one.",
+    "The letters of {0} could not be loaded. Retry before recording one.",
     "មិនអាចអានលិខិតរបស់ {0} បានទេ។ សូមព្យាយាមម្តងទៀត មុនកត់ត្រា។",
   ],
   d_t: ["Record a Rent letter · {0}", "កត់ត្រាលិខិតថ្លៃឈ្នួល · {0}"],
@@ -138,7 +142,7 @@ const TEXT = {
     "ឧទាហរណ៍៖ អ្នកជួលបានចុះហត្ថលេខាលើច្បាប់ចម្លងយើង ឬឈ្មោះសាក្សី។",
   ],
   d_detail_e: ["Write the details.", "សូមសរសេរព័ត៌មានលម្អិត។"],
-  d_no: ["Letter number", "លេខលិខិត"],
+  d_no: ["Notice number", "លេខលិខិត"],
   d_no_ph: [
     "The number written on the paper letter",
     "លេខដែលសរសេរលើលិខិតក្រដាស",
@@ -219,12 +223,12 @@ const TEXT = {
   lw_n: ["{0} of 3", "{0} ក្នុង ៣"],
   lw_new: ["Record warning", "កត់ត្រាការព្រមាន"],
   lw_none: [
-    "No Lease rule warnings recorded.",
+    "No Lease breach notices recorded.",
     "គ្មានការព្រមានវិន័យកិច្ចសន្យាដែលបានកត់ត្រាទេ។",
   ],
   // new
   lw_some_failed: [
-    "The warnings of {0} could not be read. Retry to see them.",
+    "The warnings of {0} could not be loaded. Retry to see them.",
     "មិនអាចអានការព្រមានរបស់ {0} បានទេ។ សូមព្យាយាមម្តងទៀត។",
   ],
   lw_d_t: ["Record a Lease rule warning", "កត់ត្រាការព្រមានវិន័យកិច្ចសន្យា"],
@@ -253,7 +257,7 @@ const TEXT = {
   ],
   // new
   lw_d_ctx_failed: [
-    "The next warning number could not be read. Close and try again.",
+    "The next warning number could not be loaded. Close and try again.",
     "មិនអាចអានលេខការព្រមានបន្ទាប់បានទេ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   lw_toast: [
@@ -269,6 +273,86 @@ const TEXT = {
     "In English until the next steps replace them",
     "ជាភាសាអង់គ្លេស រហូតដល់ជំហានបន្ទាប់ជំនួសវា",
   ],
+  // DL-238 (owner 14 Nov 2026): notices for short-stay guests. Khmer is new: native check.
+  tab_ss: ["Short-stay guest notices", "សេចក្ដីជូនដំណឹងភ្ញៀវស្នាក់នៅខ្លី"],
+  ss_rule: [
+    "The Tenant bot sends guests the check-out reminder at {0} the evening before, the late check-out notice {1} minutes after the time to leave, and a note of a charge still unpaid from {2} the next day. A guest with no Telegram is told in person.",
+    "Tenant bot ផ្ញើទៅភ្ញៀវនូវការរំលឹកអំពីការចាកចេញនៅម៉ោង {0} ល្ងាចមុនថ្ងៃចាកចេញ ការជូនដំណឹងចាកចេញយឺត {1} នាទីបន្ទាប់ពីម៉ោងត្រូវចាកចេញ និងការរំលឹកប្រាក់មិនទាន់បង់ចាប់ពីម៉ោង {2} ថ្ងៃបន្ទាប់។ ភ្ញៀវដែលគ្មាន Telegram ត្រូវប្រាប់ផ្ទាល់។",
+  ],
+  ss_c_tell: ["To tell in person", "ត្រូវប្រាប់ផ្ទាល់"],
+  ss_c_stays: ["Guests checked in", "ភ្ញៀវកំពុងស្នាក់នៅ"],
+  ss_c_warned: ["Guests with a warning", "ភ្ញៀវដែលមានការព្រមាន"],
+  ss_new: ["Give a warning", "ផ្ដល់ការព្រមាន"],
+  ss_none: [
+    "No notices in the last {0} days.",
+    "មិនមានសេចក្ដីជូនដំណឹងក្នុងរយៈពេល {0} ថ្ងៃចុងក្រោយទេ។",
+  ],
+  ss_col_when: ["Date", "កាលបរិច្ឆេទ"],
+  ss_col_guest: ["Unit and guest", "បន្ទប់ និងភ្ញៀវ"],
+  ss_col_notice: ["Notice", "សេចក្ដីជូនដំណឹង"],
+  ss_col_sent: ["How the guest got it", "របៀបដែលភ្ញៀវបានទទួល"],
+  k_CHECK_OUT_REMINDER: ["Check-out reminder", "រំលឹកអំពីការចាកចេញ"],
+  k_LATE_CHECK_OUT: ["Late check-out notice", "ជូនដំណឹងចាកចេញយឺត"],
+  k_HOUSE_RULE_WARNING: [
+    "House-rule warning {0}",
+    "ការព្រមានអំពីវិន័យស្នាក់នៅ លើកទី {0}",
+  ],
+  k_final: ["Final house-rule warning", "ការព្រមានចុងក្រោយអំពីវិន័យស្នាក់នៅ"],
+  k_UNPAID_CHARGE: ["Unpaid charge", "ប្រាក់មិនទាន់បង់"],
+  ss_d_out: ["Check-out {0}", "ចាកចេញ {0}"],
+  ss_d_late: ["Time to leave {0}", "ម៉ោងត្រូវចាកចេញ {0}"],
+  ss_d_unpaid: ["{0}: {1} to pay", "{0}៖ ត្រូវបង់ {1}"],
+  ss_d_auto: ["Sent by the app", "ផ្ញើដោយកម្មវិធី"],
+  ss_d_by: ["By {0}", "ដោយ {0}"],
+  t_SENT: ["Sent by Telegram", "បានផ្ញើតាម Telegram"],
+  t_WAITING: ["Sending", "កំពុងផ្ញើ"],
+  t_NOT_DELIVERED: [
+    "Not delivered: tell in person",
+    "មិនបានទៅដល់៖ ប្រាប់ផ្ទាល់",
+  ],
+  t_NO_TELEGRAM: [
+    "No Telegram: tell in person",
+    "គ្មាន Telegram៖ ប្រាប់ផ្ទាល់",
+  ],
+  ss_told: ["Told by {0} on {1}", "{0} បានប្រាប់នៅថ្ងៃ {1}"],
+  ss_told_btn: ["Told in person", "បានប្រាប់ផ្ទាល់"],
+  ss_told_toast: [
+    "Marked as told in person: {0}.",
+    "បានកត់ថាបានប្រាប់ផ្ទាល់៖ {0}។",
+  ],
+  ss_d_t: ["Give a house-rule warning", "ផ្ដល់ការព្រមានអំពីវិន័យស្នាក់នៅ"],
+  ss_d_guest: ["Guest", "ភ្ញៀវ"],
+  ss_d_reason: ["What happened", "អ្វីដែលបានកើតឡើង"],
+  ss_d_reason_e: ["Write what happened.", "សូមសរសេរអ្វីដែលបានកើតឡើង។"],
+  ss_d_next1: [
+    "This is warning 1. A second warning is the final warning.",
+    "នេះជាការព្រមានលើកទី ១។ ការព្រមានលើកទី ២ គឺជាការព្រមានចុងក្រោយ។",
+  ],
+  ss_d_next2: [
+    "This is the final warning. After it a Manager may end the stay early; unused nights stay paid.",
+    "នេះជាការព្រមានចុងក្រោយ។ បន្ទាប់ពីនេះ អ្នកគ្រប់គ្រងអាចបញ្ចប់ការស្នាក់នៅមុនកាលកំណត់។ យប់ដែលមិនបានប្រើ មិនសងប្រាក់វិញទេ។",
+  ],
+  ss_d_full: ["final warning given", "បានផ្ដល់ការព្រមានចុងក្រោយ"],
+  ss_d_no_stay: [
+    "No guest is checked in now.",
+    "ឥឡូវនេះមិនមានភ្ញៀវកំពុងស្នាក់នៅទេ។",
+  ],
+  ss_d_no_tg: [
+    "This guest has no Telegram: tell the guest in person.",
+    "ភ្ញៀវនេះគ្មាន Telegram៖ សូមប្រាប់ភ្ញៀវផ្ទាល់។",
+  ],
+  ss_toast_tg: [
+    "Warning {0} given to {1} and sent by Telegram.",
+    "បានផ្ដល់ការព្រមានលើកទី {0} ដល់ {1} និងបានផ្ញើតាម Telegram។",
+  ],
+  ss_toast_person: [
+    "Warning {0} given to {1}. No Telegram: tell the guest in person.",
+    "បានផ្ដល់ការព្រមានលើកទី {0} ដល់ {1}។ គ្មាន Telegram៖ សូមប្រាប់ភ្ញៀវផ្ទាល់។",
+  ],
+  ss_save_e: [
+    "It was not saved. Please try again.",
+    "មិនបានរក្សាទុកទេ។ សូមព្យាយាមម្ដងទៀត។",
+  ],
 } as const;
 
 export type LettersTextKey = keyof typeof TEXT;
@@ -279,8 +363,10 @@ export function ltr(
   key: LettersTextKey,
   ...values: (string | number)[]
 ): string {
-  return TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
-    String(values[Number(n)] ?? ""),
+  return singular(
+    TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
+      String(values[Number(n)] ?? ""),
+    ),
   );
 }
 

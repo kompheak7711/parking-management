@@ -3,10 +3,11 @@
 // marked "new" needs the native check.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
-  failed: ["This could not be read just now.", "មិនអាចអានបានទេឥឡូវនេះ។"],
+  failed: ["This could not be loaded.", "មិនអាចអានបានទេឥឡូវនេះ។"],
   retry: ["Try again", "សាកម្តងទៀត"],
   back: ["Back to Quotations", "ត្រឡប់ទៅសម្រង់តម្លៃ"],
   no_property: [
@@ -21,18 +22,10 @@ const TEXT = {
     "អតិថិជនអាន និងចុះហត្ថលេខាលើសម្រង់តម្លៃ។ ការចុះហត្ថលេខាចេញវិក្កយបត្រភ្លាម។",
   ],
   new_btn: ["New Quotation", "សម្រង់តម្លៃថ្មី"],
-  c_all: ["All Quotations", "សម្រង់តម្លៃទាំងអស់"],
-  c_all_s: ["The latest 300", "300 ចុងក្រោយ"],
-  c_wait: ["Waiting for signature", "រង់ចាំហត្ថលេខា"],
-  c_wait_s: [
-    "Until their valid day",
-    // new
-    "រហូតដល់ថ្ងៃផុតសុពលភាព",
-  ],
+  c_all: ["Quotations", "សម្រង់តម្លៃ"],
+  c_wait: ["Signature", "ហត្ថលេខា"],
   c_signed: ["Signed", "បានចុះហត្ថលេខា"],
-  c_signed_s: ["Invoice issued", "វិក្កយបត្រចេញរួច"],
-  c_closed: ["Expired or declined", "ផុតកំណត់ ឬបដិសេធ"],
-  c_closed_s: ["No Invoice", "គ្មានវិក្កយបត្រ"],
+  c_closed: ["Closed", "បានបិទ"],
   showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   col_no: ["No.", "លេខ"],
@@ -117,7 +110,7 @@ const TEXT = {
     "មានតែ {0} នៅ {1}។ សម្រង់តម្លៃរង់ចាំរហូតដល់ទំនិញមានក្នុងស្តុក។",
   ],
   no_stock: [
-    "{0} is not in stock anywhere. Buy it first in Building › Products; the Quotation waits.",
+    "{0} is not in stock anywhere. Buy it first in Property › Products; the Quotation waits.",
     // new
     "{0} មិនមានក្នុងស្តុកទេ។ ទិញវាជាមុនក្នុង អគារ › ផលិតផល; សម្រង់តម្លៃរង់ចាំ។",
   ],
@@ -141,7 +134,7 @@ const TEXT = {
   // New Quotation
   new_t: ["New Quotation", "សម្រង់តម្លៃថ្មី"],
   new_sub: [
-    "Pick products. Price comes from Products. The Customer signs the printed Quotation, then the Invoice is issued.",
+    "Choose products. Price comes from Products. The Customer signs the printed Quotation, then the Invoice is issued.",
     "ជ្រើសផលិតផល។ តម្លៃមកពីផលិតផល។ អតិថិជនចុះហត្ថលេខាលើសម្រង់តម្លៃដែលបានបោះពុម្ព បន្ទាប់មកវិក្កយបត្រត្រូវបានចេញ។",
   ],
   new_ver: ["New version of {0}", "កំណែថ្មីនៃ {0}"],
@@ -251,7 +244,7 @@ const TEXT = {
     "ទំនិញមួយមិនមាននៅទីតាំងនោះទេ។ សម្រង់តម្លៃរង់ចាំ; ជ្រើសទីតាំងផ្សេង ឬទិញទំនិញជាមុន។",
   ],
   f_refused: [
-    "The server refused this. Check the Quotation: it may have expired or a product may have no price.",
+    "This could not be saved. Check the Quotation: it may have expired or a product may have no price.",
     // new
     "ម៉ាស៊ីនមេបានបដិសេធ។ ពិនិត្យសម្រង់តម្លៃ៖ វាអាចផុតកំណត់ ឬផលិតផលអាចគ្មានតម្លៃ។",
   ],
@@ -271,8 +264,10 @@ export function qt(
   ...values: (string | number)[]
 ): string {
   const words: string = TEXT[key][language === "km" ? 1 : 0];
-  return words.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    words.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }

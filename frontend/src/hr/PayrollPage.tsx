@@ -37,6 +37,7 @@ import {
   type PayrollState,
 } from "./hrClient";
 import { codeText, ht } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface PayrollPageProps {
   language: Language;
@@ -109,7 +110,7 @@ export function PayrollPage({
     <>
       <Done text={done} />
       <section aria-labelledby="hr-p-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="hr-p-title">{ht(language, "p_title")}</h2>
             <p>{ht(language, "p_sub")}</p>
@@ -127,7 +128,7 @@ export function PayrollPage({
               propertyId={propertyId}
             />
           )}
-        </div>
+        </PageHead>
         {data !== null && (
           <>
             <p className="ui-muted ui-small">
@@ -356,7 +357,7 @@ function RunView({
       {back}
       <Done text={done} />
       <section aria-labelledby="hr-pr-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="hr-pr-title">
               {ht(language, "p_for", monthLabel(language, run.salary_month))}{" "}
@@ -441,7 +442,7 @@ function RunView({
               </button>
             )}
           </div>
-        </div>
+        </PageHead>
         <Failure text={sending.failure} />
         <ol aria-label={ht(language, "a_status")} className="ui-msteps">
           {steps.map((step, index) => (

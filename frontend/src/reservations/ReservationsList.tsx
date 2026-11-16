@@ -22,6 +22,7 @@ import {
   resultOf,
 } from "./reservationsData";
 import { rt } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 const STATUS_CHIPS: Record<ReservationStatus, [Tone, ShellIcon | undefined]> = {
   ACTIVE: ["ok", "check"],
@@ -93,17 +94,16 @@ export function ReservationsList({
 
   return (
     <>
-      <div className="ui-head">
+      <PageHead>
         <p>{rt(language, "sub", data.reservations.length)}</p>
         {action !== undefined && <div className="ui-actions">{action}</div>}
-      </div>
+      </PageHead>
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone]) => (
           <CountCard
             icon={icon}
             key={value}
             label={rt(language, `c_${value}`)}
-            note={rt(language, `c_${value}_s`)}
             onPress={() => {
               setCard(card === value ? "all" : value);
             }}
@@ -137,12 +137,14 @@ export function ReservationsList({
         ) : (
           <>
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              <table className="ui-table ui-pcards ui-reslist">
                 <thead>
                   <tr>
                     <th scope="col">{rt(language, "unit")}</th>
                     <th scope="col">{rt(language, "customer")}</th>
-                    <th scope="col">{rt(language, "reserved_on")}</th>
+                    <th className="rs-on" scope="col">
+                      {rt(language, "reserved_on")}
+                    </th>
                     <th scope="col">{rt(language, "expires")}</th>
                     <th className="r" scope="col">
                       {rt(language, "deposit")}
@@ -171,7 +173,7 @@ export function ReservationsList({
                           open(id);
                         }}
                       >
-                        <td>
+                        <td className="rs-unit">
                           <a
                             className="ui-no ui-num"
                             href={hashForPage("reservations", id)}
@@ -194,11 +196,25 @@ export function ReservationsList({
                             {reservation.unit_number}
                           </a>
                         </td>
-                        <td>{reservation.customer_name}</td>
-                        <td className="ui-num">
+                        {/* Batch 6: on an iPad standing up and on a phone the Reserved on
+                            column folds under the Customer; on a phone each row is a card. */}
+                        <td className="rs-cust">
+                          {reservation.customer_name}
+                          <span className="ui-sub2 ui-num rs-on-sub">
+                            {rt(
+                              language,
+                              "reserved_sub",
+                              dayText(reservation.reservation_date),
+                            )}
+                          </span>
+                        </td>
+                        <td className="ui-num rs-on">
                           {dayText(reservation.reservation_date)}
                         </td>
-                        <td className="ui-num">
+                        <td className="ui-num rs-exp">
+                          <span className="pc-label">
+                            {rt(language, "expires")}{" "}
+                          </span>
                           {dayText(reservation.effective_expiration_date)}
                           {notes.length > 0 && (
                             <span
@@ -212,7 +228,7 @@ export function ReservationsList({
                             </span>
                           )}
                         </td>
-                        <td className="r ui-num">
+                        <td className="r ui-num rs-dep">
                           {usdFromCents(reservation.deposit_received_usd_cents)}
                           <span className="ui-sub2">
                             {rt(
@@ -224,7 +240,7 @@ export function ReservationsList({
                             )}
                           </span>
                         </td>
-                        <td className="wrap">
+                        <td className="wrap rs-status">
                           <ReservationChip
                             language={language}
                             status={reservation.status}

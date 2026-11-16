@@ -4,11 +4,25 @@
 
 import type { Language } from "../signInText";
 import type { AccountType } from "./ledgerClient";
+import { singular } from "../shell/plural";
 
 const TEXT = {
+  // Owner 16/11/2026: one-word captions on the Ledger buttons; the full name is the tooltip
+  // and the dialog title. Khmer to be checked.
+  b_request: ["Request", "សំណើ"],
+  b_report: ["Report", "របាយការណ៍"],
+  b_expense: ["Record", "កត់ត្រា"],
+  b_bill: ["Bill", "វិក្កយបត្រ"],
+  b_asset: ["Asset", "ទ្រព្យសកម្ម"],
+  b_transfer: ["Transfer", "ផ្ទេរប្រាក់"],
+  b_topup: ["Top up", "បំពេញ"],
+  b_capital: ["Capital", "ប្រាក់ម្ចាស់"],
+  b_opening: ["Opening", "សមតុល្យដើម"],
+  b_excel: ["Excel", "Excel"],
+  b_pdf: ["PDF", "PDF"],
   loading: ["Loading…", "កំពុងផ្ទុក…"],
   failed: [
-    "This list could not be read just now.",
+    "This list could not be loaded. Try again.",
     "មិនអាចអានបញ្ជីនេះបានទេឥឡូវនេះ។",
   ],
   retry: ["Try again", "សាកម្តងទៀត"],
@@ -20,30 +34,32 @@ const TEXT = {
   back: ["Back", "ត្រឡប់ក្រោយ"],
   // new
   f_right: [
-    "You do not have the right to do this.",
+    "You do not have permission to do this.",
     "អ្នកមិនមានសិទ្ធិធ្វើការនេះទេ។",
   ],
   // new
   f_failed: ["This was not saved. Try again.", "មិនបានរក្សាទុកទេ។ សាកម្តងទៀត។"],
   // new
-  f_refused: ["The app refused this: {0}", "កម្មវិធីបានបដិសេធ៖ {0}"],
+  f_refused: ["This could not be completed: {0}", "កម្មវិធីបានបដិសេធ៖ {0}"],
   // new
   not_found: [
-    "This entry is not in the ledger.",
+    "This entry could not be found. Go back to Journal entries and try again.",
     "ធាតុនេះមិនមាននៅក្នុងសៀវភៅបញ្ជីទេ។",
   ],
   // Journal entries
   j_title: ["Journal entries", "ធាតុទិនានុប្បវត្តិ"],
   j_sub: [
-    "Every money record makes its own balanced entry by itself. Entries are never edited; a mistake gets a reversing entry.",
+    "Each financial record in the app posts its own balanced entry automatically. Entries are never edited; a mistake is corrected with a reversing entry.",
     "កំណត់ត្រាប្រាក់នីមួយៗបង្កើតធាតុដែលមានតុល្យភាពដោយខ្លួនឯង។ ធាតុមិនត្រូវកែទេ។ កំហុសត្រូវមានធាតុបញ្ច្រាស។",
   ],
   month: ["Month", "ខែ"],
   all_months: ["All months", "គ្រប់ខែ"],
   no: ["No.", "លេខ"],
   date: ["Date", "កាលបរិច្ឆេទ"],
-  what: ["What happened", "អ្វីបានកើតឡើង"],
+  what: ["Description", "អ្វីបានកើតឡើង"],
   from: ["From", "ពី"],
+  // UI v81 (B5): the source record of a journal entry; "from" stays the From date label.
+  source: ["Source", "ប្រភព"], // new
   amount: ["Amount", "ចំនួន"],
   debit: ["Debit", "ឥណពន្ធ"],
   credit: ["Credit", "ឥណទាន"],
@@ -51,7 +67,7 @@ const TEXT = {
   balance: ["Balance", "សមតុល្យ"],
   total: ["Total", "សរុប"],
   newest: [
-    "Newest {0} entries. Pick a month to see all of it.",
+    "Showing the latest {0} entries. Choose a month to see all entries for that month.",
     "ធាតុថ្មីបំផុត {0}។ ជ្រើសខែ ដើម្បីមើលទាំងអស់។",
   ],
   // new
@@ -65,14 +81,14 @@ const TEXT = {
     "ធាតុនេះមិនត្រូវកែទេ។ ដើម្បីកែកំហុស សូមបញ្ច្រាស ហើយកត់ត្រាម្ដងទៀត។",
   ],
   rev_ctl: [
-    "Entries made from app records are fixed through the record itself (void, correction).",
+    "Entries posted from app records are corrected by voiding or correcting the original record.",
     "ធាតុពីកំណត់ត្រាកម្មវិធីត្រូវកែតាមកំណត់ត្រានោះ (លុបចោល ការកែតម្រូវ)។",
   ],
   rev_done: ["Reversed by {0}", "បានបញ្ច្រាសដោយ {0}"],
   rev_of: ["Reverses {0}", "បញ្ច្រាស {0}"],
-  posted_by: ["Recorded by", "កត់ត្រាដោយ"],
+  posted_by: ["Posted by", "កត់ត្រាដោយ"],
   // new
-  app: ["The app", "កម្មវិធី"],
+  app: ["System", "កម្មវិធី"],
   // new
   approved_by: ["Approved by", "អនុម័តដោយ"],
   // new
@@ -80,11 +96,11 @@ const TEXT = {
   // new
   closed_month: ["Its month is closed.", "ខែរបស់វាបានបិទ។"],
   // Entry kinds (mock-up gl_k_*)
-  k_AUTO: ["From an app record", "ពីកំណត់ត្រាកម្មវិធី"],
-  k_RENT_TO_INCOME: ["Rent moves to income", "ឈ្នួលចូលចំណូល"],
+  k_AUTO: ["Automatic entry", "ពីកំណត់ត្រាកម្មវិធី"],
+  k_RENT_TO_INCOME: ["Rent recognized as income", "ឈ្នួលចូលចំណូល"],
   k_DEPRECIATION: ["Depreciation", "រំលោះ"],
   k_FX_REVALUATION: [
-    "Riel cash valued at month end",
+    "Month-end riel revaluation",
     "វាយតម្លៃសាច់ប្រាក់រៀលចុងខែ",
   ],
   k_OPENING: ["Opening balance", "សមតុល្យដើម"],
@@ -102,29 +118,32 @@ const TEXT = {
   ],
   s_PAYMENT: ["Payment received", "ការបង់ប្រាក់បានទទួល"],
   s_PAYMENT_ALLOCATION: [
-    "Payment used for an Invoice",
+    "Payment applied to Invoice",
     "ប្រាក់ប្រើសម្រាប់វិក្កយបត្រ",
   ],
   s_DEPOSIT_RECEIPT: ["Deposit received", "ប្រាក់កក់បានទទួល"],
-  s_DEPOSIT_APPLICATION: ["Deposit used", "ប្រាក់កក់បានប្រើ"],
-  s_DEPOSIT_DISPOSITION: ["Deposit kept or returned", "ប្រាក់កក់រក្សាទុក ឬសង"],
+  s_DEPOSIT_APPLICATION: ["Deposit applied to Invoice", "ប្រាក់កក់បានប្រើ"],
+  s_DEPOSIT_DISPOSITION: [
+    "Deposit forfeited or refunded",
+    "ប្រាក់កក់រក្សាទុក ឬសង",
+  ],
   s_CUSTOMER_CREDIT: ["Customer Credit", "ឥណទានអតិថិជន"],
-  s_CREDIT_APPLICATION: ["Customer Credit used", "ឥណទានអតិថិជនបានប្រើ"],
+  s_CREDIT_APPLICATION: ["Customer Credit applied", "ឥណទានអតិថិជនបានប្រើ"],
   s_REFUND: ["Refund paid", "ការសងប្រាក់"],
   s_REFUND_CORRECTION: ["Refund correction", "ការកែការសងប្រាក់"],
   s_EXPENSE: ["Expense", "ចំណាយ"],
   s_EXPENSE_REQUEST: ["Staff advance", "ប្រាក់បុរេប្រទានបុគ្គលិក"],
-  s_STAFF_PAYBACK: ["Staff paid back", "សងប្រាក់បុគ្គលិក"],
+  s_STAFF_PAYBACK: ["Staff reimbursed", "សងប្រាក់បុគ្គលិក"],
   s_BILL_PAYMENT: ["Supplier bill paid", "វិក្កយបត្រអ្នកផ្គត់ផ្គង់បានបង់"],
-  s_MONEY_MOVE: ["Money moved", "ផ្ទេរប្រាក់"],
+  s_MONEY_MOVE: ["Fund transfer", "ផ្ទេរប្រាក់"],
   s_SHORT_STAY_DEPOSIT: ["Short-stay deposit", "ប្រាក់កក់ស្នាក់នៅខ្លី"],
-  s_OWNER_MONEY: ["Owner money", "ប្រាក់ម្ចាស់"],
+  s_OWNER_MONEY: ["Owner's capital or drawing", "ប្រាក់ម្ចាស់"],
   s_PETTY_CASH_TOPUP: ["Petty cash top-up", "បំពេញសាច់ប្រាក់រាយ"],
   s_CASH_COUNT: ["Cash count difference", "ភាពខុសគ្នានៃការរាប់សាច់ប្រាក់"],
   // Chart of accounts
   a_title: ["Chart of accounts", "តារាងគណនី"],
   a_sub: [
-    "The chart of accounts. Only the Owner adds accounts. An account with entries is turned off, never deleted.",
+    "Only the Owner can add accounts. An account that has entries can be deactivated but never deleted.",
     "តារាងគណនី។ មានតែម្ចាស់ទេដែលបន្ថែមគណនីបាន។ គណនីដែលមានធាតុត្រូវបិទ មិនលុបចោលទេ។",
   ],
   code: ["Code", "លេខកូដ"],
@@ -132,25 +151,25 @@ const TEXT = {
   t_LIABILITY: ["Liabilities", "បំណុល"],
   t_EQUITY: ["Owner's equity", "មូលធនម្ចាស់"],
   t_INCOME: ["Income", "ចំណូល"],
-  t_COST_OF_SALES: ["Cost of products sold", "ថ្លៃដើមផលិតផលលក់"],
+  t_COST_OF_SALES: ["Cost of sales", "ថ្លៃដើមផលិតផលលក់"],
   t_EXPENSE: ["Expenses", "ចំណាយ"],
-  ctl: ["App records only", "តែកំណត់ត្រាកម្មវិធី"],
+  ctl: ["Control account", "តែកំណត់ត្រាកម្មវិធី"],
   ctl_s: [
     "Changes only through app records, so the books always match the app.",
     "ប្ដូរតែតាមកំណត់ត្រាកម្មវិធី ដូច្នេះសៀវភៅតែងតែត្រូវនឹងកម្មវិធី។",
   ],
-  off: ["Turned off", "បានបិទ"],
-  tax: ["No entries yet", "មិនទាន់មានធាតុ"],
+  off: ["Inactive", "បានបិទ"],
+  tax: ["Locked: awaiting tax rules", "មិនទាន់មានធាតុ"],
   tax_n: [
     "No entries until a tax agent confirms the rules.",
     "មិនមានធាតុរហូតដល់ភ្នាក់ងារពន្ធបញ្ជាក់ច្បាប់។",
   ],
   off_n: [
-    "This account is turned off. Old entries stay. No new entries can use it.",
+    "This account is inactive. Its past entries are kept, but new entries cannot use it.",
     "គណនីនេះបានបិទ។ ធាតុចាស់នៅដដែល។ ធាតុថ្មីមិនអាចប្រើវាបានទេ។",
   ],
   used_n: [
-    "This account has entries, so it can be turned off but never deleted.",
+    "This account has entries, so it can be deactivated but never deleted.",
     "គណនីនេះមានធាតុ ដូច្នេះអាចបិទបាន តែមិនអាចលុបបានទេ។",
   ],
   ad_sub: [
@@ -160,9 +179,9 @@ const TEXT = {
   // new
   ad_open: ["Opening balance", "សមតុល្យដើម"],
   // Needs check
-  nc_title: ["Needs check", "ត្រូវពិនិត្យ"],
+  nc_title: ["Unposted records", "ត្រូវពិនិត្យ"],
   nc_sub: [
-    "App money records that could not go to the ledger yet",
+    "Financial records that could not be posted to the ledger yet.",
     "កំណត់ត្រាប្រាក់ក្នុងកម្មវិធីដែលមិនទាន់ចូលសៀវភៅបញ្ជីបាន",
   ],
   nc_open: ["To fix", "ត្រូវកែ"],
@@ -173,7 +192,7 @@ const TEXT = {
     "គ្មានអ្វីត្រូវពិនិត្យទេ។ កំណត់ត្រាប្រាក់ទាំងអស់នៅក្នុងសៀវភៅបញ្ជី។",
   ],
   nc_note: [
-    "Nothing is lost: each record goes to the ledger as soon as its reason is fixed. A Refund corrected after it was paid posts by itself; it shows here only when its Refund method has no ledger account.",
+    "Nothing is lost. Each record is posted as soon as its issue is fixed. A Refund corrected after payment posts automatically; it appears here only if its Refund method has no ledger account.",
     "គ្មានអ្វីបាត់ទេ៖ កំណត់ត្រានីមួយៗចូលសៀវភៅបញ្ជីភ្លាម ពេលកែមូលហេតុរួច។ ការសងប្រាក់ដែលកែក្រោយបានសង ចូលសៀវភៅបញ្ជីដោយខ្លួនឯង; វាបង្ហាញនៅទីនេះតែពេលមធ្យោបាយសងប្រាក់គ្មានគណនីសៀវភៅបញ្ជីប៉ុណ្ណោះ។",
   ],
   nc_r_pay: [
@@ -186,11 +205,11 @@ const TEXT = {
   ],
   // new
   nc_r_other: [
-    "The ledger could not post this record. It tries again after each change; if it stays here, tell the person who set up the app.",
+    "This record could not be posted. The app tries again after each change. If it is still here, contact your system administrator.",
     "សៀវភៅបញ្ជីមិនអាចកត់ត្រាកំណត់ត្រានេះបានទេ។ វាសាកម្ដងទៀតក្រោយការផ្លាស់ប្ដូរនីមួយៗ; បើវានៅតែនៅទីនេះ សូមប្រាប់អ្នកដែលរៀបចំកម្មវិធី។",
   ],
   nc_set: ["Set the account", "កំណត់គណនី"],
-  nc_set_m: ["Set the method's account", "កំណត់គណនីរបស់មធ្យោបាយ"],
+  nc_set_m: ["Set account", "កំណត់គណនីរបស់មធ្យោបាយ"],
   nc_change: ["Change", "ប្ដូរ"],
   nc_macc: ["Payment Method accounts", "គណនីមធ្យោបាយបង់ប្រាក់"],
   nc_macc_s: [
@@ -222,13 +241,13 @@ const TEXT = {
   nc_riel: ["Riel account", "គណនីរៀល"],
   nc_riel_none: ["None", "គ្មាន"],
   nc_riel_h: [
-    "A payment in riel goes to this account. With none, riel paid by a dollar cash method goes to 1011, and other riel goes to the account above.",
+    "Riel payments are posted to this account. If none is set, riel received through a dollar cash method goes to 1011 Cash on hand (KHR), and other riel goes to the account above.",
     "ការបង់ប្រាក់ជារៀលចូលគណនីនេះ។ បើគ្មាន រៀលដែលបង់តាមមធ្យោបាយសាច់ប្រាក់ដុល្លារចូល ១០១១ ហើយរៀលផ្សេងទៀតចូលគណនីខាងលើ។",
   ],
   nc_riel_line: ["Riel: {0}", "រៀល៖ {0}"],
   // Refund paid from a riel account (owner 05/11/2026, DL-161)
   nc_r_riel: [
-    "Paid from a riel account: type the riel that left it. The tenant still got dollars.",
+    "Paid from a riel account. Enter the riel amount paid out. The Customer still received dollars.",
     "បានសងពីគណនីរៀល៖ វាយបញ្ចូលចំនួនរៀលដែលចេញពីគណនីនោះ។ អ្នកជួលនៅតែទទួលបានដុល្លារ។",
   ],
   nc_r_ready: [
@@ -236,10 +255,10 @@ const TEXT = {
     "បានកែរួច។ វានឹងចូលសៀវភៅបញ្ជីនៅពេលកត់ត្រាលើកក្រោយ។",
   ],
   nc_r_rcorr: [
-    "A correction of a Refund paid from a riel account. It cannot go to the ledger yet; it waits for a later version of the app.",
+    "A correction of a Refund paid from a riel account. It cannot be posted yet; posting will be added in a later app update. No action is needed.",
     "ការកែការសងប្រាក់ដែលបានសងពីគណនីរៀល។ វាមិនទាន់អាចចូលសៀវភៅបញ្ជីបានទេ; វារង់ចាំកំណែក្រោយរបស់កម្មវិធី។",
   ],
-  nc_riel_type: ["Type the riel", "វាយបញ្ចូលរៀល"],
+  nc_riel_type: ["Enter riel amount", "វាយបញ្ចូលរៀល"],
   nc_rr_t: ["Riel paid for {0}", "រៀលដែលបានសងសម្រាប់ {0}"],
   nc_rr_amt: ["Riel paid (៛)", "រៀលដែលបានសង (៛)"],
   nc_rr_h: [
@@ -255,13 +274,13 @@ const TEXT = {
     "រៀលសម្រាប់ {0} បានរក្សាទុក។ វានឹងចូលសៀវភៅបញ្ជីនៅពេលកត់ត្រាលើកក្រោយ។",
   ],
   nc_racc_h: [
-    "To pay Refunds from the riel bank account, choose 1021. The Refund stays in dollars; you then type the riel paid in Needs check.",
+    "To pay a refund from the riel bank account, choose 1021. The refund stays in US dollars; you then enter the riel paid in Unposted records.",
     "ដើម្បីសងប្រាក់ពីគណនីធនាគាររៀល សូមជ្រើស ១០២១។ ការសងប្រាក់នៅតែជាដុល្លារ; បន្ទាប់មកអ្នកវាយបញ្ចូលរៀលដែលបានសងនៅក្នុង ត្រូវពិនិត្យ។",
   ],
   // Financial statements
   r_title: ["Financial statements", "របាយការណ៍ហិរញ្ញវត្ថុ"],
   r_sub: [
-    "Made from the journal entries. Pick a statement and a month.",
+    "Prepared from the journal entries. Choose a statement and a month.",
     "បង្កើតពីធាតុទិនានុប្បវត្តិ។ ជ្រើសរបាយការណ៍ និងខែ។",
   ],
   r_profit_and_loss: ["Profit and loss", "ចំណេញ និងខាត"],
@@ -269,10 +288,10 @@ const TEXT = {
   r_cash_flow: ["Cash flow", "លំហូរសាច់ប្រាក់"],
   r_trial_balance: ["Trial balance", "តុល្យភាពសាកល្បង"],
   r_account_detail: ["Account detail", "ព័ត៌មានលម្អិតគណនី"],
-  r_customer_aging: ["Customer debt aging", "អាយុបំណុលអតិថិជន"],
-  r_bills_aging: ["Supplier bill aging", "អាយុវិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
+  r_customer_aging: ["Accounts receivable aging", "អាយុបំណុលអតិថិជន"],
+  r_bills_aging: ["Accounts payable aging", "អាយុវិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
   r_budget: ["Budget vs actual", "ថវិកាធៀបនឹងជាក់ស្ដែង"],
-  r_books_check: ["Books check", "ការត្រួតពិនិត្យសៀវភៅ"],
+  r_books_check: ["Books reconciliation", "ការត្រួតពិនិត្យសៀវភៅ"],
   xlsx: ["Export Excel", "នាំចេញ Excel"],
   pdf: ["Export PDF (A4)", "នាំចេញ PDF (A4)"],
   st_closed: ["Closed", "បានបិទ"],
@@ -291,7 +310,7 @@ const TEXT = {
   r_check: ["Check", "ការត្រួតពិនិត្យ"],
   // new
   r_english: [
-    "Statement words come from the ledger in English; account names follow your language.",
+    "Statement headings are shown in English. Account names appear in your chosen language.",
     "ពាក្យក្នុងរបាយការណ៍មកពីសៀវភៅបញ្ជីជាភាសាអង់គ្លេស ឈ្មោះគណនីតាមភាសារបស់អ្នក។",
   ],
   // new
@@ -318,7 +337,7 @@ const TEXT = {
     "ឥណទានអតិថិជន (2200) ស្មើបញ្ជីក្នុងកម្មវិធី",
   ],
   bc_MONEY_NOT_USED: [
-    "Money not used yet (2210) equals the app's list",
+    "Unapplied payments (2210) equals the app's list",
     "ប្រាក់មិនទាន់ប្រើ (2210) ស្មើបញ្ជីក្នុងកម្មវិធី",
   ],
   bc_EVERY_RECORD_POSTED: [
@@ -343,18 +362,18 @@ const TEXT = {
   er_req: ["Expense request", "សំណើចំណាយ"],
   er_rep: ["Expense report", "របាយការណ៍ចំណាយ"],
   er_open_t: ["Open requests and advances", "សំណើ និងប្រាក់បុរេប្រទានដែលនៅបើក"],
-  er_c_wait: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
-  er_c_adv: ["Advances not cleared", "ប្រាក់បុរេប្រទានមិនទាន់ជម្រះ"],
+  er_c_wait: ["Pending approval", "រង់ចាំការអនុម័ត"],
+  er_c_adv: ["Outstanding advances", "ប្រាក់បុរេប្រទានមិនទាន់ជម្រះ"],
   er_c_late: ["Late reports", "របាយការណ៍យឺត"],
-  er_c_owed: ["Money owed to staff", "ប្រាក់ជំពាក់បុគ្គលិក"],
+  er_c_owed: ["Owed to staff", "ប្រាក់ជំពាក់បុគ្គលិក"],
   er_c_all: ["All requests", "សំណើទាំងអស់"],
   er_c_n: ["{0} open", "{0} នៅបើក"],
   er_list_open: ["Open requests", "សំណើដែលនៅបើក"],
   er_c_late_s: [
-    "Bill not back after {0} days",
+    "Receipt overdue after {0} days",
     "វិក្កយបត្រមិនទាន់មកវិញក្រោយ {0} ថ្ងៃ",
   ],
-  er_c_owed_s: ["To pay back", "ត្រូវសងវិញ"],
+  er_c_owed_s: ["To reimburse", "ត្រូវសងវិញ"],
   er_no: ["Number", "លេខ"],
   er_date: ["Date", "កាលបរិច្ឆេទ"],
   er_date_spent: ["Date spent", "ថ្ងៃចំណាយ"],
@@ -364,7 +383,7 @@ const TEXT = {
     "Yes: already spent, this is an Expense report",
     "បាទ/ចាស៖ បានចំណាយរួច នេះជារបាយការណ៍ចំណាយ",
   ],
-  er_for: ["What for", "សម្រាប់អ្វី"],
+  er_for: ["Purpose", "សម្រាប់អ្វី"],
   er_why: ["Reason", "មូលហេតុ"],
   er_amt: ["Amount", "ចំនួនទឹកប្រាក់"],
   er_sup: ["Supplier (if known)", "អ្នកផ្គត់ផ្គង់ (បើដឹង)"],
@@ -378,7 +397,7 @@ const TEXT = {
   er_c_open: ["Show all open", "បង្ហាញទាំងអស់ដែលបើក"],
   er_from: ["Paid from", "បង់ពី"],
   er_f_ADV: ["Advance to staff", "ប្រាក់បុរេប្រទានឱ្យបុគ្គលិក"],
-  er_f_OWN: ["Staff's own money", "ប្រាក់ផ្ទាល់ខ្លួនបុគ្គលិក"],
+  er_f_OWN: ["Paid by staff (to be reimbursed)", "ប្រាក់ផ្ទាល់ខ្លួនបុគ្គលិក"],
   er_f_LATER: [
     "Pay later (supplier bill)",
     "បង់ពេលក្រោយ (វិក្កយបត្រអ្នកផ្គត់ផ្គង់)",
@@ -386,7 +405,7 @@ const TEXT = {
   er_cur: ["Currency", "រូបិយប័ណ្ណ"],
   er_rate: ["= {0} at {1} ៛ per $1", "= {0} តាមអត្រា {1} ៛ ក្នុង $1"],
   er_asset_h: [
-    "From {0}, choose an asset account (business rule).",
+    "For {0} or more, choose an asset account (business rule).",
     "ចាប់ពី {0} សូមជ្រើសគណនីទ្រព្យសកម្ម (ច្បាប់អាជីវកម្ម)។",
   ],
   er_who_acct: [
@@ -412,17 +431,14 @@ const TEXT = {
     "វាយកាលបរិច្ឆេទជា dd/mm/yyyy មិនក្រោយថ្ងៃនេះ។",
   ],
   er_send: ["Send", "ផ្ញើ"],
-  er_sent: [
-    "{0} sent. It waits for approval.",
-    "បានផ្ញើ {0}។ រង់ចាំការអនុម័ត។",
-  ],
-  er_st_WAITING: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
+  er_sent: ["{0} submitted for approval.", "បានផ្ញើ {0}។ រង់ចាំការអនុម័ត។"],
+  er_st_WAITING: ["Pending approval", "រង់ចាំការអនុម័ត"],
   er_st_APPROVED: ["Approved", "បានអនុម័ត"],
   er_st_PAID_OUT: ["Advance given", "បានផ្ដល់ប្រាក់បុរេប្រទាន"],
   er_st_DONE: ["Done", "រួចរាល់"],
   er_st_VOID: ["Void", "ទុកជាមោឃៈ"],
   er_late: ["Late", "យឺត"],
-  er_owed: ["Owed to staff", "ជំពាក់បុគ្គលិក"],
+  er_owed: ["Reimbursement due", "ជំពាក់បុគ្គលិក"],
   er_details: ["Details", "ព័ត៌មានលម្អិត"],
   er_steps: ["Steps", "ជំហាន"],
   er_need: ["Who approves", "អ្នកអនុម័ត"],
@@ -433,19 +449,19 @@ const TEXT = {
     "ប្រាក់បុរេប្រទាន {0} ផ្ដល់ដោយ {1} ពី {2}",
   ],
   er_s_bill: ["Bill of {0} recorded by {1}", "វិក្កយបត្រ {0} កត់ត្រាដោយ {1}"],
-  er_s_change: ["Change returned: {0}", "ប្រាក់អាប់ប្រគល់វិញ៖ {0}"],
+  er_s_change: ["Unspent cash returned: {0}", "ប្រាក់អាប់ប្រគល់វិញ៖ {0}"],
   er_s_extra: [
     "Staff paid {0} more; it is owed to them.",
     "បុគ្គលិកបង់លើស {0} ដែលត្រូវសងពួកគេ។",
   ],
-  er_s_back: ["{0} paid back to {1} by {2}", "សង {0} ទៅ {1} ដោយ {2}"],
+  er_s_back: ["{0} reimbursed to {1} by {2}", "សង {0} ទៅ {1} ដោយ {2}"],
   er_s_void: ["Void by {0}: {1}", "ទុកជាមោឃៈដោយ {0}៖ {1}"],
   er_s_entry: ["Entry {0}", "ធាតុ {0}"],
   er_approve: ["Approve", "អនុម័ត"],
   er_void: ["Void", "ទុកជាមោឃៈ"],
   er_give: ["Give advance", "ផ្ដល់ប្រាក់បុរេប្រទាន"],
   er_bill: ["Record bill", "កត់ត្រាវិក្កយបត្រ"],
-  er_payback: ["Pay back staff", "សងប្រាក់បុគ្គលិក"],
+  er_payback: ["Reimburse staff", "សងប្រាក់បុគ្គលិក"],
   er_wait_own: [
     "Waits for the Owner: the amount is above the Expense limit of {0}.",
     "រង់ចាំម្ចាស់៖ ចំនួនលើសកម្រិតចំណាយ {0}។",
@@ -485,9 +501,9 @@ const TEXT = {
     "Bill recorded as expense {0}. Entry {1}.",
     "បានកត់ត្រាវិក្កយបត្រជាចំណាយ {0}។ ធាតុ {1}។",
   ],
-  er_back_t: ["Pay back {0}", "សងប្រាក់ {0}"],
+  er_back_t: ["Reimburse {0}", "សងប្រាក់ {0}"],
   er_back_from: ["Pay from", "បង់ពី"],
-  er_back_done: ["Paid back. Entry {0}.", "បានសងវិញ។ ធាតុ {0}។"],
+  er_back_done: ["Reimbursed. Entry {0}.", "បានសងវិញ។ ធាតុ {0}។"],
   er_you: ["You are signed in as {0}, {1}.", "អ្នកបានចូលជា {0}, {1}។"],
   er_can_all: ["You approve every request.", "អ្នកអនុម័តសំណើទាំងអស់។"],
   er_can_lim: [
@@ -495,7 +511,7 @@ const TEXT = {
     "អ្នកអនុម័តសំណើរហូតដល់ {0}។ លើសនេះ ម្ចាស់អនុម័ត។",
   ],
   er_can_pay: [
-    "You give advances, record bills and pay staff back.",
+    "You give advances, record bills and reimburse staff.",
     "អ្នកផ្ដល់ប្រាក់បុរេប្រទាន កត់ត្រាវិក្កយបត្រ និងសងប្រាក់បុគ្គលិក។",
   ],
   er_can_send: [
@@ -503,8 +519,8 @@ const TEXT = {
     "អ្នកផ្ញើសំណើ និងរបាយការណ៍ចំណាយ។ អ្នកមិនអាចអនុម័ត ឬបង់ប្រាក់បានទេ។",
   ],
   er_next: ["Your next step", "ជំហានបន្ទាប់របស់អ្នក"],
-  er_n_owner: ["Waits for the Owner", "រង់ចាំម្ចាស់"],
-  er_n_wait: ["Waits for approval", "រង់ចាំការអនុម័ត"],
+  er_n_owner: ["Pending Owner approval", "រង់ចាំម្ចាស់"],
+  er_n_wait: ["Pending approval", "រង់ចាំការអនុម័ត"],
   er_n_acct: ["Accountant's step", "ជំហានរបស់គណនេយ្យករ"],
   er_for_you: ["{0} for you", "{0} សម្រាប់អ្នក"],
   er_none: ["No requests here.", "គ្មានសំណើនៅទីនេះទេ។"],
@@ -513,7 +529,7 @@ const TEXT = {
     "You can see this request. Approving and paying are done by the Accountant or the Owner.",
     "អ្នកអាចមើលសំណើនេះ។ ការអនុម័ត និងការបង់ប្រាក់ធ្វើដោយគណនេយ្យករ ឬម្ចាស់។",
   ],
-  er_owed_line: ["Pay back {0}: {1}", "សងប្រាក់ {0}៖ {1}"],
+  er_owed_line: ["Reimburse {0}: {1}", "សងប្រាក់ {0}៖ {1}"],
   er_n_self: ["Someone else must approve", "អ្នកផ្សេងត្រូវអនុម័ត"],
   er_wait_self: [
     "You sent this request. Someone else must approve it.",
@@ -562,22 +578,22 @@ const TEXT = {
   sb_new: ["Add supplier bill", "បន្ថែមវិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
   sb_c_open: ["Still to pay", "នៅត្រូវបង់"],
   sb_c_n: ["{0} bills", "វិក្កយបត្រ {0}"],
-  sb_c_late: ["Late", "យឺត"],
+  sb_c_late: ["Overdue", "យឺត"],
   sb_c_paid: ["Paid", "បានបង់"],
   sb_c_paid_s: ["Fully paid bills", "វិក្កយបត្របង់គ្រប់"],
   sb_l_open: ["Bills still to pay", "វិក្កយបត្រនៅត្រូវបង់"],
-  sb_l_late: ["Late bills", "វិក្កយបត្រយឺត"],
+  sb_l_late: ["Overdue bills", "វិក្កយបត្រយឺត"],
   sb_l_paid: ["Paid bills", "វិក្កយបត្របានបង់"],
   sb_date: ["Bill date", "កាលបរិច្ឆេទវិក្កយបត្រ"],
   sb_due: ["Due date", "ថ្ងៃផុតកំណត់"],
-  sb_left: ["Left to pay", "នៅសល់ត្រូវបង់"],
+  sb_left: ["Balance due", "នៅសល់ត្រូវបង់"],
   sb_pay: ["Pay", "បង់"],
   sb_ref: ["Supplier's bill number", "លេខវិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
   sb_st_paid: ["Paid", "បានបង់"],
-  sb_st_late: ["{0} days late", "យឺត {0} ថ្ងៃ"],
+  sb_st_late: ["{0} days overdue", "យឺត {0} ថ្ងៃ"],
   sb_st_open: ["Not yet due", "មិនទាន់ដល់ថ្ងៃ"],
   sb_note: [
-    'Paid at once? Record it on Expenses. An expense marked "Pay later" comes here by itself, due 30 days after the bill date unless the bill shows its own due date (owner rule, 02/11/2026).',
+    'Paid at once? Record it in Expenses. An expense marked "Pay later" appears here automatically, due 30 days after the bill date unless the bill shows its own due date.',
     'បង់ភ្លាម? កត់ត្រានៅចំណាយ។ ចំណាយដែលសម្គាល់ "បង់ពេលក្រោយ" មកទីនេះដោយខ្លួនឯង ផុតកំណត់ ៣០ ថ្ងៃក្រោយកាលបរិច្ឆេទវិក្កយបត្រ លើកលែងតែវិក្កយបត្របង្ហាញថ្ងៃផុតកំណត់ផ្ទាល់ (ច្បាប់ម្ចាស់ ០២/១១/២០២៦)។',
   ],
   sb_e_due: [
@@ -599,7 +615,7 @@ const TEXT = {
   t_assets: ["Assets", "ទ្រព្យសកម្ម"],
   // Part 2 words not in the mock-up
   // new
-  er_st_REFUSED: ["Refused", "បានបដិសេធ"],
+  er_st_REFUSED: ["Rejected", "បានបដិសេធ"],
   // new
   er_not_found: [
     "This request is not there, or you cannot see it.",
@@ -628,12 +644,12 @@ const TEXT = {
   // Bank and cash (step 6 part 3; mock-up app26 and app29)
   bc_t: ["Bank and cash", "ធនាគារ និងសាច់ប្រាក់"],
   bc_sub: [
-    "At each month end: match the bank book to the ABA statement, and count the cash. Month-end close checks both.",
+    "At each month end, reconcile the bank account to the ABA statement and count the cash. Month-end close checks both.",
     "នៅចុងខែនីមួយៗ៖ ផ្ទៀងសៀវភៅធនាគារជាមួយរបាយការណ៍ ABA ហើយរាប់សាច់ប្រាក់។ ការបិទចុងខែពិនិត្យទាំងពីរ។",
   ],
   bc_bank: ["Bank reconciliation", "ការផ្ទៀងផ្ទាត់ធនាគារ"],
   bc_cash: ["Cash count", "ការរាប់សាច់ប្រាក់"],
-  bk_done: ["Matched", "ត្រូវគ្នា"],
+  bk_done: ["Reconciled", "ត្រូវគ្នា"],
   bk_done_by: ["Done by {0}, {1}", "ធ្វើដោយ {0}, {1}"],
   bk_stmt: ["ABA statement balance on {0}", "សមតុល្យរបាយការណ៍ ABA នៅ {0}"],
   bk_stmt_hr: [
@@ -660,23 +676,26 @@ const TEXT = {
   bk_none: ["Nothing.", "គ្មាន។"],
   bk_sum: ["Do they match?", "តើត្រូវគ្នាទេ?"],
   bk_less_tr: [
-    "Less money in the book, not on the statement yet",
+    "Less: items in the books not yet on the statement",
     "ដកប្រាក់នៅសៀវភៅ មិនទាន់លើរបាយការណ៍",
   ],
-  bk_adj: ["Book after these", "សៀវភៅក្រោយទាំងនេះ"],
+  bk_adj: ["Adjusted book balance", "សៀវភៅក្រោយទាំងនេះ"],
   bk_diff: ["Difference", "ភាពខុសគ្នា"],
   bk_ok: ["Matches", "ត្រូវគ្នា"],
   bk_bad: ["Does not match", "មិនត្រូវគ្នា"],
-  bk_ok_n: ["The book equals the statement.", "សៀវភៅស្មើរបាយការណ៍។"],
+  bk_ok_n: [
+    "The adjusted book balance equals the statement balance.",
+    "សៀវភៅស្មើរបាយការណ៍។",
+  ],
   bk_bad_n: [
-    "Find the difference before you mark the month as matched.",
+    "Find the difference before you mark the month as reconciled.",
     "រកភាពខុសគ្នាមុនពេលសម្គាល់ខែថាត្រូវគ្នា។",
   ],
-  bk_mark: ["Mark as matched", "សម្គាល់ថាត្រូវគ្នា"],
-  bk_saved: ["Bank matched for {0}.", "ធនាគារត្រូវគ្នាសម្រាប់ {0}។"],
+  bk_mark: ["Mark as reconciled", "សម្គាល់ថាត្រូវគ្នា"],
+  bk_saved: ["Bank reconciled for {0}.", "ធនាគារត្រូវគ្នាសម្រាប់ {0}។"],
   cc_done: ["Counted", "បានរាប់"],
   cc_box: ["Cash", "សាច់ប្រាក់"],
-  cc_book: ["Book on {0}", "សៀវភៅនៅ {0}"],
+  cc_book: ["Book balance on {0}", "សៀវភៅនៅ {0}"],
   cc_counted: ["Counted", "បានរាប់"],
   cc_khr_n: [
     "Count in riel. The app turns it into dollars at today's rate.",
@@ -685,7 +704,7 @@ const TEXT = {
   cc_usd_n: ["Count in dollars", "រាប់ជាដុល្លារ"],
   cc_about: ["About {0}", "ប្រហែល {0}"],
   cc_sub: [
-    "Count the office cash and the petty cash at the end of {0}, then type what you counted.",
+    "Count the cash on hand and the petty cash at the end of {0}, then enter the amounts counted.",
     "រាប់សាច់ប្រាក់ការិយាល័យ និងសាច់ប្រាក់រាយនៅចុង {0} រួចវាយចំនួនដែលបានរាប់។",
   ],
   cc_e_all: [
@@ -702,17 +721,17 @@ const TEXT = {
     "Cash count saved for {0}.",
     "បានរក្សាទុកការរាប់សាច់ប្រាក់សម្រាប់ {0}។",
   ],
-  mm_t: ["Move money", "ផ្ទេរប្រាក់"],
+  mm_t: ["Fund transfer", "ផ្ទេរប្រាក់"],
   mm_from: ["From", "ពី"],
   mm_to: ["To", "ទៅ"],
   mm_riel: ["Riel amount", "ចំនួនរៀល"],
-  mm_rate: ["Rate (riel for 1 dollar)", "អត្រា (រៀលក្នុង ១ ដុល្លារ)"],
+  mm_rate: ["Exchange rate (riel per $1)", "អត្រា (រៀលក្នុង ១ ដុល្លារ)"],
   mm_rate_h: [
     "The rate you really got. Today's ABA rate is filled in.",
     "អត្រាដែលអ្នកទទួលបានពិត។ អត្រា ABA ថ្ងៃនេះបានបំពេញរួច។",
   ],
   mm_prev: [
-    "You get {0}. The books hold this riel at {1}. {2}",
+    "You receive {0}. Book value of this riel: {1}. {2}",
     "អ្នកទទួលបាន {0}។ សៀវភៅកាន់រៀលនេះនៅ {1}។ {2}",
   ],
   mm_gain: [
@@ -727,22 +746,22 @@ const TEXT = {
     "For riel, type the riel amount and the rate. The app works out the gain or loss.",
     "សម្រាប់រៀល វាយចំនួនរៀល និងអត្រា។ កម្មវិធីគណនាចំណេញ ឬខាត។",
   ],
-  mm_ok: ["Move money", "ផ្ទេរប្រាក់"],
-  mm_done: ["Money moved. Entry {0}.", "បានផ្ទេរប្រាក់។ ធាតុ {0}។"],
-  mm_e_same: ["Pick two different places.", "ជ្រើសកន្លែងពីរផ្សេងគ្នា។"],
+  mm_ok: ["Transfer funds", "ផ្ទេរប្រាក់"],
+  mm_done: ["Funds transferred. Entry {0}.", "បានផ្ទេរប្រាក់។ ធាតុ {0}។"],
+  mm_e_same: ["Choose two different accounts.", "ជ្រើសកន្លែងពីរផ្សេងគ្នា។"],
   mm_e_riel: ["Type the riel amount and the rate.", "វាយចំនួនរៀល និងអត្រា។"],
   mm_e_bal: [
-    "There is not that much money there.",
+    "The From account does not have enough funds. Enter a smaller amount.",
     "មិនមានប្រាក់ច្រើនដល់ម្ល៉េះទេ។",
   ],
-  ow_t: ["Owner money", "ប្រាក់ម្ចាស់"],
-  ow_dir: ["Which way", "ទិសដៅ"],
-  ow_in: ["Money in", "ដាក់ប្រាក់ចូល"],
+  ow_t: ["Owner's capital and drawings", "ប្រាក់ម្ចាស់"],
+  ow_dir: ["Type", "ទិសដៅ"],
+  ow_in: ["Capital contribution", "ដាក់ប្រាក់ចូល"],
   ow_in_s: [
     "The Owner puts money into the business. 3000 Owner's capital.",
     "ម្ចាស់ដាក់ប្រាក់ចូលអាជីវកម្ម។ ៣០០០ ដើមទុនម្ចាស់។",
   ],
-  ow_out: ["Money out", "ដកប្រាក់ចេញ"],
+  ow_out: ["Owner's drawing", "ដកប្រាក់ចេញ"],
   ow_out_s: [
     "The Owner takes money for themselves. 3100 Owner's drawings.",
     "ម្ចាស់ដកប្រាក់សម្រាប់ខ្លួន។ ៣១០០ ការដកប្រាក់របស់ម្ចាស់។",
@@ -755,11 +774,11 @@ const TEXT = {
   ],
   ow_ok: ["Save", "រក្សាទុក"],
   ow_done_in: [
-    "Owner money in {0}. Entry {1}.",
+    "Capital contribution of {0} recorded. Entry {1}.",
     "ម្ចាស់ដាក់ប្រាក់ចូល {0}។ ធាតុ {1}។",
   ],
   ow_done_out: [
-    "Owner money out {0}. Entry {1}.",
+    "Owner's drawing of {0} recorded. Entry {1}.",
     "ម្ចាស់ដកប្រាក់ចេញ {0}។ ធាតុ {1}។",
   ],
   pt_t: ["Top up petty cash", "បំពេញសាច់ប្រាក់រាយ"],
@@ -773,7 +792,7 @@ const TEXT = {
     "បានបំពេញសាច់ប្រាក់រាយ {0}។ ធាតុ {1}។",
   ],
   pt_e_max: [
-    "That is more than the float allows, or more than there is to take.",
+    "This amount is more than the float allows or more than the source account holds. Enter a smaller amount.",
     "ច្រើនជាងប្រាក់រាយកំណត់ ឬច្រើនជាងប្រាក់ដែលមាន។",
   ],
   pt_card: ["Petty cash", "សាច់ប្រាក់រាយ"],
@@ -781,7 +800,7 @@ const TEXT = {
   pt_bal: ["In petty cash now", "មានក្នុងប្រាក់រាយឥឡូវ"],
   pt_gap: ["Can top up", "អាចបំពេញ"],
   pt_open: [
-    "Bills not recorded yet: {0}, {1}",
+    "Unrecorded petty cash receipts: {0}, totaling {1}",
     "វិក្កយបត្រមិនទាន់កត់ត្រា៖ {0} សរុប {1}",
   ],
   pt_open0: [
@@ -806,8 +825,8 @@ const TEXT = {
     "On the last day of each month the app values riel cash at the month-end rate. The difference goes to 4100.",
     "នៅថ្ងៃចុងខែ កម្មវិធីវាយតម្លៃសាច់ប្រាក់រៀលតាមអត្រាចុងខែ។ ភាពខុសគ្នាចូល ៤១០០។",
   ],
-  br_e_reason: ["Say why.", "សូមប្រាប់មូលហេតុ។"],
-  bk_book: ["Bank book ({1}) on {0}", "សៀវភៅធនាគារ ({1}) នៅ {0}"],
+  br_e_reason: ["Enter a reason.", "សូមប្រាប់មូលហេតុ។"],
+  bk_book: ["Book balance ({1}) on {0}", "សៀវភៅធនាគារ ({1}) នៅ {0}"],
   // new
   bk_tick: [
     "Tick each line that is not on the ABA statement yet.",
@@ -859,8 +878,8 @@ const TEXT = {
   ],
   gl_c_btn: ["Close month", "បិទខែ"],
   gl_c_done: ["{0} closed.", "បានបិទ {0}។"],
-  br_by: ["Recorded by", "កត់ត្រាដោយ"],
-  gl_src: ["From", "ពី"],
+  br_by: ["Closed by", "កត់ត្រាដោយ"],
+  gl_src: ["Entry", "ពី"],
   cl_head: [
     "The app checks each line itself. A month can be closed only when every line is green.",
     "កម្មវិធីពិនិត្យបន្ទាត់នីមួយៗដោយខ្លួនឯង។ អាចបិទខែបានតែពេលគ្រប់បន្ទាត់ពណ៌បៃតង។",
@@ -875,31 +894,31 @@ const TEXT = {
   cl_bad_n: ["{0} to fix", "{0} ត្រូវកែ"],
   cl_all_ok: ["Ready to close", "រួចរាល់ដើម្បីបិទ"],
   cl_fix: ["Open", "បើក"],
-  cl_books: ["Books check", "ការត្រួតពិនិត្យសៀវភៅ"],
+  cl_books: ["Books reconciliation", "ការត្រួតពិនិត្យសៀវភៅ"],
   cl_books_d: [
     "Every record has its entry, every entry is balanced, Customer debt equals the unpaid Invoices.",
     "កំណត់ត្រានីមួយៗមានធាតុ ធាតុនីមួយៗមានតុល្យភាព បំណុលអតិថិជនស្មើវិក្កយបត្រមិនទាន់បង់។",
   ],
-  cl_wait: ["No request waiting", "គ្មានសំណើរង់ចាំ"],
+  cl_wait: ["No pending approvals", "គ្មានសំណើរង់ចាំ"],
   cl_wait_n: [
-    "{0} Expense requests or adjusting entries dated in the month still wait for approval.",
+    "{0} Expense requests or adjusting entries dated in this month are still pending approval.",
     "សំណើចំណាយ ឬធាតុកែតម្រូវ {0} ក្នុងខែនៅរង់ចាំការអនុម័ត។",
   ],
   cl_wait_0: ["Nothing waits for approval.", "គ្មានអ្វីរង់ចាំការអនុម័ត។"],
   cl_late: ["No late report or advance", "គ្មានរបាយការណ៍ ឬប្រាក់បុរេប្រទានយឺត"],
   cl_late_n: [
-    "{0} staff advances are past the report days.",
+    "{0} staff advances past the report deadline.",
     "ប្រាក់បុរេប្រទាន {0} ហួសថ្ងៃរាយការណ៍។",
   ],
   cl_late_0: ["No advance is late.", "គ្មានប្រាក់បុរេប្រទានយឺត។"],
-  cl_bank: ["Bank matched", "ធនាគារត្រូវគ្នា"],
+  cl_bank: ["Bank reconciled", "ធនាគារត្រូវគ្នា"],
   cl_bank_n: [
-    "Match the bank book to the ABA statement of {0}.",
+    "Reconcile the bank account to the ABA statement for {0}.",
     "ផ្ទៀងសៀវភៅធនាគារជាមួយរបាយការណ៍ ABA នៃ {0}។",
   ],
   cl_cash: ["Cash counted", "បានរាប់សាច់ប្រាក់"],
   cl_cash_n: [
-    "Count the office cash and petty cash of {0}.",
+    "Count the cash on hand and petty cash for {0}.",
     "រាប់សាច់ប្រាក់ការិយាល័យ និងសាច់ប្រាក់រាយនៃ {0}។",
   ],
   cl_dep: ["Depreciation done", "រំលោះរួចរាល់"],
@@ -915,6 +934,11 @@ const TEXT = {
     "No month is ready to close. {0} ends on {1}.",
     "គ្មានខែណារួចរាល់ដើម្បីបិទ។ {0} បញ្ចប់នៅ {1}។",
   ],
+  // Administration review fix 4 (13/11/2026): no open month yet, so no "— ends on —". // new
+  cl_none_yet: [
+    "No month is ready to close yet.",
+    "មិនទាន់មានខែណារួចរាល់ដើម្បីបិទនៅឡើយទេ។",
+  ],
   cl_months: ["Months", "ខែ"],
   cl_now: ["To close now", "ត្រូវបិទឥឡូវ"],
   cl_conf: [
@@ -923,11 +947,11 @@ const TEXT = {
   ],
   ye_t: ["Year-end close", "បិទចុងឆ្នាំ"],
   ye_sub: [
-    "After December is closed, the Owner closes the year. The year's profit moves to 3900 Profit kept from past years.",
+    "After December is closed, the Owner closes the year. The year's profit moves to 3900 Retained earnings.",
     "ក្រោយបិទខែធ្នូ ម្ចាស់បិទឆ្នាំ។ ចំណេញនៃឆ្នាំផ្ទេរទៅ 3900 ចំណេញរក្សាទុកពីឆ្នាំមុន។",
   ],
   ye_year: ["Year", "ឆ្នាំ"],
-  ye_profit: ["Profit moved to 3900", "ចំណេញផ្ទេរទៅ 3900"],
+  ye_profit: ["Profit moved to retained earnings (3900)", "ចំណេញផ្ទេរទៅ 3900"],
   ye_closed: ["Closed", "បានបិទ"],
   ye_btn: ["Close year", "បិទឆ្នាំ"],
   ye_wait: [
@@ -985,12 +1009,12 @@ const TEXT = {
   fa_cost: ["Cost", "ថ្លៃដើម"],
   fa_life: ["Useful life (years)", "អាយុប្រើប្រាស់ (ឆ្នាំ)"],
   fa_years: ["{0} years", "{0} ឆ្នាំ"],
-  fa_mon: ["Each month", "ប្រចាំខែ"],
-  fa_sofar: ["Depreciation so far", "រំលោះរហូតមកដល់ពេលនេះ"],
-  fa_now: ["Value now", "តម្លៃបច្ចុប្បន្ន"],
+  fa_mon: ["Monthly depreciation", "ប្រចាំខែ"],
+  fa_sofar: ["Accumulated depreciation", "រំលោះរហូតមកដល់ពេលនេះ"],
+  fa_now: ["Book value", "តម្លៃបច្ចុប្បន្ន"],
   fa_date: ["Date bought", "កាលបរិច្ឆេទទិញ"],
   fa_check: [
-    "Depreciation so far equals Accumulated depreciation (1590): {0}.",
+    "Accumulated depreciation matches account 1590: {0}.",
     "រំលោះរហូតមកដល់ពេលនេះ ស្មើរំលោះបង្គរ (1590)៖ {0}។",
   ],
   fa_note: [
@@ -1040,7 +1064,7 @@ const TEXT = {
   bu_year: ["Year", "ឆ្នាំ"],
   bu_for: ["Budget {0}", "ថវិកា {0}"],
   bu_st_OK: ["Approved", "បានអនុម័ត"],
-  bu_st_WAIT: ["Waits for the Owner", "រង់ចាំម្ចាស់"],
+  bu_st_WAIT: ["Pending approval", "រង់ចាំម្ចាស់"],
   bu_st_DRAFT: ["Draft", "សេចក្ដីព្រាង"],
   bu_send: ["Send to the Owner", "ផ្ញើទៅម្ចាស់"],
   bu_ok: ["Approve budget", "អនុម័តថវិកា"],
@@ -1063,7 +1087,7 @@ const TEXT = {
     "ថវិកាដែលបានអនុម័តត្រូវបានចាក់សោ។",
   ],
   bu_edit_n: [
-    "Tap an account to type its amounts for each month.",
+    "Select an account to enter its amounts for each month.",
     "ចុចលើគណនី ដើម្បីវាយចំនួនសម្រាប់ខែនីមួយៗ។",
   ],
   bu_backed: ["Sent back by {0}: {1}", "ផ្ញើត្រឡប់ដោយ {0}៖ {1}"],
@@ -1151,7 +1175,7 @@ const TEXT = {
   ob_start: ["Start the books", "ចាប់ផ្ដើមសៀវភៅ"],
   ob_year: ["First year", "ឆ្នាំដំបូង"],
   ob_year_n: [
-    "The books start on 01/01/{0}. Opening balances are as at 31/12/{1}.",
+    "The books start on 1 January {0}. Opening balances are as at 31 December {1}.",
     "សៀវភៅចាប់ផ្ដើមនៅ 01/01/{0}។ សមតុល្យដើមគិតត្រឹម 31/12/{1}។",
   ],
   ob_e_year: ["Type a year such as 2027.", "វាយឆ្នាំ ដូចជា 2027។"],
@@ -1159,15 +1183,15 @@ const TEXT = {
     "The books start on {0}. Type the opening balances next.",
     "សៀវភៅចាប់ផ្ដើមនៅ {0}។ បន្ទាប់មក វាយបញ្ចូលសមតុល្យដើម។",
   ],
-  ob_typed_t: ["Accounts you type", "គណនីដែលអ្នកវាយបញ្ចូល"],
+  ob_typed_t: ["Entered manually", "គណនីដែលអ្នកវាយបញ្ចូល"],
   ob_typed_s: [
     "Cash, bank, equipment, loans, the Owner's capital and every other account the app does not work out.",
     "សាច់ប្រាក់ ធនាគារ ឧបករណ៍ ប្រាក់កម្ចី ដើមទុនម្ចាស់ និងគណនីផ្សេងទៀតដែលកម្មវិធីមិនគណនា។",
   ],
   ob_typed_none: ["Nothing typed yet.", "មិនទាន់វាយបញ្ចូលអ្វីទេ។"],
-  ob_worked_t: ["Worked out by the app", "កម្មវិធីគណនា"],
+  ob_worked_t: ["Calculated by the app", "កម្មវិធីគណនា"],
   ob_worked_s: [
-    "Customer debt, Deposits, Customer Credit, money not used yet and Rent billed in advance come from the app's own lists.",
+    "Accounts receivable, Deposits, Customer Credit, Unapplied payments and Rent billed in advance come from the app's own records.",
     "បំណុលអតិថិជន ប្រាក់កក់ ឥណទានអតិថិជន ប្រាក់មិនទាន់ប្រើ និងថ្លៃឈ្នួលចេញវិក្កយបត្រមុន មកពីបញ្ជីរបស់កម្មវិធីផ្ទាល់។",
   ],
   ob_worked_none: [
@@ -1187,15 +1211,15 @@ const TEXT = {
   ob_e_lines: ["Add at least one account.", "បន្ថែមយ៉ាងហោចណាស់មួយគណនី។"],
   ob_saved: ["Opening balances saved.", "បានរក្សាទុកសមតុល្យដើម។"],
   ob_off: [
-    "Off by {0}. Put the difference on an equity account such as 3000 Owner's capital.",
+    "Debits and credits differ by {0}. Put the difference on an equity account such as 3000 Owner's capital.",
     "ខុសគ្នា {0}។ សូមដាក់ភាពខុសគ្នាលើគណនីមូលធន ដូចជា 3000 ដើមទុនម្ចាស់។",
   ],
   ob_nc: [
-    "{0} records wait in Needs check. Clear that list before you post.",
+    "{0} records are in Unposted records. Clear that list before you post.",
     "កំណត់ត្រា {0} កំពុងរង់ចាំក្នុង ត្រូវពិនិត្យ។ សូមដោះស្រាយបញ្ជីនោះ មុនពេលប្រកាស។",
   ],
   ob_empty: [
-    "Type the opening balances first. Post opens when Debit and Credit are equal.",
+    "Enter the opening balances first. You can post when total debits equal total credits.",
     "សូមវាយបញ្ចូលសមតុល្យដើមជាមុនសិន។ ប៊ូតុងប្រកាសបើកពេលឥណពន្ធ និងឥណទានស្មើគ្នា។",
   ],
   ob_post: ["Post opening balances", "ប្រកាសសមតុល្យដើម"],
@@ -1220,9 +1244,11 @@ export function lt(
   ...values: string[]
 ): string {
   const text = TEXT[key][language === "en" ? 0 : 1];
-  return values.reduce(
-    (out, value, index) => out.split(`{${String(index)}}`).join(value),
-    text,
+  return singular(
+    values.reduce(
+      (out, value, index) => out.split(`{${String(index)}}`).join(value),
+      text,
+    ),
   );
 }
 

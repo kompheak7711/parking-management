@@ -284,7 +284,7 @@ def profit_and_loss(
     for title, income, cost in MARGINS:
         rows.append(_total(title, **add((1, cells(values[income])), (-1, cells(values[cost])))))
     if book_profit is None:
-        ok, text = True, "The year is closed; its profit is in 3900 Profit kept from past years"
+        ok, text = True, "The year is closed; its profit is in 3900 Retained earnings"
     else:
         ok, text = _check(
             profit["year_to_date"] == book_profit,

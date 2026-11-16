@@ -3,10 +3,11 @@
 // mock-up and needs the native check.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
-  failed: ["This could not be read just now.", "មិនអាចអានបានទេឥឡូវនេះ។"],
+  failed: ["This could not be loaded.", "មិនអាចអានបានទេឥឡូវនេះ។"],
   retry: ["Try again", "សាកម្តងទៀត"],
   no_property: ["Choose a Property first.", "សូមជ្រើសអចលនទ្រព្យជាមុន។"],
   // new
@@ -25,6 +26,10 @@ const TEXT = {
   tabs: ["Views", "ទិដ្ឋភាព"],
   tab_cal: ["Calendar", "ប្រតិទិន"],
   tab_list: ["Bookings", "ការកក់"],
+  f_search: [
+    "Search guest, phone, booking or Unit",
+    "ស្វែងរកភ្ញៀវ ទូរស័ព្ទ ការកក់ ឬបន្ទប់",
+  ],
   prev: ["Earlier", "មុន"],
   next: ["Later", "បន្ទាប់"],
   this_week: ["Today", "ថ្ងៃនេះ"],
@@ -41,6 +46,9 @@ const TEXT = {
   c_status: ["Status", "ស្ថានភាព"],
   c_source: ["Booked by", "កក់តាម"],
   none: ["No bookings yet.", "មិនទាន់មានការកក់នៅឡើយទេ។"],
+  // UI v81 round 11: the status row above the Bookings list.
+  f_all: ["All", "ទាំងអស់"], // new
+  f_none: ["No bookings with this status.", "គ្មានការកក់ដែលមានស្ថានភាពនេះទេ។"], // new
   n1: ["1 booking", "ការកក់ 1"],
   n: ["{0} bookings", "ការកក់ {0}"],
   nights1: ["1 night", "1 យប់"],
@@ -57,7 +65,7 @@ const TEXT = {
   src_BOOKING_SITE: ["Booking site", "គេហទំព័រកក់"],
   // New booking
   new_sub: [
-    "Pick the Unit and the nights. The price follows the rules in Settings.",
+    "Choose the Unit and the nights. The price follows the rules in Settings.",
     // new
     "ជ្រើសបន្ទប់ និងយប់។ តម្លៃគិតតាមច្បាប់ក្នុងការកំណត់។",
   ],
@@ -94,7 +102,7 @@ const TEXT = {
   // Price box
   p_title: ["Price", "តម្លៃ"],
   p_pick: [
-    "Pick a Unit and the nights to see the price.",
+    "Choose a Unit and the nights to see the price.",
     // new
     "ជ្រើសបន្ទប់ និងយប់ ដើម្បីមើលតម្លៃ។",
   ],
@@ -169,12 +177,12 @@ const TEXT = {
     "គណនីរបស់អ្នកមិនអាចធ្វើការកក់បានទេ។",
   ],
   f_taken: [
-    "Someone has just booked one of these nights. Pick other nights or another Unit.",
+    "Someone has just booked one of these nights. Choose other nights or another Unit.",
     // new
     "មាននរណាម្នាក់ទើបតែកក់យប់មួយក្នុងចំណោមនេះ។ ជ្រើសយប់ផ្សេង ឬបន្ទប់ផ្សេង។",
   ],
   f_refused: [
-    "The server refused this booking. Check what you typed.",
+    "This booking could not be saved. Check what you entered.",
     // new
     "ម៉ាស៊ីនមេបានបដិសេធការកក់នេះ។ ពិនិត្យអ្វីដែលអ្នកបានវាយ។",
   ],
@@ -197,6 +205,8 @@ const TEXT = {
   d_price: ["Price", "តម្លៃ"],
   d_hist: ["History", "ប្រវត្តិ"],
   ev_BOOKED: ["Booked", "បានកក់"],
+  // DL-238: a house-rule warning the front desk gave (the note is what happened).
+  ev_HOUSE_RULE_WARNING: ["House-rule warning", "ការព្រមានអំពីវិន័យស្នាក់នៅ"],
   // Step 3: payment, deposit, check-in, check-out, room check, damage. All new.
   cal_unpaid: ["Not paid", "មិនទាន់បង់"],
   pay_t: ["Payment", "ការបង់ប្រាក់"],
@@ -232,7 +242,7 @@ const TEXT = {
     "Card's last 4 digits (if wanted)",
     "លេខ 4 ខ្ទង់ចុងក្រោយនៃកាត (បើចង់)",
   ],
-  dep_never: ["Never type the card number.", "កុំវាយលេខកាតឲ្យសោះ។"],
+  dep_never: ["Never enter the card number.", "កុំវាយលេខកាតឲ្យសោះ។"],
   dep_take: ["Take the deposit", "ទទួលប្រាក់កក់"],
   dep_HELD: ["Held", "កំពុងរក្សាទុក"],
   dep_RETURNED: ["Returned", "បានប្រគល់វិញ"],
@@ -270,6 +280,19 @@ const TEXT = {
     "បន្ទប់កំពុងសម្អាតរហូតដល់ពិនិត្យបន្ទប់រួច។",
   ],
   out_b: ["Check out", "ចេញ"],
+  // UI v81 (owner 07/11): Check out before the booked check-out day.
+  out_early_t: ["Not the check-out date", "មិនមែនថ្ងៃចេញទេ"], // new
+  out_early_b: [
+    "{0} is booked until {1} ({2} nights). Today is {3}. Check out now only if the guest is really leaving today.",
+    "{0} បានកក់រហូតដល់ {1} ({2} យប់)។ ថ្ងៃនេះ {3}។ ចុះចេញឥឡូវ លុះត្រាតែភ្ញៀវពិតជាចាកចេញថ្ងៃនេះ។",
+  ], // new
+  // Owner rule 07/11 10:04: unused nights stay paid; no money back by itself.
+  out_early_money: [
+    "The unused nights stay paid. There is no money back by itself. Only the Owner, a Manager or a person with the credit right can give Credit for unused nights, with a reason, the same way as a late cancel.",
+    "យប់ដែលមិនបានប្រើ នៅតែបានបង់។ គ្មានការសងប្រាក់វិញដោយស្វ័យប្រវត្តិទេ។ មានតែម្ចាស់ អ្នកគ្រប់គ្រង ឬអ្នកមានសិទ្ធិផ្តល់ឥណទានប៉ុណ្ណោះ ដែលអាចផ្តល់ឥណទានសម្រាប់យប់ដែលមិនបានប្រើ ដោយមានហេតុផល ដូចការលុបចោលយឺត។",
+  ], // new
+  out_early_ok: ["Check out early", "ចុះចេញមុនថ្ងៃ"], // new
+  out_early_keep: ["Keep the stay", "រក្សាការស្នាក់នៅ"], // new
   room_t: ["Room check", "ពិនិត្យបន្ទប់"],
   room_due: ["Room check due on {0}.", "ត្រូវពិនិត្យបន្ទប់នៅថ្ងៃ {0}។"],
   room_done: ["Room checked {0}.", "បានពិនិត្យបន្ទប់ {0}។"],
@@ -294,7 +317,7 @@ const TEXT = {
   e_type: ["Pick the type of problem.", "សូមជ្រើសរើសប្រភេទបញ្ហា។"],
   e_wrong: ["Say what is wrong.", "សូមប្រាប់ថាមានបញ្ហាអ្វី។"],
   e_cost: [
-    "Type the cost in dollars, for example 80 or 80.50.",
+    "Enter the cost in dollars, for example 80 or 80.50.",
     "វាយតម្លៃជាដុល្លារ ឧទាហរណ៍ 80 ឬ 80.50។",
   ],
   dmg_t: ["Damage", "ការខូចខាត"],
@@ -344,7 +367,7 @@ const TEXT = {
     "គណនីរបស់អ្នកមិនអាចធ្វើជំហាននេះបានទេ។",
   ],
   f_step_refused: [
-    "The server refused this step. Check what you typed.",
+    "This step could not be saved. Check what you entered.",
     "ម៉ាស៊ីនមេបានបដិសេធជំហាននេះ។ ពិនិត្យអ្វីដែលអ្នកបានវាយ។",
   ],
   f_not_now: [
@@ -358,7 +381,7 @@ const TEXT = {
   ev_CHECKED_OUT: ["Checked out", "បានចេញ"],
   ev_ROOM_CHECKED: ["Room checked", "បានពិនិត្យបន្ទប់"],
   ev_DAMAGE_APPROVED: ["Damage approved", "បានអនុម័តការខូចខាត"],
-  ev_DAMAGE_REFUSED: ["Damage refused", "បានបដិសេធការខូចខាត"],
+  ev_DAMAGE_REFUSED: ["Damage rejected", "បានបដិសេធការខូចខាត"],
   ev_DAMAGE_CHARGED: ["Damage charged", "បានគិតថ្លៃការខូចខាត"],
   ev_NO_DAMAGE_CHARGE: ["No damage charge", "មិនគិតថ្លៃការខូចខាត"],
   ev_DEPOSIT_RETURNED: ["Deposit returned", "បានប្រគល់ប្រាក់កក់វិញ"],
@@ -440,14 +463,14 @@ const TEXT = {
   e_in: ["Choose the check-in day.", "ជ្រើសថ្ងៃចូល។"],
   // new
   e_nights: [
-    "Type the nights: a whole number, 1 or more.",
+    "Enter the nights: a whole number, 1 or more.",
     "វាយចំនួនយប់៖ ចំនួនគត់ ចាប់ពី 1 ឡើងទៅ។",
   ],
   // new
-  e_name: ["Type the guest's full name.", "វាយឈ្មោះពេញរបស់ភ្ញៀវ។"],
+  e_name: ["Enter the guest's full name.", "វាយឈ្មោះពេញរបស់ភ្ញៀវ។"],
   // new
   e_id: [
-    "Type the ID or passport number.",
+    "Enter the ID or passport number.",
     "វាយលេខអត្តសញ្ញាណប័ណ្ណ ឬលិខិតឆ្លងដែន។",
   ],
   // Booking page, more
@@ -491,7 +514,7 @@ const TEXT = {
     "The difference is a new Invoice for the guest.",
     "ចំនួនខុសគ្នាជាវិក្កយបត្រថ្មីសម្រាប់ភ្ញៀវ។",
   ],
-  e_out: ["Pick a day after {0}.", "ជ្រើសថ្ងៃក្រោយ {0}។"],
+  e_out: ["Choose a day after {0}.", "ជ្រើសថ្ងៃក្រោយ {0}។"],
   x_EXTEND: ["Extension", "ការបន្ត"],
   x_EARLY_CHECK_IN: ["Early check-in", "ការចូលមុនម៉ោង"],
   x_LATE_CHECK_OUT: ["Late check-out", "ការចេញយឺត"],
@@ -503,7 +526,7 @@ const TEXT = {
   ev_EXTENDED: ["Stay extended", "បានបន្តការស្នាក់នៅ"],
   ev_EARLY_CHECK_IN: ["Early check-in added", "បានបន្ថែមការចូលមុនម៉ោង"],
   ev_LATE_CHECK_OUT: ["Late check-out added", "បានបន្ថែមការចេញយឺត"],
-  tab_clean: ["Cleaning", "ការសម្អាត"],
+  tab_clean: ["Housekeeping", "ការសម្អាត"],
   tab_sites: ["Booking sites", "គេហទំព័រកក់"],
   cl_prev: ["Day before", "ថ្ងៃមុន"],
   cl_next: ["Next day", "ថ្ងៃបន្ទាប់"],
@@ -517,13 +540,33 @@ const TEXT = {
   cl_ROOM_CHECK: ["Room check", "ពិនិត្យបន្ទប់"],
   cl_TO_DO: ["To do", "ត្រូវធ្វើ"],
   cl_DONE: ["Done", "រួចរាល់"],
-  cl_SKIPPED: ["Skipped", "បានរំលង"],
+  cl_SKIPPED: ["Not cleaned", "មិនបានសម្អាត"], // owner 14/11/2026: was "Skipped"
   cl_late: ["Due {0}", "ត្រូវធ្វើ {0}"],
-  cl_done_b: ["Done", "រួចរាល់"],
-  cl_skip: ["Skip", "រំលង"],
-  cl_reason: ["Why it is skipped", "មូលហេតុដែលរំលង"],
+  // Owner 13/11/2026: a task not done on its day shows red, and done or skipped ones fold.
+  cl_late_chip: ["Late", "យឺត"],
+  cl_all_done: [
+    "Nothing left to do on this day.",
+    "មិនមានការងារនៅសល់ក្នុងថ្ងៃនេះទេ។",
+  ],
+  cl_finished: ["Finished ({0})", "បានបញ្ចប់ ({0})"],
+  cl_finished_list: ["Finished", "បានបញ្ចប់"],
+  // DL-236 (owner 14/11/2026): a task is given to one person.
+  cl_assign: ["Assign to", "ផ្ដល់ការងារឱ្យ"],
+  cl_nobody: ["Nobody yet", "មិនទាន់មាននរណាម្នាក់"],
+  // The Staff bot tells the person given a task; this person has no linked Telegram.
+  cl_no_tg: ["{0} (no Telegram)", "{0} (គ្មាន Telegram)"],
+  cl_nobody_yet: ["Not given to anyone yet", "មិនទាន់ផ្ដល់ឱ្យនរណាម្នាក់"],
+  cl_given: ["Given to {0}", "ផ្ដល់ឱ្យ {0}"],
+  cl_done_by: ["Done by {0}", "ធ្វើដោយ {0}"],
+  cl_not_by: ["Marked not cleaned by {0}", "{0} បានកត់ថាមិនបានសម្អាត"],
+  cl_done_b: ["Cleaned", "បានសម្អាត"], // owner 14/11/2026: was "Done"
+  cl_skip: ["Not cleaned today", "មិនបានសម្អាតថ្ងៃនេះ"], // owner 14/11/2026: was "Skip"
+  cl_reason: ["Why it is not cleaned", "មូលហេតុដែលមិនបានសម្អាត"],
   cl_room: ["Do the room check", "ធ្វើការពិនិត្យបន្ទប់"],
-  e_skip: ["A skipped clean says why.", "ការរំលងការសម្អាតត្រូវប្រាប់មូលហេតុ។"],
+  e_skip: [
+    "Say why the room is not cleaned today.",
+    "សូមប្រាប់មូលហេតុដែលមិនបានសម្អាតបន្ទប់ថ្ងៃនេះ។",
+  ],
   cl_saved: ["{0}: {1}.", "{0}៖ {1}។"],
   // Step 4b: cancel and credit
   can_t: ["Cancel", "លុបចោល"],
@@ -552,7 +595,7 @@ const TEXT = {
   // new (owner test 06/11/2026): the Refund button after a free cancel.
   rf_t: ["Give the money back", "ប្រគល់ប្រាក់វិញ"],
   rf_s: [
-    "{0} goes back to the guest. A Manager or the Owner approves it in Waiting for approval.",
+    "{0} goes back to the guest. A Manager or the Owner approves it in Approvals.",
     // new
     "{0} ត្រឡប់ទៅភ្ញៀវវិញ។ អ្នកគ្រប់គ្រង ឬម្ចាស់អនុម័តក្នុង កំពុងរង់ចាំការអនុម័ត។",
   ],
@@ -563,14 +606,14 @@ const TEXT = {
     // new
     "ឧទាហរណ៍៖ សាច់ប្រាក់នៅតុ ឬលេខប្រតិបត្តិការ ABA។",
   ],
-  e_rf_note: ["Type the reference.", "វាយឯកសារយោង។"],
+  e_rf_note: ["Enter the reference.", "វាយឯកសារយោង។"],
   rf_b: ["Refund {0}", "សងប្រាក់ {0}"],
   rf_wait: [
     "Refund of {0} waits for approval.",
     // new
     "ការសងប្រាក់ {0} កំពុងរង់ចាំការអនុម័ត។",
   ],
-  rf_open: ["Open Waiting for approval", "បើក កំពុងរង់ចាំការអនុម័ត"],
+  rf_open: ["Open Approvals", "បើក កំពុងរង់ចាំការអនុម័ត"],
   rf_done: ["Given back: {0}.", "បានប្រគល់វិញ៖ {0}។"],
   rf_no_right: [
     "Your account may not make a Refund. Ask a Manager.",
@@ -588,7 +631,7 @@ const TEXT = {
   cr_note: ["Why", "មូលហេតុ"],
   cr_b: ["Give credit", "ផ្ដល់ឥណទាន"],
   cr_given: ["{0} credit, to use by {1}.", "ឥណទាន {0} ប្រើបានរហូតដល់ {1}។"],
-  e_credit: ["Type an amount up to {0}.", "វាយចំនួនរហូតដល់ {0}។"],
+  e_credit: ["Enter an amount up to {0}.", "វាយចំនួនរហូតដល់ {0}។"],
   ev_CANCELLED: ["Cancelled", "បានលុបចោល"],
   ev_NO_SHOW: ["Did not come", "មិនបានមក"],
   ev_CREDIT_GIVEN: ["Credit given", "បានផ្ដល់ឥណទាន"],
@@ -657,7 +700,7 @@ const TEXT = {
   sc_ok: ["Read", "បានអាន"],
   sc_failed: ["Could not read", "មិនអាចអានបាន"],
   sc_read: [
-    "Last read {0} · {1} booked ranges ahead",
+    "Last checked {0} · {1} booked ranges ahead",
     "អានចុងក្រោយ {0} · {1} ចន្លោះដែលបានកក់ខាងមុខ",
   ],
   sc_url: ["Calendar link", "តំណប្រតិទិន"],
@@ -678,7 +721,7 @@ const TEXT = {
     "តំណប្រតិទិនចាប់ផ្ដើមដោយ https://",
   ],
   e_link_form: [
-    "Pick the room and the site, and paste a link that starts with https://",
+    "Choose the room and the site, and paste a link that starts with https://.",
     "ជ្រើសបន្ទប់ និងគេហទំព័រ ហើយបិទភ្ជាប់តំណដែលចាប់ផ្ដើមដោយ https://",
   ],
   // Step 5b (new): line names, thank-you, discount, guest history, review and quotes.
@@ -699,7 +742,7 @@ const TEXT = {
   dc_reason: ["Reason", "មូលហេតុ"],
   dc_b: ["Give the discount", "ផ្ដល់ការបញ្ចុះតម្លៃ"],
   dc_wrong: [
-    "Type an amount less than the stay and a reason.",
+    "Enter an amount less than the stay and a reason.",
     "វាយចំនួនទឹកប្រាក់តិចជាងតម្លៃស្នាក់នៅ និងមូលហេតុ។",
   ],
   dc_given: ["{0} off: {1}", "បញ្ចុះ {0}៖ {1}"],
@@ -728,7 +771,7 @@ const TEXT = {
   ],
   cu_loading: ["Looking for free Units…", "កំពុងរកបន្ទប់ទំនេរ…"],
   cu_failed: [
-    "The free Units could not be read just now.",
+    "The free Units could not be loaded.",
     "មិនអាចអានបន្ទប់ទំនេរបានទេឥឡូវនេះ។",
   ],
   cu_none: [
@@ -807,11 +850,11 @@ const TEXT = {
   q_nights: ["Nights", "ចំនួនយប់"],
   q_b: ["Make the quote", "ធ្វើសម្រង់តម្លៃ"],
   q_wrong: [
-    "Pick the room, type the guest's name, 1 to 10 guests and the nights.",
+    "Choose the room, enter the guest's name, 1 to 10 guests and the nights.",
     "ជ្រើសបន្ទប់ វាយឈ្មោះភ្ញៀវ ភ្ញៀវ 1 ដល់ 10 នាក់ និងចំនួនយប់។",
   ],
   q_not_free: [
-    "That room cannot be booked for those nights. Pick another room or other days.",
+    "That room cannot be booked for those nights. Choose another room or other days.",
     "បន្ទប់នោះមិនអាចកក់សម្រាប់យប់ទាំងនោះបានទេ។ សូមជ្រើសបន្ទប់ ឬថ្ងៃផ្សេង។",
   ],
   q_none: ["No quotes yet.", "មិនទាន់មានសម្រង់តម្លៃទេ។"],
@@ -820,6 +863,85 @@ const TEXT = {
     "បានធ្វើសម្រង់តម្លៃ {0}។ ចម្លងសារសម្រាប់ភ្ញៀវ។",
   ],
   q_book: ["Book this", "កក់បន្ទប់នេះ"],
+  // Leasing batch (owner 13/11/2026, new; Khmer needs the native check): the price message is
+  // copied on New booking instead of the Quotes tab.
+  // Leasing batch (owner 13/11/2026, new; Khmer needs the native check): the new Calendar
+  // (booking bars, room state, free rooms, quick numbers) and the Today panel.
+  v_week: ["Week", "សប្ដាហ៍"],
+  v_2weeks: ["2 weeks", "2 សប្ដាហ៍"],
+  v_month: ["Month", "ខែ"],
+  v_label: ["How many days", "ចំនួនថ្ងៃ"],
+  lg_booked: ["Booked", "បានកក់"],
+  lg_in: ["Checked in", "បានចូល"],
+  lg_site: ["Booking site", "គេហទំព័រកក់"],
+  lg_lease: ["Lease", "កិច្ចសន្យា"],
+  lg_closed: ["Closed", "បិទ"],
+  lg_unpaid: ["Not paid", "មិនទាន់បង់"],
+  lg_label: ["What the colours mean", "អត្ថន័យពណ៌"],
+  bar_unpaid: ["{0}, not paid", "{0} មិនទាន់បង់"],
+  bar_out: ["{0}, checked out", "{0} បានចេញ"],
+  grp_free: ["{0} free", "ទំនេរ {0}"],
+  grp_full: ["Full", "ពេញ"],
+  rm_VACANT: ["Ready", "រួចរាល់"],
+  rm_CLEANING: ["Needs cleaning", "ត្រូវសម្អាត"],
+  rm_OCCUPIED: ["Guest in", "មានភ្ញៀវ"],
+  rm_RESERVED: ["Reserved", "បានកក់ទុក"],
+  rm_UNDER_MAINTENANCE: ["Repair", "កំពុងជួសជុល"],
+  rm_OUT_OF_SERVICE: ["Closed", "បិទ"],
+  kp_full: ["Tonight", "យប់នេះ"], // owner 14/11/2026: was "Full tonight"
+  kp_full_s: ["{0} free", "ទំនេរ {0}"],
+  kp_arrive: ["Arriving today", "មកដល់ថ្ងៃនេះ"],
+  kp_leave: ["Leaving today", "ចេញថ្ងៃនេះ"],
+  kp_unpaid: ["Not paid yet", "មិនទាន់បង់"],
+  kp_unpaid_s: ["Bookings in the next 2 weeks", "ការកក់ក្នុង 2 សប្ដាហ៍ខាងមុខ"],
+  kp_sites: ["Online", "អនឡាញ"], // owner 14/11/2026: was "Booking sites"
+  kp_sites_none: ["No calendar links yet", "មិនទាន់មានតំណប្រតិទិន"],
+  kp_sites_bad: ["{0}: could not read", "{0}៖ អានមិនបាន"],
+  td_title: ["Today · {0}", "ថ្ងៃនេះ · {0}"],
+  td_staying: ["{0} staying", "កំពុងស្នាក់ {0}"],
+  td_arrive: ["Arriving", "មកដល់"],
+  td_leave: ["Leaving", "ចេញ"],
+  td_none_in: ["No one arrives today.", "គ្មាននរណាមកដល់ថ្ងៃនេះទេ។"],
+  td_none_out: ["No one leaves today.", "គ្មាននរណាចេញថ្ងៃនេះទេ។"],
+  td_pay: ["Pay", "បង់ប្រាក់"],
+  td_deposit: ["Take deposit", "ទទួលប្រាក់កក់"],
+  td_id: ["Add ID number", "បញ្ចូលលេខអត្តសញ្ញាណ"],
+  td_room: ["Room not ready", "បន្ទប់មិនទាន់រួចរាល់"],
+  td_paid: ["Paid", "បានបង់"],
+  td_not_paid: ["Not paid", "មិនទាន់បង់"],
+  td_no_deposit: ["No deposit yet", "មិនទាន់មានប្រាក់កក់"],
+  td_by: ["By {0}", "មុនម៉ោង {0}"],
+  td_clean: ["Rooms to clean", "បន្ទប់ត្រូវសម្អាត"],
+  td_clean_none: ["No room waits for cleaning.", "គ្មានបន្ទប់រង់ចាំសម្អាតទេ។"],
+  td_clean_open: ["Open Housekeeping", "បើកការសម្អាត"],
+  td_unpaid: ["Not paid", "មិនទាន់បង់"],
+  td_unpaid_row: ["{0} · {1} · arrives {2}", "{0} · {1} · មកដល់ {2}"],
+  td_in_t: ["Check in {0}", "ចុះឈ្មោះចូល {0}"],
+  td_in_s: [
+    "{0} · {1}. Paid, deposit taken, ID number kept and the room is ready.",
+    "{0} · {1}។ បានបង់ បានទទួលប្រាក់កក់ មានលេខអត្តសញ្ញាណ ហើយបន្ទប់រួចរាល់។",
+  ],
+  td_out_t: ["Check out {0}", "ចុះឈ្មោះចេញ {0}"],
+  td_out_s: [
+    "{0} leaves {1}. The room check comes next on the booking.",
+    "{0} ចេញពី {1}។ ការពិនិត្យបន្ទប់បន្ទាប់នៅលើការកក់។",
+  ],
+  td_done_in: ["{0} is checked in.", "{0} បានចុះឈ្មោះចូល។"],
+  td_done_out: ["{0} is checked out.", "{0} បានចុះឈ្មោះចេញ។"],
+  td_close: ["Cancel", "បោះបង់"],
+  td_shut: ["Close", "បិទ"],
+  td_unpaid_none: ["Every booking is paid.", "ការកក់ទាំងអស់បានបង់។"],
+  td_ticks: [
+    "Tick both boxes: ID copy made and house rules signed.",
+    "សូមធីកទាំងពីរ៖ បានថតចម្លងអត្តសញ្ញាណ និងបានចុះហត្ថលេខាលើវិធាន។",
+  ],
+  pm_copy: ["Copy price message", "ចម្លងសារតម្លៃ"],
+  pm_note: [
+    "Send it to the guest on Telegram. It does not hold the room.",
+    "ផ្ញើទៅភ្ញៀវតាម Telegram។ វាមិនរក្សាបន្ទប់ទុកទេ។",
+  ],
+  pm_name: ["Type the guest's name first.", "សូមវាយឈ្មោះភ្ញៀវជាមុនសិន។"],
+  pm_select: ["Select the message and copy it.", "សូមជ្រើសសារ ហើយចម្លងវា។"],
   q_message: [
     "CHETANA Residence: quote {0}\nRoom {1}, {2} guests\n{3} to {4}, {5}\nTotal {6}\nCheck-in from {7}, check-out by {8}. Deposit {9} at check-in (cash or a card hold), given back after the room check.\nThis is today's price; the room is held only when you book.",
     "CHETANA Residence៖ សម្រង់តម្លៃ {0}\nបន្ទប់ {1} ភ្ញៀវ {2} នាក់\n{3} ដល់ {4} {5}\nសរុប {6}\nចូលចាប់ពីម៉ោង {7} ចេញមុនម៉ោង {8}។ ប្រាក់កក់ {9} ពេលចូល (សាច់ប្រាក់ ឬកាត) ហើយប្រគល់វិញក្រោយពិនិត្យបន្ទប់។\nនេះជាតម្លៃថ្ងៃនេះ បន្ទប់ត្រូវបានរក្សាទុកតែពេលអ្នកកក់ប៉ុណ្ណោះ។",
@@ -898,10 +1020,12 @@ export function st(
   ...values: (string | number)[]
 ): string {
   const words: string = TEXT[key][language === "km" ? 1 : 0];
-  return words.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    words.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 export function hasText(key: string): key is StaysTextKey {

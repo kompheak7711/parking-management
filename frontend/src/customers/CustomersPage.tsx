@@ -12,8 +12,13 @@ import type { LeaseApi } from "../leaseClient";
 import type { ReservationApi } from "../reservationClient";
 import { todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
-import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
+import {
+  openPageInAddress,
+  useHashDetail,
+  useHashShow,
+} from "../shell/useHashPage";
 import type { Language } from "../signInText";
+import { type BirthdaysApi, BirthdaysCard } from "./Birthdays";
 import { CustomerDetail } from "./CustomerDetail";
 import { AddCustomerPage } from "./CustomerDialogs";
 import type { CustomerCommandGate } from "./commands";
@@ -36,6 +41,8 @@ export interface CustomersPageProps {
   gate: CustomerCommandGate;
   /** Typed values not saved yet, so signing out can warn first. */
   onDirty: (dirty: boolean) => void;
+  /** UI v81 round 11: the read of the coming birthdays; left out, the app's own read. */
+  birthdaysApi?: BirthdaysApi;
 }
 
 export function CustomersPage({
@@ -51,6 +58,7 @@ export function CustomersPage({
   onOpenLedger,
   gate,
   onDirty,
+  birthdaysApi,
 }: CustomersPageProps) {
   const detail = useHashDetail("customers");
   const [data, setData] = useState<CustomersData | null>(null);
@@ -62,6 +70,10 @@ export function CustomersPage({
   const [added, setAdded] = useState<{ id: string; text: string } | null>(null);
   const sequence = useRef(0);
   const searchSequence = useRef(0);
+  // UI v81 round 11: Home's "Birthdays" card opens "#/customers?show=birthdays"; the list of
+  // coming birthdays shows above the Customers while the address asks for it ("Hide" opens
+  // "#/customers").
+  const birthdays = useHashShow("customers") === "birthdays";
 
   const load = useCallback(() => {
     if (propertyId === "") return;
@@ -230,6 +242,18 @@ export function CustomersPage({
         </div>
       )}
       <CustomersList
+        above={
+          birthdays && (
+            <BirthdaysCard
+              api={birthdaysApi}
+              language={language}
+              onHide={() => {
+                openPageInAddress("customers", true);
+              }}
+              propertyId={propertyId}
+            />
+          )
+        }
         data={data}
         language={language}
         onAdd={

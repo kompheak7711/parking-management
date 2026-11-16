@@ -4,10 +4,11 @@
 
 import type { Language } from "../signInText";
 import type { WaitingDraft } from "./approvalsClient";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   ap_sub: [
-    "Drafts move no money until the Owner or a Manager confirms them",
+    "Drafts move no money until the Owner or a Manager confirms them.",
     "សេចក្តីព្រាងមិនផ្លាស់ទីប្រាក់ទេ រហូតដល់ម្ចាស់ ឬអ្នកគ្រប់គ្រងបញ្ជាក់",
   ],
   as_of: ["As of {0}", "គិតត្រឹមម៉ោង {0}"],
@@ -15,7 +16,7 @@ const TEXT = {
   loading: ["Loading the drafts…", "កំពុងផ្ទុកសេចក្តីព្រាង…"],
   // new
   failed: [
-    "The drafts could not be read just now. Check the connection and try again.",
+    "The drafts could not be loaded. Check the connection and try again.",
     "មិនអាចអានសេចក្តីព្រាងបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -25,18 +26,18 @@ const TEXT = {
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
 
-  apc_wait: ["Waiting", "កំពុងរង់ចាំ"],
+  apc_wait: ["Pending approval", "កំពុងរង់ចាំ"],
   apc_wait_s: ["Drafts to confirm", "សេចក្តីព្រាងត្រូវបញ្ជាក់"],
-  apc_out: ["Money out", "ប្រាក់ចេញ"],
-  apc_out_s: ["Refunds waiting", "ការសងប្រាក់កំពុងរង់ចាំ"],
+  apc_out: ["Refunds pending", "ប្រាក់ចេញ"],
+  apc_out_s: ["Refunds pending approval", "ការសងប្រាក់កំពុងរង់ចាំ"],
   // new: a held-value refund gets its amount only at confirm.
   apc_out_unknown: [
-    "Refunds waiting · {0} worked out at confirm",
+    "Refunds pending approval · {0} calculated when confirmed",
     "ការសងប្រាក់កំពុងរង់ចាំ · {0} គណនាពេលបញ្ជាក់",
   ],
-  apc_kept: ["Deposits kept", "ប្រាក់កក់ដែលរក្សាទុក"],
-  apc_kept_s: ["Forfeitures waiting", "ការរឹបអូសកំពុងរង់ចាំ"],
-  apc_done: ["Decided today", "បានសម្រេចថ្ងៃនេះ"],
+  apc_kept: ["Deposit forfeitures pending", "ប្រាក់កក់ដែលរក្សាទុក"],
+  apc_kept_s: ["Forfeitures pending approval", "ការរឹបអូសកំពុងរង់ចាំ"],
+  apc_done: ["Processed today", "បានសម្រេចថ្ងៃនេះ"],
   apc_done_s: ["Confirmed or rejected", "បានបញ្ជាក់ ឬបដិសេធ"],
   ap_showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
   pc_clear: ["Show all", "បង្ហាញទាំងអស់"],
@@ -47,15 +48,17 @@ const TEXT = {
   ap_col_amt: ["Amount", "ចំនួន"],
   col_status: ["Status", "ស្ថានភាព"],
   ap_open: ["Open", "បើក"],
-  ap_wait_chip: ["Waiting", "កំពុងរង់ចាំ"],
+  // Round 15: the row button has the design's word (v81 "Review").
+  ap_review: ["Review", "ពិនិត្យ"],
+  ap_wait_chip: ["Pending approval", "កំពុងរង់ចាំ"],
   ap_none: [
-    "Nothing is waiting. Every draft has been decided.",
+    "Nothing is pending. Every draft has been processed.",
     "គ្មានអ្វីរង់ចាំទេ។ សេចក្តីព្រាងទាំងអស់បានសម្រេចហើយ។",
   ],
-  ap_done_h: ["Decided today", "បានសម្រេចថ្ងៃនេះ"],
+  ap_done_h: ["Processed today", "បានសម្រេចថ្ងៃនេះ"],
   ap_done_none: ["Nothing decided yet today.", "មិនទាន់មានការសម្រេចថ្ងៃនេះទេ។"],
   ap_rule: [
-    "The person who prepared a draft may also confirm it only if they have approval rights. Both names are kept in History.",
+    "The person who prepared a draft may also confirm it only if they have approval rights. Both names are kept in the audit log.",
     "អ្នករៀបចំសេចក្តីព្រាងអាចបញ្ជាក់វាបាន លុះត្រាតែមានសិទ្ធិអនុម័ត។ ឈ្មោះទាំងពីរត្រូវរក្សាក្នុងប្រវត្តិ។",
   ],
   // new: the list shows the first 200 drafts, oldest first.
@@ -72,6 +75,9 @@ const TEXT = {
   required: ["Required", "ចាំបាច់"],
   ap_reason: ["Reason", "មូលហេតុ"],
   ap_prepared: ["Prepared", "បានរៀបចំ"],
+  // Round 15: the Refund's method and reference note, as in design v81 Review.
+  ap_method: ["Refund method", "វិធីសងប្រាក់"],
+  ap_ref: ["Reference", "លេខយោង"],
   df_res: ["Reservation", "ការកក់"],
   df_lease: ["Lease", "កិច្ចសន្យា"],
   ap_moves: ["What happens when you confirm", "អ្វីកើតឡើងពេលអ្នកបញ្ជាក់"],
@@ -223,10 +229,12 @@ export function apt(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "km" ? 1 : 0];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 function correctionKey(variant: string | null): ApprovalsTextKey {

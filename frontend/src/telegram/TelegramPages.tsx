@@ -7,6 +7,7 @@
 // saves. The server checks every right again. No bot key is ever shown.
 
 import "../shell/screens.css";
+import "./visits.css";
 
 import {
   type FormEvent,
@@ -50,8 +51,9 @@ import {
   type VisitRequestsPage,
   type VisitStepBody,
 } from "./telegramClient";
-import { openPageInAddress } from "../shell/useHashPage";
+import { openPageInAddress, useShowFromAddress } from "../shell/useHashPage";
 import { hasText, type TelegramTextKey, tt } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface TelegramPageProps {
   language: Language;
@@ -504,9 +506,9 @@ export function LinkedTenantsPage({
   if (propertyId === "") return <NoProperty language={language} />;
 
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{tt(language, "links_sub")}</p>
-    </div>
+    </PageHead>
   );
   if (page.data === null)
     return (
@@ -784,6 +786,42 @@ function invoiceReached(invoice: {
   return "waiting";
 }
 
+/** Administration review fix 7: a long list shows its newest rows first. */
+const FIRST = 5;
+
+function ShowAll({
+  all,
+  count,
+  language,
+  onShow,
+}: {
+  all: boolean;
+  count: number;
+  language: Language;
+  onShow: (all: boolean) => void;
+}) {
+  if (count <= FIRST) return null;
+  return (
+    <div className="ui-tfoot ui-tfoot-row">
+      <span>
+        {all
+          ? tt(language, "list_all", count)
+          : tt(language, "list_some", FIRST, count)}
+      </span>
+      <button
+        aria-expanded={all}
+        className="ui-btn"
+        onClick={() => {
+          onShow(!all);
+        }}
+        type="button"
+      >
+        {all ? tt(language, "show_fewer") : tt(language, "show_all", count)}
+      </button>
+    </div>
+  );
+}
+
 function InvoicesOnTelegram({
   language,
   propertyId,
@@ -797,6 +835,8 @@ function InvoicesOnTelegram({
 }) {
   const page = usePage<InvoicesPage>(propertyId, active, api.invoices);
   const data = page.data;
+  // Administration review fix 7 (owner 13/11/2026): the 5 newest, then "Show all".
+  const [all, setAll] = useState(false);
   const paper =
     data === null
       ? 0
@@ -842,50 +882,64 @@ function InvoicesOnTelegram({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.invoices.map((invoice) => {
-                    const reached = invoiceReached(invoice);
-                    const sentCount = invoice.sent.filter(
-                      (person) => person.state === "SENT",
-                    ).length;
-                    return (
-                      <tr key={invoice.id}>
-                        <td className="ui-num">{invoice.number}</td>
-                        <td>{invoice.unit_number ?? ""}</td>
-                        <td className="ui-wide">{invoice.customer}</td>
-                        <td className="ui-num">{dayText(invoice.due_date)}</td>
-                        <td className="ui-wide ui-num">
-                          {usdFromCents(invoice.to_pay_usd_cents)}
-                        </td>
-                        <td>
-                          {reached === "sent" && (
-                            <Chip tone="ok">
-                              {tt(language, "inv_sent", sentCount)}
-                            </Chip>
-                          )}
-                          {reached === "waiting" && (
-                            <Chip tone="warn">
-                              {tt(language, "inv_waiting")}
-                            </Chip>
-                          )}
-                          {reached === "failed" && (
-                            <Chip tone="err">{tt(language, "inv_failed")}</Chip>
-                          )}
-                          {reached === "none" && (
-                            <Chip tone="err">{tt(language, "inv_paper")}</Chip>
-                          )}
-                        </td>
-                        <td className="ui-wide ui-num">
-                          {invoice.reminded_at === null
-                            ? tt(language, "inv_no_reminder")
-                            : momentText(invoice.reminded_at)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(all ? data.invoices : data.invoices.slice(0, FIRST)).map(
+                    (invoice) => {
+                      const reached = invoiceReached(invoice);
+                      const sentCount = invoice.sent.filter(
+                        (person) => person.state === "SENT",
+                      ).length;
+                      return (
+                        <tr key={invoice.id}>
+                          <td className="ui-num">{invoice.number}</td>
+                          <td>{invoice.unit_number ?? ""}</td>
+                          <td className="ui-wide">{invoice.customer}</td>
+                          <td className="ui-num">
+                            {dayText(invoice.due_date)}
+                          </td>
+                          <td className="ui-wide ui-num">
+                            {usdFromCents(invoice.to_pay_usd_cents)}
+                          </td>
+                          <td>
+                            {reached === "sent" && (
+                              <Chip tone="ok">
+                                {tt(language, "inv_sent", sentCount)}
+                              </Chip>
+                            )}
+                            {reached === "waiting" && (
+                              <Chip tone="warn">
+                                {tt(language, "inv_waiting")}
+                              </Chip>
+                            )}
+                            {reached === "failed" && (
+                              <Chip tone="err">
+                                {tt(language, "inv_failed")}
+                              </Chip>
+                            )}
+                            {reached === "none" && (
+                              <Chip tone="err">
+                                {tt(language, "inv_paper")}
+                              </Chip>
+                            )}
+                          </td>
+                          <td className="ui-wide ui-num">
+                            {invoice.reminded_at === null
+                              ? tt(language, "inv_no_reminder")
+                              : momentText(invoice.reminded_at)}
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )}
                 </tbody>
               </table>
             </div>
           )}
+          <ShowAll
+            all={all}
+            count={data.invoices.length}
+            language={language}
+            onShow={setAll}
+          />
           <p className="ui-tfoot">
             {tt(language, "inv_sub", data.rules.remind_days, data.rules.days)}
           </p>
@@ -910,6 +964,7 @@ function ReceiptsOnTelegram({
 }) {
   const page = usePage<ReceiptsPage>(propertyId, active, api.receipts);
   const data = page.data;
+  const [all, setAll] = useState(false);
   const reachedOf = (receipt: TelegramReceipt) => invoiceReached(receipt);
   const paper =
     data === null
@@ -953,47 +1008,59 @@ function ReceiptsOnTelegram({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.receipts.map((receipt) => {
-                    const reached = reachedOf(receipt);
-                    const sentCount = receipt.sent.filter(
-                      (person) => person.state === "SENT",
-                    ).length;
-                    return (
-                      <tr key={receipt.id}>
-                        <td className="ui-num">{receipt.number}</td>
-                        <td className="ui-wide">{receipt.customer}</td>
-                        <td className="ui-wide ui-num">
-                          {momentText(receipt.issued_at)}
-                        </td>
-                        <td className="ui-num">
-                          {usdFromCents(receipt.amount_usd_cents)}
-                        </td>
-                        <td>
-                          {receipt.status !== "RECEIVED" ? (
-                            <Chip tone="warn">
-                              {tt(language, "rec_reversed")}
-                            </Chip>
-                          ) : reached === "sent" ? (
-                            <Chip tone="ok">
-                              {tt(language, "inv_sent", sentCount)}
-                            </Chip>
-                          ) : reached === "waiting" ? (
-                            <Chip tone="warn">
-                              {tt(language, "inv_waiting")}
-                            </Chip>
-                          ) : reached === "failed" ? (
-                            <Chip tone="err">{tt(language, "inv_failed")}</Chip>
-                          ) : (
-                            <Chip tone="err">{tt(language, "inv_paper")}</Chip>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(all ? data.receipts : data.receipts.slice(0, FIRST)).map(
+                    (receipt) => {
+                      const reached = reachedOf(receipt);
+                      const sentCount = receipt.sent.filter(
+                        (person) => person.state === "SENT",
+                      ).length;
+                      return (
+                        <tr key={receipt.id}>
+                          <td className="ui-num">{receipt.number}</td>
+                          <td className="ui-wide">{receipt.customer}</td>
+                          <td className="ui-wide ui-num">
+                            {momentText(receipt.issued_at)}
+                          </td>
+                          <td className="ui-num">
+                            {usdFromCents(receipt.amount_usd_cents)}
+                          </td>
+                          <td>
+                            {receipt.status !== "RECEIVED" ? (
+                              <Chip tone="warn">
+                                {tt(language, "rec_reversed")}
+                              </Chip>
+                            ) : reached === "sent" ? (
+                              <Chip tone="ok">
+                                {tt(language, "inv_sent", sentCount)}
+                              </Chip>
+                            ) : reached === "waiting" ? (
+                              <Chip tone="warn">
+                                {tt(language, "inv_waiting")}
+                              </Chip>
+                            ) : reached === "failed" ? (
+                              <Chip tone="err">
+                                {tt(language, "inv_failed")}
+                              </Chip>
+                            ) : (
+                              <Chip tone="err">
+                                {tt(language, "inv_paper")}
+                              </Chip>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )}
                 </tbody>
               </table>
             </div>
           )}
+          <ShowAll
+            all={all}
+            count={data.receipts.length}
+            language={language}
+            onShow={setAll}
+          />
           <p className="ui-tfoot">{tt(language, "rec_sub", data.rules.days)}</p>
         </>
       )}
@@ -1233,12 +1300,12 @@ export function TelegramHealthPage({
   if (propertyId === "") return <NoProperty language={language} />;
 
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{tt(language, "h_sub")}</p>
       <span className="ui-muted">
         <Icon name="lock" small /> {tt(language, "h_lock")}
       </span>
-    </div>
+    </PageHead>
   );
   if (page.data === null)
     return (
@@ -1322,7 +1389,7 @@ export function TelegramHealthPage({
             role="listitem"
           >
             <span className="ui-kpi-label">{label}</span>
-            <span className="ui-kpi-value ui-num">{value}</span>
+            <span className="ui-kpi-value ui-num ui-kpi-words">{value}</span>
             <span className="ui-kpi-note">{note}</span>
           </div>
         ))}
@@ -1346,7 +1413,8 @@ export function TelegramHealthPage({
           <h2 id="tg-bots">{tt(language, "bots")}</h2>
         </div>
         <div className="ui-tablewrap">
-          <table className="ui-table">
+          {/* Administration review fix 6: one card per bot on a phone. */}
+          <table className="ui-table ui-rowcards">
             <thead>
               <tr>
                 <th scope="col">{tt(language, "c_bot")}</th>
@@ -1370,8 +1438,18 @@ export function TelegramHealthPage({
                         <Chip tone="ok">{tt(language, "working")}</Chip>
                       )}
                     </td>
-                    <td className="ui-num">{when(bot.last_in, language)}</td>
-                    <td className="ui-num">{when(bot.last_out, language)}</td>
+                    <td
+                      className="ui-num ui-rc-wide"
+                      data-label={tt(language, "c_in")}
+                    >
+                      {when(bot.last_in, language)}
+                    </td>
+                    <td
+                      className="ui-num ui-rc-wide"
+                      data-label={tt(language, "c_out")}
+                    >
+                      {when(bot.last_out, language)}
+                    </td>
                   </tr>
                 );
               })}
@@ -1546,9 +1624,9 @@ export function ContactOfficePage({
   if (propertyId === "") return <NoProperty language={language} />;
 
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{tt(language, "contact_sub")}</p>
-    </div>
+    </PageHead>
   );
   if (page.data === null)
     return (
@@ -1871,7 +1949,7 @@ export function FaqPageView({
   if (propertyId === "") return <NoProperty language={language} />;
   const edit = holds(capabilities, FAQ) && page.data?.can_edit === true;
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{tt(language, "faq_sub")}</p>
       {edit && (
         <button
@@ -1886,7 +1964,7 @@ export function FaqPageView({
           <Icon name="plus" small /> {tt(language, "faq_new")}
         </button>
       )}
-    </div>
+    </PageHead>
   );
   if (page.data === null)
     return (
@@ -2393,27 +2471,27 @@ function InquiryCells({
   language: Language;
   inquiry: VisitInquiry;
 }) {
+  // Owner 14/11/2026 01:43: fewer columns, so Status and Staff fit on a laptop; the contact
+  // way sits under the phone, the day wanted under the Unit type, and a note only when written.
   return (
     <>
       <td>
         {inquiry.name}
-        <span className="ui-sub2 ui-num">{inquiry.phone}</span>
-      </td>
-      <td className="ui-wide">
-        {contactBy(language, inquiry)}
+        <span className="ui-sub2">
+          <span className="ui-num">{inquiry.phone}</span> ·{" "}
+          <span>{contactBy(language, inquiry)}</span>
+        </span>
         {inquiry.email !== null && (
           <span className="ui-sub2">{inquiry.email}</span>
         )}
       </td>
       <td>
-        {unitTypeName(language, inquiry)}
-        <span className="ui-sub2">
-          {tt(language, "vr_movein", moveIn(language, inquiry))}
-        </span>
-      </td>
-      <td>{prefers(language, inquiry)}</td>
-      <td className="ui-wide">
-        <span className="ui-muted">{inquiry.note ?? ""}</span>
+        <span>{unitTypeName(language, inquiry)}</span> ·{" "}
+        <span>{tt(language, "vr_movein", moveIn(language, inquiry))}</span>
+        <span className="ui-sub2">{prefers(language, inquiry)}</span>
+        {inquiry.note !== null && (
+          <span className="ui-sub2 ui-muted vr-note">{inquiry.note}</span>
+        )}
       </td>
     </>
   );
@@ -2463,19 +2541,29 @@ function CountTable({
       {rows.length === 0 ? (
         <p className="ui-muted">{tt(language, "m_none")}</p>
       ) : (
-        <table className="ui-table">
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.code}>
-                <td>{textOf(language, prefix, row.code)}</td>
-                <td className="r ui-num">{row.count}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        // A short list, not a table: it stays inside the card at every size.
+        <ul className="vr-counts">
+          {rows.map((row) => (
+            <li key={row.code}>
+              <span>{textOf(language, prefix, row.code)}</span>
+              <b className="ui-num">{row.count}</b>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
+}
+
+function monthCounts(month: VisitMonth): [TelegramTextKey, number][] {
+  return [
+    ["m_new", month.new],
+    ["m_joined", month.joined],
+    ...MONTH_STEPS.map((step): [TelegramTextKey, number] => [
+      `m_${step}`,
+      month.steps[step] ?? 0,
+    ]),
+  ];
 }
 
 /** This month, for Managers and the Owner (DL-173). */
@@ -2494,18 +2582,15 @@ function MonthSection({
           {month.month.split("-").reverse().join("/")}
         </span>
       </h2>
-      <dl className="ui-kv">
-        <dt>{tt(language, "m_new")}</dt>
-        <dd className="ui-num">{month.new}</dd>
-        <dt>{tt(language, "m_joined")}</dt>
-        <dd className="ui-num">{month.joined}</dd>
-        {MONTH_STEPS.map((step) => [
-          <dt key={`${step}-t`}>{tt(language, `m_${step}`)}</dt>,
-          <dd className="ui-num" key={`${step}-d`}>
-            {month.steps[step] ?? 0}
-          </dd>,
-        ])}
-      </dl>
+      {/* Owner 14/11/2026 01:43: number cards in rows, not one long thin list. */}
+      <ul className="vr-month">
+        {monthCounts(month).map(([key, count]) => (
+          <li key={key}>
+            <span>{tt(language, key)}</span>
+            <b className="ui-num">{count}</b>
+          </li>
+        ))}
+      </ul>
       <div className="ui-split">
         <CountTable
           language={language}
@@ -2623,15 +2708,25 @@ export function VisitRequestsPageView({
     active,
     api.visitRequests,
   );
-  const [card, setCard] = useState<VisitCard>("all");
+  const [card, setCardState] = useState<VisitCard>("all");
+  // UI v81 round 11: Home's "Viewing requests waiting" card opens "#/visitreqs?show=waiting"; a
+  // card chosen by hand is kept in the address too.
+  const keepShow = useShowFromAddress("visitreqs", (show) => {
+    const asked = VISIT_CARDS.find(([value]) => value === show)?.[0];
+    if (asked !== undefined || show === "all") setCardState(asked ?? "all");
+  });
+  const setCard = (next: VisitCard) => {
+    setCardState(next);
+    keepShow(next === "all" ? null : next);
+  };
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   if (propertyId === "") return <NoProperty language={language} />;
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{tt(language, "vr_sub")}</p>
-    </div>
+    </PageHead>
   );
   if (page.data === null)
     return (
@@ -2678,7 +2773,6 @@ export function VisitRequestsPageView({
             icon={icon}
             key={value}
             label={tt(language, key)}
-            note={textOf(language, "", `${key}_s`)}
             onPress={() => {
               setCard(card === value ? "all" : value);
             }}
@@ -2731,20 +2825,13 @@ export function VisitRequestsPageView({
           <p className="ui-empty">{tt(language, "vr_none")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            <table className="ui-table fit vr-list">
               <thead>
                 <tr>
                   <th scope="col">{tt(language, "vr_col_req")}</th>
                   <th scope="col">{tt(language, "vr_col_wait")}</th>
                   <th scope="col">{tt(language, "vr_col_who")}</th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "vr_col_ch")}
-                  </th>
                   <th scope="col">{tt(language, "vr_col_wants")}</th>
-                  <th scope="col">{tt(language, "vr_col_pref")}</th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "vr_col_note")}
-                  </th>
                   <th scope="col">{tt(language, "vr_col_status")}</th>
                   <th scope="col">{tt(language, "vr_col_staff")}</th>
                 </tr>

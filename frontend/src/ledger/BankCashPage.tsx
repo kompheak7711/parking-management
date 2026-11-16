@@ -34,6 +34,7 @@ import {
   useBusy,
 } from "./SpendingPage";
 import { lt, monthLabel } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface BankCashPageProps {
   language: Language;
@@ -115,7 +116,7 @@ export function BankCashPage({
     <>
       <Done text={done} />
       <section aria-labelledby="bc-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="bc-title">{lt(language, "bc_t")}</h2>
             <p>{lt(language, "bc_sub")}</p>
@@ -128,10 +129,12 @@ export function BankCashPage({
                 onClick={() => {
                   open("move");
                 }}
+                aria-label={lt(language, "mm_t")}
+                title={lt(language, "mm_t")}
                 type="button"
               >
                 <Icon name="swap" small />
-                {lt(language, "mm_t")}
+                {lt(language, "b_transfer")}
               </button>
             )}
             {may("ledger.petty_cash") && data?.petty !== null && (
@@ -141,10 +144,12 @@ export function BankCashPage({
                 onClick={() => {
                   open("topup");
                 }}
+                aria-label={lt(language, "pt_t")}
+                title={lt(language, "pt_t")}
                 type="button"
               >
                 <Icon name="plus" small />
-                {lt(language, "pt_t")}
+                {lt(language, "b_topup")}
               </button>
             )}
             {may("ledger.owner_money") && (
@@ -154,14 +159,16 @@ export function BankCashPage({
                 onClick={() => {
                   open("owner");
                 }}
+                aria-label={lt(language, "ow_t")}
+                title={lt(language, "ow_t")}
                 type="button"
               >
                 <Icon name="customers" small />
-                {lt(language, "ow_t")}
+                {lt(language, "b_capital")}
               </button>
             )}
           </span>
-        </div>
+        </PageHead>
       </section>
       {data === null ? (
         <Waiting
@@ -171,17 +178,21 @@ export function BankCashPage({
         />
       ) : (
         <>
-          <div className="ui-split">
-            {data.petty !== null && (
-              <PettyCard language={language} petty={data.petty} />
-            )}
-            {data.riel !== null && (
-              <RielCard language={language} riel={data.riel} />
-            )}
-            {data.riel_bank !== null && (
-              <RielCard bank language={language} riel={data.riel_bank} />
-            )}
-          </div>
+          {(data.petty !== null ||
+            data.riel !== null ||
+            data.riel_bank !== null) && (
+            <div className="ui-split">
+              {data.petty !== null && (
+                <PettyCard language={language} petty={data.petty} />
+              )}
+              {data.riel !== null && (
+                <RielCard language={language} riel={data.riel} />
+              )}
+              {data.riel_bank !== null && (
+                <RielCard bank language={language} riel={data.riel_bank} />
+              )}
+            </div>
+          )}
           <section aria-label={lt(language, "bc_t")} className="ui-card">
             <div
               aria-label={lt(language, "bc_t")}
@@ -1185,6 +1196,7 @@ function MoveDialog({
       onClose={onClose}
       onSubmit={submit}
       submitLabel={lt(language, "mm_ok")}
+      aria-label={lt(language, "mm_t")}
       title={lt(language, "mm_t")}
     >
       <div className="ui-row2">
@@ -1353,6 +1365,7 @@ function TopUpDialog({
       onClose={onClose}
       onSubmit={submit}
       submitLabel={lt(language, "pt_ok")}
+      aria-label={lt(language, "pt_t")}
       title={lt(language, "pt_t")}
     >
       <p>
@@ -1462,6 +1475,7 @@ function OwnerDialog({
       onClose={onClose}
       onSubmit={submit}
       submitLabel={lt(language, "ow_ok")}
+      aria-label={lt(language, "ow_t")}
       title={lt(language, "ow_t")}
     >
       <fieldset className="ui-radios">

@@ -25,7 +25,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # the app and back").
     "base.ping_reply": {
         "km": "✅ ប្រព័ន្ធបានទទួលសាររបស់អ្នក ({bot})។ ការភ្ជាប់ដំណើរការល្អ។",
-        "en": "✅ The office app got your message ({bot}). The connection works.",
+        "en": "✅ The office app received your message ({bot}). The connection is working.",
     },
     # Step 2a: the Tenant bot, Start, language and linking (owner rules of 2 and 3 Nov 2026;
     # tenant mock-up v15). The Khmer waits for the native-speaker check.
@@ -47,12 +47,12 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។"
         ),
         "en": (
-            "I hope you are doing well.\nHow can we help you today?\nPlease link your Lease first."
+            "We hope you are doing well.\nHow can we help you today?\nPlease link your Lease first."
         ),
     },
     "tenant.hello_linked": {
         "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
-        "en": "Welcome, {name}. You are linked to Unit {unit}. What do you need?",
+        "en": "Welcome, {name}. You are linked to Unit {unit}. How can we help you today?",
     },
     "tenant.ask_phone": {
         "km": ("សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ បន្ទាប់មក សូមសរសេរឈ្មោះ និងលេខបន្ទប់របស់លោកអ្នក។"),
@@ -60,7 +60,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.ask_phone_again": {
         "km": "សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ មានតែលេខរបស់លោកអ្នកផ្ទាល់ទេ ដែលអាចភ្ជាប់បាន។",
-        "en": "Please tap “Share my phone number” below. Only your own number can link.",
+        "en": "Please tap “Share my phone number” below. Only your own phone number can be used.",
     },
     "tenant.ask_name": {
         "km": "សូមអរគុណ។ សូមសរសេរឈ្មោះពេញរបស់លោកអ្នក ដូចក្នុងកិច្ចសន្យាជួល។",
@@ -77,8 +77,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "តែដើម្បីស្វែងរកកិច្ចសន្យាជួល និងឆ្លើយតបសំណើរបស់លោកអ្នកប៉ុណ្ណោះ។"
         ),
         "en": (
-            "Welcome, {name}. You are linked to Unit {unit}. What do you need?\n\n"
-            "We use your phone, name and Unit only to find your Lease and answer your requests."
+            "Welcome, {name}. You are linked to Unit {unit}. How can we help you "
+            "today?\n\nWe use your phone number, name and Unit only to find your "
+            "Lease and answer your requests."
         ),
     },
     "tenant.no_match": {
@@ -89,15 +90,18 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "លោកអ្នកនៅសល់ {tries_left} ដងទៀត។"
         ),
         "en": (
-            "We cannot find a tenant with this phone, name and Unit. Please check:\n"
-            "• Your full name as written on your Lease (any order is fine)\n"
-            "• Your Unit number, for example 305\n"
-            "You have {tries_left} tries left."
+            "We could not find a Lease with this phone number, name and Unit. "
+            "Please check:\n• Your full name as written on your Lease (any order is "
+            "fine)\n• Your Unit number, for example 305\nYou have {tries_left} "
+            "attempts left."
         ),
     },
     "tenant.blocked": {
         "km": ("ការភ្ជាប់ត្រូវបានបិទ 24 ម៉ោង បន្ទាប់ពីព្យាយាមខុស 5 ដង។ សូមទាក់ទងការិយាល័យ។"),
-        "en": ("Linking is blocked for 24 hours after 5 failed tries. Please contact the office."),
+        "en": (
+            "For your security, linking is paused for 24 hours after 5 failed "
+            "attempts. Please contact the office."
+        ),
     },
     "tenant.link_first": {
         "km": "សូមភ្ជាប់កិច្ចសន្យាជួលរបស់លោកអ្នកជាមុនសិន។",
@@ -294,6 +298,109 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "The office's paper letter is the official copy."
         ),
     },
+    # DL-238 (owner 14 Nov 2026): notices for short-stay guests, to the links of the booking
+    # (check-in QR). The check-out reminder at 18:00 the evening before, the late check-out notice,
+    # the house-rule warnings staff write, and a charge still unpaid. Khmer is new: native check.
+    "tenant.ss_check_out": {
+        "km": (
+            "🧳 រំលឹកអំពីការចាកចេញ\n{unit}\n"
+            "ការចាកចេញរបស់លោកអ្នកគឺនៅថ្ងៃស្អែក {date} ម៉ោង {time}។\n"
+            "ការចាកចេញយឺតរហូតដល់ម៉ោង {until} មានតម្លៃ {fee}។ "
+            "សូមសួរផ្នែកទទួលភ្ញៀវមុនម៉ោង {time}។\n"
+            "សូមអរគុណដែលបានស្នាក់នៅជាមួយយើង។"
+        ),
+        "en": (
+            "🧳 Check-out reminder\n{unit}\n"
+            "Your check-out is tomorrow, {date}, at {time}.\n"
+            "Late check-out until {until} costs {fee}. Please ask the front desk before {time}.\n"
+            "Thank you for staying with us."
+        ),
+    },
+    "tenant.ss_check_out_free": {
+        "km": (
+            "🧳 រំលឹកអំពីការចាកចេញ\n{unit}\n"
+            "ការចាកចេញរបស់លោកអ្នកគឺនៅថ្ងៃស្អែក {date} ម៉ោង {time}។\n"
+            "ការចាកចេញយឺតរហូតដល់ម៉ោង {until} គឺឥតគិតថ្លៃសម្រាប់ការស្នាក់នៅរបស់លោកអ្នក។ "
+            "សូមប្រាប់ផ្នែកទទួលភ្ញៀវមុនម៉ោង {time}។\n"
+            "សូមអរគុណដែលបានស្នាក់នៅជាមួយយើង។"
+        ),
+        "en": (
+            "🧳 Check-out reminder\n{unit}\n"
+            "Your check-out is tomorrow, {date}, at {time}.\n"
+            "Late check-out until {until} is free for your stay. "
+            "Please tell the front desk before {time}.\n"
+            "Thank you for staying with us."
+        ),
+    },
+    "tenant.ss_check_out_late": {
+        "km": (
+            "🧳 រំលឹកអំពីការចាកចេញ\n{unit}\n"
+            "ការចាកចេញរបស់លោកអ្នកគឺនៅថ្ងៃស្អែក {date} ម៉ោង {until} (ចាកចេញយឺត)។\n"
+            "សូមអរគុណដែលបានស្នាក់នៅជាមួយយើង។"
+        ),
+        "en": (
+            "🧳 Check-out reminder\n{unit}\n"
+            "Your check-out is tomorrow, {date}, at {until} (late check-out).\n"
+            "Thank you for staying with us."
+        ),
+    },
+    "tenant.ss_late": {
+        "km": (
+            "⏰ ម៉ោងចាកចេញបានហួសហើយ\n{unit}\n"
+            "ម៉ោងចាកចេញថ្ងៃនេះគឺ {time}។\n"
+            "សូមចាកចេញឥឡូវនេះ ឬមកផ្នែកទទួលភ្ញៀវ ប្រសិនបើលោកអ្នកត្រូវការពេលបន្ថែម។"
+        ),
+        "en": (
+            "⏰ Check-out time has passed\n{unit}\n"
+            "Check-out time today was {time}.\n"
+            "Please check out now, or come to the front desk if you need more time."
+        ),
+    },
+    "tenant.ss_warning_1": {
+        "km": (
+            "⚠️ ការព្រមានអំពីវិន័យស្នាក់នៅ លើកទី ១\n{unit}\n"
+            "កាលបរិច្ឆេទ៖ {date}\n\n"
+            "អ្វីដែលបានកើតឡើង៖ {text}\n\n"
+            "សូមគោរពវិន័យស្នាក់នៅ ដែលលោកអ្នកបានចុះហត្ថលេខានៅពេលចូលស្នាក់នៅ។ "
+            "ការព្រមានលើកទី ២ គឺជាការព្រមានចុងក្រោយ។"
+        ),
+        "en": (
+            "⚠️ House-rule warning 1\n{unit}\n"
+            "Date: {date}\n\n"
+            "What happened: {text}\n\n"
+            "Please follow the house rules you signed at check-in. "
+            "A second warning is the final warning."
+        ),
+    },
+    "tenant.ss_warning_2": {
+        "km": (
+            "🔴 ការព្រមានចុងក្រោយអំពីវិន័យស្នាក់នៅ\n{unit}\n"
+            "កាលបរិច្ឆេទ៖ {date}\n\n"
+            "អ្វីដែលបានកើតឡើង៖ {text}\n\n"
+            "នេះជាការព្រមានចុងក្រោយ។ ប្រសិនបើវិន័យស្នាក់នៅត្រូវបានបំពានម្តងទៀត "
+            "អ្នកគ្រប់គ្រងអាចបញ្ចប់ការស្នាក់នៅរបស់លោកអ្នកមុនកាលកំណត់។ "
+            "យប់ដែលមិនបានប្រើ មិនត្រូវបានសងប្រាក់វិញទេ។"
+        ),
+        "en": (
+            "🔴 Final house-rule warning\n{unit}\n"
+            "Date: {date}\n\n"
+            "What happened: {text}\n\n"
+            "This is the final warning. If the house rules are broken again, the manager may "
+            "end your stay early. Nights not used are not paid back."
+        ),
+    },
+    "tenant.ss_unpaid": {
+        "km": (
+            "💳 នៅមានប្រាក់ត្រូវបង់\n{unit}\n"
+            "វិក្កយបត្រ {invoice}៖ នៅត្រូវបង់ {amount}។\n"
+            "សូមបង់នៅផ្នែកទទួលភ្ញៀវនៅថ្ងៃនេះ។ សូមអរគុណ។"
+        ),
+        "en": (
+            "💳 Payment still due\n{unit}\n"
+            "Invoice {invoice}: {amount} still to pay.\n"
+            "Please pay at the front desk today. Thank you."
+        ),
+    },
     "tenant.menu": {
         "km": "តើយើងអាចជួយអ្វីលោកអ្នកបាន?",
         "en": "How can we help you?",
@@ -313,8 +420,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង ០៧:០០ ដល់ ១៧:០០។"
         ),
         "en": (
-            "Thank you. We got your message. Our team will reply here, Monday to Saturday, "
-            "07:00 to 17:00."
+            "Thank you. We have received your message. Our team will reply here, "
+            "Monday to Saturday, 07:00 to 17:00."
         ),
     },
     "contact.reply": {
@@ -327,7 +434,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.faq_answer": {
         "km": "{question}\n\n{answer}\n\nមានសំណួរផ្សេងទៀតទេ?",
-        "en": "{question}\n\n{answer}\n\nAny other question?",
+        "en": "{question}\n\n{answer}\n\nDo you have another question?",
     },
     "tenant.faq_none": {
         "km": "មិនទាន់មានសំណួរនៅឡើយទេ។ សូមចុច «ទាក់ទងការិយាល័យ» ដើម្បីសួរយើង។",
@@ -343,57 +450,57 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ភ្លើងឆេះ ឬគ្រោះថ្នាក់ឥឡូវនេះ៖ សូមទូរស័ព្ទ 118 (ពន្លត់អគ្គិភ័យ) ឬ 117 (ប៉ូលិស) ជាមុនសិន។"
         ),
         "en": (
-            "What kind of problem?\n"
-            "• Unit Problem: something inside your Unit. You can mark it urgent.\n"
-            "• Building problem: a shared place, for example stairs, parking, lift or gate.\n"
-            "Fire or danger now: call 118 (fire) or 117 (police) first."
+            "What kind of problem is it?\n• Unit problem: something inside your "
+            "Unit. You can mark it urgent.\n• Building problem: a shared area, for "
+            "example stairs, parking, lift or gate.\nIn an emergency (fire or "
+            "danger), call 118 (fire) or 117 (police) first."
         ),
     },
     "tenant.report_received": {
         "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
         "យើងនឹងរៀបចំការមកពិនិត្យក្នុងរយៈពេល 1 ថ្ងៃធ្វើការ។",
-        "en": "We got your report {number}. Status: Received.\n"
-        "We will plan a visit within 1 working day.",
+        "en": "We have received your report {number}.\nWe will schedule a visit "
+        "within 1 working day.",
     },
     "tenant.report_received_days": {
         "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
         "យើងនឹងរៀបចំការមកពិនិត្យក្នុងរយៈពេល {days} ថ្ងៃធ្វើការ។",
-        "en": "We got your report {number}. Status: Received.\n"
-        "We will plan a visit within {days} working days.",
+        "en": "We have received your report {number}.\nWe will schedule a visit "
+        "within {days} working days.",
     },
     "tenant.report_urgent": {
         "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
         "នេះជារឿងបន្ទាន់៖ ក្រុមការងាររបស់យើងនឹងទាក់ទងលោកអ្នកក្នុងរយៈពេល 1 ម៉ោង។",
-        "en": "We got your report {number}. Status: Received.\n"
-        "This is urgent: our team will contact you within 1 hour.",
+        "en": "We have received your report {number}.\nAs this is urgent, our team "
+        "will contact you within 1 hour.",
     },
     "tenant.report_urgent_hours": {
         "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។\n"
         "នេះជារឿងបន្ទាន់៖ ក្រុមការងាររបស់យើងនឹងទាក់ទងលោកអ្នកក្នុងរយៈពេល {hours} ម៉ោង។",
-        "en": "We got your report {number}. Status: Received.\n"
-        "This is urgent: our team will contact you within {hours} hours.",
+        "en": "We have received your report {number}.\nAs this is urgent, our team "
+        "will contact you within {hours} hours.",
     },
     "tenant.report_building": {
         "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ អ្នកគ្រប់គ្រងនឹងពិនិត្យវា។",
-        "en": "Thank you. We got your report {number}. The Manager will check it.",
+        "en": "Thank you. We have received your report {number}. Our manager will review it.",
     },
     "tenant.report_building_urgent": {
         "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ "
         "នេះជារឿងបន្ទាន់៖ អ្នកថែទាំដែលកំពុងប្រចាំការនឹងមក។",
-        "en": "Thank you. We got your report {number}. "
-        "This is urgent: the caretaker on shift is coming.",
+        "en": "Thank you. We have received your report {number}. As this is urgent, "
+        "our caretaker on duty is on the way.",
     },
     "tenant.report_joined": {
         "km": "សូមអរគុណ។ យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ "
         "វាជាបញ្ហាដូចគ្នានឹង {main} ដែលយើងកំពុងដោះស្រាយរួចហើយ។",
-        "en": "Thank you. We got your report {number}. "
-        "It is the same problem as {main}, which we are already working on.",
+        "en": "Thank you. We have received your report {number}. It is the same "
+        "problem as {main}, which we are already working on.",
     },
     "tenant.report_not_linked": {
         "km": "កិច្ចសន្យាជួលរបស់លោកអ្នកមិនបានភ្ជាប់ទៀតទេ ដូច្នេះយើងមិនអាចរក្សាទុករបាយការណ៍នេះបានទេ។ "
         "សូមភ្ជាប់ម្ដងទៀត ឬទូរស័ព្ទមកការិយាល័យ។",
-        "en": "Your Lease is not linked any more, so we could not save this report. "
-        "Please link again, or call the office.",
+        "en": "Your Lease is no longer linked, so we could not save this report. "
+        "Please link your Lease again, or call the office.",
     },
     "tenant.report_invalid": {
         "km": "យើងមិនអាចរក្សាទុករបាយការណ៍នេះបានទេ។ សូមបើកទម្រង់ម្ដងទៀត ហើយព្យាយាមម្ដងទៀត។",
@@ -403,7 +510,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # (tenant mock-up v15). The Khmer waits for the native-speaker check.
     "tenant.step_received": {
         "km": "យើងបានទទួលរបាយការណ៍ {number} របស់លោកអ្នក។ ស្ថានភាព៖ បានទទួល។",
-        "en": "We got your report {number}. Status: Received.",
+        "en": "We have received your report {number}.",
     },
     "tenant.step_on_way": {
         "km": "{number}៖ ក្រុមការងាររបស់យើងកំពុងធ្វើដំណើរមក។",
@@ -411,23 +518,24 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.step_planned": {
         "km": "{number}៖ {technician} នឹងមកពិនិត្យនៅថ្ងៃ {day} ម៉ោង {time}។",
-        "en": "{number}: {technician} will come to check on {day} at {time}.",
+        "en": "{number}: {technician} will come on {day} at {time} to inspect the problem.",
     },
     "tenant.step_checked": {
         "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានពិនិត្យរកមូលហេតុ។ យើងនឹងប្រាប់លោកអ្នកពីជំហានបន្ទាប់ឆាប់ៗនេះ។",
-        "en": "{number}: our technician checked the cause. We will tell you the next step soon.",
+        "en": "{number}: our technician has inspected the problem. We will update "
+        "you on the next step soon.",
     },
     "tenant.step_checked_fixed": {
         "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានជួសជុលបញ្ហាបន្ទាន់ ហើយបានពិនិត្យរកមូលហេតុ។ "
         "យើងនឹងប្រាប់លោកអ្នកពីជំហានបន្ទាប់ឆាប់ៗនេះ។",
-        "en": "{number}: our technician fixed the urgent problem and checked the cause. "
-        "We will tell you the next step soon.",
+        "en": "{number}: our technician fixed the urgent problem and inspected the "
+        "cause. We will update you on the next step soon.",
     },
     "tenant.step_owner_pays": {
         "km": "{number}៖ អ្នកបច្ចេកទេសរបស់យើងបានពិនិត្យហើយ។ យើងនឹងជួសជុលដោយមិនគិតថ្លៃលោកអ្នកទេ។ "
         "{technician} នឹងធ្វើការជួសជុល។",
-        "en": "{number}: our technician checked. We will fix it at no cost to you. "
-        "{technician} will do the repair.",
+        "en": "{number}: our technician has inspected the problem. We will repair it "
+        "at no cost to you. {technician} will do the repair.",
     },
     "tenant.step_parts": {
         "km": "{number}៖ យើងកំពុងរង់ចាំគ្រឿងបន្លាស់។ យើងនឹងប្រាប់លោកអ្នកបន្ត។",
@@ -440,8 +548,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "tenant.step_done_check": {
         "km": "{number}៖ ជួសជុលរួចរាល់ហើយ។ សូមពិនិត្យ ហើយចុច «ជួសជុលរួច» ឬ «មិនទាន់រួច»។ "
         "បើគ្មានការឆ្លើយតបក្នុងរយៈពេល {days} ថ្ងៃ វានឹងបិទដោយខ្លួនឯង។",
-        "en": "{number}: done. Please check and tap Fixed or Not fixed. "
-        "If there is no reply in {days} days, it closes by itself.",
+        "en": "{number}: the repair is complete. Please check and tap Fixed or Not "
+        "fixed. If we do not hear from you within {days} days, the report will "
+        "close automatically.",
     },
     "tenant.step_done": {
         "km": "{number}៖ ការជួសជុលបានរួចរាល់។ សូមអរគុណ។",
@@ -453,11 +562,11 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.step_cleaning": {
         "km": "{number}៖ សូមអរគុណ។ ក្រុមសម្អាតរបស់យើងបានដោះស្រាយរួចហើយ។",
-        "en": "{number}: thank you. Our cleaning team has handled it.",
+        "en": "{number}: thank you. Our housekeeping team has taken care of it.",
     },
     "tenant.step_handled": {
         "km": "{number}៖ សូមអរគុណ។ អ្នកគ្រប់គ្រងបានដោះស្រាយរួចហើយ។",
-        "en": "{number}: thank you. The Manager has handled it.",
+        "en": "{number}: thank you. Our manager has taken care of it.",
     },
     "tenant.step_not_accepted": {
         "km": "{number}៖ យើងបានបិទរបាយការណ៍នេះ ព្រោះវាមិនមែនជាការជួសជុលទេ។ បើមានសំណួរ សូមទាក់ទងការិយាល័យ។",
@@ -475,8 +584,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "tenant.step_joined": {
         "km": "របាយការណ៍ {number} របស់លោកអ្នកត្រូវបានភ្ជាប់ទៅ {main} ដែលជាបញ្ហាដូចគ្នា។ "
         "លោកអ្នកនឹងទទួលបានព័ត៌មានថ្មីៗរបស់វា។",
-        "en": "Your report {number} is joined to {main}, the same problem. "
-        "You will get its updates.",
+        "en": "Your report {number} has been merged with {main}, as it is the same "
+        "problem. You will receive updates on {main}.",
     },
     "tenant.check_fixed": {
         "km": "សូមអរគុណ។ {number} បានបិទហើយ។",
@@ -484,11 +593,11 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.check_not_fixed": {
         "km": "សូមទោស។ {number} បានបើកម្ដងទៀត។ អ្នកបច្ចេកទេសរបស់យើងនឹងមកម្ដងទៀត។",
-        "en": "Sorry. {number} is open again. Our technician will come back.",
+        "en": "We are sorry. {number} has been reopened. Our technician will come back.",
     },
     "tenant.check_nothing": {
         "km": "ឥឡូវនេះ គ្មានការជួសជុលណាមួយរង់ចាំការពិនិត្យរបស់លោកអ្នកទេ។",
-        "en": "No repair is waiting for your check now.",
+        "en": "There are no repairs waiting for you to check.",
     },
     "tenant.my_requests": {
         "km": "សំណើរបស់លោកអ្នក (បន្ទប់ {unit})៖\n\n{list}",
@@ -508,7 +617,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "tenant.my_joined": {
         "km": "{number} · {type}៖ ភ្ជាប់ទៅ {main}",
-        "en": "{number} · {type}: joined to {main}",
+        "en": "{number} · {type}: merged with {main}",
     },
     # Step 3a (DL-171): the Customer bot, from the owner-approved CRM mock-up (customer bot view)
     # and the FAQ document. Texts marked "new" are not in the mock-up and need the Khmer check.
@@ -580,7 +689,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "customer.ask_day": {
         "km": "តើអ្នកចង់មកមើលនៅថ្ងៃណា?",
-        "en": "Which day would you like to visit?",
+        "en": "Which day would you like to come for a viewing?",
     },
     # new
     "customer.day_again": {
@@ -589,8 +698,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ថ្ងៃមកមើលគឺពី ២ ដល់ ៣០ ថ្ងៃខាងមុខ ពីថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍។"
         ),
         "en": (
-            "Please choose a day below or type one, for example 12/11. "
-            "A visit is 2 to 30 days from today, Monday to Saturday."
+            "Please choose a day below or type one, for example 12/11 (day/month). "
+            "Viewings are available 2 to 30 days from today, Monday to Saturday."
         ),
     },
     "customer.ask_part": {
@@ -612,13 +721,13 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ប្រភេទបន្ទប់៖ {type}\nមកមើល៖ {visit}\nចូលស្នាក់នៅ៖ {move}\nកំណត់សម្គាល់៖ {note}"
         ),
         "en": (
-            "Please check your request.\n\n"
-            "Name: {name}\nPhone: {phone}\nContact by: {contact}\n"
-            "Unit Type: {type}\nVisit: {visit}\nMove in: {move}\nNote: {note}"
+            "Please check your request.\n\nName: {name}\nPhone: {phone}\nContact by: "
+            "{contact}\nUnit Type: {type}\nViewing: {visit}\nMove-in: {move}\nNote: "
+            "{note}"
         ),
     },
     # new
-    "customer.no_day": {"km": "មិនទាន់កំណត់", "en": "No day yet"},
+    "customer.no_day": {"km": "មិនទាន់កំណត់", "en": "Not chosen yet"},
     "customer.request_received": {
         "km": (
             "យើងបានទទួលសំណើរបស់អ្នក។ លេខ៖ {number}។\n"
@@ -626,9 +735,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ម៉ោងធ្វើការ៖ ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។"
         ),
         "en": (
-            "We received your request. Number: {number}.\n"
-            "Staff will call you within 2 working hours.\n"
-            "Working hours: Monday to Saturday, 07:00 to 17:00."
+            "Thank you. We have received your request. Reference number: "
+            "{number}.\nOur team will contact you within 2 working hours.\nWorking "
+            "hours: Monday to Saturday, 07:00 to 17:00."
         ),
     },
     # new
@@ -639,10 +748,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "ម៉ោងធ្វើការ៖ ថ្ងៃច័ន្ទ ដល់ថ្ងៃសៅរ៍ ម៉ោង 07:00 ដល់ 17:00។"
         ),
         "en": (
-            "We already have your request ({main}). We added these details to it "
-            "(number {number}).\n"
-            "Staff will call you within 2 working hours.\n"
-            "Working hours: Monday to Saturday, 07:00 to 17:00."
+            "We already have your request ({main}). We have added these details to "
+            "it (reference number {number}).\nOur team will contact you within 2 "
+            "working hours.\nWorking hours: Monday to Saturday, 07:00 to 17:00."
         ),
     },
     # DL-213: what the relay says while the office app is closed.
@@ -671,11 +779,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "បើចង់ប្ដូរម៉ោង សូមចុច «ទាក់ទងការិយាល័យ»។"
         ),
         "en": (
-            "Your visit is booked.\n"
-            "Date: {day} at {time}\n"
-            "Address: {address}\n"
-            "Staff: {staff}\n"
-            "To change the time, tap Contact office."
+            "Your viewing is booked.\nDate: {day} at {time}\nAddress: "
+            "{address}\nStaff: {staff}\nTo change the time, tap Contact office."
         ),
     },
     "customer.visit_moved": {
@@ -687,17 +792,15 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "បើចង់ប្ដូរម៉ោង សូមចុច «ទាក់ទងការិយាល័យ»។"
         ),
         "en": (
-            "Your visit has moved.\n"
-            "New date: {day} at {time}\n"
-            "Address: {address}\n"
-            "Staff: {staff}\n"
-            "To change the time, tap Contact office."
+            "Your viewing has been rescheduled.\nNew date: {day} at {time}\nAddress: "
+            "{address}\nStaff: {staff}\nTo change the time, tap Contact office."
         ),
     },
     "customer.visit_reminder": {
         "km": ("រំលឹក៖ ការមកមើល CHETANA Residence របស់អ្នកគឺនៅថ្ងៃស្អែក {day} ម៉ោង {time}។ ជួបគ្នាឆាប់ៗ។"),
         "en": (
-            "Reminder: your visit to CHETANA Residence is tomorrow, {day} at {time}. See you soon."
+            "Reminder: your viewing at CHETANA Residence is tomorrow, {day} at "
+            "{time}. See you soon."
         ),
     },
     # Step 4a: the Staff bot (Khmer only, owner rule; the English is the same Khmer text).
@@ -1036,6 +1139,38 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": "🚨 បន្ទាន់៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។ លេខរបាយការណ៍នឹងមកពេលក្រោយ។",
         "en": "🚨 បន្ទាន់៖ {type} · {where}។ សូមទៅមើលភ្លាមៗ។ លេខរបាយការណ៍នឹងមកពេលក្រោយ។",
     },
+    # DL-236 (owner 13 Nov 2026): the front desk gave this person a Housekeeping task. The Khmer
+    # waits for the native-speaker check.
+    "staff.task_given": {
+        "km": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · បន្ទប់ {unit} · ថ្ងៃ {day}។",
+        "en": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · បន្ទប់ {unit} · ថ្ងៃ {day}។",
+    },
+    # The cleaner's tap on Cleaned or Not cleaned (owner card 14 Nov 2026: "Telegram: get and
+    # tick tasks").
+    "staff.task_done": {
+        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} សម្អាតរួច។ អរគុណ!",
+        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} សម្អាតរួច។ អរគុណ!",
+    },
+    "staff.task_why": {
+        "km": "បន្ទប់ {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
+        "en": "បន្ទប់ {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
+    },
+    "staff.task_skipped": {
+        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} មិនបានសម្អាតថ្ងៃនេះ។",
+        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} មិនបានសម្អាតថ្ងៃនេះ។",
+    },
+    "staff.task_closed": {
+        "km": "ការងារបន្ទប់ {unit} នេះបានបញ្ចប់រួចហើយ។",
+        "en": "ការងារបន្ទប់ {unit} នេះបានបញ្ចប់រួចហើយ។",
+    },
+    "staff.task_not_due": {
+        "km": "ការងារបន្ទប់ {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
+        "en": "ការងារបន្ទប់ {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
+    },
+    "staff.task_not_yours": {
+        "km": "ការងារនេះមិនមែនសម្រាប់អ្នកទេ។ សូមសួរផ្នែកទទួលភ្ញៀវ។",
+        "en": "ការងារនេះមិនមែនសម្រាប់អ្នកទេ។ សូមសួរផ្នែកទទួលភ្ញៀវ។",
+    },
     # Report states as the tenant sees them (the app's words, Building > Problem reports).
     "status.RECEIVED": {"km": "បានទទួល", "en": "Received"},
     "status.PLANNED": {"km": "បានរៀបចំការមកពិនិត្យ", "en": "Visit planned"},
@@ -1046,15 +1181,15 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "status.DONE": {"km": "រួចរាល់ សូមពិនិត្យ", "en": "Done, please check"},
     "status.CLOSED": {"km": "បានបិទ", "en": "Closed"},
     "status.NOT_ACCEPTED": {"km": "មិនមែនជាការជួសជុល", "en": "Not a repair"},
-    "status.JOINED": {"km": "បានភ្ជាប់", "en": "Joined"},
+    "status.JOINED": {"km": "បានភ្ជាប់", "en": "Merged"},
     # Button labels (no fields). The bot reads a tap as the label's text in either language.
     "button.link": {"km": "ភ្ជាប់កិច្ចសន្យាជួល", "en": "Link my Lease"},
     "button.share_phone": {"km": "ចែករំលែកលេខទូរស័ព្ទ", "en": "Share my phone number"},
-    "button.problem": {"km": "រាយការណ៍បញ្ហា", "en": "Problem report"},
+    "button.problem": {"km": "រាយការណ៍បញ្ហា", "en": "Report a problem"},
     "button.my_requests": {"km": "សំណើរបស់ខ្ញុំ", "en": "My requests"},
     "button.faq": {"km": "សំណួរញឹកញាប់", "en": "FAQ"},
     "button.contact": {"km": "ទាក់ទងការិយាល័យ", "en": "Contact office"},
-    "button.unit_problem": {"km": "បញ្ហាក្នុងបន្ទប់", "en": "Unit Problem"},
+    "button.unit_problem": {"km": "បញ្ហាក្នុងបន្ទប់", "en": "Unit problem"},
     "button.building_problem": {"km": "បញ្ហាអគារ", "en": "Building problem"},
     "button.back_menu": {"km": "ត្រឡប់ទៅម៉ឺនុយ", "en": "Back to menu"},
     "button.fixed": {"km": "ជួសជុលរួច", "en": "Fixed"},

@@ -50,6 +50,7 @@ import {
   businessSettingsApi as businessSettingsClient,
 } from "./settings/businessSettingsClient";
 import { UnitApi, unitApi as defaultUnitApi } from "./unitClient";
+import { type SearchSources, TopSearch } from "./shell/TopSearch";
 import {
   CustomerManagement,
   CustomerReconciliationRequirement,
@@ -67,7 +68,6 @@ import {
   ReservationApi,
   reservationApi as reservationClient,
 } from "./reservationClient";
-import { LeaseManagement } from "./LeaseManagement";
 import { LeasesPage } from "./leases/LeasesPage";
 import { LettersPage } from "./letters/LettersPage";
 import {
@@ -81,7 +81,6 @@ import {
   moveOutApi as moveOutClient,
 } from "./moveout/moveoutClient";
 import { mt } from "./moveout/text";
-import { lt } from "./leases/text";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
@@ -138,6 +137,7 @@ import {
 import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
 import { NoAccess, PropertyNeeded } from "./shell/pages";
+import { InspectionsPage } from "./inspections/InspectionsPage";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -750,8 +750,17 @@ export function App({
       dueDays: dueDaysApi,
       units: unitApi ?? defaultUnitApi,
       rates: effectiveConfigApi,
+      // Owner 12/11/2026: the Exchange card shows the riel rate now.
+      payments: paymentsApi,
     }),
-    [propertyApi, businessSettingsApi, dueDaysApi, unitApi, effectiveConfigApi],
+    [
+      propertyApi,
+      businessSettingsApi,
+      dueDaysApi,
+      unitApi,
+      effectiveConfigApi,
+      paymentsApi,
+    ],
   );
   const client = useMemo<AuthenticationApi>(
     () => api ?? { ...authenticationApi, signIn: authenticate },
@@ -1324,6 +1333,7 @@ export function App({
           code: normalizedCode,
           display_name: displayName.trim(),
           accepted: true,
+          aba_qr: false,
         },
       ],
     });
@@ -1652,16 +1662,37 @@ export function App({
   };
   const allowed = pageAllowed(page, capabilities);
   const shown = (candidate: PageId) => candidate === page && allowed;
+  // UI v81: the top-bar search reads only what the person may read (the server checks again).
+  const searchSources: SearchSources = {
+    ...(pageAllowed("customers", capabilities)
+      ? {
+          customers: (property: string, query: string) =>
+            (customerApi ?? defaultCustomerApi)
+              .list(property, { query })
+              .then((found) => found.items),
+        }
+      : {}),
+    ...(pageAllowed("units", capabilities)
+      ? {
+          units: (property: string) =>
+            (unitApi ?? defaultUnitApi)
+              .list(property)
+              .then((found) => found.items),
+        }
+      : {}),
+  };
 
   return (
     <AppShell
+      accountClass={session.account_class ?? null}
       buildId={buildId}
       capabilities={capabilities}
       displayName={session.display_name ?? null}
       environment={environment}
       language={language}
       notice={
-        notice !== null && (
+        notice !== null &&
+        notice !== "" && (
           <p className="global-status" role="status">
             {notice}
           </p>
@@ -1671,6 +1702,13 @@ export function App({
       onLanguageChange={changeLanguage}
       onSignOut={handleLogout}
       page={page}
+      search={
+        <TopSearch
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          sources={searchSources}
+        />
+      }
       signOutDisabled={isSubmitting}
     >
       {!allowed && <NoAccess language={language} />}
@@ -1683,6 +1721,8 @@ export function App({
           capabilities={capabilities}
           homeApi={homeApi}
           language={language}
+          attendanceApi={hrApi}
+          ledgerApi={generalLedgerApi}
           problemsApi={problemsApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
@@ -1701,6 +1741,9 @@ export function App({
           leaseApi={leaseApi}
           paymentsApi={paymentsApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          ledgerApi={ledgerApi ?? customerLedgerClient}
+          actorId={sessionActorId ?? undefined}
+          reports={reportsApi}
         />
         {/* V1-058 R5c: the payment list, matching, Credit and refunds stay in the earlier English
             forms, folded, until the next steps move them into the Payments screens. */}
@@ -1737,6 +1780,9 @@ export function App({
           lateApi={paymentsApi}
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          ledgerApi={ledgerApi ?? customerLedgerClient}
+          actorId={sessionActorId ?? undefined}
+          reports={reportsApi}
         />
         {/* V1-058 R5: the billing runs and the Due Date settings stay in the earlier English
             forms, folded, until Settings and Home take them over. */}
@@ -1825,11 +1871,19 @@ export function App({
           language={language}
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+          invoiceApi={invoiceApi}
           productsApi={productsApi}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           utilityApi={utilityApi}
         />
+      </div>
+      <div
+        className="shell-page"
+        data-page="inspections"
+        hidden={!shown("inspections")}
+      >
+        <InspectionsPage active={shown("inspections")} language={language} />
       </div>
       <div
         className="shell-page"
@@ -2302,20 +2356,10 @@ export function App({
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}
           lettersApi={lettersApi}
+          ledgerApi={ledgerApi ?? customerLedgerClient}
+          actorId={sessionActorId ?? undefined}
+          reports={reportsApi}
         />
-        {/* V1-058 R3: the Lease actions stay in the earlier English forms, folded, until
-            the next step moves them into the design. */}
-        <details className="ui-records">
-          <summary lang={language}>
-            <span className="ui-records-title">{lt(language, "records")}</span>
-            <span className="ui-small ui-muted">
-              {lt(language, "records_note")}
-            </span>
-          </summary>
-          <div lang="en">
-            <LeaseManagement api={leaseApi} />
-          </div>
-        </details>
       </div>
       <div
         className="shell-page"
@@ -2613,10 +2657,13 @@ export function App({
       <div
         className="shell-page"
         data-page="settings"
-        hidden={!shown("settings")}
+        hidden={!shown("settings") && !shown("access")}
       >
+        {/* UI v81: Users and access is its own menu item, drawn by the same component so the
+            earlier forms are mounted once. */}
         <SettingsPage
-          active={shown("settings")}
+          active={shown("settings") || shown("access")}
+          mode={shown("access") ? "access" : "settings"}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           unitApi={unitApi ?? defaultUnitApi}
           capabilities={capabilities}
@@ -3212,6 +3259,7 @@ export function App({
           rolesApi={rolesApi}
           businessApi={businessApi}
           ratesApi={effectiveConfigApi}
+          testApp={environment !== "production"}
         />
       </div>
     </AppShell>

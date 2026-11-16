@@ -1,6 +1,7 @@
 // V1.1 part 3 (DL-120): the words of Roles and permissions, in English and Khmer.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   ro_title: ["Roles", "តួនាទី"],
@@ -59,7 +60,7 @@ const TEXT = {
     "ម្ចាស់តែងតែរក្សាតួនាទីម្ចាស់។",
   ],
   ur_roles_reason_h: [
-    "Needed when a role is taken away. It is kept in History.",
+    "Needed when a role is taken away. It is kept in the audit log.",
     "ត្រូវការនៅពេលដកតួនាទីចេញ។ វាត្រូវបានរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   ur_roles_code: [
@@ -83,8 +84,10 @@ export function at(
   ...values: (string | number)[]
 ): string {
   const words = TEXT[key][language === "km" ? 1 : 0];
-  return values.reduce<string>(
-    (text, value, index) => text.replace(`{${String(index)}}`, String(value)),
-    words,
+  return singular(
+    values.reduce<string>(
+      (text, value, index) => text.replace(`{${String(index)}}`, String(value)),
+      words,
+    ),
   );
 }

@@ -152,7 +152,7 @@ describe("Staff bot readings in Utilities", () => {
       expect(calls).toEqual([[["p-1"], "CONFIRMED"]]);
     });
     expect(
-      await screen.findByText("1 readings confirmed and saved."),
+      await screen.findByText("1 reading confirmed and saved."),
     ).toBeTruthy();
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(
@@ -218,7 +218,7 @@ describe("Staff bot readings in Utilities", () => {
       within(dialog).getByRole("checkbox", { name: "A103 Water" }),
     );
     fireEvent.click(within(dialog).getByRole("button", { name: "Don't use" }));
-    expect(await screen.findByText("1 readings not used.")).toBeTruthy();
+    expect(await screen.findByText("1 reading not used.")).toBeTruthy();
     expect(calls).toEqual([
       [["p-2"], "ASK_AGAIN"],
       [["p-1", "p-3"], "CONFIRMED"],

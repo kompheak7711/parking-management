@@ -12,7 +12,7 @@ import {
 import { dayText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
+import { openPageInAddress, useShowFromAddress } from "../shell/useHashPage";
 import { Chip, CountCard, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import { monthText } from "../utilities/text";
@@ -36,6 +36,7 @@ import {
   ivt,
   type InvoicesTextKey,
 } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 const STATE_CHIPS: Record<
   InvoiceState,
@@ -95,10 +96,41 @@ export function InvoicesList({
   /** V1.1 part 6: New Quotation shows only to a person who may make one. */
   canCreate: boolean;
 }) {
-  const [period, setPeriod] = useState<InvoicePeriod>("all");
+  const [period, setPeriodState] = useState<InvoicePeriod>("all");
   const [picked, setPicked] = useState(today.slice(0, 7));
   const [type, setType] = useState<InvoiceTypeCode | "all">("all");
-  const [card, setCard] = useState<InvoiceCard>("all");
+  const [card, setCardState] = useState<InvoiceCard>("all");
+  // UI v81 round 11: Home's money cards open their own part of this list: "Pending payment"
+  // "#/invoices?show=open", "Overdue" "?show=overdue", "Paid this month"
+  // "?show=paid&period=month" (every type, as the cards count them; such an address never
+  // names one Customer). A card or period chosen by hand is kept in the address too, so Back
+  // from an Invoice returns to it.
+  const keepShow = useShowFromAddress("invoices", (show, query) => {
+    const asked = CARDS.find(([value]) => value === show)?.[0];
+    if (asked === undefined) return;
+    const months = query.get("period");
+    setCardState(asked);
+    setPeriodState(months === "month" || months === "last" ? months : "all");
+    setType("all");
+  });
+  const keep = (nextCard: InvoiceCard, nextPeriod: InvoicePeriod) => {
+    const months =
+      nextPeriod === "month" || nextPeriod === "last"
+        ? { period: nextPeriod }
+        : undefined;
+    keepShow(
+      nextCard === "all" && months === undefined ? null : nextCard,
+      months,
+    );
+  };
+  const setCard = (next: InvoiceCard) => {
+    setCardState(next);
+    keep(next, period);
+  };
+  const setPeriod = (next: InvoicePeriod) => {
+    setPeriodState(next);
+    keep(card, next);
+  };
 
   const month = periodMonth(period, today, picked);
   const base = filtered(data.invoices, month, type, customerId);
@@ -209,6 +241,16 @@ export function InvoicesList({
             </span>
           )}
           <span className="ui-sub2">{unitOf(data, invoice)}</span>
+          {/* Operations fix 3 (owner 13/11/2026): on a phone the status and the balance sit
+              under the Customer, so the row never runs past the screen. */}
+          <span className="ui-phone ui-invstate">
+            <InvoiceChip language={language} state={state} />
+            {!draft && state !== "void" && state !== "paid" && (
+              <span className="ui-num">
+                {usdFromCents(Math.max(0, cents(invoice.outstanding_balance)))}
+              </span>
+            )}
+          </span>
         </td>
         <td className="ui-wide">{ivt(language, invoiceType(invoice))}</td>
         <td className={draft ? "ui-wide ui-muted" : "ui-wide ui-num"}>
@@ -226,13 +268,8 @@ export function InvoicesList({
             usdFromCents(Math.max(0, cents(invoice.outstanding_balance)))
           )}
         </td>
-        <td>
+        <td className="ui-wide">
           <InvoiceChip language={language} state={state} />
-          {!draft && state !== "void" && state !== "paid" && (
-            <span className="ui-sub2 ui-phone ui-num">
-              {usdFromCents(Math.max(0, cents(invoice.outstanding_balance)))}
-            </span>
-          )}
         </td>
       </tr>
     );
@@ -240,7 +277,7 @@ export function InvoicesList({
 
   return (
     <>
-      <div className="ui-head">
+      <PageHead>
         <p>
           {month === null
             ? ivt(language, "inv_sub")
@@ -257,7 +294,7 @@ export function InvoicesList({
             </a>
           </div>
         )}
-      </div>
+      </PageHead>
       <div className="ui-filters">
         <div
           aria-label={ivt(language, "pm_period")}
@@ -341,15 +378,11 @@ export function InvoicesList({
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone, key]) => {
           const amount = amounts.get(value) ?? 0;
-          const count = issued.filter((invoice) =>
-            inCard(invoice, value, today),
-          ).length;
           return (
             <CountCard
               icon={icon}
               key={value}
               label={ivt(language, key)}
-              note={`${ivt(language, `${key}_s` as InvoicesTextKey)}\n${countText(language, count)}`}
               onPress={() => {
                 setCard(card === value && value !== "all" ? "all" : value);
               }}
@@ -409,7 +442,9 @@ export function InvoicesList({
                     <th className="r ui-wide" scope="col">
                       {ivt(language, "col_balance")}
                     </th>
-                    <th scope="col">{ivt(language, "col_status")}</th>
+                    <th className="ui-wide" scope="col">
+                      {ivt(language, "col_status")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

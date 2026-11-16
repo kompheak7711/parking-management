@@ -38,6 +38,7 @@ import {
   useBusy,
 } from "./SpendingPage";
 import { lt, monthLabel } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface FixedAssetsPageProps {
   language: Language;
@@ -94,7 +95,7 @@ export function FixedAssetsPage({
     <>
       <Done text={done} />
       <section aria-labelledby="fa-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="fa-title">{lt(language, "fa_t")}</h2>
             <p>{lt(language, "fa_sub")}</p>
@@ -107,13 +108,15 @@ export function FixedAssetsPage({
                 setDone(null);
                 setOpen(true);
               }}
+              aria-label={lt(language, "fa_new")}
+              title={lt(language, "fa_new")}
               type="button"
             >
               <Icon name="plus" small />
-              {lt(language, "fa_new")}
+              {lt(language, "b_asset")}
             </button>
           )}
-        </div>
+        </PageHead>
       </section>
       {data === null ? (
         <Waiting
@@ -427,6 +430,7 @@ function AddAssetDialog({
       onClose={onClose}
       onSubmit={submit}
       submitLabel={lt(language, "save")}
+      aria-label={lt(language, "fa_new")}
       title={lt(language, "fa_new")}
     >
       <div className="ui-field">

@@ -37,7 +37,9 @@ export const FINANCIAL_APPROVE = "financial.approve";
 export type DraftDecisionApi = Pick<
   SettlementApi,
   "confirmDraft" | "rejectDraft" | "withdrawDraft"
->;
+> &
+  // Round 15: the Refund method's name in Review. Without it the row is left out.
+  Partial<Pick<SettlementApi, "refundMethods">>;
 
 export interface ApprovalsPageProps {
   language: Language;
@@ -102,14 +104,26 @@ function UnitLink({ draft }: { draft: WaitingDraft }) {
   );
 }
 
+/** A text the draft's own payload holds, such as the Refund's reference note. */
+function payloadText(draft: WaitingDraft, key: string): string | null {
+  const value = draft.payload[key];
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
 function DraftFacts({
   language,
   draft,
+  methods,
 }: {
   language: Language;
   draft: WaitingDraft;
+  /** Refund method names by id; a name not read is left out. */
+  methods: ReadonlyMap<string, string>;
 }) {
   const { summary } = draft;
+  const methodId = payloadText(draft, "refund_method_id");
+  const method = methodId === null ? undefined : methods.get(methodId);
+  const reference = payloadText(draft, "reference_note");
   return (
     <dl className="ui-kv">
       <dt>{apt(language, "ap_col_for")}</dt>
@@ -131,7 +145,19 @@ function DraftFacts({
         <span className="ui-num">{momentText(draft.prepared_at)}</span>
       </dd>
       <dt>{apt(language, "ap_reason")}</dt>
-      <dd className="note">{draft.reason}</dd>
+      <dd>{draft.reason}</dd>
+      {method !== undefined && (
+        <>
+          <dt>{apt(language, "ap_method")}</dt>
+          <dd>{method}</dd>
+        </>
+      )}
+      {reference !== null && (
+        <>
+          <dt>{apt(language, "ap_ref")}</dt>
+          <dd>{reference}</dd>
+        </>
+      )}
       {summary.reservation_id !== null && (
         <>
           <dt>{apt(language, "df_res")}</dt>
@@ -255,6 +281,12 @@ function ReasonDialog({
   );
 }
 
+/**
+ * Approvals: the financial drafts that wait for a decision. UI v81 had a second tab,
+ * Short-stay approvals; since DL-222 (owner 12/11/2026) a short-stay damage charge needs no
+ * approval (it is decided on the booking by the person who bills damage), so the page has no
+ * tabs again.
+ */
 export function ApprovalsPage({
   language,
   propertyId,
@@ -267,13 +299,15 @@ export function ApprovalsPage({
   const mayApprove =
     capabilities === null || capabilities.has(FINANCIAL_APPROVE);
   const [page, setPage] = useState<WaitingPage | null>(null);
-  const [readAt, setReadAt] = useState("");
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [opened, setOpened] = useState<{ id: string; step: Step } | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [methods, setMethods] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
   const sequence = useRef(0);
   // One key per decision on a draft, kept until it succeeds, so sending again after an answer
   // that did not come back cannot decide twice.
@@ -283,12 +317,27 @@ export function ApprovalsPage({
     if (propertyId === "") return;
     const operation = ++sequence.current;
     setFailure(null);
+    // The names are only shown in Review: a failed read leaves the row out, nothing else.
+    decisionApi
+      .refundMethods?.(propertyId)
+      .then((rows) => {
+        if (operation !== sequence.current) return;
+        const names = new Map<string, string>();
+        for (const row of rows) {
+          if (
+            typeof row.id === "string" &&
+            typeof row.display_name === "string"
+          )
+            names.set(row.id, row.display_name);
+        }
+        setMethods(names);
+      })
+      .catch(() => undefined);
     approvalsApi
       .waiting(propertyId)
       .then((loaded) => {
         if (operation !== sequence.current) return;
         setPage(loaded);
-        setReadAt(new Date().toISOString());
       })
       .catch((error: unknown) => {
         if (operation !== sequence.current) return;
@@ -298,7 +347,7 @@ export function ApprovalsPage({
           error instanceof ApprovalsNotAllowedError ? "not_allowed" : "failed",
         );
       });
-  }, [approvalsApi, propertyId]);
+  }, [approvalsApi, decisionApi, propertyId]);
 
   // Another Property never shows the drafts of the one before, and a decision still on its
   // way for the one before reports nothing here.
@@ -310,6 +359,7 @@ export function ApprovalsPage({
     setPage(null);
     setFailure(null);
     setFilter("all");
+    setMethods(new Map());
     setOpened(null);
     setProblem(null);
     setToast(null);
@@ -321,24 +371,9 @@ export function ApprovalsPage({
 
   if (propertyId === "") return null;
 
-  const head = (
-    <div className="ui-head">
-      <p>
-        {apt(language, "ap_sub")}
-        {page !== null && readAt !== "" && (
-          <span className="ui-num">
-            {" "}
-            · {apt(language, "as_of", momentText(readAt).slice(11))}
-          </span>
-        )}
-      </p>
-    </div>
-  );
-
   if (failure !== null) {
     return (
       <>
-        {head}
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
           <p>{apt(language, failure)}</p>
@@ -354,7 +389,6 @@ export function ApprovalsPage({
   if (page === null) {
     return (
       <>
-        {head}
         <p className="ui-muted" role="status">
           {apt(language, "loading")}
         </p>
@@ -472,7 +506,7 @@ export function ApprovalsPage({
       note={
         name === "out" && unknownOut > 0
           ? apt(language, "apc_out_unknown", unknownOut)
-          : apt(language, `apc_${name}_s`)
+          : undefined
       }
       onPress={() => {
         toggle(name);
@@ -486,7 +520,6 @@ export function ApprovalsPage({
 
   return (
     <>
-      {head}
       {toast !== null && (
         <div className="ui-notice ok" role="status">
           <Icon name="check" />
@@ -518,7 +551,9 @@ export function ApprovalsPage({
           </p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            {/* Operations fix 4 (owner 13/11/2026): on a phone each draft is a card with a
+                full-width Review button (screens.css, table.ui-applist). */}
+            <table className="ui-table ui-applist">
               <thead>
                 <tr>
                   <th scope="col">{apt(language, "ap_col_draft")}</th>
@@ -529,7 +564,7 @@ export function ApprovalsPage({
                   </th>
                   <th scope="col">{apt(language, "col_status")}</th>
                   <th scope="col">
-                    <span className="ui-sr">{apt(language, "ap_open")}</span>
+                    <span className="ui-sr">{apt(language, "ap_review")}</span>
                   </th>
                 </tr>
               </thead>
@@ -546,11 +581,14 @@ export function ApprovalsPage({
                       </td>
                       <td>
                         <UnitLink draft={item} />
-                        {item.summary.customer_name !== null && (
-                          <span className="ui-sub2">
-                            {item.summary.customer_name}
-                          </span>
-                        )}
+                        {item.summary.customer_name !== null &&
+                          (item.summary.unit_number === null ? (
+                            item.summary.customer_name
+                          ) : (
+                            <span className="ui-sub2">
+                              {item.summary.customer_name}
+                            </span>
+                          ))}
                       </td>
                       <td>
                         {item.summary.prepared_by_name ?? "—"}
@@ -564,7 +602,7 @@ export function ApprovalsPage({
                       </td>
                       <td className="r">
                         <button
-                          aria-label={`${apt(language, "ap_open")}: ${label}`}
+                          aria-label={`${apt(language, "ap_review")}: ${label}`}
                           className="ui-btn"
                           onClick={() => {
                             setProblem(null);
@@ -573,7 +611,7 @@ export function ApprovalsPage({
                           }}
                           type="button"
                         >
-                          {apt(language, "ap_open")}
+                          {apt(language, "ap_review")}
                         </button>
                       </td>
                     </tr>
@@ -591,11 +629,11 @@ export function ApprovalsPage({
         <Icon name="info" />
         <p>{apt(language, "ap_rule")}</p>
       </div>
-      <section aria-labelledby="approvals-done" className="ui-card">
-        <h2 id="approvals-done">{apt(language, "ap_done_h")}</h2>
-        {done.length === 0 ? (
-          <p className="ui-muted">{apt(language, "ap_done_none")}</p>
-        ) : (
+      {/* Operations fix 7 (owner 13/11/2026): with nothing decided today the box is left out;
+          the "Processed today 0" card above already says so. */}
+      {done.length > 0 && (
+        <section aria-labelledby="approvals-done" className="ui-card">
+          <h2 id="approvals-done">{apt(language, "ap_done_h")}</h2>
           <ul className="ui-apps">
             {done.map((item) => (
               <li key={item.draft_id}>
@@ -615,8 +653,8 @@ export function ApprovalsPage({
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       {opened !== null &&
         draft !== undefined &&
@@ -681,7 +719,7 @@ export function ApprovalsPage({
                 : `${draftLabel(language, draft)} · ${draft.summary.unit_number}`
             }
           >
-            <DraftFacts draft={draft} language={language} />
+            <DraftFacts draft={draft} language={language} methods={methods} />
             {draft.state === "PENDING" ? (
               <>
                 <div className="ui-notice info">

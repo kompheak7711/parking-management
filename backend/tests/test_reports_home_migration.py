@@ -154,6 +154,9 @@ def test_the_home_page_lists_a_lease_near_its_end_and_leaves_out_unpassed_sectio
         "waiting_for_approval",
         "meter_readings_missing",
         "letters_due",
+        # UI v81 round 4 (migration 20270710_361)
+        "paid_on_time",
+        "birthdays",
     } == set(every["cards"])
     assert set(every["cards"]["paid_this_month"]) == {
         "billed_usd_cents",
@@ -204,3 +207,73 @@ def test_to_do_groups_follow_the_property_day() -> None:
     assert todo_group(day, day) == "today"
     assert todo_group(date(2026, 10, 31), day) == "this_week"
     assert todo_group(date(2026, 11, 1), day) == "later"
+
+
+def test_the_birthdays_read_and_the_paid_on_time_and_birthdays_cards(
+    migrated_database_url: str,
+) -> None:
+    """UI v81 round 4 (migration 20270710_361): the Primary Tenant of a running Lease with a date of
+    birth is listed with the Unit and the next birthday (never the year); Home counts the week."""
+    now = today(migrated_database_url)
+    soon = now + timedelta(days=2)
+    born = soon.replace(year=1992 if (soon.month, soon.day) == (2, 29) else 1990)
+    with psycopg.connect(migrated_database_url) as connection:
+        actor, prop, customer, lease, _ = setup_billing_source(
+            connection, configure_trash=False, configure_internet=False
+        )
+        # The history trigger wants the next version and a later update time.
+        connection.execute(
+            "UPDATE app.customers SET date_of_birth=%s, version=version+1,"
+            " updated_at=statement_timestamp() WHERE id=%s",
+            (born, customer),
+        )
+        unit_number = connection.execute(
+            "SELECT unit.unit_number FROM app.leases lease"
+            " JOIN app.units unit ON unit.id=lease.unit_id WHERE lease.id=%s",
+            (lease,),
+        ).fetchone()
+    assert unit_number is not None
+    with psycopg.connect(runtime_database_url()) as connection:
+        rows = connection.execute(
+            "SELECT customer_id,customer_name,role,unit_id,unit_number,birthday"
+            " FROM app.customer_birthdays(%s,%s,%s::uuid[])",
+            (actor, prop, [prop]),
+        ).fetchall()
+        mine = [row for row in rows if row[0] == customer]
+        assert len(mine) == 1
+        assert mine[0][2] == "PRIMARY" and mine[0][4] == unit_number[0] and mine[0][5] == soon
+        assert [row[5] for row in rows] == sorted(row[5] for row in rows)
+        assert all(row[5] >= now for row in rows)
+        # 29 February falls on 28 February in a year without it.
+        leap = connection.execute(
+            "SELECT app.birthday_in_year(DATE '2000-02-29',2027),"
+            " app.birthday_in_year(DATE '2000-02-29',2028)"
+        ).fetchone()
+        assert leap == (date(2027, 2, 28), date(2028, 2, 29))
+        # UI v81 pilot (migration 20270711_362): the same rule for one Customer, as two counts.
+        counts = connection.execute(
+            "SELECT on_time,invoice_count FROM app.customer_paid_on_time(%s,%s,%s::uuid[],%s)",
+            (actor, prop, [prop], customer),
+        ).fetchall()
+        assert len(counts) == 1 and 0 <= counts[0][0] <= counts[0][1]
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            connection.execute(
+                "SELECT * FROM app.customer_birthdays(%s,%s,%s::uuid[])",
+                (actor, prop, [uuid.uuid4()]),
+            )
+        connection.rollback()
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            connection.execute(
+                "SELECT * FROM app.customer_paid_on_time(%s,%s,%s::uuid[],%s)",
+                (actor, prop, [uuid.uuid4()], customer),
+            )
+    page = home(runtime_database_url(), actor, prop, ["invoices", "birthdays"])
+    assert set(page["cards"]["paid_on_time"]) == {"on_time", "invoice_count"}
+    on_time = page["cards"]["paid_on_time"]
+    assert 0 <= on_time["on_time"] <= on_time["invoice_count"]
+    birthdays = page["cards"]["birthdays"]
+    assert birthdays["count"] >= 1
+    assert birthdays["from"] == now.isoformat()
+    assert birthdays["to"] == (now + timedelta(7)).isoformat()
+    without = home(runtime_database_url(), actor, prop, ["units"])
+    assert "birthdays" not in without["cards"] and "paid_on_time" not in without["cards"]

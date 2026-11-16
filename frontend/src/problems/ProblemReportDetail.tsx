@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { BackLink } from "../shell/backNav";
 
 import { centsFromText } from "../products/productsClient";
 import { DateInput } from "../shell/DateInput";
@@ -22,7 +23,6 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { problemRefusal } from "./NewProblemReport";
@@ -49,6 +49,7 @@ import {
   showsCost,
 } from "./RepairCost";
 import { hasText, pt, type ProblemsTextKey } from "./text";
+import { PageHeader } from "../shell/layouts";
 
 type Problem = "failed" | "missing";
 type DialogName = StepName | "REPLAN" | "ANSWER" | "COST" | "COST_CHECK";
@@ -196,18 +197,7 @@ export function ProblemReportDetail({
     load();
   }, [load]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("problems");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {pt(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="problems" />;
 
   if (report === null)
     return (
@@ -354,11 +344,12 @@ export function ProblemReportDetail({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">{report.report_number}</h2>
+      {/* Property fix 4 (owner 14/11/2026): one head: Back on top, the report number with its
+          status, the summary under it. */}
+      <PageHeader
+        back={back}
+        badge={
+          <>
             <StatusChip language={language} state={state} />
             {report.urgent && (
               <Chip icon="alert" tone="err">
@@ -368,26 +359,26 @@ export function ProblemReportDetail({
             {report.repeat !== null && (
               <Chip tone="warn">{pt(language, "repeat")}</Chip>
             )}
-          </div>
-          <p>
-            {[
-              pt(language, `k_${report.kind}`),
-              typeName(language, report.problem_type),
-              pt(language, `src_${report.source}`),
-              pt(
-                language,
-                "received_ago",
-                ageText(language, report.created_at, moment),
-              ),
-              report.created_by_name === null
-                ? null
-                : pt(language, "added_by", report.created_by_name),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
-      </div>
+          </>
+        }
+        numeric
+        summary={[
+          pt(language, `k_${report.kind}`),
+          typeName(language, report.problem_type),
+          pt(language, `src_${report.source}`),
+          pt(
+            language,
+            "received_ago",
+            ageText(language, report.created_at, moment),
+          ),
+          report.created_by_name === null
+            ? null
+            : pt(language, "added_by", report.created_by_name),
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+        title={report.report_number}
+      />
       {notice !== null && (
         <div className="ui-notice ok" role="status">
           <Icon name="check" />

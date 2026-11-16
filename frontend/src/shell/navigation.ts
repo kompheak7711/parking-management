@@ -11,6 +11,7 @@ export type PageId =
   | "utilities"
   | "approvals"
   | "units"
+  | "inspections"
   | "problems"
   | "products"
   | "stock"
@@ -25,6 +26,7 @@ export type PageId =
   | "reports"
   | "history"
   | "settings"
+  | "access"
   | "exreqs"
   | "expenses"
   | "bills"
@@ -65,7 +67,8 @@ export type IconName =
   | "history"
   | "staff"
   | "settings"
-  | "send";
+  | "send"
+  | "clip";
 
 export interface MenuItem {
   /** The page the menu link opens; with tabs, the first tab. */
@@ -75,6 +78,23 @@ export interface MenuItem {
   label?: readonly [string, string];
   /** Pages shown as tabs under one menu item (owner, 24/10/2026). */
   tabs?: readonly PageId[];
+  /** Owner 16/11/2026 (Ledger, 11 tabs -> 5): the tabs are these groups of pages; a switch
+   *  under the tab row picks the page inside the open group. */
+  groups?: readonly TabGroup[];
+}
+
+export interface TabGroup {
+  id: string;
+  label: readonly [string, string];
+  /** The group's pages, in switch order; `tabs` above lists the same pages. */
+  pages: readonly PageId[];
+}
+
+/** A tab group the person may see, with only the pages they may open. */
+export interface AllowedGroup {
+  id: string;
+  label: string;
+  pages: PageId[];
 }
 
 export interface MenuGroup {
@@ -89,7 +109,7 @@ export interface MenuGroup {
 export const MENU: readonly MenuGroup[] = [
   { label: null, items: [{ page: "home", icon: "home" }] },
   {
-    label: ["Daily work", "ការងារប្រចាំថ្ងៃ"],
+    label: ["Operations", "ប្រតិបត្តិការ"],
     items: [
       { page: "payments", icon: "payments" },
       // V1.1 part 6 (DL-123): Quotations is a tab of Invoices.
@@ -99,44 +119,47 @@ export const MENU: readonly MenuGroup[] = [
     ],
   },
   {
-    // new
-    label: ["Tenants", "អ្នកជួល"],
+    // UI v81 (02/11 wording review): Tenants → Leasing.
+    label: ["Leasing", "ការជួល"],
+    // Leasing batch (owner 13/11/2026): Viewing requests; Long stays (Reservations, Leases,
+    // Move-outs); Short stays with its in-page tabs as sub-items; Notices for every stay;
+    // Customers.
     items: [
+      // Telegram bots step 3a (DL-171): Visit requests from the Customer bot.
+      { page: "visitreqs", icon: "calendar" },
       {
         page: "reservations",
-        icon: "calendar",
-        // new
-        label: ["Bookings", "ការកក់"],
-        // Telegram bots step 3a (DL-171): Visit requests from the Customer bot.
-        tabs: ["reservations", "visitreqs"],
-      },
-      // Daily and weekly rent (phase 6 step 2, mock-up round 28): Tenants › Short stays.
-      { page: "shortstays", icon: "calendar" },
-      {
-        page: "leases",
         icon: "lease",
-        tabs: ["leases", "letters", "moveout"],
+        // new: the Khmer word needs the native check.
+        label: ["Long stays", "ការស្នាក់នៅយូរ"],
+        tabs: ["reservations", "leases", "moveout"],
       },
+      // Daily and weekly rent (phase 6 step 2): its tabs are sub-items (PAGE_SUB_TABS).
+      { page: "shortstays", icon: "calendar" },
+      { page: "letters", icon: "list" },
       { page: "customers", icon: "customers" },
     ],
   },
   {
-    // new
-    label: ["Building", "អគារ"],
+    // UI v81: Building → Property.
+    label: ["Property", "អចលនទ្រព្យ"],
+    // UI v81 round 2 (owner 07/11/2026): the design's order, Inspections after Units.
     items: [
       { page: "units", icon: "units" },
+      { page: "inspections", icon: "clip" },
+      // V1.1 part 7 (DL-124): one list for Unit and Building problems.
+      { page: "problems", icon: "wrench" },
       // V1.1 part 4 (DL-121): Building › Products with its three tabs.
       {
         page: "products",
         icon: "box",
         tabs: ["products", "stock", "locations"],
       },
-      // V1.1 part 7 (DL-124): one list for Unit and Building problems.
-      { page: "problems", icon: "wrench" },
     ],
   },
   {
-    label: ["Office", "ការិយាល័យ"],
+    label: ["Administration", "រដ្ឋបាល"],
+    // UI v81 round 2: the design's order, Reports and the Audit log before Staff.
     items: [
       // General Ledger phase 6 step 6 (mock-up v76, Administration › Ledger): its tabs in the
       // mock-up's order. Every role sees Expense requests; the other tabs need ledger.read.
@@ -157,13 +180,45 @@ export const MENU: readonly MenuGroup[] = [
           "bankcash",
           "lclose",
         ],
+        // Owner 16/11/2026 (picked on the card): 11 tabs become 5 groups. Khmer group names are
+        // new and need the native check.
+        groups: [
+          {
+            id: "spending",
+            label: ["Spending", "ការចំណាយ"],
+            pages: ["exreqs", "expenses", "bills"],
+          },
+          {
+            id: "books",
+            label: ["Books", "សៀវភៅបញ្ជី"],
+            pages: ["journal", "needscheck", "chart"],
+          },
+          {
+            id: "reports",
+            label: ["Reports", "របាយការណ៍"],
+            pages: ["statements", "budget"],
+          },
+          {
+            id: "assets",
+            label: ["Assets and cash", "ទ្រព្យ និងសាច់ប្រាក់"],
+            pages: ["fassets", "bankcash"],
+          },
+          {
+            id: "close",
+            label: ["Month-end close", "ការបិទចុងខែ"],
+            pages: ["lclose"],
+          },
+        ],
       },
-      // HRIS phase 6 (mock-up v69, round 23): Employees and payroll with its tabs. Users and
-      // access stays in Settings › Users and sign-in for now.
+      { page: "reports", icon: "reports" },
+      { page: "history", icon: "history" },
+      // HRIS phase 6 (mock-up v69, round 23): the Employees, Loans, Payroll and Attendance tabs.
+      // UI v81 round 2 (owner 07/11/2026): the menu item is "Staff"; the Khmer word is new and
+      // needs the native check.
       {
         page: "employees",
         icon: "staff",
-        label: ["Employees and payroll", "បុគ្គលិក និងប្រាក់ខែ"],
+        label: ["Staff", "បុគ្គលិក"],
         tabs: ["employees", "loans", "payroll", "attendance"],
       },
       // Telegram bots step 2c (DL-128, mock-up round 29): Office › Telegram, with Contact office
@@ -174,8 +229,8 @@ export const MENU: readonly MenuGroup[] = [
         label: ["Telegram", "តេឡេក្រាម"],
         tabs: ["tglinks", "tgcontact", "tgfaq", "tgnotices", "tghealth"],
       },
-      { page: "reports", icon: "reports" },
-      { page: "history", icon: "history" },
+      // UI v81 (B4): Users and access is its own menu item, moved out of Settings.
+      { page: "access", icon: "customers" },
       { page: "settings", icon: "settings" },
     ],
   },
@@ -189,26 +244,30 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   invoices: ["Invoices", "វិក្កយបត្រ"],
   quotations: ["Quotations", "សម្រង់តម្លៃ"],
   utilities: ["Utilities", "ទឹកភ្លើង"],
-  approvals: ["Waiting for approval", "រង់ចាំការអនុម័ត"],
+  approvals: ["Approvals", "ការអនុម័ត"],
   units: ["Units", "បន្ទប់"],
+  // UI v81 round 2 (design v81 menu); the Khmer word is new and needs the native check.
+  inspections: ["Inspections", "ការត្រួតពិនិត្យ"],
   problems: ["Problem reports", "របាយការណ៍បញ្ហា"],
   // new
   products: ["Products", "ផលិតផល"],
   // new
   stock: ["Stock movements", "ចលនាស្តុក"],
   // new
-  locations: ["Locations", "ទីតាំង"],
+  locations: ["Storage locations", "ទីតាំងស្តុក"],
   customers: ["Customers", "អតិថិជន"],
   reservations: ["Reservations", "ការកក់ទុក"],
-  visitreqs: ["Visit requests", "សំណើមកមើលបន្ទប់"],
+  visitreqs: ["Viewing requests", "សំណើមើលបន្ទប់"],
   // new
   shortstays: ["Short stays", "ការស្នាក់នៅខ្លី"],
   leases: ["Leases", "កិច្ចសន្យាជួល"],
-  letters: ["Letters", "លិខិត"],
-  moveout: ["Move-out", "ការចាកចេញ"],
+  letters: ["Notices", "សេចក្ដីជូនដំណឹង"],
+  moveout: ["Move-outs", "ការចាកចេញ"],
   reports: ["Reports", "របាយការណ៍"],
-  history: ["History", "ប្រវត្តិ"],
+  history: ["Audit log", "កំណត់ហេតុសវនកម្ម"],
   settings: ["Settings", "ការកំណត់"],
+  // new
+  access: ["Users and access", "អ្នកប្រើ និងសិទ្ធិ"],
   exreqs: ["Expense requests", "សំណើចំណាយ"],
   expenses: ["Expenses", "ចំណាយ"],
   bills: ["Supplier bills", "វិក្កយបត្រអ្នកផ្គត់ផ្គង់"],
@@ -253,6 +312,9 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   utilities: ["utility.read"],
   approvals: ["financial.approve"],
   units: ["units.read"],
+  // UI v81 round 2: Inspections belong to the Units (Joint Inspections at move-in and move-out,
+  // Unit Checks during a Lease), so whoever reads Units sees the page.
+  inspections: ["units.read"],
   // V1.1 part 7 (DL-124).
   problems: ["problem_reports.read"],
   // V1.1 part 4 (DL-121): every Products tab reads with products.read.
@@ -266,18 +328,15 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   // Daily and weekly rent: the calendar and bookings read with short_stays.read.
   shortstays: ["short_stays.read"],
   leases: ["leases.read"],
-  letters: ["rent_nonpayment.read", "leases.warn"],
+  letters: ["rent_nonpayment.read", "leases.warn", "short_stays.read"],
   moveout: ["deposits.read", "final_settlements.prepare", "leases.move_out"],
   // V1-060 B6: anyone who may read one report (frontend/src/reports/reportsData.ts REPORTS;
   // Unit occupancy also needs leases.read).
   reports: ["reports.read", "utility.read", "leases.read", "audit.view"],
   history: ["audit.view"],
   // V1-058 R7b: System health is a Settings tab for operations.status.read too.
-  settings: [
-    "settings.manage",
-    "identity.manage_access",
-    "operations.status.read",
-  ],
+  settings: ["settings.manage", "operations.status.read"],
+  access: ["identity.manage_access"],
   // General Ledger (owner plan 03/11/2026, rights table L1): Owner and Manager read the ledger.
   exreqs: ["expenses.request"],
   expenses: ["ledger.read"],
@@ -324,6 +383,39 @@ export function allowedPagesOf(
   );
 }
 
+/** The tab groups of a menu item the person may see (empty groups left out); none without groups. */
+export function allowedGroupsOf(
+  item: MenuItem,
+  capabilities: ReadonlySet<string> | null,
+  language: Language,
+): AllowedGroup[] {
+  return (item.groups ?? []).flatMap((group) => {
+    const pages = group.pages.filter((page) => pageAllowed(page, capabilities));
+    return pages.length === 0
+      ? []
+      : [
+          {
+            id: group.id,
+            label: group.label[language === "en" ? 0 : 1],
+            pages,
+          },
+        ];
+  });
+}
+
+// Owner 16/11/2026: inside the Spending group the first page is just "Requests".
+const SWITCH_NAMES: Partial<Record<PageId, readonly [string, string]>> = {
+  exreqs: ["Requests", "សំណើ"],
+};
+
+/** A page's name on the switch inside a tab group. */
+export function switchName(page: PageId, language: Language): string {
+  const short = SWITCH_NAMES[page];
+  return short === undefined
+    ? pageName(page, language)
+    : short[language === "en" ? 0 : 1];
+}
+
 export const PAGE_IDS = Object.keys(PAGE_NAMES) as PageId[];
 
 export function pageName(page: PageId, language: Language): string {
@@ -359,13 +451,13 @@ export function isPageId(value: string): value is PageId {
  * else.
  */
 export function pageFromHash(hash: string): PageId {
-  const name = hash.replace(/^#\/?/, "").split("/")[0] ?? "";
+  const name = stripQuery(hash).replace(/^#\/?/, "").split("/")[0] ?? "";
   return isPageId(name) ? name : "home";
 }
 
 /** V1-058 R2: the record an address opens inside its page ("#/units/<id>"), or null. */
 export function detailFromHash(hash: string): string | null {
-  const parts = hash.replace(/^#\/?/, "").split("/");
+  const parts = stripQuery(hash).replace(/^#\/?/, "").split("/");
   if (parts.length < 2 || !isPageId(parts[0] ?? "")) return null;
   let detail: string;
   try {
@@ -377,8 +469,153 @@ export function detailFromHash(hash: string): string | null {
   return detail === "" ? null : detail;
 }
 
+/** UI v81 (B2): an address may end with "?tab=<sub-tab>"; the page and record ignore it. */
+function stripQuery(hash: string): string {
+  const at = hash.indexOf("?");
+  return at < 0 ? hash : hash.slice(0, at);
+}
+
+/** UI v81 (B2): the sub-tab kept in the address ("#/settings?tab=rates"), or null. */
+export function subTabFromHash(hash: string): string | null {
+  return queryFromHash(hash, "tab");
+}
+
+/**
+ * UI v81 round 3: one value kept after "?" in the address ("#/home?tasks=overdue" gives
+ * "overdue" for "tasks"), or null when the address has none.
+ */
+export function queryFromHash(hash: string, key: string): string | null {
+  const at = hash.indexOf("?");
+  if (at < 0) return null;
+  return new URLSearchParams(hash.slice(at + 1)).get(key);
+}
+
 export function hashForPage(page: PageId, detail?: string): string {
   return detail === undefined
     ? `#/${page}`
     : `#/${page}/${encodeURIComponent(detail)}`;
+}
+
+/**
+ * UI v81 (owner 08/11/2026, section D item 14): the sub-tabs inside one page, shown as the menu
+ * item's sub-items. A sub-item links to the same address as the sub-tab row writes
+ * ("#/access?tab=roles"), so no address changes. The ids and names are the pages' own
+ * (access, settings/text.ts); a sub-tab shows only to a person who holds one of its
+ * capabilities (null: everyone who sees the page). Approvals has one view since DL-222
+ * (owner 12/11/2026: a short-stay damage charge needs no approval), so it has no sub-items.
+ */
+export interface PageSubTab {
+  id: string;
+  label: readonly [string, string];
+  needs?: readonly string[];
+}
+
+const PAGE_SUB_TABS: Partial<Record<PageId, readonly PageSubTab[]>> = {
+  // Leasing batch (owner 13/11/2026): the Short stays tabs (shortstays/text.ts tab_*). Owner
+  // 13/11 evening: the Weekly report moved to Reports and Booking sites to Settings.
+  shortstays: [
+    { id: "cal", label: ["Calendar", "ប្រតិទិន"] },
+    { id: "list", label: ["Bookings", "ការកក់"] },
+    { id: "clean", label: ["Housekeeping", "ការសម្អាត"] },
+  ],
+  access: [
+    { id: "users", label: ["Users", "អ្នកប្រើ"] },
+    { id: "roles", label: ["Roles", "តួនាទី"] },
+    { id: "signin", label: ["Sign-in and security", "ការចូល និងសុវត្ថិភាព"] },
+    { id: "history", label: ["History", "ប្រវត្តិ"] },
+  ],
+  settings: [
+    {
+      id: "business",
+      label: ["Business", "អាជីវកម្ម"],
+      needs: ["settings.manage"],
+    },
+    {
+      id: "rates",
+      label: ["Utility rates", "អត្រាទឹកភ្លើង"],
+      needs: ["settings.manage"],
+    },
+    {
+      id: "services",
+      label: ["Monthly services", "សេវាប្រចាំខែ"],
+      needs: ["settings.manage"],
+    },
+    {
+      id: "units",
+      label: ["Unit setup", "ការរៀបចំបន្ទប់"],
+      needs: ["settings.manage"],
+    },
+    {
+      id: "sites",
+      label: ["Booking sites", "គេហទំព័រកក់"],
+      needs: ["short_stays.approve"],
+    },
+    {
+      id: "health",
+      label: ["System health", "សុខភាពប្រព័ន្ធ"],
+      needs: ["settings.manage", "operations.status.read"],
+    },
+  ],
+};
+
+/** One sub-item of a menu item: a page tab or an in-page sub-tab. */
+export interface SubItem {
+  key: string;
+  href: string;
+  label: string;
+  /** The open page (and sub-tab) is this one. */
+  current: boolean;
+}
+
+/**
+ * The sub-items of a menu item the person may see: its page tabs (Leases → Leases, Notices,
+ * Move-outs) or its in-page sub-tabs (Users and access → Users, Roles, …).
+ * Fewer than two means the item has no "⌄". `tab` is the sub-tab in the address, null for the
+ * page's first one.
+ */
+export function subItemsOf(
+  item: MenuItem,
+  page: PageId,
+  tab: string | null,
+  capabilities: ReadonlySet<string> | null,
+  language: Language,
+): SubItem[] {
+  const groups = allowedGroupsOf(item, capabilities, language);
+  const first = groups[0];
+  if (groups.length > 1 || (first !== undefined && first.pages.length > 1)) {
+    return groups.map((group) => ({
+      key: group.id,
+      href: hashForPage(group.pages[0] ?? item.page),
+      label: group.label,
+      current: group.pages.includes(page),
+    }));
+  }
+  const pages = allowedPagesOf(item, capabilities);
+  if (pages.length > 1) {
+    return pages.map((tabPage) => ({
+      key: tabPage,
+      href: hashForPage(tabPage),
+      label: pageName(tabPage, language),
+      current: tabPage === page,
+    }));
+  }
+  const subTabs = (PAGE_SUB_TABS[item.page] ?? []).filter(
+    (subTab) =>
+      subTab.needs === undefined ||
+      capabilities === null ||
+      subTab.needs.some((capability) => capabilities.has(capability)),
+  );
+  if (subTabs.length < 2) return [];
+  const here = item.page === page;
+  return subTabs.map((subTab, index) => ({
+    key: subTab.id,
+    href: `${hashForPage(item.page)}?tab=${encodeURIComponent(subTab.id)}`,
+    label: subTab.label[language === "en" ? 0 : 1],
+    current: here && (tab === null ? index === 0 : tab === subTab.id),
+  }));
+}
+
+/** The key a menu group is remembered under (folded or open) on the device. */
+export function menuGroupKey(group: MenuGroup): string {
+  return group.label === null ? "home" : group.label[0].toLowerCase();
 }

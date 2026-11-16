@@ -289,7 +289,9 @@ describe("Journal entries", () => {
       within(at(rows, 1)).getByRole("link", { name: "INV270001" }),
     ).toHaveAttribute("href", "#/invoices/inv%3Ai-1");
     expect(rows[2]).toHaveTextContent("EX270001");
-    expect(screen.getByText(/Newest 2 entries/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Showing the latest 2 entries/),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-1191 reads one month when a month is picked", async () => {
@@ -316,7 +318,7 @@ describe("Journal entries", () => {
     expect(within(table).getAllByText("$423.00").length).toBeGreaterThanOrEqual(
       4,
     );
-    expect(screen.getByText(/Recorded by: The app/)).toBeInTheDocument();
+    expect(screen.getByText(/Posted by: System/)).toBeInTheDocument();
   });
 
   it("TEST-FE-1193 says when the entry is not in the ledger", async () => {
@@ -328,7 +330,9 @@ describe("Journal entries", () => {
       }),
     );
     expect(
-      await screen.findByText("This entry is not in the ledger."),
+      await screen.findByText(
+        "This entry could not be found. Go back to Journal entries and try again.",
+      ),
     ).toBeInTheDocument();
   });
 });
@@ -341,8 +345,8 @@ describe("Chart of accounts", () => {
     expect(
       screen.getByRole("heading", { name: "Liabilities" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("App records only")).toBeInTheDocument();
-    expect(screen.getByText("No entries yet")).toBeInTheDocument();
+    expect(screen.getByText("Control account")).toBeInTheDocument();
+    expect(screen.getByText("Locked: awaiting tax rules")).toBeInTheDocument();
     expect(screen.getByText("$16,546.87")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "4010" })).toHaveAttribute(
       "href",
@@ -397,7 +401,7 @@ describe("Chart of accounts", () => {
     expect(screen.getByText("Opening balance")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "This account has entries, so it can be turned off but never deleted.",
+        "This account has entries, so it can be deactivated but never deleted.",
       ),
     ).toBeInTheDocument();
   });
@@ -413,7 +417,7 @@ describe("Needs check", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/violates check constraint/)).toBeNull();
     expect(
-      screen.getByText(/The ledger could not post this record/),
+      screen.getByText(/This record could not be posted/),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "RCP270004" })).toHaveAttribute(
       "href",
@@ -566,7 +570,7 @@ describe("Needs check", () => {
     );
     expect(
       await screen.findByText(
-        "Paid from a riel account: type the riel that left it. The tenant still got dollars.",
+        "Paid from a riel account. Enter the riel amount paid out. The Customer still received dollars.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -574,7 +578,7 @@ describe("Needs check", () => {
     ).toBeInTheDocument();
     // Only the waiting Refund takes riel.
     const typeButtons = screen.getAllByRole("button", {
-      name: "Type the riel",
+      name: "Enter riel amount",
     });
     expect(typeButtons).toHaveLength(1);
     fireEvent.click(at(typeButtons, 0));
@@ -659,7 +663,7 @@ describe("Financial statements", () => {
       );
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "Customer debt aging" }),
+      screen.getByRole("button", { name: "Accounts receivable aging" }),
     );
     await waitFor(() => {
       expect(api.report).toHaveBeenLastCalledWith(
@@ -702,11 +706,53 @@ describe("Financial statements", () => {
     const api = fakeApi();
     show("statements", api);
     await screen.findByRole("heading", { name: "Profit and loss" });
-    fireEvent.click(screen.getByRole("button", { name: "Books check" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Books reconciliation" }),
+    );
     expect(
       await screen.findByText("Every app money record has its entry"),
     ).toBeInTheDocument();
     expect(screen.getByText("2 waiting")).toBeInTheDocument();
     expect(screen.getByText("Does not match")).toBeInTheDocument();
+  });
+
+  it('TEST-FE-2122 (owner 12/11/2026: "check all card is link to correct place") "#/statements?show=…" opens that statement and reads only it; a statement chosen by hand is kept in the address (Profit and loss has the plain address); opening a card\'s address again reads its statement for this month', async () => {
+    const api = fakeApi();
+    window.location.hash = "#/statements?show=customer-aging";
+    show("statements", api);
+    expect(
+      await screen.findByRole("button", {
+        name: "Accounts receivable aging",
+        pressed: true,
+      }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.report).toHaveBeenCalledWith("prop-1", "customer-aging", {});
+    });
+    // Profit and loss, the statement the page opens on by itself, was never read.
+    expect(api.report).not.toHaveBeenCalledWith(
+      "prop-1",
+      "profit-and-loss",
+      expect.anything(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Balance sheet" }));
+    expect(window.location.hash).toBe("#/statements?show=balance-sheet");
+    fireEvent.click(screen.getByRole("button", { name: "Profit and loss" }));
+    expect(window.location.hash).toBe("#/statements");
+
+    // Home's "Spent this month" card.
+    window.location.hash = "#/statements?show=budget";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    await waitFor(() => {
+      expect(api.report).toHaveBeenLastCalledWith("prop-1", "budget", {
+        month: expect.stringMatching(/^\d{4}-\d{2}-01$/) as unknown,
+      });
+    });
+    expect(
+      screen
+        .getByRole("button", { name: "Budget vs actual" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
   });
 });

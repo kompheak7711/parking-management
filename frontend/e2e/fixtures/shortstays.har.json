@@ -1,0 +1,462 @@
+{
+ "log": {
+  "version": "1.2",
+  "creator": {
+   "name": "Playwright",
+   "version": "1.63.0"
+  },
+  "browser": {
+   "name": "chromium",
+   "version": "153.0.8010.12"
+  },
+  "entries": [
+   {
+    "startedDateTime": "2026-11-13T10:12:24.905Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 443,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-13T10:12:19.865861Z\",\"last_activity_at\":\"2026-11-13T10:12:20.633984Z\",\"idle_expires_at\":\"2026-11-13T10:42:20.633984Z\",\"absolute_expires_at\":\"2026-11-14T10:12:19.865861Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":\"2026-11-13T10:12:19.872702Z\",\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"1fd0c84a-d5c3-4dc2-8b58-4fedfcb86f16\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T10:12:24.906Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 443,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-13T10:12:19.865861Z\",\"last_activity_at\":\"2026-11-13T10:12:20.633984Z\",\"idle_expires_at\":\"2026-11-13T10:42:20.633984Z\",\"absolute_expires_at\":\"2026-11-14T10:12:19.865861Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":\"2026-11-13T10:12:19.872702Z\",\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"2a6bde78-eeb5-434c-b554-0112c6093c1b\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T10:12:25.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/identity/me/access"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 12713,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"capabilities\":[{\"capability\":\"audit.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"audit.view\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"billing.generate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"configuration.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.applications.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.apply\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.recognize\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customer_ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"damage_charges.bill\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"data.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.refund.qualify\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"exchange_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve_over_limit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.request\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"final_settlements.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"financial.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.overtime.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.manage_access\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.read_self\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.issue\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.void\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.charge_correction\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.final_decision\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.review\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"lease_signers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.draft\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.inspect\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.move_out\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.sign\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.terminate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.warn\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.accounts.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.cash_count\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.close\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.fixed_assets\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.money_move\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.opening_balances\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.owner_money\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.petty_cash\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.reconcile\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.write_off\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"operations.status.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocations.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.add\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.costs\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.join\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.plan\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.prices\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.lower_price\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.make\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.reprint\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.corrections.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent.below_default\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.case_manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.event_post\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.override\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.refund\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.cancel\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.complete\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.extend\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"service_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"settings.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.credit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.desk\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.housekeeping\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.purchase\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.transfer\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.contact\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.faq\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.operate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"units.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.calculate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.estimate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_meters.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.work\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]}]},\"meta\":{\"request_id\":\"08ded851-2748-41c3-ac5f-25e78bb5b594\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T10:12:25.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/recovery-codes"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 198,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"set_id\":\"54836803-c09d-4123-8156-842aab6dff73\",\"created_at\":\"2026-11-11T21:51:23.344472Z\",\"made_by\":\"other\",\"usable_count\":10},\"meta\":{\"request_id\":\"482d45a3-771e-4dc4-a073-5a6c032cb2a0\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T10:12:25.098Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/financial-workspaces?limit=100"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 717,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":[{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"capabilities\":{\"payments.read\":true,\"payments.record\":true,\"payments.allocate\":true,\"payments.allocations.reverse\":true,\"payments.reverse\":true,\"receipts.read\":true,\"receipts.reprint\":true,\"credits.read\":true,\"credits.recognize\":true,\"credits.reverse\":true,\"credits.apply\":true,\"credits.applications.reverse\":true,\"refunds.read\":true,\"refunds.create\":true,\"refunds.correct\":true,\"refunds.corrections.reverse\":true,\"exchange_rates.manage\":true}}],\"page\":{\"limit\":100,\"next_cursor\":null},\"meta\":{\"request_id\":\"5fba45be-146c-43bc-b709-4bc90df70cca\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T10:12:25.099Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/lease-enforcement-workspaces?limit=50"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 413,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"items\":[{\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"capabilities\":{\"leases.read\":true,\"leases.warn\":true,\"rent_nonpayment.read\":true,\"rent_nonpayment.case_manage\":true,\"rent_nonpayment.event_post\":true}}],\"next_cursor\":null},\"meta\":{\"request_id\":\"337c340f-5589-4ca7-bf16-42e2903ce5d9\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/calendar?from=2026-11-13&days=14",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"from\": \"2026-11-13\", \"days\": 14, \"today\": \"2026-11-13\", \"units\": [{\"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"unit_type\": \"STUDIO\", \"status\": \"OCCUPIED\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000001\", \"booking_number\": \"ST260001\", \"guest_name\": \"Sok Dara\", \"status\": \"CHECKED_IN\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-10\", \"check_out_on\": \"2026-11-13\", \"paid\": true}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000002\", \"booking_number\": \"ST260002\", \"guest_name\": \"Chan Sophea\", \"status\": \"BOOKED\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-15\", \"check_out_on\": \"2026-11-19\", \"paid\": false}], \"leases\": [], \"reserved\": false, \"site_holds\": []}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000102\", \"unit_number\": \"U102\", \"unit_type\": \"STUDIO\", \"status\": \"VACANT\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000003\", \"booking_number\": \"ST260003\", \"guest_name\": \"Kim Lina\", \"status\": \"BOOKED\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-16\", \"paid\": true}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000004\", \"booking_number\": \"ST260004\", \"guest_name\": \"Meas Vibol\", \"status\": \"BOOKED\", \"source\": \"BOOKING_SITE\", \"check_in_on\": \"2026-11-18\", \"check_out_on\": \"2026-11-22\", \"paid\": true}], \"leases\": [], \"reserved\": false, \"site_holds\": []}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"status\": \"CLEANING\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000005\", \"booking_number\": \"ST260005\", \"guest_name\": \"Heng Rith\", \"status\": \"BOOKED\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-15\", \"paid\": false}], \"leases\": [], \"reserved\": false, \"site_holds\": []}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000104\", \"unit_number\": \"U104\", \"unit_type\": \"STUDIO\", \"status\": \"OCCUPIED\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000006\", \"booking_number\": \"ST260006\", \"guest_name\": \"Ly Bopha\", \"status\": \"CHECKED_IN\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-12\", \"check_out_on\": \"2026-11-17\", \"paid\": true}], \"leases\": [], \"reserved\": false, \"site_holds\": [{\"hold_id\": \"h0000000-0000-4000-8000-000000000001\", \"site_name\": \"Agoda\", \"start_on\": \"2026-11-20\", \"end_on\": \"2026-11-23\", \"clash\": false}]}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000201\", \"unit_number\": \"U201\", \"unit_type\": \"ONE_BEDROOM\", \"status\": \"VACANT\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000007\", \"booking_number\": \"ST260007\", \"guest_name\": \"Tep Sokha\", \"status\": \"BOOKED\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-14\", \"check_out_on\": \"2026-11-18\", \"paid\": true}], \"leases\": [{\"lease_id\": \"l0000000-0000-4000-8000-000000000001\", \"start_date\": \"2026-11-21\", \"end_date\": \"2027-06-01\"}], \"reserved\": false, \"site_holds\": []}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000202\", \"unit_number\": \"U202\", \"unit_type\": \"ONE_BEDROOM\", \"status\": \"OCCUPIED\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000008\", \"booking_number\": \"ST260008\", \"guest_name\": \"Nov Malis\", \"status\": \"CHECKED_IN\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-09\", \"check_out_on\": \"2026-11-15\", \"paid\": true}], \"leases\": [], \"reserved\": false, \"site_holds\": []}, {\"unit_id\": \"u0000000-0000-4000-8000-000000000301\", \"unit_number\": \"U301\", \"unit_type\": \"TWO_BEDROOM\", \"status\": \"VACANT\", \"for_rent\": true, \"monthly_rent_usd_cents\": 29900, \"bookings\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000009\", \"booking_number\": \"ST260009\", \"guest_name\": \"Pich Rotha\", \"status\": \"BOOKED\", \"source\": \"WALK_IN\", \"check_in_on\": \"2026-11-16\", \"check_out_on\": \"2026-11-23\", \"paid\": false}], \"leases\": [], \"reserved\": false, \"site_holds\": []}]}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/site-calendars",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": [{\"calendar_id\": \"s0000000-0000-4000-8000-000000000001\", \"unit_id\": \"u0000000-0000-4000-8000-000000000104\", \"unit_number\": \"U104\", \"site_name\": \"Agoda\", \"import_url\": \"https://agoda.example/ical/1\", \"active\": true, \"last_read_at\": \"2026-11-13T02:45:00Z\", \"last_read_ok\": true, \"last_error\": null, \"version\": 1, \"holds\": 1}], \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings/b0000000-0000-4000-8000-000000000001",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"booking_id\": \"b0000000-0000-4000-8000-000000000001\", \"booking_number\": \"ST260001\", \"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Sok Dara\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-10\", \"check_out_on\": \"2026-11-13\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_IN\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 8700, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings/b0000000-0000-4000-8000-000000000003",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"booking_id\": \"b0000000-0000-4000-8000-000000000003\", \"booking_number\": \"ST260003\", \"unit_id\": \"u0000000-0000-4000-8000-000000000102\", \"unit_number\": \"U102\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Kim Lina\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-16\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": {\"deposit_id\": \"d0000000-0000-4000-8000-000000000001\", \"kind\": \"CASH\", \"amount_usd_cents\": 5000, \"hold_reference\": null, \"card_last4\": null, \"status\": \"HELD\", \"kept_usd_cents\": 0, \"taken_at\": \"2026-11-13T02:00:00Z\", \"ended_at\": null}, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 8700, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings/b0000000-0000-4000-8000-000000000005",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"booking_id\": \"b0000000-0000-4000-8000-000000000005\", \"booking_number\": \"ST260005\", \"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Heng Rith\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-15\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"CLEANING\", \"guest_has_id\": true, \"payment\": \"NOT_BILLED\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 0, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": [{\"booking_id\": \"b0000000-0000-4000-8000-000000000001\", \"booking_number\": \"ST260001\", \"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Sok Dara\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-10\", \"check_out_on\": \"2026-11-13\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_IN\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 8700, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000006\", \"booking_number\": \"ST260006\", \"unit_id\": \"u0000000-0000-4000-8000-000000000104\", \"unit_number\": \"U104\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Ly Bopha\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-12\", \"check_out_on\": \"2026-11-17\", \"nights\": 5, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_IN\", \"total_usd_cents\": 14500, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 14500, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000008\", \"booking_number\": \"ST260008\", \"unit_id\": \"u0000000-0000-4000-8000-000000000202\", \"unit_number\": \"U202\", \"unit_type\": \"ONE_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Nov Malis\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-09\", \"check_out_on\": \"2026-11-15\", \"nights\": 6, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_IN\", \"total_usd_cents\": 17400, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 17400, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000003\", \"booking_number\": \"ST260003\", \"unit_id\": \"u0000000-0000-4000-8000-000000000102\", \"unit_number\": \"U102\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Kim Lina\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-16\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 8700, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000005\", \"booking_number\": \"ST260005\", \"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Heng Rith\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-13\", \"check_out_on\": \"2026-11-15\", \"nights\": 2, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 5800, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"CLEANING\", \"guest_has_id\": true, \"payment\": \"UNPAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 0, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000007\", \"booking_number\": \"ST260007\", \"unit_id\": \"u0000000-0000-4000-8000-000000000201\", \"unit_number\": \"U201\", \"unit_type\": \"ONE_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Tep Sokha\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-14\", \"check_out_on\": \"2026-11-18\", \"nights\": 4, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 11600, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 11600, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000002\", \"booking_number\": \"ST260002\", \"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Chan Sophea\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-15\", \"check_out_on\": \"2026-11-19\", \"nights\": 4, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 11600, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"UNPAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 0, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000009\", \"booking_number\": \"ST260009\", \"unit_id\": \"u0000000-0000-4000-8000-000000000301\", \"unit_number\": \"U301\", \"unit_type\": \"TWO_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Pich Rotha\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-16\", \"check_out_on\": \"2026-11-23\", \"nights\": 7, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 20300, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"UNPAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 0, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000004\", \"booking_number\": \"ST260004\", \"unit_id\": \"u0000000-0000-4000-8000-000000000102\", \"unit_number\": \"U102\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Meas Vibol\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-18\", \"check_out_on\": \"2026-11-22\", \"nights\": 4, \"source\": \"BOOKING_SITE\", \"site_name\": \"Agoda\", \"site_reference\": \"AG-55120\", \"note\": null, \"status\": \"BOOKED\", \"total_usd_cents\": 11600, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 11600, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000010\", \"booking_number\": \"ST260010\", \"unit_id\": \"u0000000-0000-4000-8000-000000000202\", \"unit_number\": \"U202\", \"unit_type\": \"ONE_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Ouk Sreyneang\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-04\", \"check_out_on\": \"2026-11-08\", \"nights\": 4, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_OUT\", \"total_usd_cents\": 11600, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"OCCUPIED\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 11600, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000011\", \"booking_number\": \"ST260011\", \"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Sam Dalin\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-07\", \"check_out_on\": \"2026-11-12\", \"nights\": 5, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_OUT\", \"total_usd_cents\": 14500, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"CLEANING\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 14500, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000012\", \"booking_number\": \"ST260012\", \"unit_id\": \"u0000000-0000-4000-8000-000000000301\", \"unit_number\": \"U301\", \"unit_type\": \"TWO_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Keo Ratana\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-11\", \"check_out_on\": \"2026-11-14\", \"nights\": 3, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CANCELLED\", \"total_usd_cents\": 8700, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 8700, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}, {\"booking_id\": \"b0000000-0000-4000-8000-000000000013\", \"booking_number\": \"ST260013\", \"unit_id\": \"u0000000-0000-4000-8000-000000000201\", \"unit_number\": \"U201\", \"unit_type\": \"ONE_BEDROOM\", \"customer_id\": \"c0000000-0000-4000-8000-000000000001\", \"guest_name\": \"Yim Sothy\", \"guest_phone\": null, \"guest_count\": 2, \"check_in_on\": \"2026-11-10\", \"check_out_on\": \"2026-11-12\", \"nights\": 2, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"NO_SHOW\", \"total_usd_cents\": 5800, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [], \"history\": [], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": null, \"deposit\": null, \"room_check\": null, \"damages\": [], \"problems\": [], \"damage_decision\": null, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-11\", \"cancel_reason\": null, \"paid_usd_cents\": 5800, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": null}], \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/housekeeping?day=2026-11-13",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"day\": \"2026-11-13\", \"today\": \"2026-11-13\", \"tasks\": [{\"task_id\": \"t0000000-0000-4000-8000-000000000001\", \"kind\": \"ROOM_CHECK\", \"task_on\": \"2026-11-13\", \"status\": \"TO_DO\", \"note\": null, \"done_at\": null, \"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"booking_id\": \"b0000000-0000-4000-8000-000000000001\", \"booking_number\": \"ST260001\", \"guest_name\": \"Sok Dara\", \"late\": false, \"assigned_to\": \"e0000000-0000-4000-8000-000000000001\", \"assigned_name\": \"Chan Thida\", \"done_by_name\": null}, {\"task_id\": \"t0000000-0000-4000-8000-000000000002\", \"kind\": \"CHANGE_OVER\", \"task_on\": \"2026-11-13\", \"status\": \"TO_DO\", \"note\": null, \"done_at\": null, \"unit_id\": \"u0000000-0000-4000-8000-000000000101\", \"unit_number\": \"U101\", \"booking_id\": \"b0000000-0000-4000-8000-000000000001\", \"booking_number\": \"ST260001\", \"guest_name\": \"Sok Dara\", \"late\": false, \"assigned_to\": null, \"assigned_name\": null, \"done_by_name\": null}, {\"task_id\": \"t0000000-0000-4000-8000-000000000003\", \"kind\": \"CHANGE_OVER\", \"task_on\": \"2026-11-12\", \"status\": \"TO_DO\", \"note\": null, \"done_at\": null, \"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"booking_id\": \"b0000000-0000-4000-8000-000000000011\", \"booking_number\": \"ST260011\", \"guest_name\": \"Sam Dalin\", \"late\": true, \"assigned_to\": \"e0000000-0000-4000-8000-000000000002\", \"assigned_name\": \"Sok Mony\", \"done_by_name\": null}, {\"task_id\": \"t0000000-0000-4000-8000-000000000004\", \"kind\": \"DAILY_CLEAN\", \"task_on\": \"2026-11-13\", \"status\": \"TO_DO\", \"note\": null, \"done_at\": null, \"unit_id\": \"u0000000-0000-4000-8000-000000000104\", \"unit_number\": \"U104\", \"booking_id\": \"b0000000-0000-4000-8000-000000000006\", \"booking_number\": \"ST260006\", \"guest_name\": \"Ly Bopha\", \"late\": false, \"assigned_to\": null, \"assigned_name\": null, \"done_by_name\": null}, {\"task_id\": \"t0000000-0000-4000-8000-000000000005\", \"kind\": \"DAILY_CLEAN\", \"task_on\": \"2026-11-13\", \"status\": \"DONE\", \"note\": null, \"done_at\": \"2026-11-13T02:30:00Z\", \"unit_id\": \"u0000000-0000-4000-8000-000000000202\", \"unit_number\": \"U202\", \"booking_id\": \"b0000000-0000-4000-8000-000000000008\", \"booking_number\": \"ST260008\", \"guest_name\": \"Nov Malis\", \"late\": false, \"assigned_to\": null, \"assigned_name\": null, \"done_by_name\": \"Chan Thida\"}, {\"task_id\": \"t0000000-0000-4000-8000-000000000006\", \"kind\": \"DAILY_CLEAN\", \"task_on\": \"2026-11-13\", \"status\": \"SKIPPED\", \"note\": \"Guest asked: no cleaning today\", \"done_at\": \"2026-11-13T02:40:00Z\", \"unit_id\": \"u0000000-0000-4000-8000-000000000202\", \"unit_number\": \"U202\", \"booking_id\": \"b0000000-0000-4000-8000-000000000008\", \"booking_number\": \"ST260008\", \"guest_name\": \"Nov Malis\", \"late\": false, \"assigned_to\": null, \"assigned_name\": null, \"done_by_name\": \"Sok Mony\"}], \"cleaners\": [{\"employee_id\": \"e0000000-0000-4000-8000-000000000001\", \"name\": \"Chan Thida\", \"name_km\": \"\\u1785\\u17b6\\u1793\\u17cb \\u1792\\u17b8\\u178f\\u17b6\", \"telegram\": true}, {\"employee_id\": \"e0000000-0000-4000-8000-000000000002\", \"name\": \"Sok Mony\", \"name_km\": \"\\u179f\\u17bb\\u1781 \\u1798\\u17bb\\u1793\\u17b8\", \"telegram\": false}]}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/credits-due",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": [], \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/damage-due",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": [], \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   }
+  ]
+ }
+}

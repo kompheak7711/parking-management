@@ -512,9 +512,11 @@ describe("local sign-in", () => {
         password: "local-password",
       });
     });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Signed in as local-user.",
-    );
+    // UI v81 round 2: the app opens on Home with no welcome banner.
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Home" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Signed in as/)).not.toBeInTheDocument();
   });
 
   it("TEST-FE-221 mounts the Utilities workflow only in the authenticated workspace", async () => {
@@ -650,9 +652,11 @@ describe("local sign-in", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Signed in as local-user.",
-    );
+    // UI v81 round 2: the app opens on Home with no welcome banner.
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Home" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Signed in as/)).not.toBeInTheDocument();
     expect(authenticate).toHaveBeenCalledTimes(2);
   });
 
@@ -821,7 +825,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-012 exposes account commands only after server capability and recent-auth checks with explicit consequence confirmation", async () => {
-    openPage("settings");
+    openPage("access?tab=history");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -874,8 +878,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
-    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
-    openPage("settings/users");
+    // UI v81: the account forms live on Users and access (moved out of Settings).
+    openPage("access?tab=history");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1031,7 +1035,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-014 requires consequence confirmation before administrative recovery", async () => {
-    openPage("settings");
+    openPage("access?tab=history");
     const user: UserAccount = {
       user_id: "user-1",
       property_id: "property-1",
@@ -1089,8 +1093,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
-    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
-    openPage("settings/users");
+    // UI v81: the account forms live on Users and access (moved out of Settings).
+    openPage("access?tab=history");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1132,7 +1136,7 @@ describe("local sign-in", () => {
   });
 
   it("TEST-FE-684 shows a new account's first one-time password once and clears it", async () => {
-    openPage("settings");
+    openPage("access?tab=history");
     const created: UserAccount = {
       user_id: "user-2",
       property_id: "property-1",
@@ -1188,8 +1192,8 @@ describe("local sign-in", () => {
     fireEvent.change(await screen.findByLabelText("Property identifier"), {
       target: { value: "property-1" },
     });
-    // V1-058 R7b: the account forms live on the Users and sign-in tab of Settings.
-    openPage("settings/users");
+    // UI v81: the account forms live on Users and access (moved out of Settings).
+    openPage("access?tab=history");
     fireEvent.click(
       screen.getByRole("button", { name: "Check administration access" }),
     );
@@ -1269,7 +1273,7 @@ describe("local sign-in", () => {
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "a long new password of mine" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "a different long password" },
     });
     fireEvent.click(save);
@@ -1278,7 +1282,7 @@ describe("local sign-in", () => {
     ).toBeInTheDocument();
     expect(changePassword).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "a long new password of mine" },
     });
     fireEvent.click(save);
@@ -1291,7 +1295,7 @@ describe("local sign-in", () => {
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "a long new password of mine" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "a long new password of mine" },
     });
     fireEvent.click(save);
@@ -1330,7 +1334,7 @@ describe("local sign-in", () => {
       fireEvent.change(await screen.findByLabelText("New password"), {
         target: { value: "a long new password of mine" },
       });
-      fireEvent.change(screen.getByLabelText("Type the new password again"), {
+      fireEvent.change(screen.getByLabelText("Enter the new password again"), {
         target: { value: "a long new password of mine" },
       });
       fireEvent.click(
@@ -1382,7 +1386,12 @@ describe("local sign-in", () => {
       business_name: null,
       timezone_name: "Asia/Phnom_Penh",
       payment_methods: [
-        { code: "BANK", display_name: "Bank transfer", accepted: true },
+        {
+          code: "BANK",
+          display_name: "Bank transfer",
+          accepted: true,
+          aba_qr: false,
+        },
       ],
       version: 3,
     };
@@ -2265,7 +2274,7 @@ describe("local sign-in", () => {
         within(menu)
           .getAllByRole("link")
           .map((link) => link.textContent),
-      ).toEqual(["Home", "Customers", "Parking"]);
+      ).toEqual(["Home", "Customers", "Units", "Inspections"]);
     });
     // On Home, the Units page is mounted but neither shown nor in the accessibility tree.
     const unitsPage = document.querySelector('[data-page="units"]');

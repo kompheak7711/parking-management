@@ -259,6 +259,8 @@ def test_successful_local_login_sets_protected_session_and_csrf_cookies() -> Non
                 "reauthenticated_at": None,
                 # Login sub-slice L3a-1 (approved plan): the session shows the display name.
                 "display_name": None,
+                # UI v81 side menu (owner 08/11/2026): the role on the user card, display only.
+                "account_class": None,
             },
         },
         "meta": {"request_id": "login-success"},
@@ -627,6 +629,7 @@ def test_authenticated_session_inspection_returns_only_bounded_non_secret_state(
         "mfa_assurance",
         "reauthenticated_at",
         "display_name",
+        "account_class",
     }
     assert "session-token-secret" not in response.text
     assert "reauthentication-token-secret" not in response.text

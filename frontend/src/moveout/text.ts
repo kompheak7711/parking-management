@@ -3,9 +3,10 @@
 // Lines marked "new" are not in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
-  title: ["Move-out", "ការចាកចេញ"],
+  title: ["Move-outs", "ការចាកចេញ"],
   sub: [
     "Leases ending, Parking handed back and Final Settlements",
     "កិច្ចសន្យាជិតបញ្ចប់ ចំណតបានប្រគល់ និងការទូទាត់ចុងក្រោយ",
@@ -16,12 +17,13 @@ const TEXT = {
     "Lease ends within 60 days, or terminated and still in",
     "កិច្ចសន្យាបញ្ចប់ក្នុង 60 ថ្ងៃ ឬបានបញ្ចប់ហើយនៅមិនទាន់ចេញ",
   ],
-  c_out: ["Handed back", "បានប្រគល់ចំណត"],
+  // UI v81 round 2: the design's card name (C10).
+  c_out: ["Unit handed over", "បានប្រគល់បន្ទប់"],
   c_out_s: [
     "Readings, inspection and charges to finish",
     "អំណាន ការត្រួតពិនិត្យ និងថ្លៃត្រូវបញ្ចប់",
   ],
-  c_confirm: ["Waiting for a Manager", "រង់ចាំអ្នកគ្រប់គ្រង"],
+  c_confirm: ["Pending Manager approval", "រង់ចាំអ្នកគ្រប់គ្រង"],
   c_confirm_s: [
     "Draft Final Settlement to confirm",
     "សេចក្តីព្រាងការទូទាត់ចុងក្រោយ ត្រូវបញ្ជាក់",
@@ -30,7 +32,7 @@ const TEXT = {
   c_closed_s: ["Final Settlement closed", "ការទូទាត់ចុងក្រោយបានបិទ"],
   // new
   settle_failed: [
-    "The Final Settlements could not be read, so Waiting for a Manager and Closed are not shown.",
+    "The Final Settlements could not be loaded, so Pending Manager approval and Closed are not shown.",
     "មិនអាចអានការទូទាត់ចុងក្រោយបានទេ ដូច្នេះរង់ចាំអ្នកគ្រប់គ្រង និងបានបិទ មិនបង្ហាញទេ។",
   ],
   showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
@@ -41,7 +43,7 @@ const TEXT = {
   col_unit: ["Parking", "ចំណត"],
   col_cust: ["Customer", "អតិថិជន"],
   col_end: ["Lease ends", "កិច្ចសន្យាបញ្ចប់"],
-  col_hb: ["Handed back", "បានប្រគល់"],
+  col_hb: ["Unit handed over", "បានប្រគល់"],
   col_step: ["Step", "ជំហាន"],
   col_dep: ["Deposits held", "ប្រាក់កក់កាន់កាប់"],
   was: ["End Date was {0}", "ថ្ងៃបញ្ចប់គឺ {0}"],
@@ -59,17 +61,17 @@ const TEXT = {
   // new
   in1: ["in 1 day", "ក្នុង 1 ថ្ងៃ"],
   rule_note: [
-    "Order of work: hand-back, final readings, inspection and charges, Final Settlement (BR-MOVEOUT-012). One Final Settlement per Lease; corrections after closure are separate records.",
-    "លំដាប់ការងារ៖ ប្រគល់ចំណត អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
+    "Order of work: hand-back, final readings, inspection and charges, Final Settlement. One Final Settlement per Lease; corrections after that are made as new records.",
+    "លំដាប់ការងារ៖ ប្រគល់បន្ទប់ អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
   ],
   s_soon: ["Leaving soon", "ជិតចាកចេញ"],
-  s_in: ["Still in the Parking", "នៅក្នុងចំណត"],
-  s_out: ["Handed back", "បានប្រគល់"],
+  s_in: ["Still in the Unit", "នៅក្នុងបន្ទប់"],
+  s_out: ["Unit handed over", "បានប្រគល់"],
   // new: terminated before anybody moved in.
   s_skip: ["Never moved in", "មិនដែលចូលស្នាក់នៅ"],
   // new (M5)
   s_settle: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
-  s_confirm: ["Waiting for a Manager", "រង់ចាំអ្នកគ្រប់គ្រង"],
+  s_confirm: ["Pending Manager approval", "រង់ចាំអ្នកគ្រប់គ្រង"],
   s_closed: ["Closed", "បានបិទ"],
   steps_t: ["Move-out steps", "ជំហានចាកចេញ"],
   done: ["Done", "រួចរាល់"],
@@ -112,7 +114,7 @@ const TEXT = {
   ],
   // new
   st2_no_term: [
-    "The termination of this Lease could not be read, so the hand-back cannot be recorded here. Open the Lease and try again later.",
+    "The termination of this Lease could not be loaded, so the hand-back cannot be recorded here. Open the Lease and try again later.",
     "មិនអាចអានការបញ្ចប់កិច្ចសន្យានេះបានទេ ដូច្នេះមិនអាចកត់ត្រាការប្រគល់នៅទីនេះបានទេ។ បើកកិច្ចសន្យា ហើយព្យាយាមម្តងទៀតពេលក្រោយ។",
   ],
   // new
@@ -252,8 +254,8 @@ const TEXT = {
   st3_taken: ["{0}, read on {1}", "{0} អាននៅ {1}"],
   // new
   st3_meters_failed: [
-    "The meters of this Parking could not be read just now. Close and try again.",
-    "មិនអាចអាននាឡិកាស្ទង់នៃចំណតនេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+    "The meters of this Unit could not be loaded. Close and try again.",
+    "មិនអាចអាននាឡិកាស្ទង់នៃបន្ទប់នេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
   st3_no_meters: [
@@ -266,8 +268,8 @@ const TEXT = {
     "ចំណតនេះគ្មាននាឡិកាស្ទង់នៅ {0} ទេ ដូច្នេះគ្មានអំណានចុងក្រោយ និងគ្មានវិក្កយបត្រទឹកភ្លើងចុងក្រោយទេ។",
   ],
   st3_note: [
-    "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date (BR-UTIL-021).",
-    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់ចំណត។",
+    "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date.",
+    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់បន្ទប់។",
   ],
   // new
   st3_note_only: [
@@ -295,7 +297,7 @@ const TEXT = {
   ],
   // new
   st3_no_invoices: [
-    "The Invoices of this Lease could not be read, so this page cannot tell whether the final Utility Invoice is issued. Check Invoices.",
+    "The Invoices of this Lease could not be loaded, so this page cannot tell whether the final Utility Invoice is issued. Check Invoices.",
     "មិនអាចអានវិក្កយបត្រនៃកិច្ចសន្យានេះបានទេ ដូច្នេះទំព័រនេះមិនដឹងថាវិក្កយបត្រទឹកភ្លើងចុងក្រោយបានចេញឬនៅ។ សូមពិនិត្យវិក្កយបត្រ។",
   ],
   // new
@@ -450,7 +452,7 @@ const TEXT = {
     "ការត្រួតពិនិត្យបានរក្សាទុក ប៉ុន្តែថ្លៃមួយមិនទាន់បានបង្កើត។ ចុច ព្យាយាមម្តងទៀត; គ្មានអ្វីរក្សាទុកពីរដងទេ។",
   ],
   st4_saved_charge_refused: [
-    "The inspection is saved, but a charge was refused. Check its amount and evidence and save again, or close and use Charge on the finding.",
+    "The inspection is saved, but a charge could not be saved. Check its amount and evidence and save again, or close and use Charge on the finding.",
     "ការត្រួតពិនិត្យបានរក្សាទុក ប៉ុន្តែថ្លៃមួយត្រូវបានបដិសេធ។ ពិនិត្យចំនួន និងភស្តុតាង ហើយរក្សាទុកម្តងទៀត ឬបិទ ហើយប្រើ គិតថ្លៃ លើការរកឃើញ។",
   ],
   st4_charge_btn: ["Charge", "គិតថ្លៃ"],
@@ -499,7 +501,7 @@ const TEXT = {
     "កំពុងអានការត្រួតពិនិត្យ និងថ្លៃ…",
   ],
   st4_failed: [
-    "The inspection or the charges could not be read just now.",
+    "The inspection or the charges could not be loaded.",
     "មិនអាចអានការត្រួតពិនិត្យ ឬថ្លៃបានទេឥឡូវនេះ។",
   ],
   st4_no_invoices: [
@@ -607,7 +609,7 @@ const TEXT = {
   ],
   // new
   st5_failed: [
-    "The Final Settlement could not be read.",
+    "The Final Settlement could not be loaded.",
     "មិនអាចអានការទូទាត់ចុងក្រោយបានទេ។",
   ],
   // new
@@ -630,10 +632,10 @@ const TEXT = {
     "សេចក្តីព្រាងរង់ចាំអ្នកគ្រប់គ្រង។",
   ],
   // new
-  st5_open_approvals: ["Open Waiting for approval", "បើករង់ចាំការអនុម័ត"],
+  st5_open_approvals: ["Open Approvals", "បើករង់ចាំការអនុម័ត"],
   // new
   st5_no_preview: [
-    "The statement could not be read. Read the page again.",
+    "The statement could not be loaded. Read the page again.",
     "មិនអាចអានរបាយការណ៍បានទេ។ សូមអានទំព័រម្តងទៀត។",
   ],
   st5_statement: ["Statement", "របាយការណ៍"],
@@ -730,11 +732,11 @@ const TEXT = {
   pd_t: ["Prepare the Final Settlement", "រៀបចំការទូទាត់ចុងក្រោយ"],
   pd_ok: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
   pd_c: [
-    "The draft is saved with the statement above. Only a Manager or the Owner can confirm and close it, in Waiting for approval. Nothing moves until then.",
+    "The draft is saved with the statement above. Only a Manager or the Owner can confirm and close it, in Approvals. Nothing moves until then.",
     "សេចក្តីព្រាងរក្សាទុកជាមួយរបាយការណ៍ខាងលើ។ មានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ទេ អាចបញ្ជាក់ និងបិទ នៅរង់ចាំការអនុម័ត។ គ្មានអ្វីផ្លាស់ទី រហូតដល់ពេលនោះ។",
   ],
   pd_toast: [
-    "Draft Final Settlement saved. A Manager confirms it in Waiting for approval.",
+    "Draft Final Settlement saved. A Manager confirms it in Approvals.",
     "បានរក្សាទុកសេចក្តីព្រាងការទូទាត់ចុងក្រោយ។ អ្នកគ្រប់គ្រងបញ្ជាក់វានៅរង់ចាំការអនុម័ត។",
   ],
   // new
@@ -783,7 +785,7 @@ const TEXT = {
     "អត្ថបទវែងពេក មិនអាចរក្សាទុកបានទេ។ សូមកាត់ខ្លីជម្រើសរបស់អតិថិជន ឬមូលហេតុរបស់បុគ្គលិក។",
   ],
   pd_methods_failed: [
-    "The refund methods could not be read. Close and try again.",
+    "The refund methods could not be loaded. Close and try again.",
     "មិនអាចអានវិធីសងវិញបានទេ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -835,12 +837,12 @@ const TEXT = {
     "ប្រាក់កក់រក្សាទុកពេលចាកចេញ។ {0}",
   ],
   kd_note: [
-    "This saves a draft. Nothing is kept until the Owner or a Manager approves it in Waiting for approval. Then prepare the Final Settlement.",
+    "This saves a draft. Nothing is kept until the Owner or a Manager approves it in Approvals. Then prepare the Final Settlement.",
     "នេះរក្សាទុកសេចក្តីព្រាង។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ រហូតដល់ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តវា នៅរង់ចាំការអនុម័ត។ បន្ទាប់មក រៀបចំការទូទាត់ចុងក្រោយ។",
   ],
   kd_err: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
   kd_toast: [
-    "Draft saved: keep the {0}. The Owner or a Manager approves it in Waiting for approval.",
+    "Draft saved: keep the {0}. The Owner or a Manager approves it in Approvals.",
     "បានរក្សាទុកសេចក្តីព្រាង៖ រក្សាទុក{0}។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តវា នៅរង់ចាំការអនុម័ត។",
   ],
   kd_waiting: [
@@ -894,7 +896,7 @@ const TEXT = {
   ],
   // new (V1-060 B6, DL-106): the kept-Deposit draft is recorded and waits.
   fi_FORFEITURE_WAITING: [
-    "The Owner or a Manager approves the kept Deposit in Waiting for approval.",
+    "The Owner or a Manager approves the kept Deposit in Approvals.",
     "ម្ចាស់ ឬអ្នកគ្រប់គ្រងអនុម័តប្រាក់កក់ដែលរក្សាទុក នៅរង់ចាំការអនុម័ត។",
   ],
   fi_PENDING_DRAFT: [
@@ -933,11 +935,11 @@ const TEXT = {
     "ការសងវិញក្រោយបិទ នឹងមកក្នុងការធ្វើបច្ចុប្បន្នភាពក្រោយ។",
   ],
   st6_approvals: [
-    "Corrections waiting: Waiting for approval",
+    "Corrections pending: see Approvals",
     "ការកែដែលកំពុងរង់ចាំ៖ រង់ចាំការអនុម័ត",
   ],
   st6_toast: [
-    "Saved as a draft. A Manager confirms it in Waiting for approval.",
+    "Saved as a draft. A Manager confirms it in Approvals.",
     "បានរក្សាទុកជាសេចក្តីព្រាង។ អ្នកគ្រប់គ្រងបញ្ជាក់វានៅក្នុង រង់ចាំការអនុម័ត។",
   ],
   c6_ok: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
@@ -971,7 +973,7 @@ const TEXT = {
   ],
   // new
   dep_failed: [
-    "The Deposits could not be read just now.",
+    "The Deposits could not be loaded.",
     "មិនអាចអានប្រាក់កក់បានទេឥឡូវនេះ។",
   ],
   history_t: ["History", "ប្រវត្តិ"],
@@ -986,11 +988,11 @@ const TEXT = {
     "ការប្រគល់ត្រូវបានកែ៖ {0}; ចំណត {1}។",
   ],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
-  open_unit: ["Open Parking", "បើកចំណត"],
-  back: ["Move-out", "ការចាកចេញ"],
+  open_unit: ["Open Unit", "បើកបន្ទប់"],
+  back: ["Back to Move-outs", "ការចាកចេញ"],
   loading: ["Reading the move-outs…", "កំពុងអានការចាកចេញ…"],
   failed: [
-    "The move-outs could not be read just now. Check the connection and try again.",
+    "The move-outs could not be loaded. Check the connection and try again.",
     "មិនអាចអានការចាកចេញបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -1036,10 +1038,12 @@ export function mt(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "km" ? 1 : 0];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 export function conditionText(language: Language, condition: string): string {

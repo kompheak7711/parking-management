@@ -16,7 +16,11 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { useHashDetail } from "../shell/useHashPage";
+import {
+  showInAddress,
+  useHashDetail,
+  useShowFromAddress,
+} from "../shell/useHashPage";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
@@ -43,6 +47,7 @@ import {
   monthLabel,
   typeName,
 } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export type LedgerTab = "journal" | "needscheck" | "chart" | "statements";
 
@@ -259,26 +264,31 @@ function JournalTab({
     return <Waiting failed={failed} language={language} onRetry={reload} />;
   return (
     <section aria-labelledby="journal-title" className="ui-card pad0">
-      <header className="ui-chead pad">
-        <h2 id="journal-title">{lt(language, "j_title")}</h2>
-      </header>
+      {/* Owner 16/11/2026: the tab already names the page, so the card title is for screen
+          readers only, and the month box looks like the app's other choice boxes. */}
+      <h2 className="ui-sr" id="journal-title">
+        {lt(language, "j_title")}
+      </h2>
       <p className="ui-muted pad">{lt(language, "j_sub")}</p>
-      <div className="ui-field pad">
-        <label htmlFor="journal-month">{lt(language, "month")}</label>
-        <select
-          id="journal-month"
-          onChange={(event) => {
-            setMonth(event.target.value);
-          }}
-          value={month}
-        >
-          <option value="">{lt(language, "all_months")}</option>
-          {data.months.map((value) => (
-            <option key={value} value={value}>
-              {monthLabel(language, value)}
-            </option>
-          ))}
-        </select>
+      <div className="ui-qa pad">
+        <div className="ui-field">
+          <label htmlFor="journal-month">{lt(language, "month")}</label>
+          <select
+            className="ui-sel"
+            id="journal-month"
+            onChange={(event) => {
+              setMonth(event.target.value);
+            }}
+            value={month}
+          >
+            <option value="">{lt(language, "all_months")}</option>
+            {data.months.map((value) => (
+              <option key={value} value={value}>
+                {monthLabel(language, value)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       {data.entries.length === 0 ? (
         <p className="ui-muted pad">{lt(language, "j_none")}</p>
@@ -290,7 +300,7 @@ function JournalTab({
                 <th scope="col">{lt(language, "no")}</th>
                 <th scope="col">{lt(language, "date")}</th>
                 <th scope="col">{lt(language, "what")}</th>
-                <th scope="col">{lt(language, "from")}</th>
+                <th scope="col">{lt(language, "source")}</th>
                 <th className="r" scope="col">
                   {lt(language, "amount")}
                 </th>
@@ -428,7 +438,7 @@ function EntryDetail({
           {data.description}
         </p>
         <p className="pad">
-          {lt(language, "from")}:{" "}
+          {lt(language, "source")}:{" "}
           {data.reverses !== null ? (
             <>
               {lt(language, "rev_of", "")}
@@ -1178,18 +1188,23 @@ function ChartTab({
   return (
     <>
       <section aria-labelledby="chart-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="chart-title">{lt(language, "a_title")}</h2>
             <p className="ui-muted">{lt(language, "a_sub")}</p>
           </div>
           <span className="ui-actions">
-            <a className="ui-btn" href={hashForPage("chart", OPENING)}>
+            <a
+              className="ui-btn"
+              href={hashForPage("chart", OPENING)}
+              aria-label={lt(language, "ob_t")}
+              title={lt(language, "ob_t")}
+            >
               <Icon name="list" small />
-              {lt(language, "ob_t")}
+              {lt(language, "b_opening")}
             </a>
           </span>
-        </div>
+        </PageHead>
       </section>
       {ACCOUNT_TYPES.map((type) => {
         const accounts = data.accounts.filter(
@@ -1518,9 +1533,29 @@ function StatementsTab({
   api: LedgerApi;
 }) {
   const today = todayInPhnomPenh();
-  const [chosen, setChosen] = useState<StatementKey>("profit-and-loss");
+  // The statement the address names is the first one read (no read of another one before it).
+  const [chosen, setChosenState] = useState<StatementKey>(
+    () =>
+      STATEMENTS.find(
+        (statement) => statement === showInAddress("statements"),
+      ) ?? "profit-and-loss",
+  );
   const [month, setMonth] = useState(`${today.slice(0, 7)}-01`);
   const [asOf, setAsOf] = useState(today);
+  // UI v81 round 11: Home's Financial summary cards open their own statement for today
+  // ("#/statements?show=balance-sheet", "customer-aging", "budget", "profit-and-loss"); a
+  // statement chosen by hand is kept in the address too.
+  const keepShow = useShowFromAddress("statements", (show) => {
+    const asked = STATEMENTS.find((statement) => statement === show);
+    if (asked === undefined) return;
+    setChosenState(asked);
+    setMonth(`${today.slice(0, 7)}-01`);
+    setAsOf(today);
+  });
+  const setChosen = (next: StatementKey) => {
+    setChosenState(next);
+    keepShow(next === "profit-and-loss" ? null : next);
+  };
   const [from, setFrom] = useState(`${today.slice(0, 7)}-01`);
   const [to, setTo] = useState(today);
   const [busy, setBusy] = useState(false);
@@ -1592,7 +1627,7 @@ function StatementsTab({
   return (
     <>
       <section aria-labelledby="statements-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="statements-title">{lt(language, "r_title")}</h2>
             <p>{lt(language, "r_sub")}</p>
@@ -1605,10 +1640,12 @@ function StatementsTab({
                 onClick={() => {
                   download("xlsx");
                 }}
+                aria-label={lt(language, "xlsx")}
+                title={lt(language, "xlsx")}
                 type="button"
               >
                 <Icon name="download" small />
-                {lt(language, "xlsx")}
+                {lt(language, "b_excel")}
               </button>
               <button
                 className="ui-btn"
@@ -1616,14 +1653,16 @@ function StatementsTab({
                 onClick={() => {
                   download("pdf");
                 }}
+                aria-label={lt(language, "pdf")}
+                title={lt(language, "pdf")}
                 type="button"
               >
                 <Icon name="download" small />
-                {lt(language, "pdf")}
+                {lt(language, "b_pdf")}
               </button>
             </span>
           )}
-        </div>
+        </PageHead>
         <div
           aria-label={lt(language, "r_title")}
           className="ui-seg"
@@ -1649,6 +1688,7 @@ function StatementsTab({
             <div className="ui-field">
               <label htmlFor="st-month">{lt(language, "month")}</label>
               <select
+                className="ui-sel"
                 id="st-month"
                 onChange={(event) => {
                   setMonth(event.target.value);
@@ -1757,7 +1797,9 @@ function Statement({
         <p className="ui-muted pad">{lt(language, "r_none")}</p>
       ) : (
         <div className="ui-tablewrap">
-          <table className="ui-table">
+          {/* Administration review fix 6: "ui-stmt" lets long column names wrap, so the
+              Difference column fits on a laptop. */}
+          <table className="ui-table ui-stmt">
             <thead>
               <tr>
                 {report.columns.map((column) => (

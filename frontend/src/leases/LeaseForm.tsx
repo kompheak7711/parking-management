@@ -14,6 +14,7 @@
 // and cannot be unticked.
 
 import { PET_DEPOSIT } from "./parking";
+import { BackLink } from "../shell/backNav";
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 import type { CustomerApi, CustomerListItem } from "../customerClient";
@@ -64,6 +65,8 @@ import {
 } from "./leaseServices";
 import { PEOPLE_MOVE_IN } from "./parking";
 import { lt } from "./text";
+import { FieldGrid, FormLayout, FullRow, PageHeader } from "../shell/layouts";
+import { goBack } from "../shell/backNav";
 
 export type LeaseFormMode =
   | { kind: "new" }
@@ -431,18 +434,7 @@ export function LeaseForm({
     if (!depositTyped) setDeposit(value);
   }, [walkIn, rentTyped, unitDefault, depositTyped]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        window.history.back();
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {lt(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="leases" />;
   const title =
     mode.kind === "renew"
       ? lt(language, "renew_title")
@@ -552,7 +544,10 @@ export function LeaseForm({
     );
     return (
       <div className="ui-field">
-        <label htmlFor={`lease-form-${label}`}>{lt(language, label)}</label>
+        <div className="ui-flabel">
+          <label htmlFor={`lease-form-${label}`}>{lt(language, label)}</label>
+          <span className="req">{lt(language, "opt_mark")}</span>
+        </div>
         {list.length > 0 && (
           <ul className="ui-picked">
             {list.map((id) => (
@@ -592,6 +587,12 @@ export function LeaseForm({
             ))}
           </select>
         )}
+        <p className="help">
+          {lt(
+            language,
+            label === "other_signers" ? "signers_help" : "occupants_help",
+          )}
+        </p>
       </div>
     );
   }
@@ -817,15 +818,24 @@ export function LeaseForm({
       });
   }
 
+  // UI v81 pilot: "Required" or "Optional" beside the label, as in design v81.
   const field = (
     id: string,
     label: string,
     input: ReactNode,
     problem: string | undefined,
     help?: string,
+    mark?: "req" | "opt",
   ) => (
     <div className="ui-field">
-      <label htmlFor={id}>{label}</label>
+      <div className="ui-flabel">
+        <label htmlFor={id}>{label}</label>
+        {mark !== undefined && (
+          <span className="req">
+            {lt(language, mark === "req" ? "req_mark" : "opt_mark")}
+          </span>
+        )}
+      </div>
       {input}
       {help !== undefined && <p className="help">{help}</p>}
       {problem !== undefined && (
@@ -839,399 +849,474 @@ export function LeaseForm({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <h2>{title}</h2>
-          <p>
-            {previous !== null
-              ? lt(language, "renew_sub", previous.unit_number)
-              : reservation !== null
-                ? lt(language, "from_booking", reservation.customer_name)
-                : lt(language, "new_sub")}
-          </p>
-        </div>
-      </div>
-      <form className="ui-split ui-leaseform" noValidate onSubmit={check}>
-        <section aria-labelledby="lease-form-terms" className="ui-card ui-form">
-          <h2 id="lease-form-terms">{lt(language, "terms")}</h2>
-          {field(
-            "lease-form-unit",
-            lt(language, "unit"),
-            fixedParty ? (
-              <input id="lease-form-unit" readOnly value={unitNumber} />
-            ) : (
-              <select
-                aria-invalid={problems.unit !== undefined}
-                id="lease-form-unit"
-                onChange={(event) => {
-                  setUnitId(event.currentTarget.value);
-                }}
-                value={unitId}
-              >
-                <option value="">{lt(language, "choose_unit")}</option>
-                {unitOptions.map((unit) => (
-                  <option key={unit.unit_id} value={unit.unit_id}>
-                    {unit.unit_number}
-                  </option>
-                ))}
-              </select>
-            ),
-            problems.unit,
-            fixedParty ? undefined : lt(language, "unit_help"),
-          )}
-          {noMeter !== null &&
-            noMeter.unitId === unitId &&
-            noMeter.kinds.length > 0 && (
-              <p className="ui-small ui-muted" role="status">
-                <Icon name="zap" small />{" "}
-                {lt(
-                  language,
-                  noMeter.kinds.length === 2
-                    ? "no_meter_both"
-                    : noMeter.kinds[0] === "ELECTRICITY"
-                      ? "no_meter_e"
-                      : "no_meter_w",
+      <PageHeader
+        back={back}
+        summary={
+          previous !== null
+            ? lt(language, "renew_sub", previous.unit_number)
+            : reservation !== null
+              ? lt(language, "from_booking", reservation.customer_name)
+              : lt(language, "new_sub")
+        }
+        title={title}
+      />
+      <FormLayout
+        className="ui-leaseform"
+        onSubmit={check}
+        main={
+          <section
+            aria-labelledby="lease-form-terms"
+            className="ui-card ui-form"
+          >
+            <h2 className="ui-sr" id="lease-form-terms">
+              {lt(language, "terms")}
+            </h2>
+            <FieldGrid>
+              {field(
+                "lease-form-unit",
+                lt(language, "unit"),
+                fixedParty ? (
+                  <input id="lease-form-unit" readOnly value={unitNumber} />
+                ) : (
+                  <select
+                    aria-invalid={problems.unit !== undefined}
+                    id="lease-form-unit"
+                    onChange={(event) => {
+                      setUnitId(event.currentTarget.value);
+                    }}
+                    value={unitId}
+                  >
+                    <option value="">{lt(language, "choose_unit")}</option>
+                    {unitOptions.map((unit) => (
+                      <option key={unit.unit_id} value={unit.unit_id}>
+                        {unit.unit_number}
+                      </option>
+                    ))}
+                  </select>
+                ),
+                problems.unit,
+                fixedParty ? undefined : lt(language, "unit_help"),
+                "req",
+              )}
+              {noMeter !== null &&
+                noMeter.unitId === unitId &&
+                noMeter.kinds.length > 0 && (
+                  <p className="ui-small ui-muted ui-span2" role="status">
+                    <Icon name="zap" small />{" "}
+                    {lt(
+                      language,
+                      noMeter.kinds.length === 2
+                        ? "no_meter_both"
+                        : noMeter.kinds[0] === "ELECTRICITY"
+                          ? "no_meter_e"
+                          : "no_meter_w",
+                    )}
+                  </p>
                 )}
-              </p>
-            )}
-          {field(
-            "lease-form-tenant",
-            lt(language, "primary"),
-            fixedParty ? (
-              <input id="lease-form-tenant" readOnly value={nameOf(tenantId)} />
-            ) : (
-              <div className="ui-pickrow">
-                <select
-                  aria-invalid={problems.tenant !== undefined}
-                  id="lease-form-tenant"
-                  onChange={(event) => {
-                    setTenantId(event.currentTarget.value);
-                  }}
-                  value={tenantId}
-                >
-                  <option value="">{lt(language, "choose_customer")}</option>
-                  {sources.customers.map((customer) => (
-                    <option
-                      key={customer.customer_id}
-                      value={customer.customer_id}
-                    >
-                      {customer.legal_name}
-                      {customer.phone_number
-                        ? ` · ${customer.phone_number}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-                {customerCreateApi !== undefined &&
-                  customerGate !== undefined && (
-                    <button
-                      aria-label={lt(language, "new_customer")}
-                      className="ui-btn ui-iconbtn"
-                      onClick={() => {
-                        setAddingCustomer(true);
+              {field(
+                "lease-form-tenant",
+                lt(language, "primary"),
+                fixedParty ? (
+                  <input
+                    id="lease-form-tenant"
+                    readOnly
+                    value={nameOf(tenantId)}
+                  />
+                ) : (
+                  <div className="ui-pickrow">
+                    <select
+                      aria-invalid={problems.tenant !== undefined}
+                      id="lease-form-tenant"
+                      onChange={(event) => {
+                        setTenantId(event.currentTarget.value);
                       }}
-                      title={lt(language, "new_customer")}
-                      type="button"
+                      value={tenantId}
                     >
-                      <Icon name="userplus" />
-                    </button>
-                  )}
-              </div>
-            ),
-            problems.tenant,
-          )}
-          {pick(
-            signers,
-            setSigners,
-            "other_signers",
-            [tenantId, ...signers],
-            19,
-          )}
-          {/* At most 20 occupants with the Primary Tenant, and 19 other Signers. */}
-          {PEOPLE_MOVE_IN &&
-            pick(
-              occupants,
-              setOccupants,
-              "other_occupants",
-              [tenantId, ...occupants],
-              19,
-            )}
-          <div className="ui-row2">
-            {field(
-              "lease-form-start",
-              lt(language, "start"),
-              <DateInput
-                language={language}
-                invalid={problems.start !== undefined}
-                id="lease-form-start"
-                onChange={(value) => {
-                  setStart(value);
-                  if (isDay(value)) setEnd(oneYearEnd(value));
-                }}
-                value={start}
-              />,
-              problems.start,
-            )}
-            {field(
-              "lease-form-end",
-              lt(language, "end"),
-              <DateInput
-                language={language}
-                invalid={problems.end !== undefined}
-                id="lease-form-end"
-                onChange={(value) => {
-                  setEnd(value);
-                }}
-                value={end}
-              />,
-              problems.end,
-              lt(language, "end_help"),
-            )}
-          </div>
-          {field(
-            "lease-form-rent",
-            lt(language, "rent"),
-            <input
-              aria-invalid={problems.rent !== undefined}
-              id="lease-form-rent"
-              inputMode="decimal"
-              onChange={(event) => {
-                setRent(event.currentTarget.value);
-                setRentTyped(true);
-                if (!depositTyped) setDeposit(event.currentTarget.value);
-              }}
-              value={rent}
-            />,
-            problems.rent,
-            defaultRent === null
-              ? undefined
-              : lt(language, "rent_default_help", usdFromCents(defaultRent)),
-          )}
-          {belowDefault &&
-            mayLowerRent !== false &&
-            field(
-              "lease-form-rent-reason",
-              lt(language, "rent_reason", usdFromCents(rentFloor)),
-              <input
-                aria-invalid={problems.rentReason !== undefined}
-                id="lease-form-rent-reason"
-                maxLength={300}
-                onChange={(event) => {
-                  setRentReason(event.currentTarget.value);
-                }}
-                value={rentReason}
-              />,
-              problems.rentReason,
-            )}
-          {takesDeposit &&
-            field(
-              "lease-form-deposit",
-              lt(language, "deposit_box"),
-              <input
-                aria-invalid={problems.deposit !== undefined}
-                id="lease-form-deposit"
-                inputMode="decimal"
-                onChange={(event) => {
-                  setDeposit(event.currentTarget.value);
-                  setDepositTyped(true);
-                }}
-                value={deposit}
-              />,
-              problems.deposit,
-              heldDeposit === null
-                ? lt(language, "deposit_help")
-                : lt(
-                    language,
-                    "deposit_help_booking",
-                    usdFromCents(heldDeposit.received),
-                  ),
-            )}
-          {heldDeposit !== null &&
-            centsOf(deposit) !== null &&
-            centsOf(deposit) !== heldDeposit.required &&
-            field(
-              "lease-form-deposit-reason",
-              lt(language, "deposit_reason"),
-              <input
-                aria-invalid={problems.depositReason !== undefined}
-                id="lease-form-deposit-reason"
-                maxLength={500}
-                onChange={(event) => {
-                  setDepositReason(event.currentTarget.value);
-                }}
-                value={depositReason}
-              />,
-              problems.depositReason,
-            )}
-          {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. A renewal of a
-              Lease that has a pet keeps it and shows the tick (data-driven). */}
-          {(PET_DEPOSIT || pet) && (
-            <label className="ui-chk">
-              <input
-                checked={pet}
-                onChange={(event) => {
-                  setPet(event.currentTarget.checked);
-                }}
-                type="checkbox"
-              />
-              <span>{lt(language, "pet_ok")}</span>
-            </label>
-          )}
-          {pet &&
-            field(
-              "lease-form-pet",
-              lt(language, "pet_what"),
-              <input
-                aria-invalid={problems.pet !== undefined}
-                id="lease-form-pet"
-                maxLength={200}
-                onChange={(event) => {
-                  setPetText(event.currentTarget.value);
-                }}
-                value={petText}
-              />,
-              problems.pet,
-              lt(language, takesDeposit ? "pet_help_new" : "pet_help"),
-            )}
-          {pet &&
-            takesDeposit &&
-            field(
-              "lease-form-pet-deposit",
-              lt(language, "pet_deposit_box"),
-              <input
-                aria-invalid={problems.petDeposit !== undefined}
-                id="lease-form-pet-deposit"
-                inputMode="decimal"
-                onChange={(event) => {
-                  setPetDeposit(event.currentTarget.value);
-                }}
-                value={petDeposit}
-              />,
-              problems.petDeposit,
-              lt(language, "pet_deposit_help"),
-            )}
-          <ServicesField
-            added={addDone}
-            addNote={addNote}
-            chosen={ticked}
-            groups={groups}
-            language={language}
-            locked={required}
-            onAdd={
-              services !== null && services !== "failed" && services.can_manage
-                ? () => {
-                    setAddProblem(null);
-                    setAddDone(null);
-                    setAddNote(null);
-                    setAdding(true);
-                  }
-                : undefined
-            }
-            onChange={setChosen}
-            onRetry={() => {
-              loadServices(previous, start, end);
-            }}
-            problem={problems.services}
-            state={
-              services === null
-                ? "loading"
-                : services === "failed"
-                  ? "failed"
-                  : startOk && endOk
-                    ? "ready"
-                    : "dates"
-            }
-          />
-          <div className="ui-dlg-buttons">
-            <button className="ui-btn primary" type="submit">
-              {lt(language, "save_draft")}
-            </button>
-          </div>
-        </section>
-        <section aria-labelledby="lease-form-preview" className="ui-card">
-          <h2 id="lease-form-preview">{lt(language, "preview")}</h2>
-          {preview === null || cents === null ? (
-            <p className="ui-muted">{lt(language, "preview_wait")}</p>
-          ) : (
-            <ul className="ui-small">
-              <li>
-                {lt(
-                  language,
-                  "pv_initial",
-                  usdFromCents(preview.total),
-                  dayText(preview.due),
-                )}
-                <span className="ui-sub2">
-                  {lt(
-                    language,
-                    "pv_initial_how",
-                    usdFromCents(cents),
-                    preview.days,
-                    preview.daysInMonth,
-                    usdFromCents(preview.firstPart),
-                  )}
-                  {preview.nextMonth > 0 &&
-                    ` ${lt(language, "pv_next_month", usdFromCents(preview.nextMonth))}`}
-                </span>
-              </li>
-              <li>{lt(language, "pv_monthly", usdFromCents(cents))}</li>
-              <li>
-                {previous !== null
-                  ? lt(language, "pv_renewal")
-                  : heldDeposit === null
-                    ? centsOf(deposit) === null
-                      ? lt(language, "pv_deposit_walkin", usdFromCents(cents))
-                      : lt(
-                          language,
-                          "pv_deposit_planned",
-                          usdFromCents(centsOf(deposit) ?? 0),
-                        )
-                    : heldDeposit.received >= bookingDeposit
-                      ? lt(
-                          language,
-                          "pv_deposit_full",
-                          usdFromCents(heldDeposit.received),
-                        )
-                      : lt(
-                          language,
-                          "pv_deposit_booking",
-                          usdFromCents(heldDeposit.received),
-                          usdFromCents(bookingDeposit),
-                          usdFromCents(
-                            Math.max(0, bookingDeposit - heldDeposit.received),
-                          ),
-                          dayText(preview.due),
-                        )}
-              </li>
-              {picked.map((choice) => (
-                <li key={choice.service.service_id}>
-                  {choice.rateCents === null
-                    ? lt(language, "pv_service_no_rate", serviceName(choice))
+                      <option value="">
+                        {lt(language, "choose_customer")}
+                      </option>
+                      {sources.customers.map((customer) => (
+                        <option
+                          key={customer.customer_id}
+                          value={customer.customer_id}
+                        >
+                          {customer.legal_name}
+                          {customer.phone_number
+                            ? ` · ${customer.phone_number}`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {customerCreateApi !== undefined &&
+                      customerGate !== undefined && (
+                        <button
+                          aria-label={lt(language, "new_customer")}
+                          className="ui-btn ui-iconbtn"
+                          onClick={() => {
+                            setAddingCustomer(true);
+                          }}
+                          title={lt(language, "new_customer")}
+                          type="button"
+                        >
+                          <Icon name="userplus" />
+                        </button>
+                      )}
+                  </div>
+                ),
+                problems.tenant,
+                undefined,
+                "req",
+              )}
+              {pick(
+                signers,
+                setSigners,
+                "other_signers",
+                [tenantId, ...signers],
+                19,
+              )}
+              {/* At most 20 occupants with the Primary Tenant, and 19 other Signers. */}
+              {pick(
+                occupants,
+                setOccupants,
+                "other_occupants",
+                [tenantId, ...occupants],
+                19,
+              )}
+              {field(
+                "lease-form-start",
+                lt(language, "start"),
+                <DateInput
+                  language={language}
+                  invalid={problems.start !== undefined}
+                  id="lease-form-start"
+                  onChange={(value) => {
+                    setStart(value);
+                    if (isDay(value)) setEnd(oneYearEnd(value));
+                  }}
+                  value={start}
+                />,
+                problems.start,
+                undefined,
+                "req",
+              )}
+              {field(
+                "lease-form-end",
+                lt(language, "end"),
+                <DateInput
+                  language={language}
+                  invalid={problems.end !== undefined}
+                  id="lease-form-end"
+                  onChange={(value) => {
+                    setEnd(value);
+                  }}
+                  value={end}
+                />,
+                problems.end,
+                lt(language, "end_help"),
+                "req",
+              )}
+              {field(
+                "lease-form-rent",
+                lt(language, "rent"),
+                <div className="ui-cash">
+                  <span aria-hidden="true" className="ui-cash-cur">
+                    $
+                  </span>
+                  <input
+                    aria-invalid={problems.rent !== undefined}
+                    id="lease-form-rent"
+                    inputMode="decimal"
+                    onChange={(event) => {
+                      setRent(event.currentTarget.value);
+                      setRentTyped(true);
+                      if (!depositTyped) setDeposit(event.currentTarget.value);
+                    }}
+                    value={rent}
+                  />
+                </div>,
+                problems.rent,
+                defaultRent === null
+                  ? undefined
+                  : lt(
+                      language,
+                      "rent_default_help",
+                      usdFromCents(defaultRent),
+                    ),
+                "req",
+              )}
+              {takesDeposit &&
+                field(
+                  "lease-form-deposit",
+                  lt(language, "dep_sec"),
+                  <div className="ui-cash">
+                    <span aria-hidden="true" className="ui-cash-cur">
+                      $
+                    </span>
+                    <input
+                      aria-invalid={problems.deposit !== undefined}
+                      id="lease-form-deposit"
+                      inputMode="decimal"
+                      onChange={(event) => {
+                        setDeposit(event.currentTarget.value);
+                        setDepositTyped(true);
+                      }}
+                      value={deposit}
+                    />
+                  </div>,
+                  problems.deposit,
+                  heldDeposit === null
+                    ? lt(language, "deposit_help")
                     : lt(
                         language,
-                        "pv_service",
-                        serviceName(choice),
-                        usdFromCents(choice.rateCents),
-                      )}
-                </li>
-              ))}
-              {pet && (
-                <li>
-                  {takesDeposit && centsOf(petDeposit) !== null
-                    ? lt(
+                        "deposit_help_booking",
+                        usdFromCents(heldDeposit.received),
+                      ),
+                  "req",
+                )}
+              <FullRow>
+                {belowDefault &&
+                  mayLowerRent !== false &&
+                  field(
+                    "lease-form-rent-reason",
+                    lt(language, "rent_reason", usdFromCents(rentFloor)),
+                    <input
+                      aria-invalid={problems.rentReason !== undefined}
+                      id="lease-form-rent-reason"
+                      maxLength={300}
+                      onChange={(event) => {
+                        setRentReason(event.currentTarget.value);
+                      }}
+                      value={rentReason}
+                    />,
+                    problems.rentReason,
+                  )}
+                {heldDeposit !== null &&
+                  centsOf(deposit) !== null &&
+                  centsOf(deposit) !== heldDeposit.required &&
+                  field(
+                    "lease-form-deposit-reason",
+                    lt(language, "deposit_reason"),
+                    <input
+                      aria-invalid={problems.depositReason !== undefined}
+                      id="lease-form-deposit-reason"
+                      maxLength={500}
+                      onChange={(event) => {
+                        setDepositReason(event.currentTarget.value);
+                      }}
+                      value={depositReason}
+                    />,
+                    problems.depositReason,
+                  )}
+                <label className="ui-chk">
+                  <input
+                    aria-describedby="lease-form-pet-help"
+                    aria-labelledby="lease-form-pet-ok"
+                    checked={pet}
+                    onChange={(event) => {
+                      setPet(event.currentTarget.checked);
+                    }}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span id="lease-form-pet-ok">{lt(language, "pet_ok")}</span>
+                    <span className="ui-sub2" id="lease-form-pet-help">
+                      {lt(language, "pet_help2")}
+                    </span>
+                  </span>
+                </label>
+                {pet &&
+                  field(
+                    "lease-form-pet",
+                    lt(language, "pet_what"),
+                    <input
+                      aria-invalid={problems.pet !== undefined}
+                      id="lease-form-pet"
+                      maxLength={200}
+                      onChange={(event) => {
+                        setPetText(event.currentTarget.value);
+                      }}
+                      value={petText}
+                    />,
+                    problems.pet,
+                    lt(language, takesDeposit ? "pet_help_new" : "pet_help"),
+                  )}
+                {pet &&
+                  takesDeposit &&
+                  field(
+                    "lease-form-pet-deposit",
+                    lt(language, "pet_deposit_box"),
+                    <input
+                      aria-invalid={problems.petDeposit !== undefined}
+                      id="lease-form-pet-deposit"
+                      inputMode="decimal"
+                      onChange={(event) => {
+                        setPetDeposit(event.currentTarget.value);
+                      }}
+                      value={petDeposit}
+                    />,
+                    problems.petDeposit,
+                    lt(language, "pet_deposit_help"),
+                  )}
+                <ServicesField
+                  added={addDone}
+                  addNote={addNote}
+                  chosen={ticked}
+                  groups={groups}
+                  language={language}
+                  locked={required}
+                  onAdd={
+                    services !== null &&
+                    services !== "failed" &&
+                    services.can_manage
+                      ? () => {
+                          setAddProblem(null);
+                          setAddDone(null);
+                          setAddNote(null);
+                          setAdding(true);
+                        }
+                      : undefined
+                  }
+                  onChange={setChosen}
+                  onRetry={() => {
+                    loadServices(previous, start, end);
+                  }}
+                  problem={problems.services}
+                  state={
+                    services === null
+                      ? "loading"
+                      : services === "failed"
+                        ? "failed"
+                        : startOk && endOk
+                          ? "ready"
+                          : "dates"
+                  }
+                />
+                <div className="ui-actions">
+                  <button className="ui-btn primary" type="submit">
+                    <Icon name="check" />
+                    {lt(language, "save_draft")}
+                  </button>
+                  <button
+                    className="ui-btn"
+                    onClick={() => {
+                      goBack("leases");
+                    }}
+                    type="button"
+                  >
+                    {lt(language, "cancel_form")}
+                  </button>
+                </div>
+              </FullRow>
+            </FieldGrid>
+          </section>
+        }
+        side={
+          <>
+            <section aria-labelledby="lease-form-preview" className="ui-card">
+              <h2 id="lease-form-preview">{lt(language, "preview")}</h2>
+              {preview === null || cents === null ? (
+                <p className="ui-muted">{lt(language, "preview_wait")}</p>
+              ) : (
+                <ul className="ui-small">
+                  <li>
+                    {lt(
+                      language,
+                      "pv_initial",
+                      usdFromCents(preview.total),
+                      dayText(preview.due),
+                    )}
+                    <span className="ui-sub2">
+                      {lt(
                         language,
-                        "pv_pet_new",
-                        usdFromCents(centsOf(petDeposit) ?? 0),
-                      )
-                    : lt(language, "pv_pet")}
-                </li>
+                        "pv_initial_how",
+                        usdFromCents(cents),
+                        preview.days,
+                        preview.daysInMonth,
+                        usdFromCents(preview.firstPart),
+                      )}
+                      {preview.nextMonth > 0 &&
+                        ` ${lt(language, "pv_next_month", usdFromCents(preview.nextMonth))}`}
+                    </span>
+                  </li>
+                  <li>{lt(language, "pv_monthly", usdFromCents(cents))}</li>
+                  <li>
+                    {previous !== null
+                      ? lt(language, "pv_renewal")
+                      : heldDeposit === null
+                        ? centsOf(deposit) === null
+                          ? lt(
+                              language,
+                              "pv_deposit_walkin",
+                              usdFromCents(cents),
+                            )
+                          : lt(
+                              language,
+                              "pv_deposit_planned",
+                              usdFromCents(centsOf(deposit) ?? 0),
+                            )
+                        : heldDeposit.received >= bookingDeposit
+                          ? lt(
+                              language,
+                              "pv_deposit_full",
+                              usdFromCents(heldDeposit.received),
+                            )
+                          : lt(
+                              language,
+                              "pv_deposit_booking",
+                              usdFromCents(heldDeposit.received),
+                              usdFromCents(bookingDeposit),
+                              usdFromCents(
+                                Math.max(
+                                  0,
+                                  bookingDeposit - heldDeposit.received,
+                                ),
+                              ),
+                              dayText(preview.due),
+                            )}
+                  </li>
+                  {picked.map((choice) => (
+                    <li key={choice.service.service_id}>
+                      {choice.rateCents === null
+                        ? lt(
+                            language,
+                            "pv_service_no_rate",
+                            serviceName(choice),
+                          )
+                        : lt(
+                            language,
+                            "pv_service",
+                            serviceName(choice),
+                            usdFromCents(choice.rateCents),
+                          )}
+                    </li>
+                  ))}
+                  {pet && (
+                    <li>
+                      {takesDeposit && centsOf(petDeposit) !== null
+                        ? lt(
+                            language,
+                            "pv_pet_new",
+                            usdFromCents(centsOf(petDeposit) ?? 0),
+                          )
+                        : lt(language, "pv_pet")}
+                    </li>
+                  )}
+                  <li>{lt(language, "pv_end", dayText(end))}</li>
+                </ul>
               )}
-              <li>{lt(language, "pv_end", dayText(end))}</li>
-            </ul>
-          )}
-        </section>
-      </form>
+            </section>
+            <section aria-labelledby="lease-form-next" className="ui-card">
+              <h2 id="lease-form-next">{lt(language, "next_t")}</h2>
+              <ul className="ui-next">
+                <li>{lt(language, "next_1")}</li>
+                <li>{lt(language, "next_2")}</li>
+                <li>{lt(language, "next_3")}</li>
+                <li>{lt(language, "next_4")}</li>
+              </ul>
+            </section>
+          </>
+        }
+      />
       {addingCustomer &&
         customerCreateApi !== undefined &&
         customerGate !== undefined && (

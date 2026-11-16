@@ -22,7 +22,7 @@ import { ExportRefusedError, ReportsNotAllowedError } from "../reportsClient";
 import { momentText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { Chip } from "../shell/ui";
+import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi } from "../unitClient";
 import { allPages } from "../units/unitsData";
@@ -33,6 +33,7 @@ import {
   HistoryNotAllowedError,
 } from "./historyClient";
 import { actionText, hit, kindOf, kindText } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface HistoryExportApi {
   exportAudit: (
@@ -131,6 +132,9 @@ export function HistoryPage({
     [],
   );
   const [exporting, setExporting] = useState(false);
+  // UI v81 (B4, design v81): one Export button; the window asks Excel or PDF.
+  const [choosing, setChoosing] = useState(false);
+  const [fileType, setFileType] = useState<ExportFileType>("xlsx");
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const sequence = useRef(0);
   const shownProperty = useRef(propertyId);
@@ -291,28 +295,57 @@ export function HistoryPage({
   if (!names.has(me.id)) whoList.unshift([me.id, me.name]);
 
   const head = (
-    <div className="ui-head">
+    <PageHead>
       <p>{hit(language, "hi_sub")}</p>
       {mayExport && (
         <div className="ui-actions">
-          {(["xlsx", "pdf"] as const).map((type) => (
-            <button
-              className="ui-btn"
-              disabled={exporting || failure !== null}
-              key={type}
-              onClick={() => {
-                exportFile(type);
-              }}
-              type="button"
-            >
-              <Icon name="upload" small />
-              {hit(language, "hi_export")} ·{" "}
-              {hit(language, type === "xlsx" ? "ex_xlsx" : "ex_pdf")}
-            </button>
-          ))}
+          <button
+            className="ui-btn"
+            disabled={exporting || failure !== null}
+            onClick={() => {
+              setChoosing(true);
+            }}
+            type="button"
+          >
+            <Icon name="upload" small />
+            {hit(language, "hi_export")}
+          </button>
         </div>
       )}
-    </div>
+      {choosing && (
+        <Dialog
+          closeLabel={hit(language, "ex_close")}
+          onClose={() => {
+            setChoosing(false);
+          }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            setChoosing(false);
+            exportFile(fileType);
+          }}
+          submitLabel={hit(language, "hi_export")}
+          title={hit(language, "ex_title")}
+        >
+          <fieldset className="ui-radios">
+            <legend>{hit(language, "ex_as")}</legend>
+            {(["xlsx", "pdf"] as const).map((type) => (
+              <label className="ui-chk" key={type}>
+                <input
+                  checked={fileType === type}
+                  name="hi-export-type"
+                  onChange={() => {
+                    setFileType(type);
+                  }}
+                  type="radio"
+                />
+                {hit(language, type === "xlsx" ? "ex_xlsx" : "ex_pdf")}
+              </label>
+            ))}
+          </fieldset>
+          <p className="ui-small ui-muted">{hit(language, "ex_same")}</p>
+        </Dialog>
+      )}
+    </PageHead>
   );
 
   const filters = (
@@ -433,7 +466,8 @@ export function HistoryPage({
           <p className="ui-empty">{hit(language, "hi_none")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            {/* Administration review fix 6: cards on a phone and an iPad. */}
+            <table className="ui-table ui-rowcards ui-rowcards-md">
               <thead>
                 <tr>
                   <th scope="col">{hit(language, "hi_when")}</th>
@@ -464,7 +498,7 @@ export function HistoryPage({
                       <td>
                         <Chip tone="neutral">{kind}</Chip>
                       </td>
-                      <td>
+                      <td className="ui-rc-wide">
                         <span lang="en">{actionText(event.action)}</span>
                         {event.outcome.toLowerCase() === "refused" && (
                           <>

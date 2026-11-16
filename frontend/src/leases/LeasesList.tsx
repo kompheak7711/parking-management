@@ -7,7 +7,7 @@ import type { LeaseResource } from "../leaseClient";
 import { dayText, usdFromCents } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
+import { openPageInAddress, useShowFromAddress } from "../shell/useHashPage";
 import { Chip, CountCard, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
@@ -18,10 +18,12 @@ import {
   cardsOf,
   endingLimit,
   kindOf,
+  leaseNo,
   renewedIds,
   sortLeases,
 } from "./leasesData";
 import { lt } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 const KIND_CHIPS: Record<LeaseKind, [Tone, ShellIcon | undefined]> = {
   current: ["ok", "check"],
@@ -85,7 +87,17 @@ export function LeasesList({
   deposits: Map<string, DepositCell> | null;
   today: string;
 }) {
-  const [card, setCard] = useState<LeaseCard | "all">("all");
+  const [card, setCardState] = useState<LeaseCard | "all">("all");
+  // UI v81 round 11: Home's "Leases ending soon" card opens "#/leases?show=ending"; a card
+  // chosen by hand is kept in the address too, so Back from a Lease returns to it.
+  const keepShow = useShowFromAddress("leases", (show) => {
+    const asked = CARDS.find(([value]) => value === show)?.[0];
+    if (asked !== undefined || show === "all") setCardState(asked ?? "all");
+  });
+  const setCard = (next: LeaseCard | "all") => {
+    setCardState(next);
+    keepShow(next === "all" ? null : next);
+  };
   const renewed = renewedIds(data.leases);
   const kind = (lease: LeaseResource) =>
     kindOf(lease, today, renewed.has(lease.lease_id));
@@ -99,7 +111,7 @@ export function LeasesList({
 
   return (
     <>
-      <div className="ui-head">
+      <PageHead>
         <p>{lt(language, "sub")}</p>
         {canCreate && (
           <div className="ui-actions">
@@ -109,7 +121,7 @@ export function LeasesList({
             </a>
           </div>
         )}
-      </div>
+      </PageHead>
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone]) => (
           <CountCard
@@ -149,7 +161,7 @@ export function LeasesList({
               <table className="ui-table">
                 <thead>
                   <tr>
-                    <th scope="col">{lt(language, "unit")}</th>
+                    <th scope="col">{lt(language, "col_lease")}</th>
                     <th scope="col">{lt(language, "primary")}</th>
                     <th scope="col">{lt(language, "period")}</th>
                     <th className="r" scope="col">
@@ -196,7 +208,7 @@ export function LeasesList({
                               open(id);
                             }}
                           >
-                            {lease.unit_number}
+                            {leaseNo(lease)}
                           </a>
                         </td>
                         <td>

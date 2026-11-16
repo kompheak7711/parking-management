@@ -4,6 +4,11 @@
 // pay. Pressing Receive payment in the dialog is the staff confirmation; the server saves the
 // payment, its Receipt and what it pays in one step, and the same values keep one key, so
 // pressing again after no answer saves once.
+//
+// UI v81 module batch 2 (Payments, owner 12/11/2026): the page is on the shared layouts
+// (PageHeader with the Back link on top, FormLayout, FieldGrid) and has the design's side column:
+// the payer's Customer card and the "Exchange rate for riel" card. Layout and display only: what
+// the form checks and sends is unchanged.
 
 import {
   type FormEvent,
@@ -13,14 +18,20 @@ import {
   useRef,
   useState,
 } from "react";
+import { BackLink } from "../shell/backNav";
+import { FieldGrid, FormLayout, FullRow, PageHeader } from "../shell/layouts";
 
 import type { InvoicesData } from "../invoices/invoicesData";
 import { centsOf, payerIds } from "../invoices/invoicesData";
 import { InvoiceClientError } from "../invoiceClient";
-import { dayText, usdFromCents } from "../shell/format";
+import {
+  dayText,
+  momentText,
+  todayInPhnomPenh,
+  usdFromCents,
+} from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import { useLeaveGuard } from "../shell/leaveGuard";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -32,12 +43,15 @@ import {
   pickedTotal,
   planFor,
 } from "./payFor";
+import { PayerCard, type PayerCardReads } from "./PayerCard";
 import type {
+  KhrRate,
   PaymentMethodOption,
   PaymentsApi,
   ReceiveInput,
   ReceiveResult,
 } from "./paymentsClient";
+import { RielRateCard } from "./RielRateCard";
 import { pyt, type PaymentsTextKey } from "./text";
 
 type Field = "cust" | "amt" | "method" | "when" | "ref" | "payfor";
@@ -131,6 +145,7 @@ export function ReceivePayment({
   initialPick = "",
   now: fixedNow,
   onSaved,
+  payerCard,
 }: {
   language: Language;
   propertyId: string;
@@ -143,6 +158,8 @@ export function ReceivePayment({
   now?: Date;
   /** The lists read again, so they show the new payment. */
   onSaved: () => void;
+  /** What the Customer card beside the form reads; left out, the card is not shown. */
+  payerCard?: PayerCardReads;
 }) {
   const now = useRef(fixedNow ?? new Date()).current;
   const [customer, setCustomer] = useState(initialCustomer);
@@ -156,7 +173,9 @@ export function ReceivePayment({
   const [items, setItems] = useState<PayableItem[] | null>(null);
   const [itemsFailed, setItemsFailed] = useState(false);
   const [methods, setMethods] = useState<PaymentMethodOption[] | null>(null);
-  const [rate, setRate] = useState<number | null | undefined>(undefined);
+  // The rate is read when the form opens, so the card beside the form always has it.
+  const [fx, setFx] = useState<KhrRate | null | undefined>(undefined);
+  const rate = fx === undefined ? undefined : (fx?.rate ?? null);
   const [problems, setProblems] = useState<Field[] | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -200,16 +219,20 @@ export function ReceivePayment({
   }, [api, propertyId]);
 
   useEffect(() => {
-    if (currency !== "KHR" || rate !== undefined) return;
-    void api
-      .khrRate(propertyId)
+    let live = true;
+    // A client without the rate read counts as "no rate now", not a crash.
+    void Promise.resolve()
+      .then(() => api.khrRate(propertyId))
       .then((found) => {
-        setRate(found?.rate ?? null);
+        if (live) setFx(found ?? null);
       })
       .catch(() => {
-        setRate(null);
+        if (live) setFx(null);
       });
-  }, [api, currency, propertyId, rate]);
+    return () => {
+      live = false;
+    };
+  }, [api, propertyId]);
 
   const readItems = useCallback(
     (id: string) => {
@@ -418,9 +441,7 @@ export function ReceivePayment({
         : `${done.receivedMinor.toLocaleString("en-US")} ៛`;
     return (
       <>
-        <div className="ui-head">
-          <h2>{pyt(language, "done_pay_t")}</h2>
-        </div>
+        <PageHeader title={pyt(language, "done_pay_t")} />
         <section className="ui-card">
           <div className="ui-notice ok" role="status">
             <Icon name="check" />
@@ -658,262 +679,259 @@ export function ReceivePayment({
     );
   };
 
+  // The dollar value typed, or the riel typed with its dollar value, for the rate card.
+  const side = (
+    <>
+      {chosen !== undefined && payerCard !== undefined && (
+        <PayerCard
+          customerId={chosen.id}
+          data={data}
+          headingId="rp-cust-card"
+          key={chosen.id}
+          language={language}
+          propertyId={propertyId}
+          reads={payerCard}
+          today={todayInPhnomPenh(now)}
+        />
+      )}
+      <RielRateCard
+        items={list}
+        language={language}
+        rate={fx}
+        toRiel={rielFor}
+        typedCents={currency === "USD" ? cents : null}
+        typedRiel={
+          currency === "KHR" && typedRiel !== null
+            ? { riel: typedRiel, cents }
+            : null
+        }
+        when={fx?.at === undefined ? null : momentText(fx.at)}
+      />
+    </>
+  );
+
   return (
     <>
-      <button
-        className="ui-crumb"
-        onClick={() => {
-          openPageInAddress("payments");
-        }}
-        type="button"
-      >
-        <Icon name="back" small />
-        {pyt(language, "back")}
-      </button>
-      <div className="ui-head">
-        <div>
-          <h2>{pyt(language, "rp_title")}</h2>
-          <p>{pyt(language, "rp_intro")}</p>
-        </div>
-      </div>
-      <div className="ui-split ui-split-form">
-        <form
-          aria-label={pyt(language, "rp_title")}
-          className="ui-card ui-form ui-pageform"
-          noValidate
-          onSubmit={check}
-        >
-          {outcome === "out_changed" && !confirming && (
-            <div className="ui-notice warn" role="alert">
-              <Icon name="alert" />
-              <p>{pyt(language, "out_changed")}</p>
-            </div>
-          )}
-          {problems !== null && problems.length > 0 && (
-            <div
-              className="ui-notice err"
-              ref={summary}
-              role="alert"
-              tabIndex={-1}
-            >
-              <Icon name="alert" />
-              <div>
-                <b>{pyt(language, "err_sum", problems.length)}</b>
-                <ul>
-                  {problems.map((name) => (
-                    <li key={name}>
-                      <a
-                        href={`#${IDS[name]}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          document.getElementById(IDS[name])?.focus();
-                        }}
-                      >
-                        {errorText(name)}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-          <div className="ui-field">
-            {label("cust", "f_customer")}
-            <select
-              aria-describedby={describedBy("cust", false)}
-              aria-invalid={shown.has("cust")}
-              id={IDS.cust}
-              onChange={(event) => {
-                chooseCustomer(event.currentTarget.value);
-              }}
-              value={customer}
-            >
-              <option value="">{pyt(language, "f_choose")}</option>
-              {customers.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.unit === ""
-                    ? entry.name
-                    : `${entry.name} · ${entry.unit}`}
-                </option>
-              ))}
-            </select>
-            {error("cust")}
-          </div>
-          <div className="ui-row2">
-            <div className="ui-field">
-              <span className="lbl" id="rp-cur">
-                {pyt(language, "f_currency")}
-              </span>
-              <div aria-labelledby="rp-cur" className="ui-seg" role="group">
-                {(["USD", "KHR"] as const).map((value) => (
-                  <button
-                    aria-pressed={currency === value}
-                    key={value}
-                    onClick={() => {
-                      setCurrency(value);
-                      setAmount("");
-                      setPicks(null);
-                    }}
-                    type="button"
-                  >
-                    {value === "USD" ? "$" : "៛"}{" "}
-                    {pyt(language, value === "USD" ? "cur_USD" : "cur_KHR")}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="ui-field">
-              {label("amt", "f_amount")}
-              <div className="ui-money">
-                <span aria-hidden="true">{currency === "USD" ? "$" : "៛"}</span>
-                <input
-                  aria-describedby={describedBy("amt", currency === "KHR")}
-                  aria-invalid={shown.has("amt")}
-                  autoComplete="off"
-                  id={IDS.amt}
-                  inputMode={currency === "USD" ? "decimal" : "numeric"}
-                  onChange={(event) => {
-                    setAmount(event.currentTarget.value);
-                  }}
-                  value={amount}
-                />
-              </div>
-              {currency === "KHR" && (
-                <p className="help" id={`${IDS.amt}-help`}>
-                  {rate
-                    ? `${pyt(language, "fx_system")}: ${rate.toLocaleString("en-US")} ៛ = $1.00 · ${pyt(language, "fx_usd")}: ${cents === null ? "—" : money(cents)}`
-                    : rate === null
-                      ? pyt(language, "err_rate")
-                      : pyt(language, "loading")}
-                </p>
-              )}
-              {error("amt")}
-            </div>
-          </div>
-          <div className="ui-row2">
-            <div className="ui-field">
-              {label("method", "f_method")}
-              <select
-                aria-describedby={describedBy("method", false)}
-                aria-invalid={shown.has("method")}
-                id={IDS.method}
-                onChange={(event) => {
-                  setMethodId(event.currentTarget.value);
-                }}
-                value={methodId}
-              >
-                {(methods ?? []).map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.displayName}
-                  </option>
-                ))}
-              </select>
-              {error("method")}
-            </div>
-            <div className="ui-field">
-              {label("when", "f_when")}
-              <input
-                aria-describedby={describedBy("when", true)}
-                aria-invalid={shown.has("when")}
-                autoComplete="off"
-                className="ui-num"
-                id={IDS.when}
-                onChange={(event) => {
-                  setWhen(event.currentTarget.value);
-                }}
-                value={when}
-              />
-              <p className="help" id={`${IDS.when}-help`}>
-                {pyt(language, "f_when_help")}
-              </p>
-              {error("when")}
-            </div>
-          </div>
-          <div className="ui-row2">
-            {needsReference(method) && (
-              <div className="ui-field">
-                {label("ref", "f_ref")}
-                <input
-                  aria-describedby={describedBy("ref", false)}
-                  aria-invalid={shown.has("ref")}
-                  autoComplete="off"
-                  id={IDS.ref}
-                  maxLength={500}
-                  onChange={(event) => {
-                    setReference(event.currentTarget.value);
-                  }}
-                  value={reference}
-                />
-                {error("ref")}
+      <PageHeader
+        back={<BackLink language={language} parent="payments" />}
+        summary={pyt(language, "rp_intro")}
+        title={pyt(language, "rp_title")}
+      />
+      <FormLayout
+        className="ui-pageform"
+        label={pyt(language, "rp_title")}
+        main={
+          <div className="ui-card ui-form">
+            {outcome === "out_changed" && !confirming && (
+              <div className="ui-notice warn" role="alert">
+                <Icon name="alert" />
+                <p>{pyt(language, "out_changed")}</p>
               </div>
             )}
-            <div className="ui-field">
-              <label htmlFor="rp-note">
-                {pyt(language, "f_note")}
-                <span className="req">{pyt(language, "optional")}</span>
-              </label>
-              <input
-                aria-describedby="rp-note-help"
-                autoComplete="off"
-                id="rp-note"
-                maxLength={2000}
-                onChange={(event) => {
-                  setNote(event.currentTarget.value);
-                }}
-                value={note}
-              />
-              <p className="help" id="rp-note-help">
-                {pyt(language, "f_note_help")}
-              </p>
-            </div>
+            {problems !== null && problems.length > 0 && (
+              <div
+                className="ui-notice err"
+                ref={summary}
+                role="alert"
+                tabIndex={-1}
+              >
+                <Icon name="alert" />
+                <div>
+                  <b>{pyt(language, "err_sum", problems.length)}</b>
+                  <ul>
+                    {problems.map((name) => (
+                      <li key={name}>
+                        <a
+                          href={`#${IDS[name]}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            document.getElementById(IDS[name])?.focus();
+                          }}
+                        >
+                          {errorText(name)}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+            <FieldGrid>
+              <FullRow>
+                <div className="ui-field">
+                  {label("cust", "f_customer")}
+                  <select
+                    aria-describedby={describedBy("cust", false)}
+                    aria-invalid={shown.has("cust")}
+                    id={IDS.cust}
+                    onChange={(event) => {
+                      chooseCustomer(event.currentTarget.value);
+                    }}
+                    value={customer}
+                  >
+                    <option value="">{pyt(language, "f_choose")}</option>
+                    {customers.map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {entry.unit === ""
+                          ? entry.name
+                          : `${entry.name} · ${entry.unit}`}
+                      </option>
+                    ))}
+                  </select>
+                  {error("cust")}
+                </div>
+              </FullRow>
+              <div className="ui-field">
+                <span className="lbl" id="rp-cur">
+                  {pyt(language, "f_currency")}
+                </span>
+                <div aria-labelledby="rp-cur" className="ui-seg" role="group">
+                  {(["USD", "KHR"] as const).map((value) => (
+                    <button
+                      aria-pressed={currency === value}
+                      key={value}
+                      onClick={() => {
+                        setCurrency(value);
+                        setAmount("");
+                        setPicks(null);
+                      }}
+                      type="button"
+                    >
+                      {value === "USD" ? "$" : "៛"}{" "}
+                      {pyt(language, value === "USD" ? "cur_USD" : "cur_KHR")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="ui-field">
+                {label("amt", "f_amount")}
+                <div className="ui-money">
+                  <span aria-hidden="true">
+                    {currency === "USD" ? "$" : "៛"}
+                  </span>
+                  <input
+                    aria-describedby={describedBy("amt", currency === "KHR")}
+                    aria-invalid={shown.has("amt")}
+                    autoComplete="off"
+                    id={IDS.amt}
+                    inputMode={currency === "USD" ? "decimal" : "numeric"}
+                    onChange={(event) => {
+                      setAmount(event.currentTarget.value);
+                    }}
+                    value={amount}
+                  />
+                </div>
+                {currency === "KHR" && (
+                  <p className="help" id={`${IDS.amt}-help`}>
+                    {rate
+                      ? `${pyt(language, "fx_system")}: ${rate.toLocaleString("en-US")} ៛ = $1.00 · ${pyt(language, "fx_usd")}: ${cents === null ? "—" : money(cents)}`
+                      : rate === null
+                        ? pyt(language, "err_rate")
+                        : pyt(language, "loading")}
+                  </p>
+                )}
+                {error("amt")}
+              </div>
+              <div className="ui-field">
+                {label("method", "f_method")}
+                <select
+                  aria-describedby={describedBy("method", false)}
+                  aria-invalid={shown.has("method")}
+                  id={IDS.method}
+                  onChange={(event) => {
+                    setMethodId(event.currentTarget.value);
+                  }}
+                  value={methodId}
+                >
+                  {(methods ?? []).map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.displayName}
+                    </option>
+                  ))}
+                </select>
+                {error("method")}
+              </div>
+              <div className="ui-field">
+                {label("when", "f_when")}
+                <input
+                  aria-describedby={describedBy("when", true)}
+                  aria-invalid={shown.has("when")}
+                  autoComplete="off"
+                  className="ui-num"
+                  id={IDS.when}
+                  onChange={(event) => {
+                    setWhen(event.currentTarget.value);
+                  }}
+                  value={when}
+                />
+                <p className="help" id={`${IDS.when}-help`}>
+                  {pyt(language, "f_when_help")}
+                </p>
+                {error("when")}
+              </div>
+              {needsReference(method) && (
+                <div className="ui-field">
+                  {label("ref", "f_ref")}
+                  <input
+                    aria-describedby={describedBy("ref", false)}
+                    aria-invalid={shown.has("ref")}
+                    autoComplete="off"
+                    id={IDS.ref}
+                    maxLength={500}
+                    onChange={(event) => {
+                      setReference(event.currentTarget.value);
+                    }}
+                    value={reference}
+                  />
+                  {error("ref")}
+                </div>
+              )}
+              <div className="ui-field">
+                <label htmlFor="rp-note">
+                  {pyt(language, "f_note")}
+                  <span className="req">{pyt(language, "optional")}</span>
+                </label>
+                <input
+                  aria-describedby="rp-note-help"
+                  autoComplete="off"
+                  id="rp-note"
+                  maxLength={2000}
+                  onChange={(event) => {
+                    setNote(event.currentTarget.value);
+                  }}
+                  value={note}
+                />
+                <p className="help" id="rp-note-help">
+                  {pyt(language, "f_note_help")}
+                </p>
+              </div>
+              <FullRow>
+                <fieldset
+                  aria-invalid={shown.has("payfor")}
+                  className="ui-payfor"
+                >
+                  <legend>{pyt(language, "pf_t")}</legend>
+                  {payFor()}
+                  {error("payfor")}
+                </fieldset>
+              </FullRow>
+              <FullRow>
+                <div className="ui-actions">
+                  <button className="ui-btn primary" type="submit">
+                    <Icon name="check" />
+                    {pyt(language, "rp_submit")}
+                  </button>
+                  <button className="ui-btn" onClick={clear} type="button">
+                    {pyt(language, "clear")}
+                  </button>
+                </div>
+              </FullRow>
+            </FieldGrid>
           </div>
-          <fieldset aria-invalid={shown.has("payfor")} className="ui-payfor">
-            <legend>{pyt(language, "pf_t")}</legend>
-            {payFor()}
-            {error("payfor")}
-          </fieldset>
-          <div className="ui-actions">
-            <button className="ui-btn primary" type="submit">
-              <Icon name="check" />
-              {pyt(language, "rp_submit")}
-            </button>
-            <button className="ui-btn" onClick={clear} type="button">
-              {pyt(language, "clear")}
-            </button>
-          </div>
-        </form>
-        <div className="ui-stack">
-          {chosen !== undefined && (
-            <section aria-labelledby="rp-cust-card" className="ui-card">
-              <h2 id="rp-cust-card">{chosen.name}</h2>
-              <dl className="ui-kv">
-                {chosen.unit !== "" && (
-                  <>
-                    <dt>{pyt(language, "unit")}</dt>
-                    <dd className="ui-num">{chosen.unit}</dd>
-                  </>
-                )}
-                {data.phones.get(chosen.id) !== undefined && (
-                  <>
-                    <dt>{pyt(language, "phone")}</dt>
-                    <dd className="ui-num">{data.phones.get(chosen.id)}</dd>
-                  </>
-                )}
-                {items !== null && (
-                  <>
-                    <dt>{pyt(language, "unpaid")}</dt>
-                    <dd className="ui-num">
-                      {money(
-                        list.reduce((total, item) => total + item.owed, 0),
-                      )}
-                    </dd>
-                  </>
-                )}
-              </dl>
-            </section>
-          )}
-        </div>
-      </div>
+        }
+        onSubmit={check}
+        side={side}
+      />
       {confirming && chosen !== undefined && cents !== null && (
         <Dialog
           busy={busy}

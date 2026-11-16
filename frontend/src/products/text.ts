@@ -2,13 +2,11 @@
 // "new" needs the native check.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
-  failed: [
-    "This list could not be read just now.",
-    "មិនអាចអានបញ្ជីនេះបានទេឥឡូវនេះ។",
-  ],
+  failed: ["This list could not be loaded.", "មិនអាចអានបញ្ជីនេះបានទេឥឡូវនេះ។"],
   retry: ["Try again", "សាកម្តងទៀត"],
   no_property: ["Choose the Property first.", "សូមជ្រើសរើសអចលនទ្រព្យជាមុនសិន។"],
   cancel: ["Cancel", "បោះបង់"],
@@ -34,6 +32,9 @@ const TEXT = {
   pr_mark_up: ["Mark-up", "ការបូកបន្ថែម"],
   pr_price: ["Price", "តម្លៃ"],
   pr_actions: ["Actions", "សកម្មភាព"],
+  // Property fix 1 (owner 14/11/2026): the row menu's button. Khmer new.
+  // Owner 14/11/2026: the row menu is "Edit" (shorter); its first choice is "Details".
+  pr_details: ["Details", "ព័ត៌មានលម្អិត"],
   pr_edit: ["Edit", "កែ"],
   pr_prices: ["Prices", "តម្លៃ"],
   pr_set_mark_up: ["Mark-up", "ការបូកបន្ថែម"],
@@ -41,6 +42,9 @@ const TEXT = {
   pr_service: ["Service", "សេវា"],
   pr_discontinued: ["Discontinued", "ឈប់លក់"],
   pr_low: ["Low stock", "ស្តុកតិច"],
+  // UI v81 round 11: the row above the list that shows every product or only the low ones.
+  pr_all: ["All", "ទាំងអស់"],
+  pr_low_none: ["No product is low on stock.", "គ្មានផលិតផលណាស្តុកតិចទេ។"],
   pr_no_price: [
     "No price until the first Purchase",
     "គ្មានតម្លៃរហូតដល់ការទិញលើកដំបូង",
@@ -65,7 +69,7 @@ const TEXT = {
   ],
   pd_service_cost: ["Cost of one", "ថ្លៃដើមមួយ"],
   pd_service_cost_h: [
-    "A Service's cost is typed by a Manager or the Owner. The app sets the price from it.",
+    "A Service's cost is entered by a Manager or the Owner. The app sets the price from it.",
     "ថ្លៃដើមរបស់សេវាត្រូវវាយដោយអ្នកគ្រប់គ្រង ឬម្ចាស់។ កម្មវិធីកំណត់តម្លៃពីវា។",
   ],
   pd_item_cost_h: [
@@ -127,6 +131,8 @@ const TEXT = {
   sm_PURCHASE: ["Purchase", "ការទិញ"],
   sm_ADJUSTMENT_IN: ["Adjustment in", "កែតម្រូវចូល"],
   sm_ADJUSTMENT_OUT: ["Adjustment out", "កែតម្រូវចេញ"],
+  // Property fix 9: a move shown as one row. Khmer new.
+  sm_moved: ["Moved", "បានផ្ទេរ"],
   sm_TRANSFER_OUT: ["Transfer out", "ផ្ទេរចេញ"],
   sm_TRANSFER_IN: ["Transfer in", "ផ្ទេរចូល"],
   sm_SALE: ["Sale", "ការលក់"],
@@ -168,9 +174,7 @@ const TEXT = {
   e_short: ["There is only {0} at this place.", "មានតែ {0} នៅទីតាំងនេះ។"],
   e_reason: ["Enter the reason.", "សូមបញ្ចូលមូលហេតុ។"],
   // Locations tab
-  lo_title: ["Locations", "ទីតាំង"],
-  lo_unit: ["Unit {0}", "បន្ទប់ {0}"],
-  lo_not_for_rent: ["Not for rent", "មិនជួល"],
+  lo_title: ["Storage locations", "ទីតាំង"],
   lo_place: ["Place", "ទីតាំង"],
   lo_holds: ["Holds", "មាន"],
   lo_empty: ["Empty", "ទទេ"],
@@ -218,7 +222,7 @@ const TEXT = {
   ui_saved: ["{0} moved into {1}.", "បានផ្លាស់ {0} ចូល {1}។"],
   ui_nothing: ["Fill in a row first.", "សូមបំពេញជួរមួយជាមុនសិន។"],
   e_row: [
-    "choose the Location, the Item and the Storage, and a quantity",
+    "Choose the Location, the Item and the Storage, and enter a quantity.",
     "ជ្រើសរើសទីតាំង របស់ និងឃ្លាំង ហើយបញ្ចូលបរិមាណ",
   ],
   e_row_short: ["only {0} in that storage place", "មានតែ {0} នៅឃ្លាំងនោះ"],
@@ -240,7 +244,7 @@ const TEXT = {
     "របស់ចូលទៅទីតាំងឃ្លាំងជាមុន បន្ទាប់មកចូលជួរនៃសារពើភណ្ឌបន្ទប់។",
   ],
   np_no_storage: [
-    "There is no storage place yet. Add a place to the warehouse in Building › Products › Locations.",
+    "There is no storage place yet. Add a place to the warehouse in Property › Products › Storage locations.",
     "មិនទាន់មានទីតាំងឃ្លាំងទេ។ សូមបន្ថែមទីតាំងទៅឃ្លាំងនៅក្នុង អគារ › ផលិតផល › ទីតាំង។",
   ],
   np_saved: ["{0} bought.", "បានទិញ {0}។"],
@@ -270,10 +274,12 @@ export function pt(
   ...values: (string | number)[]
 ): string {
   const words = TEXT[key][language === "km" ? 1 : 0];
-  return words.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    words.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 const UNIT_NAMES: Record<string, readonly [string, string]> = {

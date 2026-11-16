@@ -4,12 +4,12 @@
 // check reports problems of the types the Problem reports page offers.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BackLink } from "../shell/backNav";
 
 import type { ProblemType } from "../problems/problemsClient";
 
 import { dayText, momentText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
-import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { TelegramQrCard } from "../telegram/TelegramQrCard";
 import { GuestPanel } from "./GuestPanel";
@@ -46,9 +46,10 @@ import {
   timeText,
 } from "./StaySteps";
 import { hasText, st, type StaysTextKey } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 /** The words for a refused step; 412 and 409 also show the booking as it is now. */
-function stepProblem(error: unknown): StaysTextKey {
+export function stepProblem(error: unknown): StaysTextKey {
   if (!(error instanceof ShortStaysError)) return "f_failed";
   switch (error.status) {
     case 412:
@@ -178,18 +179,7 @@ export function BookingDetail({
     [api, propertyId, unitId, checkIn, kept],
   );
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("shortstays");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {st(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="shortstays" />;
 
   if (booking === null)
     return (
@@ -252,10 +242,12 @@ export function BookingDetail({
   return (
     <>
       {back}
-      <div className="ui-head">
+      <PageHead>
         <div>
           <div className="ui-hrow">
-            <h2 className="ui-num">{booking.booking_number}</h2>
+            <h2 className="ui-num" data-record-title="">
+              {booking.booking_number}
+            </h2>
             <BookingChip language={language} status={booking.status} />
           </div>
           <p>
@@ -263,7 +255,7 @@ export function BookingDetail({
             {nightsText(language, booking.nights)}
           </p>
         </div>
-      </div>
+      </PageHead>
       {booking.problem_guest && (
         <div className="ui-notice warn" role="note">
           <Icon name="alert" />

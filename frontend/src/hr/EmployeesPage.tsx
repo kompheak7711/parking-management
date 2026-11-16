@@ -41,6 +41,7 @@ import {
   type StaffRequest,
 } from "./hrClient";
 import { codeText, ht } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface EmployeesPageProps {
   language: Language;
@@ -207,7 +208,7 @@ function EmployeeList({
     <>
       <Done text={done} />
       <section aria-labelledby="hr-e-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="hr-e-title">{ht(language, "e_title")}</h2>
             <p>{ht(language, "e_sub")}</p>
@@ -225,7 +226,7 @@ function EmployeeList({
               {ht(language, "e_add")}
             </button>
           )}
-        </div>
+        </PageHead>
       </section>
       {canManage &&
         requests.data !== null &&
@@ -1277,7 +1278,7 @@ function EmployeeView({
         </div>
       )}
       <section aria-labelledby="hr-ed-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="hr-ed-title">
               {name}{" "}
@@ -1309,7 +1310,7 @@ function EmployeeView({
               )}
             </div>
           )}
-        </div>
+        </PageHead>
       </section>
       <div className="ui-split">
         <div className="ui-stack">

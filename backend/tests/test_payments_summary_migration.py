@@ -1,8 +1,9 @@
 """Real PostgreSQL coverage of the Payments page period read (V1-058 R5c-3a).
 
 Each payment in the period is split by what it paid (Rent, Utilities, Services, late-payment
-charges, Deposits, move-out charges, Customer Credit) and what is left; the cards add up to
-what was received.
+charges, Deposits, Short stay, Products, Damage, Other charges, Customer Credit) and what is
+left; the cards add up to what was received. Migration 20270713_364 (UI v81, owner 12/11/2026)
+divided the old "move-out charges" kind by the type of the Invoice (DL-221).
 """
 
 from __future__ import annotations
@@ -32,7 +33,18 @@ from test_late_payment_migration import migrated_database_url as migrated_databa
 from test_receive_payment_migration import charge, invoice, receive, usd
 
 REVISION = "20270312_231"
-KINDS = ("RENT", "UTIL", "SVC", "LATE", "DEPOSIT", "MOVEOUT", "CREDIT")
+KINDS = (
+    "RENT",
+    "UTIL",
+    "SVC",
+    "LATE",
+    "DEPOSIT",
+    "SHORT_STAY",
+    "PRODUCTS",
+    "DAMAGE",
+    "OTHER",
+    "CREDIT",
+)
 
 
 def today(url: str) -> date:
@@ -79,6 +91,8 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
     assert datetime.fromisoformat(row["received_at"]).utcoffset() is not None
 
     totals = result["totals"]
+    # Owner 12/11/2026: the ten kinds, and no "move-out charges" kind any more.
+    assert set(totals["kinds"]) == set(KINDS)
     assert totals["payments"] - start["payments"] == 1
     assert totals["received_usd_cents"] - start["received_usd_cents"] == row["usd_cents"]
     assert totals["left_usd_cents"] - start["left_usd_cents"] == 0
@@ -184,6 +198,14 @@ def test_the_receipt_lines_name_what_one_payment_paid(migrated_database_url: str
     ]
     assert result["left_usd_cents"] == 0
     assert sum(line["amount_usd_cents"] for line in result["lines"]) == result["usd_cents"]
+    # Owner 12/11/2026: an Invoice line also gives its parts by Invoice line (Rent, Services);
+    # they add up to the line. A late-payment charge has no parts.
+    for line in result["lines"]:
+        if line["kind"] == "INVOICE":
+            assert set(line["parts"]) <= {"RENT", "SERVICE_CHARGES"}
+            assert sum(line["parts"].values()) == line["amount_usd_cents"]
+        else:
+            assert "parts" not in line
     assert result["reprints"] == [] and result["reprint_count"] == 0
 
     printer = ReceiptService(runtime_database_url(), financial_database_url())

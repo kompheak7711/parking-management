@@ -80,7 +80,10 @@ const SUMMARY: PaymentsSummary = {
     SVC: { cents: 4_000, payments: 1 },
     LATE: { cents: 4_000, payments: 1 },
     DEPOSIT: ZERO,
-    MOVEOUT: ZERO,
+    SHORT_STAY: ZERO,
+    PRODUCTS: ZERO,
+    DAMAGE: ZERO,
+    OTHER: ZERO,
     CREDIT: ZERO,
   },
   rows: [
@@ -141,7 +144,7 @@ function receiptRows(): string[] {
 }
 
 describe("V1-058 R5c-3 Payments list", () => {
-  it("TEST-FE-914 shows Total received and the seven cards, the add-up line, and filters the list by a card or by money not matched yet", async () => {
+  it("TEST-FE-914 shows Total received and the category cards, the add-up line, and filters the list by a card or by money not matched yet", async () => {
     showList();
     await screen.findByText("RCP260045");
 
@@ -150,12 +153,12 @@ describe("V1-058 R5c-3 Payments list", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("button", {
-        name: /^Rent: \$800\.00\. Rent lines\n2 payments/,
+        name: /^Rent: \$800\.00\.$/,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "The seven category cards ($900.00) and $100.00 not matched yet add up to $1,000.00. Riel payments (82,260 ៛) count at the dollar value recorded when they were received ($20.00).",
+        "The category cards ($900.00) and $100.00 not matched yet add up to $1,000.00. Riel payments (82,260 ៛) count at the dollar value recorded when they were received ($20.00).",
       ),
     ).toBeInTheDocument();
     expect(receiptRows()).toEqual([
@@ -229,7 +232,10 @@ describe("V1-058 R5c-3 Payments list", () => {
           SVC: ZERO,
           LATE: ZERO,
           DEPOSIT: ZERO,
-          MOVEOUT: ZERO,
+          SHORT_STAY: ZERO,
+          PRODUCTS: ZERO,
+          DAMAGE: ZERO,
+          OTHER: ZERO,
           CREDIT: ZERO,
         },
       }),
@@ -241,7 +247,7 @@ describe("V1-058 R5c-3 Payments list", () => {
       "2026-10-25",
     );
     expect(
-      screen.getByText("The seven category cards add up to $0.00."),
+      screen.getByText("The category cards add up to $0.00."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Last month" }));
@@ -253,7 +259,7 @@ describe("V1-058 R5c-3 Payments list", () => {
       );
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Pick dates" }));
+    fireEvent.click(screen.getByRole("button", { name: "Custom range" }));
     fireEvent.change(screen.getByLabelText("From"), {
       target: { value: "20/10/2026" },
     });
@@ -288,7 +294,7 @@ describe("V1-058 R5c-3 Payments list", () => {
     showList(api({ ...SUMMARY, refunded: 5_000, received: 105_000 }));
     expect(
       await screen.findByText(
-        /The seven category cards \(\$900\.00\), \$50\.00 refunded and \$100\.00 not matched yet add up to \$1,050\.00\./,
+        /The category cards \(\$900\.00\), \$50\.00 refunded and \$100\.00 not matched yet add up to \$1,050\.00\./,
       ),
     ).toBeInTheDocument();
     cleanup();
@@ -528,7 +534,7 @@ describe("V1-058 R5c-3 review round 1", () => {
     showList(api({ ...SUMMARY, received: 120_000 }));
     expect(
       await screen.findByText(
-        /The seven category cards \(\$900\.00\), \$0\.00 refunded and \$100\.00 not matched yet add up to \$1,000\.00, not \$1,200\.00\. Tell the Owner\./,
+        /The category cards \(\$900\.00\), \$0\.00 refunded and \$100\.00 not matched yet add up to \$1,000\.00, not \$1,200\.00\. Tell the Owner\./,
       ),
     ).toBeInTheDocument();
     cleanup();
@@ -640,7 +646,7 @@ describe("V1-058 R5c-3 review round 1", () => {
     expect(screen.getByRole("button", { name: "Reprint" })).toBeDisabled();
     expect(
       screen.getByText(
-        "The Customer names could not be read, so the Receipt cannot print yet.",
+        "The Customer names could not be loaded, so the Receipt cannot print yet.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -686,6 +692,413 @@ describe("V1-058 R5c-3 review round 1", () => {
       expect(view.left).toBe(0);
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+});
+
+// The owner saw a Receipt the list called "Move-out charges" and its page called "Short stay",
+// and one the list called "Rent, Services, Deposits" and its page called "Rent".
+describe("UI v81 round 9 (owner 12/11/2026) the list and the Receipt page say the same Paid for", () => {
+  it("TEST-FE-1937 (owner 12/11/2026) the cards and the list name the type of the Invoice: Short stay, Products, Damage and Other charges take the place of Move-out charges", async () => {
+    showList(
+      api({
+        ...SUMMARY,
+        payments: 5,
+        received: 115_780,
+        kinds: {
+          ...SUMMARY.kinds,
+          SHORT_STAY: { cents: 5_280, payments: 1 },
+          PRODUCTS: { cents: 3_000, payments: 1 },
+          DAMAGE: { cents: 6_000, payments: 1 },
+          OTHER: { cents: 1_500, payments: 1 },
+        },
+        rows: [
+          row({
+            paymentId: "p-8",
+            receiptNumber: "RCP260020",
+            usdCents: 5_280,
+            receivedMinor: 5_280,
+            kinds: { SHORT_STAY: 5_280 },
+          }),
+          row({
+            paymentId: "p-9",
+            receiptNumber: "RCP260018",
+            kinds: { RENT: 36_000, SVC: 4_000, DEPOSIT: 8_000 },
+          }),
+          row({
+            paymentId: "p-10",
+            receiptNumber: "RCP260017",
+            usdCents: 10_500,
+            receivedMinor: 10_500,
+            kinds: { PRODUCTS: 3_000, DAMAGE: 6_000, OTHER: 1_500 },
+          }),
+        ],
+      }),
+    );
+    await screen.findByText("RCP260020");
+
+    // The cards, in order: the four types stand where Move-out charges stood. Operations fix 1:
+    // the $0.00 cards are folded until "More cards" is pressed.
+    fireEvent.click(screen.getByRole("button", { name: /More cards/ }));
+    expect(
+      Array.from(
+        document.querySelectorAll(
+          ".ui-kpis-pay .ui-kpi:not(.ui-kpi-more) .ui-kpi-label",
+        ),
+      ).map((label) => label.textContent),
+    ).toEqual([
+      "Total received",
+      "Rent",
+      "Utilities",
+      "Services",
+      // Owner 12/11/2026 11:03: the card is named "Late-payment" (it was "Late-payment charges").
+      "Late-payment",
+      "Deposits",
+      "Short stay",
+      "Products",
+      "Damage",
+      "Other charges",
+      "Customer Credit",
+    ]);
+    expect(screen.queryByText(/Move-out charges/)).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: /^Short stay: \$52\.80\.$/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /^Other charges: \$15\.00\.$/,
+      }),
+    ).toBeInTheDocument();
+    // The cards still add up to the money received.
+    expect(
+      screen.getByText(
+        /^The category cards \(\$1,057\.80\) and \$100\.00 not matched yet add up to \$1,157\.80\./,
+      ),
+    ).toBeInTheDocument();
+
+    // The list: what each Receipt paid, in the words its page uses.
+    const paidFor = (receipt: string) => {
+      const line = screen.getByRole("link", { name: receipt }).closest("tr");
+      if (line === null) throw new Error(`No row ${receipt}`);
+      return Array.from(line.querySelectorAll(".ui-pf")).map(
+        (part) => part.textContent,
+      );
+    };
+    expect(paidFor("RCP260020")).toEqual(["Short stay"]);
+    expect(paidFor("RCP260018")).toEqual(["Rent", "Services", "Deposits"]);
+    expect(paidFor("RCP260017")).toEqual([
+      "Products",
+      "Damage",
+      "Other charges",
+    ]);
+
+    // A card shows only its payments.
+    fireEvent.click(screen.getByRole("button", { name: /^Short stay:/ }));
+    expect(receiptRows()).toEqual(["RCP260020"]);
+    expect(
+      screen.getByText(/Showing payments with Short stay\./),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1938 (owner 12/11/2026) the Receipt page lists Rent and Services under a Rent Invoice, as the list names them, and nothing under an Invoice that is one thing", async () => {
+    showReceipt(
+      receiptApi({
+        ...RECEIPT,
+        currency: "USD",
+        receivedMinor: 53_280,
+        usdCents: 53_280,
+        rate: null,
+        left: 0,
+        lines: [
+          {
+            kind: "INVOICE",
+            invoiceId: "inv-7",
+            invoiceNumber: "INV260007",
+            category: "RENT",
+            dueDate: "2026-10-05",
+            depositType: null,
+            amount: 40_000,
+            parts: [
+              { kind: "RENT", amount: 36_000 },
+              { kind: "SVC", amount: 4_000 },
+            ],
+          },
+          {
+            kind: "INVOICE",
+            invoiceId: "inv-19",
+            invoiceNumber: "INV260019",
+            category: "SHORT_STAY",
+            dueDate: "2026-11-19",
+            depositType: null,
+            amount: 5_280,
+            parts: [],
+          },
+          {
+            kind: "DEPOSIT",
+            invoiceId: null,
+            invoiceNumber: null,
+            category: null,
+            dueDate: null,
+            depositType: "SECURITY",
+            amount: 8_000,
+          },
+        ],
+      }),
+    );
+    await screen.findByRole("heading", { name: "Receipt RCP260045" });
+    const card = screen.getByRole("heading", {
+      name: "Paid for",
+    }).parentElement;
+    if (card === null) throw new Error("No Paid for card");
+    const lines = Array.from(card.querySelectorAll(".ui-apps > li"));
+    expect(lines.map((line) => line.textContent)).toEqual([
+      "INV260007 · RentDue date 05/10/2026$400.00Rent$360.00Services$40.00",
+      "INV260019 · Short stayDue date 19/11/2026$52.80",
+      "Deposits$80.00",
+    ]);
+    const [rent, stay] = lines;
+    expect(
+      Array.from(rent?.querySelectorAll(".ui-app-parts > li") ?? []).map(
+        (part) => part.textContent,
+      ),
+    ).toEqual(["Rent$360.00", "Services$40.00"]);
+    expect(stay?.querySelector(".ui-app-parts")).toBeNull();
+
+    // The printed Receipt is as before: one line for the Invoice, no parts.
+    const sheet = screen.getByRole("article");
+    expect(within(sheet).queryByText("Services")).toBeNull();
+  });
+
+  it("TEST-FE-1939 (owner 12/11/2026) the client reads the new kinds and the parts of an Invoice line; a part that is the Invoice itself gives no parts", async () => {
+    const answer = (data: unknown) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ data }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          ),
+        ),
+      );
+    };
+    const card = (usd_cents: number, payments: number) => ({
+      usd_cents,
+      payments,
+    });
+    const serverSummary = (kinds: Record<string, unknown>) => ({
+      property_id: "property-1",
+      from: "2026-11-01",
+      to: "2026-11-12",
+      truncated: false,
+      totals: {
+        payments: 1,
+        received_usd_cents: 5_280,
+        left_usd_cents: 0,
+        left_payments: 0,
+        refunded_usd_cents: 0,
+        riel_received_minor: 0,
+        riel_usd_cents: 0,
+        kinds,
+      },
+      rows: [
+        {
+          payment_id: "p-8",
+          receipt_number: "RCP260020",
+          payment_date: "2026-11-12",
+          received_at: "2026-11-12T04:52:00+07:00",
+          customer_id: "c-lim",
+          method_name: "Cash",
+          method_code: "CASH",
+          status: "RECEIVED",
+          received_currency: "USD",
+          received_amount_minor: 5_280,
+          usd_cents: 5_280,
+          left_usd_cents: 0,
+          refunded_usd_cents: 0,
+          kinds: { SHORT_STAY: 5_280 },
+        },
+      ],
+    });
+    const kinds = {
+      RENT: card(0, 0),
+      UTIL: card(0, 0),
+      SVC: card(0, 0),
+      LATE: card(0, 0),
+      DEPOSIT: card(0, 0),
+      SHORT_STAY: card(5_280, 1),
+      PRODUCTS: card(0, 0),
+      DAMAGE: card(0, 0),
+      OTHER: card(0, 0),
+      CREDIT: card(0, 0),
+    };
+    const line = (
+      invoice_type: string,
+      parts: Record<string, number> | undefined,
+    ) => ({
+      kind: "INVOICE",
+      invoice_id: "inv-1",
+      invoice_number: "INV260001",
+      category: "RENT",
+      short_stay: null,
+      invoice_type,
+      due_date: "2026-11-05",
+      amount_usd_cents: 40_000,
+      ...(parts === undefined ? {} : { parts }),
+    });
+    const serverReceipt = (lines: unknown[]) => ({
+      payment_id: "p-1",
+      receipt_id: "r-1",
+      receipt_number: "RCP260045",
+      status: "RECEIVED",
+      customer_id: "c-lim",
+      payment_date: "2026-11-12",
+      received_at: "2026-11-12T04:52:00+07:00",
+      received_currency: "USD",
+      received_amount_minor: 40_000,
+      usd_cents: 40_000,
+      system_rate_khr_per_usd: null,
+      method_name: "Cash",
+      method_code: "CASH",
+      reference: null,
+      payer_note: null,
+      received_by: "Chan Sophea",
+      left_usd_cents: 0,
+      lines,
+      reprints: [],
+      reprint_count: 0,
+    });
+    try {
+      answer(serverSummary(kinds));
+      const summary = await createPaymentsApi().summary(
+        "property-1",
+        "2026-11-01",
+        "2026-11-12",
+      );
+      expect(summary.kinds.SHORT_STAY).toEqual({ cents: 5_280, payments: 1 });
+      expect(summary.kinds.OTHER).toEqual({ cents: 0, payments: 0 });
+      expect(summary.rows[0]?.kinds).toEqual({ SHORT_STAY: 5_280 });
+
+      // A database that still sends the old kind is not read as if it were right.
+      answer(
+        serverSummary(
+          Object.fromEntries(
+            Object.entries(kinds).map(([kind, value]) => [
+              kind === "OTHER" ? "MOVEOUT" : kind,
+              value,
+            ]),
+          ),
+        ),
+      );
+      await expect(
+        createPaymentsApi().summary("property-1", "2026-11-01", "2026-11-12"),
+      ).rejects.toBeInstanceOf(InvoiceClientError);
+
+      answer(
+        serverReceipt([
+          // Rent and Services under a Rent Invoice.
+          line("RENT", { RENT: 36_000, SERVICE_CHARGES: 4_000 }),
+          // Only Rent: the Invoice's own name says it.
+          line("RENT", { RENT: 40_000 }),
+          // Only its Services were paid: the part says so.
+          line("RENT", { SERVICE_CHARGES: 40_000 }),
+          // A one-time charge line takes the name of its Invoice's type.
+          line("SHORT_STAY", { MISCELLANEOUS_CHARGES: 40_000 }),
+          line("DAMAGE", {
+            DAMAGE_CHARGES: 30_000,
+            MISCELLANEOUS_CHARGES: 10_000,
+          }),
+          // A database that sends no parts yet.
+          line("RENT", undefined),
+          {
+            kind: "DEPOSIT",
+            deposit_type: "SECURITY",
+            amount_usd_cents: 8_000,
+          },
+        ]),
+      );
+      const receipt = await createPaymentsApi().receipt("property-1", "p-1");
+      expect(receipt.lines.map((each) => each.parts)).toEqual([
+        [
+          { kind: "RENT", amount: 36_000 },
+          { kind: "SVC", amount: 4_000 },
+        ],
+        [],
+        [{ kind: "SVC", amount: 40_000 }],
+        [],
+        [],
+        [],
+        [],
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe("Operations screen (owner 13/11/2026)", () => {
+  it("TEST-FE-2195 (owner 13/11/2026) the $0.00 cards fold behind one More cards card; a pressed card stays shown", async () => {
+    showList(
+      api({
+        ...SUMMARY,
+        kinds: {
+          ...SUMMARY.kinds,
+          SHORT_STAY: { cents: 5_280, payments: 1 },
+        },
+      }),
+    );
+    await screen.findByRole("button", { name: /More cards/ });
+    const labels = () =>
+      Array.from(
+        document.querySelectorAll(
+          ".ui-kpis-pay .ui-kpi:not(.ui-kpi-more) .ui-kpi-label",
+        ),
+      ).map((label) => label.textContent);
+    const folded = labels();
+    expect(folded).toContain("Total received");
+    expect(folded).toContain("Short stay");
+    expect(folded).not.toContain("Products");
+    expect(folded.length).toBeLessThan(11);
+
+    fireEvent.click(screen.getByRole("button", { name: /More cards/ }));
+    expect(labels()).toHaveLength(11);
+    expect(screen.getByRole("button", { name: /Fewer cards/ })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+
+    // A card pressed while shown stays on screen after folding again.
+    fireEvent.click(screen.getByRole("button", { name: /^Products:/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Fewer cards/ }));
+    expect(labels()).toContain("Products");
+  });
+
+  it("TEST-FE-2198 (owner 16/11/2026) a large screen shows every card and no More cards card", async () => {
+    const before = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(min-width: 1600px)",
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      showList(api(SUMMARY));
+      await screen.findByRole("button", { name: /^Total received:/ });
+      expect(document.querySelectorAll(".ui-kpis-pay .ui-kpi")).toHaveLength(
+        11,
+      );
+      expect(
+        screen.queryByRole("button", { name: /More cards/ }),
+      ).not.toBeInTheDocument();
+    } finally {
+      window.matchMedia = before;
     }
   });
 });

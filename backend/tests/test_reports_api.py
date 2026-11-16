@@ -32,7 +32,7 @@ def actor(*capabilities: str, property_id: uuid.UUID = PROPERTY) -> Authenticate
 
 class FakeStore:
     def __init__(self, fail: bool = False) -> None:
-        self.calls: list[tuple[uuid.UUID, uuid.UUID, tuple[str, ...]]] = []
+        self.calls: list[tuple[uuid.UUID, uuid.UUID, tuple[object, ...]]] = []
         self.fail = fail
 
     def home_page(
@@ -62,7 +62,23 @@ class FakeStore:
         property_id: uuid.UUID,
         extra: Sequence[object] = (),
     ) -> list[dict[str, object]]:
-        raise AssertionError("not used")
+        if read == "customer_paid_on_time":
+            # UI v81 pilot: the Lease page's Customer card (migration 20270711_362).
+            self.calls.append((actor.actor_id, property_id, ("customer_paid_on_time", *extra)))
+            return [{"on_time": 11, "invoice_count": 12}]
+        # UI v81 round 4: the Birthdays list (migration 20270710_361).
+        assert read == "customer_birthdays" and extra == ()
+        self.calls.append((actor.actor_id, property_id, ("customer_birthdays",)))
+        return [
+            {
+                "customer_id": "c1",
+                "customer_name": "Sok Dara",
+                "role": "PRIMARY",
+                "unit_id": "u1",
+                "unit_number": "A-101",
+                "birthday": "2026-10-27",
+            }
+        ]
 
     def units(self, property_id: uuid.UUID) -> list[dict[str, object]]:
         raise AssertionError("not used")
@@ -107,3 +123,48 @@ def test_the_home_page_refuses_query_text_and_reports_a_store_failure() -> None:
     person = actor("units.read")
     assert client(person, FakeStore()).get(f"{PATH}?units=all").status_code == 422
     assert client(person, FakeStore(fail=True)).get(PATH).status_code == 503
+
+
+def test_the_birthdays_list_needs_customers_read_and_lists_the_rows() -> None:
+    """UI v81 round 4 (owner 08/11/2026): the Customers page Birthdays tab."""
+    store = FakeStore()
+    path = f"/api/v1/properties/{PROPERTY}/birthdays"
+    assert client(None, store).get(path).status_code == 401
+    assert client(actor("leases.read"), store).get(path).status_code == 403
+    assert store.calls == []
+    answer = client(actor("customers.read"), store).get(path)
+    assert answer.status_code == 200
+    assert answer.headers["Cache-Control"] == "private, no-store"
+    assert answer.json()["data"] == {
+        "items": [
+            {
+                "customer_id": "c1",
+                "customer_name": "Sok Dara",
+                "role": "PRIMARY",
+                "unit_id": "u1",
+                "unit_number": "A-101",
+                "birthday": "2026-10-27",
+            }
+        ]
+    }
+    assert store.calls == [(store.calls[0][0], PROPERTY, ("customer_birthdays",))]
+    assert client(actor("customers.read"), store).get(f"{path}?x=1").status_code == 422
+    assert client(actor("customers.read"), FakeStore(fail=True)).get(path).status_code == 200
+
+
+def test_the_customer_paid_on_time_needs_invoices_read_and_gives_the_two_counts() -> None:
+    """UI v81 pilot (owner 08/11/2026): the Lease page's Customer card."""
+    store = FakeStore()
+    customer = uuid.uuid4()
+    path = f"/api/v1/properties/{PROPERTY}/customers/{customer}/paid-on-time"
+    assert client(None, store).get(path).status_code == 401
+    assert client(actor("customers.read"), store).get(path).status_code == 403
+    assert store.calls == []
+    answer = client(actor("invoices.read"), store).get(path)
+    assert answer.status_code == 200
+    assert answer.headers["Cache-Control"] == "private, no-store"
+    assert answer.json()["data"] == {"on_time": 11, "invoice_count": 12}
+    assert store.calls == [(store.calls[0][0], PROPERTY, ("customer_paid_on_time", customer))]
+    assert client(actor("invoices.read"), store).get(f"{path}?x=1").status_code == 422
+    broken = path.replace(str(customer), "x")
+    assert client(actor("invoices.read"), store).get(broken).status_code == 422

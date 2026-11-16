@@ -130,6 +130,48 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
 
+  screens:
+    # UI v81 (owner 08/11/2026): every screen in frontend/e2e/screens.ts at five sizes, with
+    # the server answers replayed from frontend/e2e/fixtures. Fails on horizontal overflow, a
+    # target under 44 x 44 px, contrast under 4.5:1, cut-off text, a role badge inside a button,
+    # a card alone in a grid row and two stacked tables.
+    name: Screen checks at five sizes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install locked frontend dependencies
+        run: make frontend-install
+
+      - name: Install the check's browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Build frontend
+        run: make frontend-build
+
+      - name: Open every screen at five sizes
+        env:
+          CI: "true"
+        run: make frontend-screens
+
+      - name: Stop the other jobs after a failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+
   dependency-security:
     name: Dependency security
     runs-on: ubuntu-latest

@@ -235,7 +235,9 @@ describe("Totals by Parking and month", () => {
 
     // Pick dates starts from the days on screen, so nothing is read again yet.
     const asked = page.totals.mock.calls.length;
-    fireEvent.click(within(period).getByRole("button", { name: "Pick dates" }));
+    fireEvent.click(
+      within(period).getByRole("button", { name: "Custom range" }),
+    );
     expect(screen.getByLabelText("From")).toHaveValue("01/09/2026");
     expect(screen.getByLabelText("To")).toHaveValue("30/09/2026");
     expect(page.totals.mock.calls.length).toBe(asked);
@@ -257,7 +259,9 @@ describe("Totals by Parking and month", () => {
     expect(screen.getByText("Totals count whole months.")).toBeTruthy();
     expect(screen.getByLabelText("From")).toHaveValue("05/09/2026");
     // Pick dates pressed again keeps the days typed, not the whole months.
-    fireEvent.click(within(period).getByRole("button", { name: "Pick dates" }));
+    fireEvent.click(
+      within(period).getByRole("button", { name: "Custom range" }),
+    );
     expect(screen.getByLabelText("From")).toHaveValue("05/09/2026");
     expect(screen.getByLabelText("To")).toHaveValue("20/10/2026");
 
@@ -360,9 +364,8 @@ describe("Totals by Parking and month", () => {
         "Amounts in USD. Riel payments are shown with their riel amount and rate; never added to USD.",
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "All reports" })).toHaveAttribute(
-      "href",
-      "#/reports",
-    );
+    expect(
+      screen.getByRole("button", { name: "Back to Reports" }),
+    ).toBeInTheDocument();
   });
 });

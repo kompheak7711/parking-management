@@ -874,7 +874,7 @@ describe("Move-out", () => {
         "Tenant U105",
         "10/10/2026End Date was 24/10/2026",
         "12/10/2026",
-        "Handed backRecord final readings",
+        "Unit handed overRecord final readings",
         "$500.00",
       ],
       [
@@ -910,7 +910,7 @@ describe("Move-out", () => {
         "$500.00",
       ],
     ]);
-    fireEvent.click(screen.getByRole("button", { name: /Handed back/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Unit handed over/ }));
     expect(rows().map((row) => row[0])).toEqual(["U105", "U106"]);
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(rows()).toHaveLength(5);
@@ -2516,11 +2516,11 @@ describe("Move-out", () => {
     });
     expect(settlementApi.settlements).toHaveBeenCalledWith("property-1");
     expect(settlementApi.startSettlement).not.toHaveBeenCalled();
-    expect(rows()[0]?.[4]).toBe("Waiting for a ManagerA Manager confirms it");
-    expect(rows()[2]?.[4]).toBe("ClosedNothing left to do");
-    fireEvent.click(
-      screen.getByRole("button", { name: /Waiting for a Manager/ }),
+    expect(rows()[0]?.[4]).toBe(
+      "Pending Manager approvalA Manager confirms it",
     );
+    expect(rows()[2]?.[4]).toBe("ClosedNothing left to do");
+    fireEvent.click(screen.getByRole("button", { name: /Pending Manager/ }));
     expect(rows().map((row) => row[0])).toEqual(["U106"]);
     fireEvent.click(screen.getByRole("button", { name: /^Closed/ }));
     expect(rows().map((row) => row[0])).toEqual(["U107"]);
@@ -2536,7 +2536,7 @@ describe("Move-out", () => {
     });
     expect(
       await screen.findByText(
-        "The Final Settlements could not be read, so Waiting for a Manager and Closed are not shown.",
+        "The Final Settlements could not be loaded, so Pending Manager approval and Closed are not shown.",
       ),
     ).toBeTruthy();
     cleanup();
@@ -2747,9 +2747,7 @@ describe("Move-out", () => {
     ).toBeTruthy();
     expect(screen.getByText("A draft waits for a Manager.")).toBeTruthy();
     expect(
-      screen
-        .getByRole("link", { name: "Open Waiting for approval" })
-        .getAttribute("href"),
+      screen.getByRole("link", { name: "Open Approvals" }).getAttribute("href"),
     ).toBe("#/approvals");
     cleanup();
 
@@ -2799,7 +2797,7 @@ describe("Move-out", () => {
     });
     expect(
       await screen.findByText(
-        "The statement could not be read. Read the page again.",
+        "The statement could not be loaded. Read the page again.",
       ),
     ).toBeTruthy();
   });
@@ -2906,7 +2904,7 @@ describe("Move-out", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
     expect(
       await screen.findByText(
-        "Draft Final Settlement saved. A Manager confirms it in Waiting for approval.",
+        "Draft Final Settlement saved. A Manager confirms it in Approvals.",
       ),
     ).toBeTruthy();
     const [property, settlementId, form, key] =
@@ -3218,7 +3216,7 @@ describe("Move-out", () => {
     );
     const unread = await screen.findByRole("dialog");
     expect(
-      await within(unread).findByText(/refund methods could not be read/),
+      await within(unread).findByText(/refund methods could not be loaded/),
     ).toBeTruthy();
     fireEvent.click(within(unread).getByRole("button", { name: "Save draft" }));
     expect(failed.settlementApi.settlementDraft).not.toHaveBeenCalled();
@@ -3356,7 +3354,7 @@ describe("Move-out", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
     expect(
       await screen.findByText(
-        "Draft saved: keep the Security Deposit. The Owner or a Manager approves it in Waiting for approval.",
+        "Draft saved: keep the Security Deposit. The Owner or a Manager approves it in Approvals.",
       ),
     ).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -3382,11 +3380,11 @@ describe("Move-out", () => {
         .getAllByRole("listitem")
         .map((item) => item.textContent),
     ).toEqual([
-      "The Owner or a Manager approves the kept Deposit in Waiting for approval.",
+      "The Owner or a Manager approves the kept Deposit in Approvals.",
     ]);
     expect(
       within(blocked)
-        .getByRole("link", { name: "Open Waiting for approval" })
+        .getByRole("link", { name: "Open Approvals" })
         .getAttribute("href"),
     ).toBe("#/approvals");
     expect(
@@ -3628,7 +3626,7 @@ describe("Move-out step 6: after closure", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
     expect(
       await screen.findByText(
-        "Saved as a draft. A Manager confirms it in Waiting for approval.",
+        "Saved as a draft. A Manager confirms it in Approvals.",
       ),
     ).toBeTruthy();
     expect(settlementApi.extraCharge.mock.calls[0]?.slice(0, 3)).toEqual([
@@ -3759,7 +3757,7 @@ describe("Move-out step 6: after closure", () => {
     expect(
       within(step)
         .getByRole("link", {
-          name: "Corrections waiting: Waiting for approval",
+          name: "Corrections pending: see Approvals",
         })
         .getAttribute("href"),
     ).toBe("#/approvals");

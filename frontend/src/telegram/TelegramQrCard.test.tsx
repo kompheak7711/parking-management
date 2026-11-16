@@ -125,7 +125,7 @@ describe("Telegram QR (DL-214)", () => {
     for (const [status, words] of [
       [409, "The Telegram bot is not ready yet."],
       [422, "This person is not on a live Lease or stay now."],
-      [403, "You do not have the right to do this."],
+      [403, "You do not have permission to do this."],
     ] as const) {
       const refused = fakeApi({
         make: vi.fn(() => Promise.reject(new TelegramError(status))),

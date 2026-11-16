@@ -3,9 +3,10 @@
 // the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
-  hi_title: ["History", "ប្រវត្តិ"],
+  hi_title: ["Audit log", "ប្រវត្តិ"],
   hi_sub: [
     "Who did what and when, across the whole Property. Nothing here can be edited or deleted.",
     "អ្នកណាធ្វើអ្វី ពេលណា ទូទាំងអចលនទ្រព្យ។ គ្មានអ្វីនៅទីនេះកែ ឬលុបបានទេ។",
@@ -28,23 +29,30 @@ const TEXT = {
   hi_n1: ["1 event", "1 ព្រឹត្តិការណ៍"],
   hi_n: ["{0} events", "{0} ព្រឹត្តិការណ៍"],
   hi_none: ["No events match.", "គ្មានព្រឹត្តិការណ៍ត្រូវគ្នាទេ។"],
-  hi_export: ["Export audit", "នាំចេញសវនកម្ម"],
+  hi_export: ["Export", "នាំចេញ"], // new
+  ex_title: ["Export the audit log", "នាំចេញកំណត់ហេតុសវនកម្ម"], // new
+  ex_as: ["File type", "ប្រភេទឯកសារ"], // new
+  ex_same: [
+    "The file uses the same days, person and Unit as the list.",
+    "ឯកសារប្រើថ្ងៃ មនុស្ស និងបន្ទប់ ដូចបញ្ជីដែរ។",
+  ], // new
+  ex_close: ["Close", "បិទ"], // new
   hi_note: [
-    "Each search here is itself written to History. Record pages show the same events for one record.",
+    "Each search here is itself recorded in the audit log. Record pages show the same events for one record.",
     "ការស្វែងរកនីមួយៗនៅទីនេះ ក៏សរសេរក្នុងប្រវត្តិដែរ។ ទំព័រកំណត់ត្រាបង្ហាញព្រឹត្តិការណ៍ដូចគ្នា សម្រាប់កំណត់ត្រាមួយ។",
   ],
   // new
   more: ["Show more", "បង្ហាញបន្ថែម"],
   // new
-  loading: ["Reading History…", "កំពុងអានប្រវត្តិ…"],
+  loading: ["Loading the audit log…", "កំពុងអានប្រវត្តិ…"],
   // new
   failed: [
-    "History could not be read just now. Check the connection and try again.",
+    "The audit log could not be loaded. Check the connection and try again.",
     "មិនអាចអានប្រវត្តិបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
   not_allowed: [
-    "Your account cannot see History. Use the menu to open your work.",
+    "Your account cannot see the audit log. Use the menu to open your work.",
     "គណនីរបស់អ្នកមិនអាចមើលប្រវត្តិបានទេ។ សូមប្រើម៉ឺនុយ ដើម្បីបើកការងាររបស់អ្នក។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -55,14 +63,14 @@ const TEXT = {
   // new
   reason: ["Reason: {0}", "មូលហេតុ៖ {0}"],
   // new
-  refused: ["Refused", "បានបដិសេធ"],
+  refused: ["Rejected", "បានបដិសេធ"],
   // new
   ex_xlsx: ["Spreadsheet (.xlsx)", "សៀវភៅបញ្ជី (.xlsx)"],
   // new
   ex_pdf: ["PDF", "PDF"],
   // new
   ex_saved: [
-    "{0} is ready. Its fingerprint is written to History.",
+    "{0} is ready. Its fingerprint is recorded in the audit log.",
     "{0} រួចរាល់។ ស្នាមម្រាមដៃរបស់វាត្រូវបានសរសេរក្នុងប្រវត្តិ។",
   ],
   // new
@@ -82,8 +90,8 @@ const TEXT = {
   k_reservation: ["Reservation", "ការកក់"],
   k_lease: ["Lease", "កិច្ចសន្យា"],
   k_customer: ["Customer", "អតិថិជន"],
-  k_unit: ["Parking", "ចំណត"],
-  k_moveout: ["Move-out", "ការចាកចេញ"],
+  k_unit: ["Unit", "បន្ទប់"],
+  k_moveout: ["Move-outs", "ការចាកចេញ"],
   k_settle: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
   k_deposit: ["Deposit", "ប្រាក់កក់"],
   k_credit: ["Credit", "ឥណទាន"],
@@ -104,10 +112,12 @@ export function hit(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "km" ? 1 : 0];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 export type HistoryKind =

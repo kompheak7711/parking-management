@@ -1,0 +1,142 @@
+/* Viewing requests (owner 14/11/2026 01:43). */
+
+/* This month: number cards in rows, the number at the right of each card. */
+.vr-month {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.vr-month li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.vr-month b {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 760px) {
+  .vr-month {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vr-month li {
+    padding: 10px 12px;
+  }
+}
+
+/* On a laptop the six columns fit the card: long words wrap instead of hiding Staff. */
+table.ui-table.vr-list td {
+  white-space: normal;
+}
+
+table.ui-table.vr-list td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.vr-note {
+  font-style: italic;
+}
+
+/* On a phone each request is a card: number and status, customer and wait, wants and staff. */
+@media (max-width: 760px) {
+  table.ui-table.vr-list,
+  table.ui-table.vr-list tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  table.ui-table.vr-list thead,
+  table.ui-table.vr-list thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+
+  table.ui-table.vr-list tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.ui-table.vr-list tr:last-child {
+    border-bottom: 0;
+  }
+
+  table.ui-table.vr-list td {
+    display: block;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  table.ui-table.vr-list td:empty {
+    display: none;
+  }
+
+  table.ui-table.vr-list td:nth-child(1) {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  table.ui-table.vr-list td:nth-child(5) {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  table.ui-table.vr-list td:nth-child(3) {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  table.ui-table.vr-list td:nth-child(2) {
+    grid-row: 2;
+    grid-column: 2;
+    text-align: right;
+  }
+
+  table.ui-table.vr-list td:nth-child(4) {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
+  table.ui-table.vr-list td:nth-child(6) {
+    grid-row: 3;
+    grid-column: 2;
+    text-align: right;
+  }
+}
+
+/* Why requests closed and Where requests came from: name and count on one line. */
+.vr-counts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vr-counts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}

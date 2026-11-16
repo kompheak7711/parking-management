@@ -1,6 +1,7 @@
-// V1-060 B6 (DL-107, owner 28/10/2026): every button looks like a button, never like a text box.
-// A text box is Paper with a grey edge; a button has a light green fill, green words and a green
-// edge, in light and dark, and its words stay readable (WCAG 2.2 AA).
+// V1-060 B6 (DL-107, owner 28/10/2026): every button looks like a button, never like a text box,
+// and its words stay readable (WCAG 2.2 AA). UI v81 round 3 (owner 07/11/2026): a plain button is
+// an outline button as in design v81 (Paper, a dark edge, bold centred words); a text box has a
+// light grey edge and normal words. Only the one main action of an area is a filled button.
 
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -54,12 +55,12 @@ describe("Buttons", () => {
       colours(rule(shell, "\n:root")),
       colours(rule(shell, ':root:not([data-theme="light"])')),
     ]) {
-      // A button's fill and edge are never a text box's.
-      expect(colour("--btn-bg")).not.toBe(colour("--input"));
-      expect(colour("--btn-bg")).not.toBe(colour("--surface"));
-      expect(colour("--btn-edge")).not.toBe(colour("--border-strong"));
+      // A button's edge is darker than a text box's light grey edge, and a button is never a
+      // flat Paper box: its hover shade differs from its fill.
+      expect(colour("--btn-edge")).not.toBe(colour("--border"));
+      expect(colour("--btn-hover")).not.toBe(colour("--btn-bg"));
       // The words on a button, also under the pointer (4.5:1), and its edge on cards and on the
-      // page (3:1); the chosen part of a switch is green with Paper words.
+      // page (3:1); the one filled button of an area has Paper words on green.
       expect(
         contrast(colour("--btn-text"), colour("--btn-bg")),
       ).toBeGreaterThanOrEqual(4.5);
@@ -90,6 +91,9 @@ describe("Buttons", () => {
       expect(block).toContain("border: 1px solid var(--btn-edge);");
     }
     expect(rule(screens, "\n.ui-btn")).toContain("color: var(--btn-text);");
+    // Bold centred words tell a button from a text box (design v81).
+    expect(rule(screens, "\n.ui-btn")).toContain("font-weight: 600;");
+    expect(rule(screens, "\n.ui-btn")).toContain("justify-content: center;");
     // A button that opens a page keeps the button's words, not a page link's green.
     expect(
       rule(
@@ -97,8 +101,13 @@ describe("Buttons", () => {
         "\n.shell-view a.ui-btn:not(.primary, .link, .danger, .ui-locked),\n.shell-view a.ui-iconbtn",
       ),
     ).toContain("color: var(--btn-text);");
+    // The chosen part of a switch is the selected-card look (UI v81 round 3), not a second
+    // filled button in the area.
     expect(rule(screens, '\n.ui-seg button[aria-pressed="true"]')).toContain(
-      "background: var(--primary);",
+      "background: var(--selected);",
+    );
+    expect(rule(screens, '\n.ui-seg button[aria-pressed="true"]')).toContain(
+      "box-shadow: inset 0 -3px 0 var(--primary);",
     );
   });
   it("TEST-FE-1086 every drop-down keeps its drawn arrow: a rule that also styles a select sets only its background colour, and the arrow has room (V1-060 B7)", () => {

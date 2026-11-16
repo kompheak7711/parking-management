@@ -170,7 +170,7 @@ describe("Opening balances", () => {
     expect(screen.getByLabelText(/^First year/)).toHaveValue("2027");
     expect(
       screen.getByText(
-        "The books start on 01/01/2027. Opening balances are as at 31/12/2026.",
+        "The books start on 1 January 2027. Opening balances are as at 31 December 2026.",
       ),
     ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^First year/), {
@@ -205,7 +205,7 @@ describe("Opening balances", () => {
     expect(screen.getByText("Customer debt · Invoices")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Off by $800.00. Put the difference on an equity account such as 3000 Owner's capital.",
+        "Debits and credits differ by $800.00. Put the difference on an equity account such as 3000 Owner's capital.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -311,7 +311,7 @@ describe("Opening balances", () => {
     show(fakeApi({ ...DRAFT, typed: [], worked_out: [] }));
     expect(
       await screen.findByText(
-        "Type the opening balances first. Post opens when Debit and Credit are equal.",
+        "Enter the opening balances first. You can post when total debits equal total credits.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -323,7 +323,7 @@ describe("Opening balances", () => {
     show(fakeApi({ ...BALANCED, needs_check: 3 }));
     expect(
       await screen.findByText(
-        /3 records wait in Needs check\. Clear that list before you post\./,
+        /3 records are in Unposted records\. Clear that list before you post\./,
       ),
     ).toBeInTheDocument();
     expect(

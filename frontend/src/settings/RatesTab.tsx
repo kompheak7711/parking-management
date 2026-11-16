@@ -28,7 +28,7 @@ import { DateInput, isDay } from "../shell/DateInput";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { Chip, Dialog } from "../shell/ui";
+import { Chip, Dialog, SubTabs, useSubTab } from "../shell/ui";
 import type { Language } from "../signInText";
 import { Problem } from "./BusinessTab";
 import { CleaningRatesCard } from "./CleaningRates";
@@ -170,6 +170,11 @@ export function utilityRows(
   );
 }
 
+/** UI v81 round 4: the sub-tabs of Utility rates and of Monthly services; no part shows all. */
+type RatesSubTab = "utility" | "cleaning" | "services" | "types";
+const UTILITY_SUBTABS: readonly RatesSubTab[] = ["utility", "cleaning"];
+const SERVICE_SUBTABS: readonly RatesSubTab[] = ["services", "types"];
+
 export function RatesTab({
   language,
   propertyId,
@@ -178,7 +183,10 @@ export function RatesTab({
   services: servicesApi = serviceSettingsApi,
   cleaning = cleaningSettingsApi,
   today: fixedToday,
+  part,
 }: {
+  /** UI v81: the Settings sub-tab shown; left out, both show. */
+  part?: "utility" | "services";
   language: Language;
   propertyId: string;
   active: boolean;
@@ -191,6 +199,11 @@ export function RatesTab({
   today?: string;
 }) {
   const today = fixedToday ?? todayInPhnomPenh();
+  // UI v81 round 4 (owner 08/11/2026): one sub-tab per table, kept in the address ("?tab=").
+  const [sub, setSub] = useSubTab<RatesSubTab>(
+    part === "services" ? SERVICE_SUBTABS : UTILITY_SUBTABS,
+    part === "services" ? "services" : "utility",
+  );
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   // "failed": the rates still show, but Services cannot be added or changed.
   const [settings, setSettings] = useState<ServiceSettings | "failed" | null>(
@@ -436,6 +449,48 @@ export function RatesTab({
   const typeOf = new Map(
     (ready?.service_types ?? []).map((item) => [item.service_type_id, item]),
   );
+  const showUtility =
+    part !== "services" && (part === undefined || sub === "utility");
+  const showCleaning =
+    part !== "services" && (part === undefined || sub === "cleaning");
+  const showServices =
+    part !== "utility" && (part === undefined || sub === "services");
+  const showTypes =
+    part !== "utility" && (part === undefined || sub === "types");
+  const subTabs =
+    part === undefined ? null : (
+      <SubTabs
+        current={sub}
+        idPrefix={part === "services" ? "services" : "rates"}
+        label={sst(language, part === "services" ? "sv_tabs" : "rt_tabs")}
+        onChange={(id) => {
+          setSub(id as RatesSubTab);
+        }}
+        tabs={
+          part === "services"
+            ? [
+                {
+                  id: "services",
+                  label: sst(language, "se_svc"),
+                  count: services.length,
+                },
+                {
+                  id: "types",
+                  label: sst(language, "st_title"),
+                  count: ready?.service_types.length,
+                },
+              ]
+            : [
+                {
+                  id: "utility",
+                  label: sst(language, "se_util"),
+                  count: utilityRates.length,
+                },
+                { id: "cleaning", label: sst(language, "cl_title") },
+              ]
+        }
+      />
+    );
   const history = [...serviceRates].sort(
     (a, b) =>
       serviceName(a.property_service_id).localeCompare(
@@ -453,296 +508,356 @@ export function RatesTab({
           </div>
         )}
       </div>
-      <div className="ui-stack">
-        <section aria-labelledby="rates-utility" className="ui-card pad0">
-          <header className="ui-chead pad">
-            <h2 id="rates-utility">{sst(language, "se_util")}</h2>
-            {capabilities.manage_utility_rates && (
-              <button
-                className="ui-btn"
-                onClick={() => {
-                  start({ kind: "utility" });
-                }}
-                type="button"
-              >
-                <Icon name="plus" small />
-                {sst(language, "se_util_add")}
-              </button>
-            )}
-          </header>
-          {utilityRates.length === 0 ? (
-            <p className="pad ui-muted">{sst(language, "util_none")}</p>
-          ) : (
-            <div className="ui-tablewrap">
-              <table className="ui-table">
-                <thead>
-                  <tr>
-                    <th scope="col">{sst(language, "ro_kind")}</th>
-                    <th className="r" scope="col">
-                      {sst(language, "ro_rate")}
-                    </th>
-                    <th scope="col">{sst(language, "ro_since")}</th>
-                    <th scope="col">{sst(language, "ro_until")}</th>
-                    <th scope="col">{sst(language, "ro_told")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {utilityRows(utilityRates).map(({ rate, until }) => (
-                    <tr key={rate.id}>
-                      <td>{sst(language, KIND_TEXT[rate.utility_type])}</td>
-                      <td className="r ui-num">
-                        {ratePerUnit(rate.rate_usd_per_unit)} /{" "}
-                        {KIND_UNIT[rate.utility_type]}
-                      </td>
-                      <td className="ui-num">{dayText(rate.effective_date)}</td>
-                      <td>
-                        {rate.effective_date > today ? (
-                          <Chip icon="clock" tone="info">
-                            {sst(language, "se_sched")}
-                          </Chip>
-                        ) : until === null ? (
-                          <Chip icon="check" tone="ok">
-                            {sst(language, "se_active")}
-                          </Chip>
-                        ) : (
-                          <span className="ui-num">{dayText(until)}</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className="ui-num">
-                          {dayText(rate.notice_at.slice(0, 10))}
-                        </span>
-                        <span className="ui-sub2">{rate.notice_evidence}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <div className="ui-tfoot">
-            <span>{sst(language, "se_util_n")}</span>
-          </div>
-        </section>
-
-        <section aria-labelledby="rates-services" className="ui-card pad0">
-          <header className="ui-chead pad">
-            <h2 id="rates-services">{sst(language, "se_svc")}</h2>
-            {manageServices && (
-              <button
-                className="ui-btn"
-                onClick={() => {
-                  start({ kind: "add_service" });
-                }}
-                type="button"
-              >
-                <Icon name="plus" small />
-                {sst(language, "sv_add")}
-              </button>
-            )}
-          </header>
-          {settings === "failed" && (
-            <div className="ui-notice warn pad" role="status">
-              <Icon name="alert" />
-              <p>{sst(language, "sv_read_failed")}</p>
-            </div>
-          )}
-          {services.length === 0 ? (
-            <p className="pad ui-muted">{sst(language, "sv_none")}</p>
-          ) : (
-            <div className="ui-tablewrap">
-              <table className="ui-table">
-                <thead>
-                  <tr>
-                    <th scope="col">{sst(language, "se_svc_name")}</th>
-                    {ready !== null && (
-                      <th scope="col">{sst(language, "sv_type")}</th>
-                    )}
-                    <th className="r" scope="col">
-                      {sst(language, "sv_rate_now")}
-                    </th>
-                    <th scope="col">{sst(language, "sv_next")}</th>
-                    {ready !== null && (
-                      <th className="r" scope="col">
-                        {sst(language, "sv_leases")}
-                      </th>
-                    )}
-                    {(capabilities.manage_service_rates || manageServices) && (
-                      <th scope="col">
-                        <span className="ui-sr">
-                          {sst(language, "actions")}
-                        </span>
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {services.map((service) => {
-                    const { now, next } = serviceNow(
-                      serviceRates,
-                      service.id,
-                      today,
-                    );
-                    const setting = settingOf.get(service.id);
-                    const type =
-                      setting?.service_type_id == null
-                        ? undefined
-                        : typeOf.get(setting.service_type_id);
-                    const name =
-                      setting === undefined
-                        ? service.display_name
-                        : nameOf(language, setting);
-                    return (
-                      <tr key={service.id}>
-                        <td>
-                          <b>{name}</b>
-                          {setting?.name_km != null && language !== "km" && (
-                            <span className="ui-sub2" lang="km">
-                              {setting.name_km}
-                            </span>
-                          )}
-                        </td>
-                        {ready !== null && (
-                          <td>
-                            {type === undefined
-                              ? sst(language, "sv_no_type")
-                              : nameOf(language, type)}
-                          </td>
-                        )}
-                        <td className="r ui-num">
-                          {now !== null ? (
-                            usdFromCents(now.monthly_rate_usd_cents)
-                          ) : next !== null ? (
-                            <Chip icon="clock" tone="info">
-                              {sst(
-                                language,
-                                "se_svc_not_yet",
-                                dayText(next.effective_date),
-                              )}
-                            </Chip>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td className="ui-num">
-                          {next === null
-                            ? "—"
-                            : `${usdFromCents(next.monthly_rate_usd_cents)} · ${dayText(next.effective_date)}`}
-                        </td>
-                        {ready !== null && (
+      {subTabs}
+      <div
+        aria-labelledby={
+          part === undefined
+            ? undefined
+            : `${part === "services" ? "services" : "rates"}-${sub}`
+        }
+        className="ui-stack"
+        id={
+          part === undefined
+            ? undefined
+            : `${part === "services" ? "services" : "rates"}-panel-${sub}`
+        }
+        role={part === undefined ? undefined : "tabpanel"}
+      >
+        {showUtility && (
+          <>
+            <section aria-labelledby="rates-utility" className="ui-card pad0">
+              <header className="ui-chead pad">
+                <h2 id="rates-utility">{sst(language, "se_util")}</h2>
+                {capabilities.manage_utility_rates && (
+                  <button
+                    className="ui-btn"
+                    onClick={() => {
+                      start({ kind: "utility" });
+                    }}
+                    type="button"
+                  >
+                    <Icon name="plus" small />
+                    {sst(language, "se_util_add")}
+                  </button>
+                )}
+              </header>
+              {utilityRates.length === 0 ? (
+                <p className="pad ui-muted">{sst(language, "util_none")}</p>
+              ) : (
+                <div className="ui-tablewrap">
+                  <table className="ui-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">{sst(language, "ro_kind")}</th>
+                        <th className="r" scope="col">
+                          {sst(language, "ro_rate")}
+                        </th>
+                        <th scope="col">{sst(language, "ro_since")}</th>
+                        <th scope="col">{sst(language, "ro_until")}</th>
+                        <th scope="col">{sst(language, "ro_told")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {utilityRows(utilityRates).map(({ rate, until }) => (
+                        <tr key={rate.id}>
+                          <td>{sst(language, KIND_TEXT[rate.utility_type])}</td>
                           <td className="r ui-num">
-                            {setting?.leases_using ?? "—"}
+                            {ratePerUnit(rate.rate_usd_per_unit)} /{" "}
+                            {KIND_UNIT[rate.utility_type]}
                           </td>
+                          <td className="ui-num">
+                            {dayText(rate.effective_date)}
+                          </td>
+                          <td>
+                            {rate.effective_date > today ? (
+                              <Chip icon="clock" tone="info">
+                                {sst(language, "se_sched")}
+                              </Chip>
+                            ) : until === null ? (
+                              <Chip icon="check" tone="ok">
+                                {sst(language, "se_active")}
+                              </Chip>
+                            ) : (
+                              <span className="ui-num">{dayText(until)}</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className="ui-num">
+                              {dayText(rate.notice_at.slice(0, 10))}
+                            </span>
+                            <span className="ui-sub2">
+                              {rate.notice_evidence}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="ui-tfoot">
+                <span>{sst(language, "se_util_n")}</span>
+              </div>
+            </section>
+          </>
+        )}
+        {/* UI v81 round 2: the Move-out cleaning rates sit under Utility rates, as in the design;
+            round 4: on their own sub-tab. */}
+        {showCleaning && (
+          <CleaningRatesCard
+            active={active}
+            api={cleaning}
+            language={language}
+            propertyId={propertyId}
+          />
+        )}
+
+        {showServices && (
+          <>
+            <section aria-labelledby="rates-services" className="ui-card pad0">
+              <header className="ui-chead pad">
+                <h2 id="rates-services">{sst(language, "se_svc")}</h2>
+                {manageServices && (
+                  <button
+                    className="ui-btn"
+                    onClick={() => {
+                      start({ kind: "add_service" });
+                    }}
+                    type="button"
+                  >
+                    <Icon name="plus" small />
+                    {sst(language, "sv_add")}
+                  </button>
+                )}
+              </header>
+              {settings === "failed" && (
+                <div className="ui-notice warn pad" role="status">
+                  <Icon name="alert" />
+                  <p>{sst(language, "sv_read_failed")}</p>
+                </div>
+              )}
+              {services.length === 0 ? (
+                <p className="pad ui-muted">{sst(language, "sv_none")}</p>
+              ) : (
+                <div className="ui-tablewrap">
+                  <table className="ui-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">{sst(language, "se_svc_name")}</th>
+                        {ready !== null && (
+                          <th scope="col">{sst(language, "sv_type")}</th>
+                        )}
+                        <th className="r" scope="col">
+                          {sst(language, "sv_rate_now")}
+                        </th>
+                        <th scope="col">{sst(language, "sv_next")}</th>
+                        {ready !== null && (
+                          <th className="r" scope="col">
+                            {sst(language, "sv_leases")}
+                          </th>
                         )}
                         {(capabilities.manage_service_rates ||
                           manageServices) && (
-                          <td>
-                            <span className="ui-actions">
-                              {manageServices && setting !== undefined && (
-                                <button
-                                  aria-label={`${sst(language, "cf_edit")}: ${name}`}
-                                  className="ui-btn link"
-                                  onClick={() => {
-                                    start({ kind: "edit_service", setting });
-                                  }}
-                                  type="button"
-                                >
-                                  {sst(language, "cf_edit")}
-                                </button>
-                              )}
-                              {capabilities.manage_service_rates && (
-                                <button
-                                  aria-label={`${sst(language, "sv_new")}: ${name}`}
-                                  className="ui-btn link"
-                                  onClick={() => {
-                                    start({ kind: "service", service });
-                                  }}
-                                  type="button"
-                                >
-                                  {sst(language, "sv_new")}
-                                </button>
-                              )}
+                          <th scope="col">
+                            <span className="ui-sr">
+                              {sst(language, "actions")}
                             </span>
-                          </td>
+                          </th>
                         )}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {history.length > 0 && (
-            <details className="ui-hist">
-              <summary>{sst(language, "sv_hist")}</summary>
-              <div className="ui-tablewrap">
-                <table className="ui-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">{sst(language, "se_svc_name")}</th>
-                      <th className="r" scope="col">
-                        {sst(language, "se_svc_rate_h")}
-                      </th>
-                      <th scope="col">{sst(language, "ro_since")}</th>
-                      <th scope="col">{sst(language, "note_l")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((rate) => (
-                      <tr key={rate.id}>
-                        <td>
-                          {serviceName(rate.property_service_id) ||
-                            rate.display_name}
-                        </td>
-                        <td className="r ui-num">
-                          {usdFromCents(rate.monthly_rate_usd_cents)}
-                        </td>
-                        <td className="ui-num">
-                          {dayText(rate.effective_date)}
-                        </td>
-                        <td>{rate.source_memo ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {services.map((service) => {
+                        const { now, next } = serviceNow(
+                          serviceRates,
+                          service.id,
+                          today,
+                        );
+                        const setting = settingOf.get(service.id);
+                        const type =
+                          setting?.service_type_id == null
+                            ? undefined
+                            : typeOf.get(setting.service_type_id);
+                        const name =
+                          setting === undefined
+                            ? service.display_name
+                            : nameOf(language, setting);
+                        return (
+                          <tr key={service.id}>
+                            <td>
+                              <b>{name}</b>
+                              {setting?.name_km != null &&
+                                language !== "km" && (
+                                  <span className="ui-sub2" lang="km">
+                                    {setting.name_km}
+                                  </span>
+                                )}
+                            </td>
+                            {ready !== null && (
+                              <td>
+                                {type === undefined
+                                  ? sst(language, "sv_no_type")
+                                  : nameOf(language, type)}
+                              </td>
+                            )}
+                            <td className="r ui-num">
+                              {now !== null ? (
+                                usdFromCents(now.monthly_rate_usd_cents)
+                              ) : next !== null ? (
+                                <Chip icon="clock" tone="info">
+                                  {sst(
+                                    language,
+                                    "se_svc_not_yet",
+                                    dayText(next.effective_date),
+                                  )}
+                                </Chip>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="ui-num">
+                              {next === null
+                                ? "—"
+                                : `${usdFromCents(next.monthly_rate_usd_cents)} · ${dayText(next.effective_date)}`}
+                            </td>
+                            {ready !== null && (
+                              <td className="r ui-num">
+                                {setting?.leases_using ?? "—"}
+                              </td>
+                            )}
+                            {(capabilities.manage_service_rates ||
+                              manageServices) && (
+                              <td>
+                                <span className="ui-actions">
+                                  {manageServices && setting !== undefined && (
+                                    <button
+                                      aria-label={`${sst(language, "cf_edit")}: ${name}`}
+                                      className="ui-btn link"
+                                      onClick={() => {
+                                        start({
+                                          kind: "edit_service",
+                                          setting,
+                                        });
+                                      }}
+                                      type="button"
+                                    >
+                                      {sst(language, "cf_edit")}
+                                    </button>
+                                  )}
+                                  {capabilities.manage_service_rates && (
+                                    <button
+                                      aria-label={`${sst(language, "sv_new")}: ${name}`}
+                                      className="ui-btn link"
+                                      onClick={() => {
+                                        start({ kind: "service", service });
+                                      }}
+                                      type="button"
+                                    >
+                                      {sst(language, "sv_new")}
+                                    </button>
+                                  )}
+                                </span>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {history.length > 0 && (
+                <details
+                  className="ui-hist"
+                  onToggle={(event) => {
+                    // Owner 12/11/2026: the opened history comes into view, so a click on it
+                    // near the bottom of the screen shows its rows at once.
+                    const opened = event.currentTarget;
+                    if (
+                      opened.open &&
+                      typeof opened.scrollIntoView === "function"
+                    )
+                      opened.scrollIntoView({ block: "nearest" });
+                  }}
+                >
+                  <summary>{sst(language, "sv_hist")}</summary>
+                  <div className="ui-tablewrap">
+                    <table className="ui-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">{sst(language, "se_svc_name")}</th>
+                          <th className="r" scope="col">
+                            {sst(language, "se_svc_rate_h")}
+                          </th>
+                          <th scope="col">{sst(language, "ro_since")}</th>
+                          <th scope="col">{sst(language, "note_l")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {history.map((rate) => (
+                          <tr key={rate.id}>
+                            <td>
+                              {serviceName(rate.property_service_id) ||
+                                rate.display_name}
+                            </td>
+                            <td className="r ui-num">
+                              {usdFromCents(rate.monthly_rate_usd_cents)}
+                            </td>
+                            <td className="ui-num">
+                              {dayText(rate.effective_date)}
+                            </td>
+                            <td>{rate.source_memo ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              )}
+              <div className="ui-tfoot">
+                <span>{sst(language, "se_svc_n")}</span>
               </div>
-            </details>
-          )}
-          <div className="ui-tfoot">
-            <span>{sst(language, "se_svc_n")}</span>
-          </div>
-        </section>
-
-        {ready !== null && (
-          <ServiceTypesCard
-            language={language}
-            manage={manageServices}
-            onAdd={() => {
-              start({ kind: "type", type: null });
-            }}
-            onEdit={(type) => {
-              start({ kind: "type", type });
-            }}
-            onRemove={(type) => {
-              start({ kind: "remove_type", type });
-            }}
-            types={ready.service_types}
-          />
+            </section>
+            {/* V1.1 part 6 (DL-123): the Regular services are Service products now. */}
+            <div className="ui-notice" role="note">
+              <Icon name="info" />
+              <p>
+                {sst(language, "rs_moved")}{" "}
+                <a href={hashForPage("products")}>
+                  {sst(language, "rs_moved_go")}
+                </a>
+              </p>
+            </div>
+          </>
         )}
-        {/* V1.1 part 6 (DL-123): the Regular services are Service products now. */}
-        <div className="ui-notice" role="note">
-          <Icon name="info" />
-          <p>
-            {sst(language, "rs_moved")}{" "}
-            <a href={hashForPage("products")}>{sst(language, "rs_moved_go")}</a>
-          </p>
-        </div>
-        <CleaningRatesCard
-          active={active}
-          api={cleaning}
-          language={language}
-          propertyId={propertyId}
-        />
+        {showTypes && (
+          <>
+            {part === "services" && ready === null && (
+              <p className="ui-muted" role="status">
+                {sst(
+                  language,
+                  settings === "failed" ? "sv_read_failed" : "rates_loading",
+                )}
+              </p>
+            )}
+            {ready !== null && (
+              <ServiceTypesCard
+                language={language}
+                manage={manageServices}
+                onAdd={() => {
+                  start({ kind: "type", type: null });
+                }}
+                onEdit={(type) => {
+                  start({ kind: "type", type });
+                }}
+                onRemove={(type) => {
+                  start({ kind: "remove_type", type });
+                }}
+                types={ready.service_types}
+              />
+            )}
+          </>
+        )}
       </div>
 
       {open?.kind === "utility" && (

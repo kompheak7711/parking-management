@@ -7,7 +7,7 @@ import { useState } from "react";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import { Icon, type ShellIcon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
+import { openPageInAddress, useShowFromAddress } from "../shell/useHashPage";
 import { Chip, CountCard, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitStatus } from "../unitClient";
@@ -20,6 +20,7 @@ import {
   reservationFor,
   typeName,
 } from "./unitsData";
+import { PageHead } from "../shell/pageHead";
 
 const STATUS_CHIPS: Record<UnitStatus, [Tone, ShellIcon | undefined]> = {
   OCCUPIED: ["ok", "check"],
@@ -71,7 +72,20 @@ export function UnitsList({
   const khmer = language === "km";
   const [floor, setFloor] = useState("all");
   const [type, setType] = useState("all");
-  const [card, setCard] = useState<UnitCard | "all">("all");
+  const [card, setCardState] = useState<UnitCard | "all">("all");
+  // UI v81 round 11: Home's "Vacant Units" card opens "#/units?show=vacant" (every floor and
+  // type, as the card counts them); a card chosen by hand is kept in the address too.
+  const keepShow = useShowFromAddress("units", (show) => {
+    const asked = CARDS.find(([value]) => value === show)?.[0];
+    if (asked === undefined && show !== "all") return;
+    setCardState(asked ?? "all");
+    setFloor("all");
+    setType("all");
+  });
+  const setCard = (next: UnitCard | "all") => {
+    setCardState(next);
+    keepShow(next === "all" ? null : next);
+  };
 
   // Floors in the Settings order, then any floor a Unit uses that is not in the list.
   const floorOrder = (data.lists?.lists.FLOOR ?? []).map(
@@ -107,7 +121,7 @@ export function UnitsList({
 
   return (
     <>
-      <div className="ui-head">
+      <PageHead>
         <p>{ut(language, "sub", data.units.length)}</p>
         {onNewUnit !== null && (
           <div className="ui-actions">
@@ -121,8 +135,10 @@ export function UnitsList({
             </button>
           </div>
         )}
-      </div>
-      <div className="ui-filters">
+      </PageHead>
+      {/* Property fix 6 (owner 14/11/2026): on a phone the floor buttons share the width
+          equally and the type list is full width. */}
+      <div className="ui-filters ui-filters-even">
         <div aria-label={ut(language, "floor")} className="ui-seg" role="group">
           {["all", ...floors].map((value) => (
             <button
@@ -158,13 +174,14 @@ export function UnitsList({
           ))}
         </select>
       </div>
-      <div className="ui-kpis">
+      {/* Property fix 7 (owner 14/11/2026): on an iPad the four cards stay one row of small
+          cards, as on a laptop. */}
+      <div className="ui-kpis ui-kpis-row">
         {CARDS.map(([value, icon, tone]) => (
           <CountCard
             icon={icon}
             key={value}
             label={ut(language, `c_${value}`)}
-            note={ut(language, `c_${value}_s`)}
             onPress={() => {
               setCard(card === value ? "all" : value);
             }}
@@ -200,7 +217,9 @@ export function UnitsList({
         ) : (
           <>
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              {/* Property fix 6: on a phone each Unit is one card line: number, type and
+                  floor, status, and the date it runs until. */}
+              <table className="ui-table ui-pcards ui-unitlist">
                 <thead>
                   <tr>
                     <th scope="col">{ut(language, "col_unit")}</th>
@@ -248,9 +267,13 @@ export function UnitsList({
                             {unit.unit_number}
                           </a>
                         </td>
-                        <td>{floorText(language, unit.floor)}</td>
-                        <td>{typeName(data.lists, unit.unit_type, khmer)}</td>
-                        <td>
+                        <td className="pc-small">
+                          {floorText(language, unit.floor)}
+                        </td>
+                        <td className="pc-small">
+                          {typeName(data.lists, unit.unit_type, khmer)}
+                        </td>
+                        <td className="pc-end">
                           <UnitChip language={language} status={unit.status} />
                           {unit.lease_starts_on != null && (
                             <span className="ui-sub2">
@@ -262,9 +285,14 @@ export function UnitsList({
                             </span>
                           )}
                         </td>
-                        <td className="ui-num">
+                        <td className="ui-num pc-full pc-small pc-later">
                           {lease?.end_date != null ? (
-                            dayText(lease.end_date)
+                            <>
+                              <span className="pc-label">
+                                {ut(language, "until")}{" "}
+                              </span>
+                              {dayText(lease.end_date)}
+                            </>
                           ) : reservation !== null ? (
                             <>
                               {dayText(reservation.effective_expiration_date)}
@@ -314,7 +342,7 @@ export function NotForRentCard({
         </div>
       </div>
       <div className="ui-tablewrap">
-        <table className="ui-table">
+        <table className="ui-table ui-pcards">
           <thead>
             <tr>
               <th scope="col">{ut(language, "col_unit")}</th>
@@ -344,12 +372,14 @@ export function NotForRentCard({
                     {unit.unit_number}
                   </a>
                 </td>
-                <td>{floorText(language, unit.floor)}</td>
-                <td>{typeName(data.lists, unit.unit_type, khmer)}</td>
-                <td>
+                <td className="pc-small">{floorText(language, unit.floor)}</td>
+                <td className="pc-small">
+                  {typeName(data.lists, unit.unit_type, khmer)}
+                </td>
+                <td className="pc-end">
                   <Chip tone="neutral">{ut(language, "fr_no")}</Chip>
                 </td>
-                <td className="ui-num">
+                <td className="ui-num pc-full pc-small pc-later">
                   {ut(
                     language,
                     "fr_places",

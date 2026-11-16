@@ -217,4 +217,23 @@ export function initialRent(start: string, rent: number): InitialRent {
   };
 }
 
+/** The last day the Initial Rent covers: the end of the Start Date's month, or of the next
+ *  month when the whole next month is billed with it (design v81 "Period" row). */
+export function initialPeriodEnd(start: string, initial: InitialRent): string {
+  const [year, month] = start.split("-").map(Number) as [number, number];
+  const last = new Date(
+    Date.UTC(year, initial.nextMonth > 0 ? month + 1 : month, 0),
+  );
+  return last.toISOString().slice(0, 10);
+}
+
+/** The Lease's name: its Lease number (U101L0026), or the Unit number for a Lease read before
+ *  the numbers came (owner 08/11/2026). */
+export function leaseNo(lease: {
+  lease_number?: string | null;
+  unit_number: string;
+}): string {
+  return lease.lease_number ?? lease.unit_number;
+}
+
 export { addDays, daysBetween };

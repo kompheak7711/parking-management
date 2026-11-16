@@ -7,9 +7,12 @@
 
 import "../shell/screens.css";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CustomerApi } from "../customerClient";
+import type { CustomerLedgerApi } from "../customerLedgerClient";
+import type { PayerCardReads } from "../payments/PayerCard";
+import type { reportsApi } from "../reportsClient";
 import type { InvoiceApi } from "../invoiceClient";
 import type { LeaseApi } from "../leaseClient";
 import type { PaymentsApi } from "../payments/paymentsClient";
@@ -40,7 +43,11 @@ export interface InvoicesPageProps {
     | "deleteDraft"
   >;
   leaseApi: Pick<LeaseApi, "list">;
-  customerApi: Pick<CustomerApi, "list">;
+  customerApi: Pick<CustomerApi, "list"> & Partial<Pick<CustomerApi, "get">>;
+  /** The shared Customer card beside an Invoice (UI v81 module batch 3). */
+  ledgerApi?: Pick<CustomerLedgerApi, "read">;
+  actorId?: string;
+  reports?: Pick<typeof reportsApi, "customerPaidOnTime">;
   /** The late-payment card on the Invoice page (R5d). */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
   capabilities: ReadonlySet<string> | null;
@@ -58,6 +65,9 @@ export function InvoicesPage({
   lateApi,
   capabilities,
   today: fixedToday,
+  ledgerApi,
+  actorId,
+  reports,
 }: InvoicesPageProps) {
   const detail = useHashDetail("invoices");
   const invoiceId =
@@ -68,6 +78,20 @@ export function InvoicesPage({
   const today = fixedToday ?? todayInPhnomPenh();
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
+  const mayCustomers = may("customers.read");
+  const mayInvoices = may("invoices.read");
+  const payerCard = useMemo<PayerCardReads | undefined>(() => {
+    const get = customerApi.get;
+    if (get === undefined) return undefined;
+    return {
+      customerApi: { get: (id) => get.call(customerApi, id) },
+      ledgerApi,
+      actorId,
+      reports,
+      mayCustomers,
+      mayInvoices,
+    };
+  }, [actorId, customerApi, ledgerApi, mayCustomers, mayInvoices, reports]);
   const [data, setData] = useState<InvoicesData | null>(null);
   // An old "Create Invoice" address opens New Quotation.
   useEffect(() => {
@@ -121,6 +145,7 @@ export function InvoicesPage({
         key={`${invoiceId}:${propertyId}`}
         lateApi={lateApi}
         onChanged={load}
+        payerCard={payerCard}
         propertyId={propertyId}
         language={language}
         today={today}

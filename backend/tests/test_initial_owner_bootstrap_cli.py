@@ -827,6 +827,9 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/payments/summary": {"get"},
         # V1-057: Home, reports, report files and the audit file (DL-072, DL-079).
         "/api/v1/properties/{property_id}/home": {"get"},
+        # UI v81: Home birthdays and a Customer's "Paid on time" (migration 361).
+        "/api/v1/properties/{property_id}/birthdays": {"get"},
+        "/api/v1/properties/{property_id}/customers/{customer_id}/paid-on-time": {"get"},
         "/api/v1/properties/{property_id}/reports/totals/{report}": {"get"},
         "/api/v1/properties/{property_id}/reports/{name}": {"get"},
         "/api/v1/properties/{property_id}/exports": {"post"},
@@ -1142,6 +1145,12 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/short-stays/housekeeping": {"get"},
         "/api/v1/properties/{property_id}/short-stays/site-calendars": {"get", "post"},
         "/api/v1/properties/{property_id}/short-stays/housekeeping/{task_id}": {"post"},
+        # DL-236 and DL-238 (Leasing thread on ui-v81): give a task to a cleaner, and the
+        # short-stay guest notices.
+        "/api/v1/properties/{property_id}/short-stays/housekeeping/{task_id}/assign": {"post"},
+        "/api/v1/properties/{property_id}/short-stays/bookings/{booking_id}/warning": {"post"},
+        "/api/v1/properties/{property_id}/short-stays/notices": {"get"},
+        "/api/v1/properties/{property_id}/short-stays/notices/{notice_id}/told": {"post"},
         "/api/v1/properties/{property_id}/ledger/bank-cash": {"get"},
         "/api/v1/properties/{property_id}/ledger/month-end": {"get"},
         "/api/v1/properties/{property_id}/ledger/asset-register": {"get"},

@@ -109,7 +109,7 @@ export function WeekReport({
   const nextFrom = addDays(from, 7);
   const tools = (
     <div className="ui-filters">
-      <h2 className="ui-num">
+      <h2 className="ui-num" data-record-title="">
         {st(language, "rp_week", dayText(from), dayText(addDays(from, 6)))}
         {report?.so_far === true && (
           <span className="ui-small ui-muted">

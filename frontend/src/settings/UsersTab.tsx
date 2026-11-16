@@ -597,11 +597,14 @@ export function UsersTab({
   staff,
   myUserId,
   reauthenticate,
+  part,
 }: {
   language: Language;
   propertyId: string;
   active: boolean;
   api: UsersApi;
+  /** UI v81: one sub-tab of Users and access; left out, every section shows. */
+  part?: "users" | "roles" | "signin";
   rolesApi: RolesApi;
   /** Without it the list shows no employees. */
   staff?: StaffLookup;
@@ -807,166 +810,176 @@ export function UsersTab({
           </div>
         )}
       </div>
-      <section aria-labelledby="settings-users" className="ui-card pad0">
-        <header className="ui-chead pad">
-          <h2 id="settings-users">{sst(language, "se_users")}</h2>
-          <span className="ui-actions">
-            <button
-              className="ui-btn primary"
-              onClick={() => {
-                start({ kind: "add" });
-              }}
-              type="button"
-            >
-              <Icon name="plus" small />
-              {sst(language, "se_new_user")}
-            </button>
-          </span>
-        </header>
-        <div className="ui-tablewrap">
-          <table className="ui-table">
-            <thead>
-              <tr>
-                <th scope="col">{sst(language, "se_user")}</th>
-                <th scope="col">{sst(language, "se_class")}</th>
-                <th scope="col">{at(language, "ur_roles_col")}</th>
-                <th scope="col">{sst(language, "se_mfa")}</th>
-                <th scope="col">{sst(language, "se_state")}</th>
-                <th scope="col">{sst(language, "ur_col")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const owner = user.account_class === "owner";
-                const helpable =
-                  !owner &&
-                  user.lifecycle_state === "active" &&
-                  user.user_id !== myUserId;
-                return (
-                  <tr key={user.user_id}>
-                    <td>
-                      <b>{user.display_name}</b>
-                      <span className="ui-sub2 ui-num" lang="en">
-                        {user.username}
-                      </span>
-                      <EmployeeLine
-                        employee={employees.get(user.user_id)}
-                        language={language}
-                      />
-                    </td>
-                    <td>{roleText(language, user)}</td>
-                    <td className="wrap">
-                      <span>{userRoleNames(language, user, roles)}</span>
-                      {user.lifecycle_state === "active" && (
-                        <>
-                          {" "}
-                          <button
-                            aria-label={`${at(language, "ur_roles_col")}: ${user.display_name}`}
-                            className="ui-btn link"
-                            onClick={() => {
-                              start({ kind: "roles", user });
-                            }}
-                            type="button"
-                          >
-                            {at(language, "ur_roles_btn")}
-                          </button>
-                        </>
-                      )}
-                    </td>
-                    <td>
-                      {user.mfa_policy_class === "required" ? (
-                        <Chip icon="lock" tone="info">
-                          {sst(language, "mfa_needed")}
-                        </Chip>
-                      ) : (
-                        <span className="ui-muted">
-                          {sst(language, "se_mfa_off")}
+      {(part === undefined || part === "users") && (
+        <section aria-labelledby="settings-users" className="ui-card pad0">
+          <header className="ui-chead pad">
+            <h2 id="settings-users">{sst(language, "se_users")}</h2>
+            <span className="ui-actions">
+              <button
+                className="ui-btn primary"
+                onClick={() => {
+                  start({ kind: "add" });
+                }}
+                type="button"
+              >
+                <Icon name="plus" small />
+                {sst(language, "se_new_user")}
+              </button>
+            </span>
+          </header>
+          <div className="ui-tablewrap">
+            {/* Administration review fix 6: one card per user on a phone. */}
+            <table className="ui-table ui-rowcards">
+              <thead>
+                <tr>
+                  <th scope="col">{sst(language, "se_user")}</th>
+                  <th scope="col">{sst(language, "se_class")}</th>
+                  <th scope="col">{at(language, "ur_roles_col")}</th>
+                  <th scope="col">{sst(language, "se_mfa")}</th>
+                  <th scope="col">{sst(language, "se_state")}</th>
+                  <th scope="col">{sst(language, "ur_col")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => {
+                  const owner = user.account_class === "owner";
+                  const helpable =
+                    !owner &&
+                    user.lifecycle_state === "active" &&
+                    user.user_id !== myUserId;
+                  return (
+                    <tr key={user.user_id}>
+                      <td>
+                        <b>{user.display_name}</b>
+                        <span className="ui-sub2 ui-num" lang="en">
+                          {user.username}
                         </span>
-                      )}
-                    </td>
-                    <td>
-                      {user.lifecycle_state === "active" ? (
-                        <Chip icon="check" tone="ok">
-                          {sst(language, "se_active")}
-                        </Chip>
-                      ) : (
-                        <Chip tone="neutral">
-                          {sst(language, "se_disabled")}
-                        </Chip>
-                      )}
-                    </td>
-                    <td>
-                      {helpable ? (
-                        <span className="ui-actions">
-                          <button
-                            aria-label={`${sst(language, "ur_btn")}: ${user.display_name}`}
-                            className="ui-btn"
-                            onClick={() => {
-                              start({ kind: "reset", user });
-                            }}
-                            type="button"
-                          >
-                            <Icon name="lock" small />
-                            {sst(language, "ur_btn")}
-                          </button>
-                          <button
-                            aria-label={`${sst(language, "dis_btn")}: ${user.display_name}`}
-                            className="ui-btn link"
-                            onClick={() => {
-                              start({ kind: "disable", user });
-                            }}
-                            type="button"
-                          >
-                            {sst(language, "dis_btn")}
-                          </button>
-                        </span>
-                      ) : (
-                        <span className="ui-muted">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="ui-tfoot ui-tfoot-row">
-          <span>{sst(language, "users_note")}</span>
-          {myUserId !== null && others.length > 0 && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                start({ kind: "revoke" });
-              }}
-              type="button"
-            >
-              <Icon name="lock" small />
-              {sst(language, "se_revoke")}
-            </button>
-          )}
-        </div>
-      </section>
+                        <EmployeeLine
+                          employee={employees.get(user.user_id)}
+                          language={language}
+                        />
+                      </td>
+                      <td>{roleText(language, user)}</td>
+                      <td
+                        className="wrap ui-rc-wide"
+                        data-label={at(language, "ur_roles_col")}
+                      >
+                        <span>{userRoleNames(language, user, roles)}</span>
+                        {user.lifecycle_state === "active" && (
+                          <>
+                            {" "}
+                            <button
+                              aria-label={`${at(language, "ur_roles_col")}: ${user.display_name}`}
+                              className="ui-btn link"
+                              onClick={() => {
+                                start({ kind: "roles", user });
+                              }}
+                              type="button"
+                            >
+                              {at(language, "ur_roles_btn")}
+                            </button>
+                          </>
+                        )}
+                      </td>
+                      <td>
+                        {user.mfa_policy_class === "required" ? (
+                          <Chip icon="lock" tone="info">
+                            {sst(language, "mfa_needed")}
+                          </Chip>
+                        ) : (
+                          <span className="ui-muted">
+                            {sst(language, "se_mfa_off")}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {user.lifecycle_state === "active" ? (
+                          <Chip icon="check" tone="ok">
+                            {sst(language, "se_active")}
+                          </Chip>
+                        ) : (
+                          <Chip tone="neutral">
+                            {sst(language, "se_disabled")}
+                          </Chip>
+                        )}
+                      </td>
+                      <td className="ui-rc-wide">
+                        {helpable ? (
+                          <span className="ui-actions">
+                            <button
+                              aria-label={`${sst(language, "ur_btn")}: ${user.display_name}`}
+                              className="ui-btn"
+                              onClick={() => {
+                                start({ kind: "reset", user });
+                              }}
+                              type="button"
+                            >
+                              <Icon name="lock" small />
+                              {sst(language, "ur_btn")}
+                            </button>
+                            <button
+                              aria-label={`${sst(language, "dis_btn")}: ${user.display_name}`}
+                              className="ui-btn link"
+                              onClick={() => {
+                                start({ kind: "disable", user });
+                              }}
+                              type="button"
+                            >
+                              {sst(language, "dis_btn")}
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="ui-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="ui-tfoot ui-tfoot-row">
+            <span>{sst(language, "users_note")}</span>
+            {myUserId !== null && others.length > 0 && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  start({ kind: "revoke" });
+                }}
+                type="button"
+              >
+                <Icon name="lock" small />
+                {sst(language, "se_revoke")}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
       {/* One under the other: the role table needs the width for its columns. */}
       <div className="ui-stack">
-        <RolesSection
-          data={roles}
-          language={language}
-          onAdd={() => {
-            start({ kind: "role", role: null });
-          }}
-          onEdit={(role) => {
-            start({ kind: "role", role });
-          }}
-        />
-        <section aria-labelledby="settings-signin" className="ui-card">
-          <h2 id="settings-signin">{sst(language, "se_signin")}</h2>
-          <ul className="ui-steps">
-            {SIGN_IN_RULES.map((key) => (
-              <li key={key}>{sst(language, key)}</li>
-            ))}
-            <li>{at(language, "se_signin_roles")}</li>
-          </ul>
-        </section>
+        {(part === undefined || part === "roles") && (
+          <RolesSection
+            data={roles}
+            language={language}
+            onAdd={() => {
+              start({ kind: "role", role: null });
+            }}
+            onEdit={(role) => {
+              start({ kind: "role", role });
+            }}
+          />
+        )}
+        {(part === undefined || part === "signin") && (
+          <section aria-labelledby="settings-signin" className="ui-card">
+            <h2 id="settings-signin">{sst(language, "se_signin")}</h2>
+            <ul className="ui-steps">
+              {SIGN_IN_RULES.map((key) => (
+                <li key={key}>{sst(language, key)}</li>
+              ))}
+              <li>{at(language, "se_signin_roles")}</li>
+            </ul>
+          </section>
+        )}
       </div>
 
       {reauth !== null && (

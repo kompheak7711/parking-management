@@ -16,19 +16,23 @@ import {
 } from "../customerClient";
 import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
-import { hashForPage } from "../shell/navigation";
-import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
-import { Chip, type Tone } from "../shell/ui";
+import { hashForPage, pageName } from "../shell/navigation";
+import {
+  openPageInAddress,
+  useHashDetail,
+  useShowFromAddress,
+} from "../shell/useHashPage";
+import { Chip, type Tone, useSubTab } from "../shell/ui";
+import { TabHead } from "../shell/layouts";
 import type { Language } from "../signInText";
 import { BookingDetail } from "./BookingDetail";
 import { CleaningList } from "./CleaningList";
 import { CreditsDue } from "./CreditsDue";
 import { DamageDue } from "./DamageDue";
 import { NewBookingForm } from "./NewBooking";
-import { nightOf } from "./nights";
-import { Quotes } from "./Quotes";
-import { SiteCalendars } from "./SiteCalendars";
-import { WeekReport } from "./WeekReport";
+import { forShortStays } from "./nights";
+import { StayChart } from "./StayChart";
+import { TodayPanel } from "./TodayPanel";
 import {
   addDays,
   type Booking,
@@ -38,6 +42,7 @@ import {
   shortStaysApi as defaultShortStaysApi,
 } from "./shortStaysClient";
 import { hasText, st } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface ShortStaysPageProps {
   language: Language;
@@ -51,7 +56,10 @@ export interface ShortStaysPageProps {
   now?: Date;
 }
 
-const DAYS = 14;
+// Leasing batch: the Calendar shows a week, 2 weeks or a month; Earlier and Later move a week
+// (a month at a time on Month).
+const VIEWS = { week: 7, "2weeks": 14, month: 30 } as const;
+type View = keyof typeof VIEWS;
 const STEP = 7;
 
 const CHIPS: Record<BookingStatus, Tone> = {
@@ -95,14 +103,21 @@ function plainClick(event: React.MouseEvent): boolean {
   );
 }
 
-function weekday(language: Language, day: string): string {
-  return new Intl.DateTimeFormat(language === "km" ? "km-KH" : "en-GB", {
-    weekday: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${day}T00:00:00Z`));
-}
+// Leasing batch (owner 13/11/2026): no Quotes tab (the price message is copied on New booking);
+// the tab is "?tab=<id>" in the address, so the menu's Short stays sub-items open it.
+// Owner 13/11/2026 evening: the Weekly report is in Reports and Booking sites in Settings.
+type Tab = "cal" | "list" | "clean";
+const ALL_TABS: readonly Tab[] = ["cal", "list", "clean"];
 
-type Tab = "cal" | "list" | "clean" | "quotes" | "report" | "sites";
+// UI v81 round 11: the Bookings list can show one status. The word in the address is the
+// status in small letters ("#/shortstays?show=booked", "?show=checked_in").
+const LIST_STATUSES: readonly BookingStatus[] = [
+  "BOOKED",
+  "CHECKED_IN",
+  "CHECKED_OUT",
+  "CANCELLED",
+  "NO_SHOW",
+];
 
 export function ShortStaysPage({
   language,
@@ -117,8 +132,28 @@ export function ShortStaysPage({
   const may = (capability: string) =>
     capabilities === null || capabilities.has(capability);
   const today = todayInPhnomPenh(now);
-  const [tab, setTab] = useState<Tab>("cal");
+  const [tab, setTabState] = useSubTab<Tab>(ALL_TABS, "cal");
+  const tabs = ALL_TABS;
+  const shownTab: Tab = tabs.includes(tab) ? tab : "cal";
+  const [status, setStatusState] = useState<BookingStatus | "all">("all");
+  const [query, setQuery] = useState("");
+  // UI v81 round 11: Home's two Short stays cards open the Bookings list on their status
+  // ("Short stay bookings" on Booked, "Short stays checked in" on Checked in).
+  const keepShow = useShowFromAddress("shortstays", (show) => {
+    const asked = LIST_STATUSES.find((value) => value.toLowerCase() === show);
+    if (asked === undefined && show !== "all") return;
+    setTabState("list");
+    setStatusState(asked ?? "all");
+  });
+  const setStatus = (next: BookingStatus | "all") => {
+    setStatusState(next);
+    keepShow(next === "all" ? null : next.toLowerCase(), { tab: "list" });
+  };
   const [from, setFrom] = useState(today);
+  const [view, setView] = useState<View>("2weeks");
+  const span = VIEWS[view];
+  // The Today panel reads again each time the Calendar does.
+  const [reloadKey, setReloadKey] = useState(0);
   const [calendar, setCalendar] = useState<StayCalendar | null>(null);
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -126,13 +161,17 @@ export function ShortStaysPage({
   const sequence = useRef(0);
 
   const load = useCallback(() => {
-    if (propertyId === "" || (tab !== "cal" && tab !== "list")) return;
+    if (propertyId === "" || (shownTab !== "cal" && shownTab !== "list"))
+      return;
     const operation = ++sequence.current;
     setFailed(false);
     const read =
-      tab === "cal"
-        ? api.calendar(propertyId, from, DAYS).then((found) => {
-            if (operation === sequence.current) setCalendar(found);
+      shownTab === "cal"
+        ? api.calendar(propertyId, from, span).then((found) => {
+            if (operation === sequence.current) {
+              setCalendar(found);
+              setReloadKey((key) => key + 1);
+            }
           })
         : api.list(propertyId).then((found) => {
             if (operation === sequence.current) setBookings(found);
@@ -140,7 +179,7 @@ export function ShortStaysPage({
     void read.catch(() => {
       if (operation === sequence.current) setFailed(true);
     });
-  }, [api, propertyId, tab, from]);
+  }, [api, propertyId, shownTab, from, span]);
 
   // Another Property never shows the bookings of the one before.
   useEffect(() => {
@@ -226,221 +265,147 @@ export function ShortStaysPage({
     openPageInAddress("shortstays", false, `st:${bookingId}`);
   };
 
-  const days = Array.from({ length: DAYS }, (_, index) => addDays(from, index));
-  const calendarView =
-    calendar === null || calendar.from !== from ? (
-      loading
-    ) : (
-      <>
-        {failure}
-        <div className="ui-filters">
-          <div className="ui-actions">
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setFrom(addDays(from, -STEP));
-              }}
-              type="button"
-            >
-              <Icon name="back" small />
-              {st(language, "prev")}
-            </button>
-            <button
-              className="ui-btn"
-              disabled={from === calendar.today}
-              onClick={() => {
-                setFrom(calendar.today);
-              }}
-              type="button"
-            >
-              {st(language, "this_week")}
-            </button>
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setFrom(addDays(from, STEP));
-              }}
-              type="button"
-            >
-              {st(language, "next")}
-              <Icon name="forward" small />
-            </button>
-          </div>
-          <span className="ui-muted ui-num">
-            {st(
-              language,
-              "cal_days",
-              dayText(from),
-              dayText(addDays(from, DAYS - 1)),
-            )}
-          </span>
-        </div>
-        <div className="ui-card pad0">
-          {calendar.units.length === 0 ? (
-            <p className="ui-empty">{st(language, "cal_none")}</p>
-          ) : (
-            <div className="ui-tablewrap">
-              <table className="ss-cal">
-                <thead>
-                  <tr>
-                    <th scope="col">{st(language, "c_unit")}</th>
-                    {days.map((day) => (
-                      <th
-                        className={day === calendar.today ? "today" : undefined}
-                        key={day}
-                        scope="col"
-                      >
-                        <span className="ss-wd">{weekday(language, day)}</span>
-                        <span className="ui-num">
-                          {dayText(day).slice(0, 5)}
-                        </span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {calendar.units.map((unit) => (
-                    <tr key={unit.unit_id}>
-                      <th scope="row">
-                        <b className="ui-num">{unit.unit_number}</b>
-                        <span className="ui-sub2">
-                          {unitTypeText(language, unit.unit_type)}
-                        </span>
-                      </th>
-                      {days.map((day) => {
-                        const night = nightOf(unit, day);
-                        const past = day < calendar.today;
-                        if (night.kind === "BOOKING") {
-                          const booking = night.booking;
-                          return (
-                            <td
-                              className={`ss-night ss-${booking.status.toLowerCase()}${
-                                booking.status === "BOOKED" && !booking.paid
-                                  ? " ss-unpaid"
-                                  : ""
-                              }${night.clash === null ? "" : " ss-clash"}`}
-                              key={day}
-                              title={
-                                night.clash === null
-                                  ? undefined
-                                  : st(
-                                      language,
-                                      "cal_clash",
-                                      night.clash.site_name,
-                                    )
-                              }
-                            >
-                              <a
-                                href={hashForPage(
-                                  "shortstays",
-                                  `st:${booking.booking_id}`,
-                                )}
-                                onClick={(event) => {
-                                  openBooking(event, booking.booking_id);
-                                }}
-                                title={`${booking.booking_number} · ${booking.guest_name}`}
-                              >
-                                <Icon
-                                  name={
-                                    booking.status === "CHECKED_IN"
-                                      ? "door"
-                                      : "calendar"
-                                  }
-                                  small
-                                />
-                                <span>
-                                  {night.first
-                                    ? booking.guest_name
-                                    : st(
-                                        language,
-                                        booking.status === "CHECKED_IN"
-                                          ? "cal_in"
-                                          : booking.status === "BOOKED" &&
-                                              !booking.paid
-                                            ? "cal_unpaid"
-                                            : `st_${booking.status}`,
-                                      )}
-                                </span>
-                              </a>
-                            </td>
-                          );
-                        }
-                        if (night.kind === "HOLD") {
-                          return (
-                            <td className="ss-night ss-hold" key={day}>
-                              <span
-                                title={st(
-                                  language,
-                                  "b_SITE_HOLD",
-                                  night.hold.site_name,
-                                  dayText(night.hold.start_on),
-                                  dayText(night.hold.end_on),
-                                )}
-                              >
-                                <Icon name="lock" small />
-                                <span>{night.hold.site_name}</span>
-                              </span>
-                            </td>
-                          );
-                        }
-                        if (night.kind === "FREE") {
-                          return (
-                            <td className="ss-night ss-free" key={day}>
-                              {!past && may("short_stays.desk") ? (
-                                <a
-                                  aria-label={st(
-                                    language,
-                                    "cal_book",
-                                    unit.unit_number,
-                                    dayText(day),
-                                  )}
-                                  href={hashForPage(
-                                    "shortstays",
-                                    `new:${unit.unit_id}:${day}`,
-                                  )}
-                                >
-                                  <Icon name="plus" small />
-                                  <span>{st(language, "cal_free")}</span>
-                                </a>
-                              ) : (
-                                <span className="ui-muted">
-                                  {st(language, "cal_free")}
-                                </span>
-                              )}
-                            </td>
-                          );
-                        }
-                        const word = {
-                          LEASE: st(language, "lease"),
-                          RESERVED: st(language, "reserved"),
-                          NOT_FOR_RENT: st(language, "not_for_rent"),
-                          CLOSED: st(language, "cal_closed"),
-                        }[night.kind];
-                        return (
-                          <td
-                            className={`ss-night ss-${night.kind.toLowerCase()}`}
-                            key={day}
-                          >
-                            <span>
-                              <Icon
-                                name={night.kind === "LEASE" ? "lease" : "lock"}
-                                small
-                              />
-                              <span>{word}</span>
-                            </span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+  const days = Array.from({ length: span }, (_, index) => addDays(from, index));
+  const step = span === VIEWS.month ? span : STEP;
+  // The Today panel stays on the screen while the chart moves to other days.
+  // Owner 14/11/2026: only the Units a short-stay guest can have (not a leased one).
+  const shortStayUnits =
+    calendar === null
+      ? []
+      : calendar.units.filter((unit) =>
+          forShortStays(
+            unit,
+            calendar.today,
+            calendar.from,
+            addDays(calendar.from, calendar.days - 1),
+          ),
+        );
+  const calendarView = (
+    <div className="ss-calgrid">
+      <TodayPanel
+        api={api}
+        language={language}
+        may={may}
+        onChanged={load}
+        propertyId={propertyId}
+        reloadKey={reloadKey}
+        today={calendar?.today ?? today}
+      />
+      {calendar === null || calendar.from !== from ? (
+        <div className="ss-calmain">{loading}</div>
+      ) : (
+        <div className="ss-calmain">
+          {failure}
+          <div className="ui-filters">
+            <div className="ui-actions">
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setFrom(addDays(from, -step));
+                }}
+                type="button"
+              >
+                <Icon name="back" small />
+                {st(language, "prev")}
+              </button>
+              <button
+                className="ui-btn"
+                disabled={from === calendar.today}
+                onClick={() => {
+                  setFrom(calendar.today);
+                }}
+                type="button"
+              >
+                {st(language, "this_week")}
+              </button>
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setFrom(addDays(from, step));
+                }}
+                type="button"
+              >
+                {st(language, "next")}
+                <Icon name="forward" small />
+              </button>
             </div>
-          )}
+            <div
+              aria-label={st(language, "v_label")}
+              className="ui-seg ss-views"
+              role="group"
+            >
+              {(Object.keys(VIEWS) as View[]).map((value) => (
+                <button
+                  aria-pressed={view === value}
+                  key={value}
+                  onClick={() => {
+                    if (value === view) return;
+                    setCalendar(null);
+                    setView(value);
+                  }}
+                  type="button"
+                >
+                  {st(language, `v_${value}`)}
+                </button>
+              ))}
+            </div>
+            <span className="ui-muted ui-num">
+              {st(
+                language,
+                "cal_days",
+                dayText(from),
+                dayText(addDays(from, span - 1)),
+              )}
+            </span>
+          </div>
+          <div className="ui-card pad0">
+            {shortStayUnits.length === 0 ? (
+              <p className="ui-empty">{st(language, "cal_none")}</p>
+            ) : (
+              <StayChart
+                calendar={{ ...calendar, units: shortStayUnits }}
+                days={days}
+                language={language}
+                mayBook={may("short_stays.desk")}
+                onOpenBooking={openBooking}
+              />
+            )}
+          </div>
+          <ul aria-label={st(language, "lg_label")} className="ss-legend">
+            {(["booked", "in", "site", "lease", "closed"] as const).map(
+              (tone) => (
+                <li key={tone}>
+                  <span aria-hidden="true" className={`ss-sw ${tone}`} />
+                  {st(language, `lg_${tone}`)}
+                </li>
+              ),
+            )}
+            <li>
+              <span aria-hidden="true" className="ss-dot" />
+              {st(language, "lg_unpaid")}
+            </li>
+          </ul>
         </div>
-      </>
-    );
+      )}
+    </div>
+  );
 
+  // Owner 13/11/2026: the Bookings list has a search box (guest, phone, booking number or Unit);
+  // the status counts are of the bookings that match it.
+  const words = query.trim().toLowerCase();
+  const matched = (bookings ?? []).filter(
+    (booking) =>
+      words === "" ||
+      [
+        booking.guest_name,
+        booking.guest_phone ?? "",
+        booking.booking_number,
+        booking.unit_number,
+      ].some((value) => value.toLowerCase().includes(words)),
+  );
+  const listed = matched.filter(
+    (booking) => status === "all" || booking.status === status,
+  );
   const listView =
     bookings === null ? (
       loading
@@ -453,13 +418,68 @@ export function ShortStaysPage({
         {may("damage_charges.bill") && (
           <DamageDue api={api} language={language} propertyId={propertyId} />
         )}
+        {bookings.length > 0 && (
+          <div className="ui-filters">
+            <label className="ui-sr" htmlFor="shortstays-search">
+              {st(language, "f_search")}
+            </label>
+            <input
+              className="ui-search"
+              id="shortstays-search"
+              maxLength={100}
+              onChange={(event) => {
+                setQuery(event.currentTarget.value);
+              }}
+              placeholder={st(language, "f_search")}
+              type="search"
+              value={query}
+            />
+            <div
+              aria-label={st(language, "c_status")}
+              className="ui-seg"
+              role="group"
+            >
+              {(["all", ...LIST_STATUSES] as const)
+                .filter(
+                  (value) =>
+                    value === "all" ||
+                    value === "BOOKED" ||
+                    value === "CHECKED_IN" ||
+                    value === status ||
+                    matched.some((booking) => booking.status === value),
+                )
+                .map((value) => (
+                  <button
+                    aria-pressed={status === value}
+                    key={value}
+                    onClick={() => {
+                      setStatus(value);
+                    }}
+                    type="button"
+                  >
+                    {value === "all"
+                      ? st(language, "f_all")
+                      : st(language, `st_${value}`)}{" "}
+                    <span className="ui-num">
+                      {value === "all"
+                        ? matched.length
+                        : matched.filter((booking) => booking.status === value)
+                            .length}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
         <div className="ui-card pad0">
-          {bookings.length === 0 ? (
-            <p className="ui-empty">{st(language, "none")}</p>
+          {listed.length === 0 ? (
+            <p className="ui-empty">
+              {st(language, bookings.length === 0 ? "none" : "f_none")}
+            </p>
           ) : (
             <>
               <div className="ui-tablewrap">
-                <table className="ui-table">
+                <table className="ui-table ss-booklist">
                   <thead>
                     <tr>
                       <th scope="col">{st(language, "c_no")}</th>
@@ -476,7 +496,7 @@ export function ShortStaysPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.map((booking) => (
+                    {listed.map((booking) => (
                       <tr
                         className="ui-row"
                         key={booking.booking_id}
@@ -548,9 +568,9 @@ export function ShortStaysPage({
                 </table>
               </div>
               <div className="ui-tfoot">
-                {bookings.length === 1
+                {listed.length === 1
                   ? st(language, "n1")
-                  : st(language, "n", bookings.length)}
+                  : st(language, "n", listed.length)}
               </div>
             </>
           )}
@@ -558,9 +578,30 @@ export function ShortStaysPage({
       </>
     );
 
+  // Owner 14/11/2026 00:00: the tabs look like the Invoices tabs (a line under the chosen one)
+  // and are the page's head; New booking sits at the right end of the tab row.
   return (
-    <>
-      <div className="ui-head">
+    <TabHead
+      tabs={
+        <nav aria-label={st(language, "tabs")} className="ui-subtabs ss-tabs">
+          {tabs.map((value) => (
+            <a
+              aria-current={shownTab === value ? "page" : undefined}
+              href={`${hashForPage("shortstays")}?tab=${value}`}
+              key={value}
+              onClick={() => {
+                setTabState(value);
+                if (value === "list") setStatusState("all");
+              }}
+            >
+              {st(language, `tab_${value}`)}
+            </a>
+          ))}
+        </nav>
+      }
+      title={pageName("shortstays", language)}
+    >
+      <PageHead>
         <p>{st(language, "sub")}</p>
         {may("short_stays.desk") && (
           <div className="ui-actions">
@@ -573,56 +614,11 @@ export function ShortStaysPage({
             </a>
           </div>
         )}
-      </div>
-      <div className="ui-filters">
-        <div aria-label={st(language, "tabs")} className="ui-seg" role="group">
-          {(may("short_stays.approve")
-            ? (["cal", "list", "clean", "quotes", "report", "sites"] as const)
-            : (["cal", "list", "clean", "quotes"] as const)
-          ).map((value) => (
-            <button
-              aria-pressed={tab === value}
-              key={value}
-              onClick={() => {
-                setTab(value);
-              }}
-              type="button"
-            >
-              {st(language, `tab_${value}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-      {tab === "cal" ? (
+      </PageHead>
+      {shownTab === "cal" ? (
         calendarView
-      ) : tab === "list" ? (
+      ) : shownTab === "list" ? (
         listView
-      ) : tab === "quotes" ? (
-        <Quotes
-          api={api}
-          key={propertyId}
-          language={language}
-          may={may}
-          propertyId={propertyId}
-          today={today}
-        />
-      ) : tab === "report" ? (
-        <WeekReport
-          api={api}
-          key={propertyId}
-          language={language}
-          may={may}
-          propertyId={propertyId}
-          today={today}
-        />
-      ) : tab === "sites" ? (
-        <SiteCalendars
-          api={api}
-          key={propertyId}
-          language={language}
-          propertyId={propertyId}
-          today={today}
-        />
       ) : (
         <CleaningList
           api={api}
@@ -633,6 +629,6 @@ export function ShortStaysPage({
           today={today}
         />
       )}
-    </>
+    </TabHead>
   );
 }

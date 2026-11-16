@@ -2,6 +2,8 @@ export interface PaymentMethodConfiguration {
   code: string;
   display_name: string;
   accepted: boolean;
+  /** DL-227: the one method ABA QR payments are recorded with. Only a method that is on. */
+  aba_qr: boolean;
 }
 
 export interface PropertyBusinessConfiguration {
@@ -117,7 +119,8 @@ function methods(value: unknown): PaymentMethodConfiguration[] {
       !isObject(method) ||
       typeof method.code !== "string" ||
       typeof method.display_name !== "string" ||
-      typeof method.accepted !== "boolean"
+      typeof method.accepted !== "boolean" ||
+      (method.aba_qr !== undefined && typeof method.aba_qr !== "boolean")
     ) {
       throw new PropertyConfigurationError();
     }
@@ -125,6 +128,8 @@ function methods(value: unknown): PaymentMethodConfiguration[] {
       code: method.code,
       display_name: method.display_name,
       accepted: method.accepted,
+      // A server before DL-227 sends no mark.
+      aba_qr: method.aba_qr === true,
     };
   });
 }

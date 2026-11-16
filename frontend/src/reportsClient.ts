@@ -12,7 +12,9 @@ export type HomeSection =
   | "deposit_decisions"
   | "readings"
   | "letters"
-  | "settlements";
+  | "settlements"
+  // UI v81 round 4 (owner 08/11/2026): the Birthdays card (customers.read).
+  | "birthdays";
 
 export type TodoGroup = "overdue" | "today" | "this_week" | "later";
 
@@ -55,6 +57,32 @@ export interface HomeCards {
   };
   meter_readings_missing?: { count: number; reading_date: string };
   letters_due?: { count: number; day_20: number; day_30: number };
+  // UI v81 round 4 (owner 08/11/2026): the Invoices whose Due Date fell in the last 12 months and
+  // how many were fully paid by their Due Date (with Invoices); the birthdays of the Primary
+  // Tenants and Occupants of active Leases, today and the next 7 days (with Customers).
+  paid_on_time?: { on_time: number; invoice_count: number };
+  birthdays?: { count: number; from: string; to: string };
+}
+
+/** UI v81 round 4: one coming birthday on the Customers page. Never the year or the age. */
+export interface BirthdayRow {
+  customer_id: string;
+  customer_name: string;
+  role: "PRIMARY" | "OCCUPANT";
+  unit_id: string;
+  unit_number: string;
+  /** The next birthday from today on (yyyy-mm-dd); 29 February shows on 28 February. */
+  birthday: string;
+}
+
+/** UI v81 pilot: one Customer's "Paid on time" (migration 20270711_362). */
+export interface PaidOnTime {
+  on_time: number;
+  invoice_count: number;
+}
+
+export interface BirthdaysPage {
+  items: BirthdayRow[];
 }
 
 export interface TodoItem {
@@ -593,6 +621,35 @@ function homePage(data: Record<string, unknown>): HomePage {
   return data as unknown as HomePage;
 }
 
+function paidOnTime(data: Record<string, unknown>): PaidOnTime {
+  if (
+    typeof data.on_time !== "number" ||
+    typeof data.invoice_count !== "number"
+  ) {
+    throw new ReportsUnavailableError();
+  }
+  return { on_time: data.on_time, invoice_count: data.invoice_count };
+}
+
+function birthdaysPage(data: Record<string, unknown>): BirthdaysPage {
+  if (
+    !Array.isArray(data.items) ||
+    !data.items.every(
+      (item) =>
+        isObject(item) &&
+        typeof item.customer_id === "string" &&
+        typeof item.customer_name === "string" &&
+        (item.role === "PRIMARY" || item.role === "OCCUPANT") &&
+        typeof item.unit_id === "string" &&
+        typeof item.unit_number === "string" &&
+        typeof item.birthday === "string",
+    )
+  ) {
+    throw new ReportsUnavailableError();
+  }
+  return data as unknown as BirthdaysPage;
+}
+
 function totalsPage(data: Record<string, unknown>): TotalsPage {
   if (
     typeof data.report !== "string" ||
@@ -642,6 +699,23 @@ export const reportsApi = {
   home: async (propertyId: string): Promise<HomePage> =>
     homePage(
       await read(`/api/v1/properties/${encodeURIComponent(propertyId)}/home`),
+    ),
+  // UI v81 round 4: the Customers page Birthdays tab (customers.read).
+  birthdays: async (propertyId: string): Promise<BirthdaysPage> =>
+    birthdaysPage(
+      await read(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/birthdays`,
+      ),
+    ),
+  // UI v81 pilot: the Lease page's Customer card (invoices.read).
+  customerPaidOnTime: async (
+    propertyId: string,
+    customerId: string,
+  ): Promise<PaidOnTime> =>
+    paidOnTime(
+      await read(
+        `/api/v1/properties/${encodeURIComponent(propertyId)}/customers/${encodeURIComponent(customerId)}/paid-on-time`,
+      ),
     ),
   totals: async (
     propertyId: string,

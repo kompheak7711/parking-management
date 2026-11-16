@@ -12,8 +12,8 @@ import type { LeaseApi } from "../leaseClient";
 import { measurementUnitLabel } from "../measurementUnits";
 import { dayText, todayInPhnomPenh } from "../shell/format";
 import { Icon } from "../shell/icons";
-import { hashForPage } from "../shell/navigation";
-import { useHashDetail } from "../shell/useHashPage";
+import { hashForPage, pageName } from "../shell/navigation";
+import { useHashDetail, useShowFromAddress } from "../shell/useHashPage";
 import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
 import type { UnitApi, UnitResource } from "../unitClient";
@@ -47,6 +47,8 @@ import {
   readingDayOf,
   withReading,
 } from "./utilitiesData";
+import { TabHead } from "../shell/layouts";
+import { PageHead } from "../shell/pageHead";
 
 export interface UtilitiesPageProps {
   language: Language;
@@ -138,29 +140,8 @@ export function UtilitiesPage({
     );
   }
 
-  return (
+  const content = (
     <>
-      <div className="ui-head">
-        <p>{utt(language, "sub")}</p>
-      </div>
-      {tab !== "meter" && (
-        <nav aria-label={utt(language, "sub")} className="ui-subtabs">
-          <a
-            aria-current={tab === "read" ? "page" : undefined}
-            href={hashForPage("utilities")}
-          >
-            <Icon name="list" small />
-            {utt(language, "tab_read")}
-          </a>
-          <a
-            aria-current={tab === "meters" ? "page" : undefined}
-            href={hashForPage("utilities", "meters")}
-          >
-            <Icon name="meter" small />
-            {utt(language, "tab_meters")}
-          </a>
-        </nav>
-      )}
       {failed && (
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
@@ -237,6 +218,47 @@ export function UtilitiesPage({
       )}
     </>
   );
+
+  return (
+    <>
+      {/* The readings and Meters tabs draw the head themselves, with their button on the
+          right, and a meter page has its own record head (UI v81 Utilities batch). */}
+      {data === null && (
+        <PageHead>
+          <p>{utt(language, "sub")}</p>
+        </PageHead>
+      )}
+
+      {tab === "meter" ? (
+        content
+      ) : (
+        // Owner 13/11/2026 23:44 (iPad): the tab row is the page's head; no title or sub-line.
+        <TabHead
+          tabs={
+            <nav aria-label={utt(language, "sub")} className="ui-subtabs">
+              <a
+                aria-current={tab === "read" ? "page" : undefined}
+                href={hashForPage("utilities")}
+              >
+                <Icon name="list" small />
+                {utt(language, "tab_read")}
+              </a>
+              <a
+                aria-current={tab === "meters" ? "page" : undefined}
+                href={hashForPage("utilities", "meters")}
+              >
+                <Icon name="meter" small />
+                {utt(language, "tab_meters")}
+              </a>
+            </nav>
+          }
+          title={pageName("utilities", language)}
+        >
+          {content}
+        </TabHead>
+      )}
+    </>
+  );
 }
 
 function ReadingsTab({
@@ -269,6 +291,14 @@ function ReadingsTab({
   const [type, setType] = useState<UtilityType>("ELECTRICITY");
   const [floor, setFloor] = useState("all");
   const [onlyMissing, setOnlyMissing] = useState(false);
+  // UI v81 round 11: Home's "Meter readings missing" card opens "#/utilities?show=missing":
+  // this month, every floor, and only the Meters not read yet once the reading day has come.
+  useShowFromAddress("utilities", (show) => {
+    if (show !== "missing") return;
+    setPeriod("month");
+    setFloor("all");
+    setOnlyMissing(true);
+  });
   const [toast, setToast] = useState<{
     ok: boolean;
     text: string;
@@ -277,6 +307,21 @@ function ReadingsTab({
 
   const readingDay = readingDayOf(today);
   const entry = period === "month" && today >= readingDay;
+  // Operations fix 5 (owner 13/11/2026): before the reading day, This month has no readings
+  // yet, so the list shows the last month that has them (the last reading round) instead of
+  // an empty box, and the note says which month it is.
+  const lastRound = (() => {
+    if (period !== "month" || entry) return null;
+    const lines = allLines(data, type, unit?.unit_id ?? null);
+    const thisMonth = today.slice(0, 7);
+    if (lines.some((line) => line.reading.reading_date.startsWith(thisMonth)))
+      return null;
+    const earlier = lines
+      .map((line) => line.reading.reading_date.slice(0, 7))
+      .filter((month) => month < thisMonth)
+      .sort();
+    return earlier.at(-1) ?? null;
+  })();
   const earlyImport = testApp && canSave && period === "month" && !entry;
   const working = (row: EntryRow) => !isBroken(row.meter);
   const counts = new Map(
@@ -284,8 +329,11 @@ function ReadingsTab({
       const rows = entryRows(data, kind, readingDay).filter(working);
       return [
         kind,
-        [rows.filter((row) => row.saved !== null).length, rows.length],
-      ];
+        [rows.filter((row) => row.saved !== null).length, rows.length] as [
+          number,
+          number,
+        ],
+      ] as const;
     }),
   );
   const floors = [...new Set(data.units.map((item) => item.floor))].sort(
@@ -302,6 +350,24 @@ function ReadingsTab({
 
   return (
     <>
+      {/* UI v81 Utilities batch: Import is the page's button, on the right of the head. */}
+      <PageHead
+        actions={
+          (entry && canSave) || earlyImport ? (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setImporting(true);
+              }}
+              type="button"
+            >
+              <Icon name="upload" small />
+              {utt(language, "im_btn")}
+            </button>
+          ) : undefined
+        }
+        sub={<p>{utt(language, "sub")}</p>}
+      />
       <div className="ui-filters">
         <UnitBox
           customers={data.customers}
@@ -377,7 +443,9 @@ function ReadingsTab({
                 {entry && (
                   <span className="ui-num ui-muted">
                     {" "}
-                    {read}/{all}
+                    {read < all
+                      ? utt(language, "to_read", all - read)
+                      : utt(language, "all_read")}
                   </span>
                 )}
               </button>
@@ -414,31 +482,7 @@ function ReadingsTab({
               />
               {utt(language, "only_missing")}
             </label>
-            {canSave && (
-              <button
-                className="ui-btn ui-push"
-                onClick={() => {
-                  setImporting(true);
-                }}
-                type="button"
-              >
-                <Icon name="upload" small />
-                {utt(language, "im_btn")}
-              </button>
-            )}
           </>
-        )}
-        {earlyImport && (
-          <button
-            className="ui-btn ui-push"
-            onClick={() => {
-              setImporting(true);
-            }}
-            type="button"
-          >
-            <Icon name="upload" small />
-            {utt(language, "im_btn")}
-          </button>
         )}
       </div>
       {importing && (
@@ -500,7 +544,11 @@ function ReadingsTab({
           {period === "month" && (
             <div className="ui-notice" role="note">
               <Icon name="info" />
-              <p>{utt(language, "before_day", dayText(readingDay))}</p>
+              <p>
+                {utt(language, "before_day", dayText(readingDay))}
+                {lastRound !== null &&
+                  ` ${utt(language, "before_day_last", monthText(language, lastRound))}`}
+              </p>
             </div>
           )}
           {earlyImport && (
@@ -513,7 +561,7 @@ function ReadingsTab({
             language={language}
             month={
               period === "month"
-                ? today.slice(0, 7)
+                ? (lastRound ?? today.slice(0, 7))
                 : period === "pick"
                   ? pick
                   : null
@@ -617,6 +665,9 @@ function EntryList({
           <b id="ut-progress" tabIndex={-1}>
             {utt(language, "progress", read, all)}
           </b>
+          {read < all && (
+            <Chip tone="warn">{utt(language, "to_read", all - read)}</Chip>
+          )}
           <div
             aria-label={utt(language, "progress", read, all)}
             aria-valuemax={all}

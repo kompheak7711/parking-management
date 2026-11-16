@@ -1,0 +1,257 @@
+{
+ "log": {
+  "version": "1.2",
+  "creator": {
+   "name": "Playwright",
+   "version": "1.63.0"
+  },
+  "browser": {
+   "name": "chromium",
+   "version": "153.0.8010.12"
+  },
+  "entries": [
+   {
+    "startedDateTime": "2026-11-13T19:28:10.936Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 418,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-13T19:03:51.468138Z\",\"last_activity_at\":\"2026-11-13T19:19:34.813139Z\",\"idle_expires_at\":\"2026-11-13T19:49:34.813139Z\",\"absolute_expires_at\":\"2026-11-14T19:03:51.468138Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":null,\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"2cc12384-f104-41a0-bbb3-5a612997c4ab\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:10.938Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 418,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-13T19:03:51.468138Z\",\"last_activity_at\":\"2026-11-13T19:19:34.813139Z\",\"idle_expires_at\":\"2026-11-13T19:49:34.813139Z\",\"absolute_expires_at\":\"2026-11-14T19:03:51.468138Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":null,\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"6094c47a-c03c-4a18-bd4c-a58559af60b0\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.146Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/identity/me/access"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 12713,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"capabilities\":[{\"capability\":\"audit.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"audit.view\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"billing.generate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"configuration.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.applications.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.apply\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.recognize\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customer_ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"damage_charges.bill\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"data.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.refund.qualify\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"exchange_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve_over_limit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.request\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"final_settlements.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"financial.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.overtime.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.manage_access\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.read_self\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.issue\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.void\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.charge_correction\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.final_decision\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.review\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"lease_signers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.draft\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.inspect\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.move_out\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.sign\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.terminate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.warn\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.accounts.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.cash_count\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.close\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.fixed_assets\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.money_move\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.opening_balances\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.owner_money\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.petty_cash\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.reconcile\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.write_off\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"operations.status.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocations.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.add\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.costs\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.join\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.plan\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.prices\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.lower_price\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.make\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.reprint\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.corrections.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent.below_default\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.case_manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.event_post\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.override\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.refund\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.cancel\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.complete\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.extend\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"service_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"settings.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.credit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.desk\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.housekeeping\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.purchase\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.transfer\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.contact\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.faq\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.operate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"units.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.calculate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.estimate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_meters.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.work\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]}]},\"meta\":{\"request_id\":\"f144a26a-cc53-4d04-acb3-809c8140fded\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.146Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/recovery-codes"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 198,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"set_id\":\"54836803-c09d-4123-8156-842aab6dff73\",\"created_at\":\"2026-11-11T21:51:23.344472Z\",\"made_by\":\"other\",\"usable_count\":10},\"meta\":{\"request_id\":\"0166363d-b1db-425d-844c-0c8a06c8d538\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.149Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/financial-workspaces?limit=100"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 717,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":[{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"capabilities\":{\"payments.read\":true,\"payments.record\":true,\"payments.allocate\":true,\"payments.allocations.reverse\":true,\"payments.reverse\":true,\"receipts.read\":true,\"receipts.reprint\":true,\"credits.read\":true,\"credits.recognize\":true,\"credits.reverse\":true,\"credits.apply\":true,\"credits.applications.reverse\":true,\"refunds.read\":true,\"refunds.create\":true,\"refunds.correct\":true,\"refunds.corrections.reverse\":true,\"exchange_rates.manage\":true}}],\"page\":{\"limit\":100,\"next_cursor\":null},\"meta\":{\"request_id\":\"58349e73-fb65-4df4-82c8-1cb44a4b9c1a\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.150Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/lease-enforcement-workspaces?limit=50"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 413,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"items\":[{\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"capabilities\":{\"leases.read\":true,\"leases.warn\":true,\"rent_nonpayment.read\":true,\"rent_nonpayment.case_manage\":true,\"rent_nonpayment.event_post\":true}}],\"next_cursor\":null},\"meta\":{\"request_id\":\"6d91fd22-11bc-468f-97cf-61c73152b00e\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.392Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/billing-capabilities"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 380,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"billing_capabilities\":[\"invoices.create\",\"invoices.issue\",\"invoices.adjust\",\"invoices.void\",\"billing.generate\",\"damage_charges.bill\",\"property.manage\",\"settings.manage\",\"late_payment.review\",\"late_payment.final_decision\",\"late_payment.charge_correction\"]},\"meta\":{\"request_id\":\"70c49b1a-b2ad-4633-afc7-78926d77ddf8\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.393Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/reservations"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 5466,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\": {\"items\": [{\"reservation_id\": \"b1474e86-2b64-4114-b430-c0f11e2f6eba\", \"property_id\": \"005abbee-4a7d-4683-b4ee-06f2b26d393e\", \"unit_id\": \"1c29d193-445f-4007-9094-319580916f2c\", \"unit_number\": \"U408\", \"customer_id\": \"097a1f71-9497-4e22-93c7-072a87754762\", \"customer_name\": \"Sam Nary\", \"reservation_date\": \"2026-11-14\", \"original_expiration_date\": \"2026-12-05\", \"effective_expiration_date\": \"2026-12-05\", \"agreed_monthly_rent_usd_cents\": 45000, \"status\": \"ACTIVE\", \"version\": 1, \"deposit_id\": \"1f802928-a5c2-4c23-b729-438903302d96\", \"deposit_required_usd_cents\": 45000, \"deposit_received_usd_cents\": 9000, \"deposit_outcome_state\": \"PENDING_V1_031\", \"cancellation_reason_code\": null, \"cancellation_responsibility\": null, \"resulting_lease_id\": null, \"extension_notice\": null, \"extension_eligible\": false, \"extension_days_remaining\": 21, \"receipts\": [], \"lifecycle_events\": [], \"deposit_outcomes\": [], \"suggested_deposit_usd_cents\": 9000, \"suggested_deposit_rate_basis_points\": 2000, \"made_by_name\": null, \"can_extend\": false, \"can_cancel\": true}, {\"reservation_id\": \"add41500-adb9-47e3-ba99-db0edb642e80\", \"property_id\": \"005abbee-4a7d-4683-b4ee-06f2b26d393e\", \"unit_id\": \"e42c8bce-10c9-4202-90fd-b9b3734046cc\", \"unit_number\": \"U410\", \"customer_id\": \"e09b5c93-45fb-4f69-b51f-b41cd2eec5e1\", \"customer_name\": \"Long Sreyneang\", \"reservation_date\": \"2026-11-14\", \"original_expiration_date\": \"2026-12-05\", \"effective_expiration_date\": \"2026-12-05\", \"agreed_monthly_rent_usd_cents\": 30000, \"status\": \"CANCELLED\", \"version\": 2, \"deposit_id\": \"b289d324-da8e-4c6f-b542-ede5004ad435\", \"deposit_required_usd_cents\": 30000, \"deposit_received_usd_cents\": 6000, \"deposit_outcome_state\": \"AWAITING_DECISION\", \"cancellation_reason_code\": \"CUSTOMER_NO_LONGER_WANTS_UNIT\", \"cancellation_responsibility\": \"CUSTOMER\", \"resulting_lease_id\": null, \"extension_notice\": null, \"extension_eligible\": false, \"extension_days_remaining\": 21, \"receipts\": [], \"lifecycle_events\": [], \"deposit_outcomes\": [], \"suggested_deposit_usd_cents\": 6000, \"suggested_deposit_rate_basis_points\": 2000, \"made_by_name\": null, \"can_extend\": false, \"can_cancel\": false}, {\"reservation_id\": \"8018a0d3-9dde-47b5-aa53-2350071c89e1\", \"property_id\": \"005abbee-4a7d-4683-b4ee-06f2b26d393e\", \"unit_id\": \"c867ba36-6f1d-4ea0-9a40-d01c32593111\", \"unit_number\": \"U409\", \"customer_id\": \"24703831-0908-4f5c-ac27-8d043933efb5\", \"customer_name\": \"Phan Rithy\", \"reservation_date\": \"2026-11-14\", \"original_expiration_date\": \"2026-12-05\", \"effective_expiration_date\": \"2026-12-05\", \"agreed_monthly_rent_usd_cents\": 60000, \"status\": \"ACTIVE\", \"version\": 1, \"deposit_id\": \"f1349ae5-912a-4a5b-80be-d61bf946accb\", \"deposit_required_usd_cents\": 60000, \"deposit_received_usd_cents\": 60000, \"deposit_outcome_state\": \"PENDING_V1_031\", \"cancellation_reason_code\": null, \"cancellation_responsibility\": null, \"resulting_lease_id\": null, \"extension_notice\": null, \"extension_eligible\": false, \"extension_days_remaining\": 21, \"receipts\": [], \"lifecycle_events\": [], \"deposit_outcomes\": [], \"suggested_deposit_usd_cents\": 12000, \"suggested_deposit_rate_basis_points\": 2000, \"made_by_name\": null, \"can_extend\": false, \"can_cancel\": true}, {\"reservation_id\": \"48e6311b-829e-47cb-9974-9b45634d8846\", \"property_id\": \"005abbee-4a7d-4683-b4ee-06f2b26d393e\", \"unit_id\": \"6927969a-5d0a-47af-bb76-ae2a68e92582\", \"unit_number\": \"U407\", \"customer_id\": \"1f467b7b-d975-4a06-bef1-67dc67f72adb\", \"customer_name\": \"Mao Sophea\", \"reservation_date\": \"2026-11-14\", \"original_expiration_date\": \"2026-12-05\", \"effective_expiration_date\": \"2026-12-05\", \"agreed_monthly_rent_usd_cents\": 33000, \"status\": \"ACTIVE\", \"version\": 1, \"deposit_id\": \"3c197fb2-9132-4a28-b9ef-b1ceb0bc1988\", \"deposit_required_usd_cents\": 33000, \"deposit_received_usd_cents\": 6600, \"deposit_outcome_state\": \"PENDING_V1_031\", \"cancellation_reason_code\": null, \"cancellation_responsibility\": null, \"resulting_lease_id\": null, \"extension_notice\": null, \"extension_eligible\": false, \"extension_days_remaining\": 21, \"receipts\": [], \"lifecycle_events\": [], \"deposit_outcomes\": [], \"suggested_deposit_usd_cents\": 6600, \"suggested_deposit_rate_basis_points\": 2000, \"made_by_name\": null, \"can_extend\": false, \"can_cancel\": true}, {\"reservation_id\": \"92d57534-59d6-4505-b519-50ccaef139bb\", \"property_id\": \"005abbee-4a7d-4683-b4ee-06f2b26d393e\", \"unit_id\": \"aa388ed8-ff9c-47bf-8170-33869a72099b\", \"unit_number\": \"U406\", \"customer_id\": \"db2182d8-a9b5-4bd8-9e11-d69df8fbb398\", \"customer_name\": \"Tep Sreymom\", \"reservation_date\": \"2026-11-02\", \"original_expiration_date\": \"2026-11-16\", \"effective_expiration_date\": \"2026-11-16\", \"agreed_monthly_rent_usd_cents\": 50000, \"status\": \"COMPLETED\", \"version\": 2, \"deposit_id\": \"294e8dc3-ddf5-4c01-9710-06769f51f52e\", \"deposit_required_usd_cents\": 50000, \"deposit_received_usd_cents\": 50000, \"deposit_outcome_state\": \"PENDING_V1_031\", \"cancellation_reason_code\": null, \"cancellation_responsibility\": null, \"resulting_lease_id\": \"7b321c5a-3497-4ea9-beb8-1a3536f2a259\", \"extension_notice\": null, \"extension_eligible\": true, \"extension_days_remaining\": 2, \"receipts\": [], \"lifecycle_events\": [], \"deposit_outcomes\": [], \"suggested_deposit_usd_cents\": 10000, \"suggested_deposit_rate_basis_points\": 2000, \"made_by_name\": null, \"can_extend\": false, \"can_cancel\": false}], \"next_cursor\": null, \"rules\": {\"reservation_days\": 21, \"extension_days\": 14, \"deposit_rate_basis_points\": 2000}, \"can_create\": true}, \"meta\": {\"request_id\": \"36bbe219-e2f9-4430-864c-6a54c51e0daa\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:11.394Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/billing-capabilities"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 380,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"billing_capabilities\":[\"invoices.create\",\"invoices.issue\",\"invoices.adjust\",\"invoices.void\",\"billing.generate\",\"damage_charges.bill\",\"property.manage\",\"settings.manage\",\"late_payment.review\",\"late_payment.final_decision\",\"late_payment.charge_correction\"]},\"meta\":{\"request_id\":\"104f079d-dfdd-4363-be69-27c31540418c\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:14.864Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/reservations/add41500-adb9-47e3-ba99-db0edb642e80"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1851,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"reservation_id\":\"add41500-adb9-47e3-ba99-db0edb642e80\",\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"unit_id\":\"e42c8bce-10c9-4202-90fd-b9b3734046cc\",\"unit_number\":\"U410\",\"customer_id\":\"e09b5c93-45fb-4f69-b51f-b41cd2eec5e1\",\"customer_name\":\"Long Sreyneang\",\"reservation_date\":\"2026-11-14\",\"original_expiration_date\":\"2026-12-05\",\"effective_expiration_date\":\"2026-12-05\",\"agreed_monthly_rent_usd_cents\":30000,\"status\":\"CANCELLED\",\"version\":2,\"deposit_id\":\"b289d324-da8e-4c6f-b542-ede5004ad435\",\"deposit_required_usd_cents\":30000,\"deposit_received_usd_cents\":6000,\"deposit_outcome_state\":\"AWAITING_DECISION\",\"cancellation_reason_code\":\"CUSTOMER_NO_LONGER_WANTS_UNIT\",\"cancellation_responsibility\":\"CUSTOMER\",\"resulting_lease_id\":null,\"extension_notice\":null,\"extension_eligible\":false,\"extension_days_remaining\":21,\"receipts\":[{\"receipt_id\":\"7773d20c-0623-4146-85f5-ca71f5465903\",\"payment_id\":\"f9c460c2-4d04-49b2-bfec-cd54164850d9\",\"amount_usd_cents\":6000,\"occurred_at\":\"2026-11-13T19:09:43.671681Z\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"actor_name\":\"Kompheak\"}],\"lifecycle_events\":[{\"event_id\":\"65b2c4f3-6302-4566-b3da-a7118c677d1f\",\"event_kind\":\"CANCELLATION\",\"reason_code\":\"CUSTOMER_NO_LONGER_WANTS_UNIT\",\"responsibility\":\"CUSTOMER\",\"reason_memo\":\"Customer found another apartment\",\"coordination_reference\":null,\"authorization_reference\":\"reservations.cancel\",\"occurred_at\":\"2026-11-13T19:10:00.653749Z\",\"business_date\":\"2026-11-14\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"actor_name\":\"Kompheak\"}],\"deposit_outcomes\":[],\"suggested_deposit_usd_cents\":6000,\"suggested_deposit_rate_basis_points\":2000,\"made_by_name\":\"Kompheak\",\"can_extend\":false,\"can_cancel\":false,\"rules\":{\"reservation_days\":21,\"extension_days\":14,\"deposit_rate_basis_points\":2000}},\"meta\":{\"request_id\":\"d143a746-31fa-488d-85ca-50e3993d1e27\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-13T19:28:14.865Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/reservations/add41500-adb9-47e3-ba99-db0edb642e80"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1851,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"reservation_id\":\"add41500-adb9-47e3-ba99-db0edb642e80\",\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"unit_id\":\"e42c8bce-10c9-4202-90fd-b9b3734046cc\",\"unit_number\":\"U410\",\"customer_id\":\"e09b5c93-45fb-4f69-b51f-b41cd2eec5e1\",\"customer_name\":\"Long Sreyneang\",\"reservation_date\":\"2026-11-14\",\"original_expiration_date\":\"2026-12-05\",\"effective_expiration_date\":\"2026-12-05\",\"agreed_monthly_rent_usd_cents\":30000,\"status\":\"CANCELLED\",\"version\":2,\"deposit_id\":\"b289d324-da8e-4c6f-b542-ede5004ad435\",\"deposit_required_usd_cents\":30000,\"deposit_received_usd_cents\":6000,\"deposit_outcome_state\":\"AWAITING_DECISION\",\"cancellation_reason_code\":\"CUSTOMER_NO_LONGER_WANTS_UNIT\",\"cancellation_responsibility\":\"CUSTOMER\",\"resulting_lease_id\":null,\"extension_notice\":null,\"extension_eligible\":false,\"extension_days_remaining\":21,\"receipts\":[{\"receipt_id\":\"7773d20c-0623-4146-85f5-ca71f5465903\",\"payment_id\":\"f9c460c2-4d04-49b2-bfec-cd54164850d9\",\"amount_usd_cents\":6000,\"occurred_at\":\"2026-11-13T19:09:43.671681Z\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"actor_name\":\"Kompheak\"}],\"lifecycle_events\":[{\"event_id\":\"65b2c4f3-6302-4566-b3da-a7118c677d1f\",\"event_kind\":\"CANCELLATION\",\"reason_code\":\"CUSTOMER_NO_LONGER_WANTS_UNIT\",\"responsibility\":\"CUSTOMER\",\"reason_memo\":\"Customer found another apartment\",\"coordination_reference\":null,\"authorization_reference\":\"reservations.cancel\",\"occurred_at\":\"2026-11-13T19:10:00.653749Z\",\"business_date\":\"2026-11-14\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"actor_name\":\"Kompheak\"}],\"deposit_outcomes\":[],\"suggested_deposit_usd_cents\":6000,\"suggested_deposit_rate_basis_points\":2000,\"made_by_name\":\"Kompheak\",\"can_extend\":false,\"can_cancel\":false,\"rules\":{\"reservation_days\":21,\"extension_days\":14,\"deposit_rate_basis_points\":2000}},\"meta\":{\"request_id\":\"fd0afa7b-ae7e-4f94-a928-549db449b162\"}}"
+     }
+    }
+   }
+  ]
+ }
+}

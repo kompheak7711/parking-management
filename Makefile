@@ -16,7 +16,7 @@ FRONTEND_RUN := cd $(FRONTEND_DIR) && $(NPM) run
 	backend-install backend-dev backend-test backend-lint backend-format \
 	backend-format-check backend-typecheck backend-build backend-import-check \
 	frontend-install frontend-dev frontend-test frontend-lint frontend-format \
-	frontend-format-check frontend-typecheck frontend-build frontend-audit automation-test \
+	frontend-format-check frontend-typecheck frontend-build frontend-screens frontend-audit automation-test \
 	relay-test relay-typecheck
 
 help:
@@ -109,6 +109,10 @@ frontend-dev:
 
 frontend-test:
 	$(FRONTEND_RUN) test
+
+# UI v81: the screen checks at five sizes (Playwright, e2e/screens.spec.ts).
+frontend-screens:
+	$(FRONTEND_RUN) screens
 
 frontend-lint:
 	$(FRONTEND_RUN) lint

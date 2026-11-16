@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 // Login sub-slice L7c (owner answer (a) to Q-2026-10-21-159): when the local certificate of
 // `scripts/local/make-certificate.sh` is in the ignored `.local/https` folder, the screen server
@@ -52,6 +52,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // UI v81: the Playwright screen checks in e2e/ are not vitest tests (`npm run screens`).
+    exclude: [...configDefaults.exclude, "e2e/**"],
     setupFiles: "./src/test/setup.ts",
     // V1-060 (DL-071 answer 13): the longest test takes about 2.5 seconds on an idle machine and
     // timed out at the default 5 seconds when the machine was busy (TEST-FE-087, 128, 258, 420,

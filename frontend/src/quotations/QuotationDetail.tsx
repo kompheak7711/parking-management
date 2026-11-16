@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { BackLink } from "../shell/backNav";
 
 import { SheetFrame } from "../invoices/InvoiceDocument";
 import {
@@ -29,7 +30,6 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { QuotationDocument } from "./QuotationDocument";
@@ -41,6 +41,7 @@ import {
 } from "./quotationsClient";
 import { QuotationChip } from "./QuotationsPage";
 import { qt } from "./text";
+import { PageHeader } from "../shell/layouts";
 
 /** Prints only the Quotation sheet (invoiceDocument.css), then the page is as before. */
 function printSheet() {
@@ -129,18 +130,7 @@ export function QuotationDetail({
     load();
   }, [load]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("quotations");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {qt(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="quotations" />;
 
   if (quotation === null) {
     return (
@@ -249,94 +239,100 @@ export function QuotationDetail({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">{quotation.quotation_number}</h2>
-            <QuotationChip language={language} state={state} />
-          </div>
-          <p>
-            {[
-              qt(language, "p_Q"),
-              quotation.customer_name,
-              quotation.unit_number,
-            ]
-              .filter((part) => part !== null && part !== "")
-              .join(" · ")}
-          </p>
-        </div>
-        <div className="ui-actions">
-          {state === "WAITING" && make && (
-            <button
-              className="ui-btn primary"
-              onClick={() => {
-                setNotice(null);
-                setDialog("sign");
-              }}
-              type="button"
-            >
-              <Icon name="check" />
-              {qt(language, "sign")}
-            </button>
-          )}
-          {state === "SIGNED" && quotation.invoice_id !== null && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("invoices", `inv:${quotation.invoice_id}`)}
-            >
-              <Icon name="invoice" />
-              {qt(language, "open_inv", quotation.invoice_number ?? "")}
-            </a>
-          )}
-          {state === "REPLACED" && quotation.replaced_by_id !== null && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("quotations", `qt:${quotation.replaced_by_id}`)}
-            >
-              <Icon name="list" />
-              {qt(language, "open_next", quotation.replaced_by_number ?? "")}
-            </a>
-          )}
-          {(state === "WAITING" || state === "SIGNED") && (
-            <button className="ui-btn" onClick={printSheet} type="button">
-              <Icon name="print" />
-              {qt(language, "print")}
-            </button>
-          )}
-          {state === "WAITING" && make && may("quotations.lower_price") && (
-            <a
-              className="ui-btn"
-              href={hashForPage("quotations", `new:${quotation.quotation_id}`)}
-            >
-              <Icon name="swap" />
-              {qt(language, "lower")}
-            </a>
-          )}
-          {state === "WAITING" && make && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setDialog("refuse");
-              }}
-              type="button"
-            >
-              <Icon name="x" />
-              {qt(language, "refuse")}
-            </button>
-          )}
-          {(state === "EXPIRED" || state === "REFUSED") && make && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("quotations", `new:${quotation.quotation_id}`)}
-            >
-              <Icon name="plus" />
-              {qt(language, "again")}
-            </a>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        actions={
+          <>
+            {state === "WAITING" && make && (
+              <button
+                className="ui-btn primary"
+                onClick={() => {
+                  setNotice(null);
+                  setDialog("sign");
+                }}
+                type="button"
+              >
+                <Icon name="check" />
+                {qt(language, "sign")}
+              </button>
+            )}
+            {state === "SIGNED" && quotation.invoice_id !== null && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage("invoices", `inv:${quotation.invoice_id}`)}
+              >
+                <Icon name="invoice" />
+                {qt(language, "open_inv", quotation.invoice_number ?? "")}
+              </a>
+            )}
+            {state === "REPLACED" && quotation.replaced_by_id !== null && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage(
+                  "quotations",
+                  `qt:${quotation.replaced_by_id}`,
+                )}
+              >
+                <Icon name="list" />
+                {qt(language, "open_next", quotation.replaced_by_number ?? "")}
+              </a>
+            )}
+            {(state === "WAITING" || state === "SIGNED") && (
+              <button className="ui-btn" onClick={printSheet} type="button">
+                <Icon name="print" />
+                {qt(language, "print")}
+              </button>
+            )}
+            {state === "WAITING" && make && may("quotations.lower_price") && (
+              <a
+                className="ui-btn"
+                href={hashForPage(
+                  "quotations",
+                  `new:${quotation.quotation_id}`,
+                )}
+              >
+                <Icon name="swap" />
+                {qt(language, "lower")}
+              </a>
+            )}
+            {state === "WAITING" && make && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setNotice(null);
+                  setDialog("refuse");
+                }}
+                type="button"
+              >
+                <Icon name="x" />
+                {qt(language, "refuse")}
+              </button>
+            )}
+            {(state === "EXPIRED" || state === "REFUSED") && make && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage(
+                  "quotations",
+                  `new:${quotation.quotation_id}`,
+                )}
+              >
+                <Icon name="plus" />
+                {qt(language, "again")}
+              </a>
+            )}
+          </>
+        }
+        back={back}
+        badge={<QuotationChip language={language} state={state} />}
+        numeric
+        summary={[
+          qt(language, "p_Q"),
+          quotation.customer_name,
+          quotation.unit_number,
+        ]
+          .filter((part) => part !== null && part !== "")
+          .join(" · ")}
+        title={quotation.quotation_number}
+      />
       {notice !== null && (
         <div className="ui-notice ok" role="status">
           <Icon name="check" />

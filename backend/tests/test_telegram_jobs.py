@@ -150,6 +150,7 @@ class FakeStore:
         self.staff_joins: list[tuple[int, str, str]] = []
         self.staff_scans: list[tuple[str, int, dict[str, Any], str]] = []
         self.staff_answers: list[dict[str, Any]] = []
+        self.staff_taps: list[tuple[str, int, int, str]] = []
         self.staff_data: dict[str, Any] = {"choices": {}, "users": []}
         self.photos_due: list[dict[str, Any]] = []
         self.photos_removed: list[str] = []
@@ -254,6 +255,10 @@ class FakeStore:
         self.rent_steps.append("queue")
         return 0
 
+    def short_stay_notices_run(self) -> int:
+        self.rent_steps.append("short_stays")
+        return 0
+
     def visit_requests_remove_old(self) -> int:
         return 0
 
@@ -333,6 +338,11 @@ class FakeStore:
         if user in self.staff:
             return {"linked": True, **self.staff[user]}
         return {"linked": False, "waiting": user in self.staff_waiting}
+
+    def staff_task_tap(self, inbound_id: str, user: int, chat: int, data: str) -> dict[str, Any]:
+        self._staff_ready()
+        self.staff_taps.append((inbound_id, user, chat, data))
+        return {"result": "DONE"}
 
     def staff_join(self, user: int, name: str, phone: str) -> dict[str, Any]:
         self._staff_ready()
@@ -494,7 +504,8 @@ def test_each_run_makes_the_rent_notices_before_it_queues_the_messages() -> None
     # DL-237: the notice the app records by itself goes to the tenant in the same run.
     store = FakeStore()
     queue_warnings(store)
-    assert store.rent_steps == ["notices", "queue"]
+    # DL-238: the short-stay guest notices run in the same step, after the Lease messages.
+    assert store.rent_steps == ["notices", "queue", "short_stays"]
 
 
 def test_an_item_that_cannot_be_opened_or_whose_photo_changed_stays_in_the_relay(
@@ -621,7 +632,7 @@ def test_send_job_sends_records_and_reports_fixed_codes() -> None:
         ("m4", "FAILED", "text_unknown", None),
     ]
     assert posts[0][0] == f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    assert posts[0][1]["text"].startswith("✅ The office app got your message")
+    assert posts[0][1]["text"].startswith("✅ The office app received your message")
 
 
 def test_an_invoice_and_its_reminder_read_as_the_tenant_gets_them() -> None:

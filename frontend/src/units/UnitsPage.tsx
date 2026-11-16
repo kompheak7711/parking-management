@@ -1,6 +1,7 @@
 // V1-058 R2: the Units page of the rebuilt app. "#/units" shows the list; "#/units/<Unit id>"
 // shows the Unit page.
 
+import type { InvoiceApi } from "../invoiceClient";
 import {
   type ProductsApi,
   productsApi as defaultProductsApi,
@@ -40,6 +41,8 @@ export interface UnitsPageProps {
   servicesApi?: RentTermsServicesApi;
   /** V1.1 part 5 (DL-122): products and stock; the real server when not given. */
   productsApi?: ProductsApi;
+  /** Property fix 5: the Unit page lists the current Lease's unpaid Invoices. */
+  invoiceApi?: Pick<InvoiceApi, "list">;
 }
 
 export function UnitsPage({
@@ -53,6 +56,7 @@ export function UnitsPage({
   utilityApi,
   servicesApi = serviceSettingsApi,
   productsApi = defaultProductsApi,
+  invoiceApi,
 }: UnitsPageProps) {
   const detail = useHashDetail("units");
   const [data, setData] = useState<UnitsData | null>(null);
@@ -135,6 +139,7 @@ export function UnitsPage({
         unitApi={unitApi}
         servicesApi={servicesApi}
         productsApi={productsApi}
+        invoiceApi={invoiceApi}
         unitId={detail}
         utilityApi={utilityApi}
       />

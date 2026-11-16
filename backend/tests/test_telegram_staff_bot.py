@@ -460,3 +460,30 @@ def test_each_answer_names_the_message_it_answers_so_the_outbox_keeps_it_once() 
     store.staff_ready = False
     send(store, {"type": "CHECK", "mode": "IN", "qr": "x"})
     assert store.reply_to == ["in-1", "in-2"]
+
+
+def tap(store: FakeStore, data: str, chat_type: str = "private") -> list[dict[str, Any]]:
+    before = len(store.replies)
+    callback = {
+        "id": "cb-1",
+        "from": {"id": USER},
+        "data": data,
+        "message": {"message_id": 5, "chat": {"id": USER, "type": chat_type}},
+    }
+    plain = {"telegram_user_id": USER, "chat_id": USER, "payload": {"callback_query": callback}}
+    handle_staff_update("STAFF", plain, {"saved": True, "inbound_id": "in-9"}, store)
+    return store.replies[before:]
+
+
+def test_a_cleaner_taps_a_housekeeping_task_and_the_database_answers() -> None:
+    """DL-236 (owner card 14 Nov 2026): the tap goes to the database, which finishes the task
+    and queues the answer; the bot itself sends nothing more. Another button or a group is not
+    a task tap."""
+    store = FakeStore()
+    task = "hk:done:0b7d8a2e-1111-4222-8333-444455556666"
+    assert tap(store, task) == []
+    assert store.staff_taps == [("in-9", USER, USER, task)]
+    assert tap(store, "faq:1") == [] and tap(store, task, chat_type="group") == []
+    assert len(store.staff_taps) == 1
+    store.staff_ready = False
+    assert codes(tap(store, task)) == [("staff.not_ready", None)]

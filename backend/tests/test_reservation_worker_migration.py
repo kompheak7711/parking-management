@@ -450,8 +450,11 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             # Sub-slice 10i-4b: the database's own time; checked against its command row below.
             "occurred_at": created_resource["receipts"][0]["occurred_at"],
             "actor_id": str(actor_id),
+            # UI v81 batch 6 (History names the person): the account name, read only.
+            "actor_name": "Reservation Tester",
         }
     ]
+    assert created_resource["made_by_name"] == "Reservation Tester"
     assert conflict.status_code == 409
     assert extended.status_code == extend_replay.status_code == 200
     extended_resource = extended.json()["data"]
@@ -464,6 +467,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         # Sub-slice 10i-3: the database's own time; checked against its command row below.
         "approved_at": extended_resource["extension_notice"]["approved_at"],
         "reason_memo": extend_payload["reason_memo"],
+        "approved_by_name": "Reservation Tester",
     }
     assert stale_extend.status_code == 412
     assert cancelled.status_code == cancel_replay.status_code == 200
@@ -493,6 +497,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             "occurred_at": cancelled_resource["lifecycle_events"][0]["occurred_at"],
             "business_date": business_date.isoformat(),
             "actor_id": str(actor_id),
+            "actor_name": "Reservation Tester",
         }
     ]
     assert cancelled_resource["deposit_outcomes"] == [
@@ -505,6 +510,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
             "occurred_at": cancelled_resource["deposit_outcomes"][0]["occurred_at"],
             "actor_id": str(actor_id),
             "authorization_reference": "reservation_deposits.dispose",
+            "actor_name": "Reservation Tester",
         }
     ]
 

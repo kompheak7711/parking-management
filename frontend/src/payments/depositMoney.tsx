@@ -27,7 +27,7 @@ const TEXT = {
   reference: ["Bank or ABA reference", "លេខយោងធនាគារ ឬ ABA"],
   err_method: ["Choose how the money came.", "សូមជ្រើសរើសរបៀបទទួលប្រាក់។"],
   err_reference: [
-    "Type the bank reference for this method.",
+    "Enter the bank reference for this method.",
     "សូមវាយលេខយោងធនាគារសម្រាប់វិធីនេះ។",
   ],
   close_anyway: ["Close anyway", "បិទទោះយ៉ាងណាក៏ដោយ"],

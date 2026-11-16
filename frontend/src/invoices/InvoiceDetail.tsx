@@ -7,6 +7,7 @@
 // a person out of the list; one that another record uses is made Void instead.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BackLink } from "../shell/backNav";
 
 import {
   InvoiceClientError,
@@ -36,6 +37,8 @@ import {
   unitOf,
 } from "./invoicesData";
 import { invoiceType, ivt } from "./text";
+import { DetailLayout, PageHeader, RightNote } from "../shell/layouts";
+import { PayerCard, type PayerCardReads } from "../payments/PayerCard";
 
 function textOf(value: JsonValue | undefined): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
@@ -233,6 +236,7 @@ export function InvoiceDetail({
   propertyId,
   onChanged,
   lateApi,
+  payerCard,
 }: {
   language: Language;
   api: Pick<
@@ -241,6 +245,8 @@ export function InvoiceDetail({
   >;
   /** The late-payment card read and the Reduce or waive command; none hides the card. */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
+  /** The reads of the shared Customer card (design v81); none shows the short card. */
+  payerCard?: PayerCardReads;
   /** Something was saved; the list reads again. */
   onChanged: () => void;
   invoiceId: string;
@@ -314,18 +320,7 @@ export function InvoiceDetail({
     loadLate();
   }, [loadLate]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("invoices");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {ivt(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="invoices" />;
 
   if (invoice === null) {
     return (
@@ -355,16 +350,54 @@ export function InvoiceDetail({
   const state = stateOf(invoice, today);
   const name = data?.names.get(invoice.customer_id) ?? null;
   const unit = data === null ? "" : unitOf(data, invoice);
+  const leaseNumber =
+    invoice.lease_id === null
+      ? undefined
+      : data?.leaseNumbers?.get(invoice.lease_id);
   const owed = Math.max(0, cents(invoice.outstanding_balance));
   const history: [string, string][] = [];
-  const made =
-    textOf(invoice.evidence.issued_at) ?? textOf(invoice.evidence.created_at);
-  history.push([made ?? invoice.invoice_date, ivt(language, "h_made")]);
+  // UI v81: each step names the person (the account name the server sends with the Invoice).
+  const names = invoice.evidence.actor_names;
+  const nameOf = (actor: JsonValue | undefined): string | null => {
+    if (
+      typeof actor !== "string" ||
+      typeof names !== "object" ||
+      names === null ||
+      Array.isArray(names)
+    )
+      return null;
+    return textOf(names[actor]);
+  };
+  const created = textOf(invoice.evidence.created_at);
+  const issuedAt = textOf(invoice.evidence.issued_at);
+  const maker = nameOf(invoice.evidence.created_by);
+  const issuer = nameOf(invoice.evidence.issued_by);
+  // A Draft saved first and issued later shows both steps; automatic billing issues at once.
+  const draftFirst =
+    created !== null &&
+    (issuedAt === null || Date.parse(issuedAt) - Date.parse(created) > 60_000);
+  if (state === "draft" || draftFirst)
+    history.push([
+      created ?? invoice.invoice_date,
+      maker === null
+        ? ivt(language, "h_made")
+        : ivt(language, "h_draft_by", maker),
+    ]);
+  if (state !== "draft" && (issuedAt !== null || !draftFirst))
+    history.push([
+      issuedAt ?? created ?? invoice.invoice_date,
+      issuer === null
+        ? ivt(language, "h_issued_app")
+        : ivt(language, "h_issued_by", issuer),
+    ]);
   for (const adjustment of invoice.adjustments) {
     const reason = textOf(adjustment.reason) ?? "";
+    const by = nameOf(adjustment.actor_id);
     history.push([
       textOf(adjustment.occurred_at) ?? "",
-      ivt(language, "h_adjusted", reason),
+      by === null
+        ? ivt(language, "h_adjusted", reason)
+        : ivt(language, "h_adjusted_by", by, reason),
     ]);
   }
   if (state === "overdue" && invoice.due_date !== null)
@@ -380,143 +413,159 @@ export function InvoiceDetail({
     !Array.isArray(invoice.void_event)
       ? invoice.void_event
       : null;
-  if (voidEvent !== null)
+  if (voidEvent !== null) {
+    const by = nameOf(voidEvent.actor_id);
+    const reason = textOf(voidEvent.reason) ?? "";
     history.push([
       textOf(voidEvent.occurred_at) ?? "",
-      ivt(language, "h_voided", textOf(voidEvent.reason) ?? ""),
+      by === null
+        ? ivt(language, "h_voided", reason)
+        : ivt(language, "h_voided_by", by, reason),
     ]);
+  }
   // A plain date is a day in Phnom Penh; the moments are UTC. Both are compared as moments.
   const momentOf = (when: string) =>
     Date.parse(when.length === 10 ? `${when}T00:00:00+07:00` : when);
   history.sort((left, right) => momentOf(left[0]) - momentOf(right[0]));
 
+  const summaryText = [ivt(language, invoiceType(invoice)), name, unit]
+    .filter((part) => part !== null && part !== "")
+    .join(" · ");
+  // D3 (DL-232): an Invoice for a missed amount links to the Invoice where it was missed.
+  const missedOn = invoice.missed_on ?? null;
+  // L1 (DL-233): a Late-payment Invoice links to the Invoice that was paid late.
+  const lateOf = invoice.late_payment_of ?? null;
+
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">
-              {state === "draft"
-                ? ivt(language, "ni_draft_no")
-                : invoice.invoice_number}
-            </h2>
-            <InvoiceChip language={language} state={state} />
-          </div>
-          <p>
-            {[ivt(language, invoiceType(invoice)), name, unit]
-              .filter((part) => part !== null && part !== "")
-              .join(" · ")}
-          </p>
-          {invoice.missed_on !== undefined && invoice.missed_on !== null && (
-            <p>
-              <a
-                href={hashForPage(
-                  "invoices",
-                  `inv:${invoice.missed_on.invoice_id}`,
-                )}
+      <PageHeader
+        actions={
+          <>
+            {state === "draft" && may("invoices.issue") && (
+              <button
+                className="ui-btn primary"
+                onClick={() => {
+                  setNotice(null);
+                  setDialog("issue");
+                }}
+                type="button"
               >
-                {ivt(language, "missed_of", invoice.missed_on.invoice_number)}
-              </a>
-            </p>
-          )}
-          {invoice.late_payment_of !== undefined &&
-            invoice.late_payment_of !== null && (
-              <p>
+                <Icon name="check" />
+                {ivt(language, "act_issue")}
+              </button>
+            )}
+            {state === "draft" &&
+              may("invoices.create") &&
+              editableItems(invoice) !== null && (
                 <a
+                  className="ui-btn"
+                  href={hashForPage("invoices", `edit:${invoice.id}`)}
+                >
+                  <Icon name="lease" />
+                  {ivt(language, "act_edit_items")}
+                </a>
+              )}
+            {state === "draft" && may("invoices.create") && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setNotice(null);
+                  setDialog("delete");
+                }}
+                type="button"
+              >
+                {ivt(language, "act_delete_draft")}
+              </button>
+            )}
+            {state !== "draft" &&
+              state !== "void" &&
+              cents(invoice.outstanding_balance) > 0 &&
+              may("payments.record") && (
+                <a
+                  className="ui-btn primary"
                   href={hashForPage(
-                    "invoices",
-                    `inv:${invoice.late_payment_of.invoice_id}`,
+                    "payments",
+                    `receive:${invoice.customer_id}`,
                   )}
                 >
-                  {ivt(
-                    language,
-                    "late_of",
-                    invoice.late_payment_of.invoice_number,
-                  )}
+                  <Icon name="payments" />
+                  {ivt(language, "act_receive")}
                 </a>
-              </p>
+              )}
+            <button className="ui-btn" onClick={printSheet} type="button">
+              <Icon name="print" />
+              {ivt(language, "act_print")}
+            </button>
+            {state !== "draft" &&
+              state !== "void" &&
+              may("invoices.adjust") && (
+                <>
+                  <button
+                    className="ui-btn"
+                    onClick={() => {
+                      setNotice(null);
+                      setDialog("adjust");
+                    }}
+                    type="button"
+                  >
+                    {ivt(language, "act_adjust")}
+                  </button>
+                  <RightNote>{ivt(language, "mgr_badge")}</RightNote>
+                </>
+              )}
+            {state !== "draft" && state !== "void" && may("invoices.void") && (
+              <>
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    setNotice(null);
+                    setDialog("void");
+                  }}
+                  type="button"
+                >
+                  {ivt(language, "act_void")}
+                </button>
+                <RightNote>{ivt(language, "mgr_badge")}</RightNote>
+              </>
             )}
-        </div>
-        <div className="ui-actions">
-          {state === "draft" && may("invoices.issue") && (
-            <button
-              className="ui-btn primary"
-              onClick={() => {
-                setNotice(null);
-                setDialog("issue");
-              }}
-              type="button"
-            >
-              <Icon name="check" />
-              {ivt(language, "act_issue")}
-            </button>
-          )}
-          {state === "draft" &&
-            may("invoices.create") &&
-            editableItems(invoice) !== null && (
-              <a
-                className="ui-btn"
-                href={hashForPage("invoices", `edit:${invoice.id}`)}
-              >
-                <Icon name="lease" />
-                {ivt(language, "act_edit_items")}
-              </a>
-            )}
-          {state === "draft" && may("invoices.create") && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setDialog("delete");
-              }}
-              type="button"
-            >
-              {ivt(language, "act_delete_draft")}
-            </button>
-          )}
-          {state !== "draft" &&
-            state !== "void" &&
-            cents(invoice.outstanding_balance) > 0 &&
-            may("payments.record") && (
-              <a
-                className="ui-btn primary"
-                href={hashForPage("payments", `receive:${invoice.customer_id}`)}
-              >
-                <Icon name="payments" />
-                {ivt(language, "act_receive")}
-              </a>
-            )}
-          <button className="ui-btn" onClick={printSheet} type="button">
-            <Icon name="print" />
-            {ivt(language, "act_print")}
-          </button>
-          {state !== "draft" && state !== "void" && may("invoices.adjust") && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setDialog("adjust");
-              }}
-              type="button"
-            >
-              {ivt(language, "act_adjust")}
-            </button>
-          )}
-          {state !== "draft" && state !== "void" && may("invoices.void") && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setDialog("void");
-              }}
-              type="button"
-            >
-              {ivt(language, "act_void")}
-            </button>
-          )}
-        </div>
-      </div>
+          </>
+        }
+        back={back}
+        badge={<InvoiceChip language={language} state={state} />}
+        numeric
+        summary={
+          missedOn === null && lateOf === null ? (
+            summaryText
+          ) : (
+            <>
+              <span>{summaryText}</span>
+              {missedOn !== null && (
+                <>
+                  {" · "}
+                  <a
+                    href={hashForPage("invoices", `inv:${missedOn.invoice_id}`)}
+                  >
+                    {ivt(language, "missed_of", missedOn.invoice_number)}
+                  </a>
+                </>
+              )}
+              {lateOf !== null && (
+                <>
+                  {" · "}
+                  <a href={hashForPage("invoices", `inv:${lateOf.invoice_id}`)}>
+                    {ivt(language, "late_of", lateOf.invoice_number)}
+                  </a>
+                </>
+              )}
+            </>
+          )
+        }
+        title={
+          state === "draft"
+            ? ivt(language, "ni_draft_no")
+            : invoice.invoice_number
+        }
+      />
       {notice !== null && (
         <div
           className={
@@ -671,8 +720,8 @@ export function InvoiceDetail({
           <p>{ivt(language, "draft_banner")}</p>
         </div>
       )}
-      <div className="ui-split">
-        <div className="ui-stack">
+      <DetailLayout
+        main={
           <SheetFrame>
             <InvoiceDocument
               invoice={invoice}
@@ -681,96 +730,136 @@ export function InvoiceDetail({
               unit={unit}
             />
           </SheetFrame>
-        </div>
-        <div className="ui-stack">
-          <StatusCard invoice={invoice} language={language} today={today} />
-          {late !== null && lateApi !== undefined && (
-            <LateChargeSection
-              api={lateApi}
-              card={late}
-              invoiceNumber={invoice.invoice_number}
-              language={language}
-              mayFix={may("late_payment.charge_correction")}
-              mayReceive={may("payments.record")}
-              onChanged={() => {
-                setNotice({ kind: "changed" });
-                load();
-                loadLate();
-              }}
-              onSaved={() => {
-                setNotice({ kind: "late" });
-                load();
-                loadLate();
-                onChanged();
-              }}
-              who={[name ?? ivt(language, "unknown_customer"), unit]
-                .filter(Boolean)
-                .join(" · ")}
-            />
-          )}
-          {lateFailed && (
-            <div className="ui-notice warn" role="status">
-              <Icon name="alert" />
-              <p>{ivt(language, "lt_failed")}</p>
-              <button className="ui-btn" onClick={loadLate} type="button">
-                {ivt(language, "retry")}
-              </button>
-            </div>
-          )}
-          <section aria-labelledby="inv-cust" className="ui-card">
-            <h2 id="inv-cust">{ivt(language, "cust_t")}</h2>
-            <p>
-              <b>{name ?? ivt(language, "unknown_customer")}</b>
-              {unit !== "" && <span className="ui-sub2">{unit}</span>}
-            </p>
-            <div className="ui-actions">
-              {may("customers.read") && (
-                <a
-                  className="ui-btn"
-                  href={hashForPage("customers", invoice.customer_id)}
-                >
-                  {ivt(language, "open_customer")}
-                </a>
-              )}
-              {invoice.lease_id !== null && may("leases.read") && (
-                <a
-                  className="ui-btn"
-                  href={hashForPage("leases", invoice.lease_id)}
-                >
-                  {ivt(language, "open_lease")}
-                </a>
-              )}
-              <a
-                className="ui-btn"
-                href={hashForPage("invoices", `for:${invoice.customer_id}`)}
-              >
-                {unit !== ""
-                  ? ivt(language, "all_for", unit)
-                  : name !== null
-                    ? ivt(language, "all_for", name)
-                    : ivt(language, "all_for_cust")}
-              </a>
-            </div>
-          </section>
-          <section aria-labelledby="inv-hist" className="ui-card">
-            <h2 id="inv-hist">{ivt(language, "history_t")}</h2>
-            <ol className="ui-timeline">
-              {history.map(([when, what], index) => (
-                <li key={index}>
-                  <div>
-                    {what}
-                    {when !== "" && (
-                      <small className="ui-num">
-                        {when.length > 10 ? momentText(when) : dayText(when)}
-                      </small>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </div>
-      </div>
+        }
+        side={
+          <>
+            <StatusCard invoice={invoice} language={language} today={today} />
+            {late !== null && lateApi !== undefined && (
+              <LateChargeSection
+                api={lateApi}
+                card={late}
+                invoiceNumber={invoice.invoice_number}
+                language={language}
+                mayFix={may("late_payment.charge_correction")}
+                mayReceive={may("payments.record")}
+                onChanged={() => {
+                  setNotice({ kind: "changed" });
+                  load();
+                  loadLate();
+                }}
+                onSaved={() => {
+                  setNotice({ kind: "late" });
+                  load();
+                  loadLate();
+                  onChanged();
+                }}
+                who={[name ?? ivt(language, "unknown_customer"), unit]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
+            )}
+            {lateFailed && (
+              <div className="ui-notice warn" role="status">
+                <Icon name="alert" />
+                <p>{ivt(language, "lt_failed")}</p>
+                <button className="ui-btn" onClick={loadLate} type="button">
+                  {ivt(language, "retry")}
+                </button>
+              </div>
+            )}
+            {payerCard === undefined ? (
+              <section aria-labelledby="inv-cust" className="ui-card">
+                <h2 id="inv-cust">{ivt(language, "cust_t")}</h2>
+                <p>
+                  <b>{name ?? ivt(language, "unknown_customer")}</b>
+                  {unit !== "" && <span className="ui-sub2">{unit}</span>}
+                </p>
+                <div className="ui-actions">
+                  {may("customers.read") && (
+                    <a
+                      className="ui-btn"
+                      href={hashForPage("customers", invoice.customer_id)}
+                    >
+                      {ivt(language, "open_customer")}
+                    </a>
+                  )}
+                  {invoice.lease_id !== null && may("leases.read") && (
+                    <a
+                      className="ui-btn"
+                      href={hashForPage("leases", invoice.lease_id)}
+                    >
+                      {leaseNumber === undefined
+                        ? ivt(language, "open_lease")
+                        : ivt(language, "open_lease_no", leaseNumber)}
+                    </a>
+                  )}
+                  <a
+                    className="ui-btn"
+                    href={hashForPage("invoices", `for:${invoice.customer_id}`)}
+                  >
+                    {unit !== ""
+                      ? ivt(language, "all_for", unit)
+                      : name !== null
+                        ? ivt(language, "all_for", name)
+                        : ivt(language, "all_for_cust")}
+                  </a>
+                </div>
+              </section>
+            ) : (
+              <>
+                <PayerCard
+                  customerId={invoice.customer_id}
+                  data={data}
+                  headingId="inv-cust"
+                  language={language}
+                  propertyId={propertyId}
+                  reads={payerCard}
+                  today={today}
+                />
+                <div className="ui-actions">
+                  {invoice.lease_id !== null && may("leases.read") && (
+                    <a
+                      className="ui-btn"
+                      href={hashForPage("leases", invoice.lease_id)}
+                    >
+                      {leaseNumber === undefined
+                        ? ivt(language, "open_lease")
+                        : ivt(language, "open_lease_no", leaseNumber)}
+                    </a>
+                  )}
+                  <a
+                    className="ui-btn"
+                    href={hashForPage("invoices", `for:${invoice.customer_id}`)}
+                  >
+                    {unit !== ""
+                      ? ivt(language, "all_for", unit)
+                      : name !== null
+                        ? ivt(language, "all_for", name)
+                        : ivt(language, "all_for_cust")}
+                  </a>
+                </div>
+              </>
+            )}
+            <section aria-labelledby="inv-hist" className="ui-card">
+              <h2 id="inv-hist">{ivt(language, "history_t")}</h2>
+              <ol className="ui-timeline">
+                {history.map(([when, what], index) => (
+                  <li key={index}>
+                    <div>
+                      {what}
+                      {when !== "" && (
+                        <small className="ui-num">
+                          {when.length > 10 ? momentText(when) : dayText(when)}
+                        </small>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </>
+        }
+      />
     </>
   );
 }

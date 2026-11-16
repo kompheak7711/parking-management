@@ -12,6 +12,7 @@ import { dayText, todayInPhnomPenh, usdFromCents } from "../shell/format";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
 import { lt } from "./text";
+import { leaseNo } from "./leasesData";
 
 /** Prints only the sheet (screens.css .lease-print), then the page is as before. */
 function printSheet() {
@@ -130,7 +131,7 @@ export function LeaseDraftPrint({
       onClose={onClose}
       onSubmit={print}
       submitLabel={lt(language, "lp_print")}
-      title={lt(language, "lp_title", lease.unit_number)}
+      title={lt(language, "lp_title", leaseNo(lease))}
       wide
     >
       <article className="lease-print" aria-label={lt(language, "lp_sheet")}>

@@ -3,6 +3,8 @@
 // Right: the Security Deposit with what happens to that money, and History.
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { BackLink } from "../shell/backNav";
+import { PageHeader } from "../shell/layouts";
 
 import {
   EARLIER_RESERVATION_RULES,
@@ -18,7 +20,6 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { CancelDialog, ExtendDialog } from "./ReservationDialogs";
 import { ReservationChip, leftText, resultText } from "./ReservationsList";
@@ -53,7 +54,14 @@ function moneyKey(reservation: ReservationResource): ReservationTextKey {
 interface HistoryLine {
   at: string;
   text: string;
+  /** Owner (UI v81): History names the person for every step. */
+  by: string | null;
 }
+
+const byLine = (language: Language, name: string | null | undefined) =>
+  name === null || name === undefined || name.trim() === ""
+    ? null
+    : rt(language, "h_by", name);
 
 function historyLines(
   language: Language,
@@ -63,18 +71,25 @@ function historyLines(
     {
       at: reservation.reservation_date,
       text: rt(language, "h_reserved", reservation.customer_name),
+      by: byLine(language, reservation.made_by_name),
     },
   ];
   for (const receipt of reservation.receipts)
     lines.push({
       at: receipt.occurred_at,
       text: rt(language, "h_receipt", usdFromCents(receipt.amount_usd_cents)),
+      by: byLine(language, receipt.actor_name),
     });
   const notice = reservation.extension_notice;
   if (notice !== null)
     lines.push({
       at: notice.approved_at,
       text: rt(language, "h_extended", dayText(notice.new_expiration_date)),
+      by:
+        notice.approved_by_name === null ||
+        notice.approved_by_name === undefined
+          ? null
+          : rt(language, "h_approved_by", notice.approved_by_name),
     });
   for (const event of reservation.lifecycle_events)
     lines.push({
@@ -87,6 +102,7 @@ function historyLines(
               "h_cancelled",
               resultText(language, reservation) ?? event.reason_code,
             ),
+      by: byLine(language, event.actor_name),
     });
   for (const outcome of reservation.deposit_outcomes)
     lines.push({
@@ -96,8 +112,13 @@ function historyLines(
         outcome.outcome_kind === "REFUND" ? "h_refund" : "h_kept",
         usdFromCents(outcome.amount_usd_cents),
       ),
+      by: byLine(language, outcome.actor_name),
     });
-  return lines.sort((left, right) => right.at.localeCompare(left.at));
+  // A day without a time (the Reservation date) counts as the start of that day, so the
+  // first step stays at the bottom of the newest-first list.
+  const key = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+  return lines.sort((left, right) => key(right.at).localeCompare(key(left.at)));
 }
 
 function when(value: string): string {
@@ -164,18 +185,7 @@ export function ReservationDetail({
     load();
   }, [load]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("reservations");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {rt(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="reservations" />;
 
   const failure = loadFailed && (
     <div className="ui-notice warn" role="status">
@@ -190,7 +200,7 @@ export function ReservationDetail({
   if (missing) {
     return (
       <>
-        {back}
+        <PageHeader back={back} title={rt(language, "details")} />
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
           <p>{rt(language, "missing")}</p>
@@ -201,7 +211,7 @@ export function ReservationDetail({
   if (reservation === null) {
     return (
       <>
-        {back}
+        <PageHeader back={back} title={rt(language, "details")} />
         {failure || (
           <p className="ui-muted" role="status">
             {rt(language, "loading")}
@@ -227,78 +237,80 @@ export function ReservationDetail({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">
-              {rt(language, "title", reservation.unit_number)}
-            </h2>
-            <ReservationChip language={language} status={reservation.status} />
-          </div>
-          <p>
-            {rt(
-              language,
-              "head_sub",
-              reservation.customer_name,
-              dayText(reservation.reservation_date),
-              dayText(reservation.effective_expiration_date),
+      {/* Owner (14/11/2026, as on the Unit and Lease pages): one head. Back on top, the
+          Reservation with its status, and the buttons on the right; no menu tabs above it. */}
+      <PageHeader
+        actions={
+          <>
+            {active && may("leases.draft") && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage(
+                  "leases",
+                  `new:${reservation.reservation_id}`,
+                )}
+              >
+                <Icon name="lease" />
+                {rt(language, "new_lease")}
+              </a>
             )}
-          </p>
-        </div>
-        <div className="ui-actions">
-          {active && may("leases.draft") && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("leases", `new:${reservation.reservation_id}`)}
-            >
-              <Icon name="lease" />
-              {rt(language, "new_lease")}
-            </a>
-          )}
-          {reservation.status === "COMPLETED" && may("leases.read") && (
-            <a
-              className="ui-btn"
-              href={hashForPage(
-                "leases",
-                reservation.resulting_lease_id ?? undefined,
-              )}
-            >
-              <Icon name="lease" />
-              {rt(language, "open_lease")}
-            </a>
-          )}
-          {active && reservation.can_extend && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setWarning(null);
-                setDialog("extend");
-              }}
-              type="button"
-            >
-              <Icon name="calendar" />
-              {rt(language, "extend")}
-              <span className="ui-badge">{rt(language, "manager")}</span>
-            </button>
-          )}
-          {active && reservation.can_cancel && (
-            <button
-              className="ui-btn"
-              onClick={() => {
-                setNotice(null);
-                setWarning(null);
-                setDialog("cancel");
-              }}
-              type="button"
-            >
-              <Icon name="x" />
-              {rt(language, "cancel_res")}
-            </button>
-          )}
-        </div>
-      </div>
+            {reservation.status === "COMPLETED" && may("leases.read") && (
+              <a
+                className="ui-btn"
+                href={hashForPage(
+                  "leases",
+                  reservation.resulting_lease_id ?? undefined,
+                )}
+              >
+                <Icon name="lease" />
+                {rt(language, "open_lease")}
+              </a>
+            )}
+            {active && reservation.can_extend && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setNotice(null);
+                  setWarning(null);
+                  setDialog("extend");
+                }}
+                type="button"
+              >
+                <Icon name="calendar" />
+                {rt(language, "extend")}
+                <span className="ui-badge">{rt(language, "manager")}</span>
+              </button>
+            )}
+            {active && reservation.can_cancel && (
+              <button
+                className="ui-btn"
+                onClick={() => {
+                  setNotice(null);
+                  setWarning(null);
+                  setDialog("cancel");
+                }}
+                type="button"
+              >
+                <Icon name="x" />
+                {rt(language, "cancel_res")}
+              </button>
+            )}
+          </>
+        }
+        back={back}
+        badge={
+          <ReservationChip language={language} status={reservation.status} />
+        }
+        numeric
+        summary={rt(
+          language,
+          "head_sub",
+          reservation.customer_name,
+          dayText(reservation.reservation_date),
+          dayText(reservation.effective_expiration_date),
+        )}
+        title={rt(language, "title", reservation.unit_number)}
+      />
       {failure}
       {active && left <= 7 && (
         <div className="ui-notice warn" role="status">
@@ -493,17 +505,12 @@ export function ReservationDetail({
                     </span>
                   </span>,
                 ],
+                // The full Security Deposit agreed (the "Full Security Deposit" box of New
+                // Reservation). It was shown as "Accepted" beside the suggestion for the first
+                // payment, so it read as "different amount approved" almost every time.
                 [
-                  rt(language, "accepted"),
-                  <span>
-                    <span className="ui-num">{usdFromCents(accepted)}</span>
-                    <span className="ui-sub2">
-                      {rt(
-                        language,
-                        accepted === suggested ? "same" : "different",
-                      )}
-                    </span>
-                  </span>,
+                  rt(language, "full_deposit"),
+                  <span className="ui-num">{usdFromCents(accepted)}</span>,
                 ],
                 [
                   rt(language, "received"),
@@ -543,6 +550,9 @@ export function ReservationDetail({
                 <li key={`${line.at}-${String(index)}`}>
                   <div>
                     {line.text}
+                    {line.by !== null && (
+                      <span className="ui-sub2">{line.by}</span>
+                    )}
                     <small className="ui-num">{when(line.at)}</small>
                   </div>
                 </li>

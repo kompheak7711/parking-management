@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CustomerApi } from "../customerClient";
+import type { CustomerApi, CustomerDetail } from "../customerClient";
+import type { CustomerLedgerApi, LedgerReply } from "../customerLedgerClient";
 import {
   InvoiceClientError,
   type InvoiceApi,
@@ -300,6 +301,12 @@ function show(
   return api;
 }
 
+/** The element found, or the test stops. */
+function box(node: Element | null): HTMLElement {
+  if (!(node instanceof HTMLElement)) throw new Error("not found");
+  return node;
+}
+
 function rows(): string[] {
   return screen
     .getAllByRole("row")
@@ -319,9 +326,7 @@ describe("Invoices page (V1-058 R5)", () => {
     show();
     expect(await screen.findByText("All Invoices")).toBeTruthy();
     const card = (name: RegExp) => screen.getByRole("button", { name });
-    expect(
-      card(/^Total Invoice amount: \$930\.00\. Issued Invoices\n3 Invoices$/),
-    ).toBeTruthy();
+    expect(card(/^Total Invoice amount: \$930\.00\.$/)).toBeTruthy();
     expect(card(/^Total unpaid: \$700\.00\./)).toBeTruthy();
     expect(card(/^Total overdue: \$450\.00\./)).toBeTruthy();
     expect(card(/^Total paid: \$230\.00\./)).toBeTruthy();
@@ -359,7 +364,7 @@ describe("Invoices page (V1-058 R5)", () => {
       "INV260005",
       "INV260001",
     ]);
-    fireEvent.click(screen.getByRole("button", { name: "Pick a month" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose month" }));
     fireEvent.change(screen.getByRole("combobox", { name: "Month" }), {
       target: { value: "2026-11" },
     });
@@ -1291,6 +1296,257 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(await screen.findByRole("heading", { name: "Draft" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Adjust" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Void" })).toBeNull();
+  });
+
+  it("TEST-FE-1924 Owner 08/11/2026: the Invoice page names its Lease by the Lease number", async () => {
+    const numbered = {
+      ...lease("lease-101", "U101", "cust-sok", "Sok Dara"),
+      lease_number: "U101L0026",
+    };
+    show({
+      leases: {
+        list: vi
+          .fn()
+          .mockResolvedValue({ items: [numbered], next_cursor: null }),
+      },
+    });
+    fireEvent.click(await screen.findByRole("link", { name: "INV260001" }));
+    expect(
+      (
+        await screen.findByRole("link", { name: "Open Lease U101L0026" })
+      ).getAttribute("href"),
+    ).toBe("#/leases/lease-101");
+  });
+
+  it('TEST-FE-1945 (owner 12/11/2026: "check all card is link to correct place") the list opens on the card its address names: "?show=overdue" shows the overdue Invoices and "?show=paid&period=month" the paid Invoices due this month; a card or a period chosen by hand is kept in the address, and Show all gives the plain address again', async () => {
+    window.location.hash = "#/invoices?show=overdue";
+    show();
+    expect(await screen.findByText("Showing: Total overdue.")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: /^Total overdue/ })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(rows()).toEqual([
+      "INV260001Sok DaraU101Rent05/10/2026$450.00$450.00Overdue",
+    ]);
+    cleanup();
+
+    // Home's "Paid this month": the paid Invoices due in October, of every type.
+    const list = [
+      ...invoices(),
+      invoice("inv-p1", "INV260006", {
+        customer: "cust-chan",
+        lease: "lease-201",
+        status: "PAID",
+        total: 5000,
+        paid: 5000,
+      }),
+    ];
+    window.location.hash = "#/invoices?show=paid&period=month";
+    show({ invoices: invoiceApi(list) });
+    expect(await screen.findByText("Showing: Total paid.")).toBeTruthy();
+    expect(screen.getByText("Invoices due in October 2026")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "This month" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    // INV260003 is paid too, but is due in November.
+    expect(rows()).toEqual([
+      "INV260006Chan VannaU201Rent05/10/2026$50.00$0.00Paid",
+    ]);
+
+    // By hand: another card, then every month, then the whole list.
+    fireEvent.click(screen.getByRole("button", { name: /^Total overdue/ }));
+    expect(window.location.hash).toBe("#/invoices?show=overdue&period=month");
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
+    expect(window.location.hash).toBe("#/invoices?show=overdue");
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    expect(window.location.hash).toBe("#/invoices");
+    expect(rows()).toHaveLength(6);
+  });
+
+  it("TEST-FE-2135 UI v81 module batch 3: the Invoice page has its own head: Back to Invoices on top, the number as the page's heading with its status, the summary, and the buttons on the right with Manager only beside Adjust and Void", async () => {
+    show();
+    fireEvent.click(await screen.findByRole("link", { name: "INV260001" }));
+    const title = await screen.findByRole("heading", {
+      level: 1,
+      name: "INV260001",
+    });
+    const head = box(title.closest("header.ui-pagehead"));
+    expect(head.firstElementChild).toBe(
+      screen.getByRole("button", { name: /^Back to/ }),
+    );
+    expect(within(head).getByText("Overdue")).toBeTruthy();
+    expect(within(head).getByText("Rent · Sok Dara · U101")).toHaveClass(
+      "ui-pagehead-sub",
+    );
+    const actions = box(head.querySelector(".ui-pagehead-actions"));
+    const parts = [...actions.children].map((part) => part.textContent);
+    expect(parts).toEqual([
+      "Receive payment",
+      "Print Invoice",
+      "Adjust",
+      "Manager only",
+      "Void",
+      "Manager only",
+    ]);
+    // "Manager only" is text beside the button, never inside it.
+    expect(screen.getByRole("button", { name: "Adjust" }).textContent).toBe(
+      "Adjust",
+    );
+  });
+
+  it("TEST-FE-2136 UI v81 module batch 3: the History names the person for every step: who saved the Draft, who issued it or automatic billing, who adjusted and who voided", async () => {
+    const named = (
+      found: InvoiceResource,
+      evidence: Record<string, unknown>,
+      extra: Partial<InvoiceResource> = {},
+    ): InvoiceResource => ({
+      ...found,
+      ...extra,
+      evidence: {
+        ...found.evidence,
+        ...evidence,
+      } as InvoiceResource["evidence"],
+    });
+    const [rent, part, , draft, voided] = invoices() as [
+      InvoiceResource,
+      InvoiceResource,
+      InvoiceResource,
+      InvoiceResource,
+      InvoiceResource,
+    ];
+    const names = { "actor-dara": "Chan Sophea", "actor-mgr": "Kim Leakhena" };
+    const list = [
+      // Saved as a Draft by a person, issued later by another.
+      named(rent, {
+        created_at: "2026-09-24T02:00:00Z",
+        created_by: "actor-dara",
+        issued_at: "2026-09-25T00:00:00Z",
+        issued_by: "actor-mgr",
+        actor_names: names,
+      }),
+      // Issued by automatic billing: made and issued at once by the app, which has no name.
+      named(part, {
+        created_at: "2026-10-25T00:00:00Z",
+        created_by: "actor-billing",
+        issued_at: "2026-10-25T00:00:00Z",
+        issued_by: "actor-billing",
+        actor_names: {},
+      }),
+      named(draft, { created_by: "actor-dara", actor_names: names }),
+      named(
+        voided,
+        {
+          created_at: "2026-09-25T00:00:00Z",
+          created_by: "actor-mgr",
+          issued_at: "2026-09-25T00:00:00Z",
+          issued_by: "actor-mgr",
+          actor_names: names,
+        },
+        {
+          adjustments: [
+            {
+              reason: "Typed the wrong amount",
+              occurred_at: "2026-09-26T03:00:00Z",
+              actor_id: "actor-mgr",
+            },
+          ],
+          void_event: {
+            reason: "Billed twice",
+            occurred_at: "2026-09-27T04:00:00Z",
+            actor_id: "actor-mgr",
+          },
+        },
+      ),
+    ];
+    const history = async (number: string) => {
+      window.location.hash = "#/invoices";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      fireEvent.click(await screen.findByRole("link", { name: number }));
+      const card = box(
+        (await screen.findByRole("heading", { name: "History" })).closest(
+          "section",
+        ),
+      );
+      return within(card)
+        .getAllByRole("listitem")
+        .map((item) => item.firstElementChild?.firstChild?.textContent);
+    };
+    show({ invoices: invoiceApi(list) });
+    expect(await history("INV260001")).toEqual(
+      expect.arrayContaining([
+        "Draft saved by Chan Sophea",
+        "Issued by Kim Leakhena",
+      ]),
+    );
+    expect(await history("INV260002")).toEqual(["Issued by automatic billing"]);
+    expect(await history("INV260005")).toEqual([
+      "Issued by Kim Leakhena",
+      "Adjusted by Kim Leakhena: Typed the wrong amount",
+      "Voided by Kim Leakhena: Billed twice",
+    ]);
+    window.location.hash = "#/invoices";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    fireEvent.click(await screen.findByRole("link", { name: "Draft" }));
+    const card = box(
+      (await screen.findByRole("heading", { name: "History" })).closest(
+        "section",
+      ),
+    );
+    expect(within(card).getByText("Draft saved by Chan Sophea")).toBeTruthy();
+  });
+
+  it("TEST-FE-2137 UI v81 module batch 3: beside an Invoice the shared Customer card shows the Customer's phone, Paid on time, Credit and Unpaid Invoices, with Open Lease and All Invoices for the Unit under it", async () => {
+    const get = vi.fn<CustomerApi["get"]>((id) =>
+      Promise.resolve({
+        customer_id: id,
+        legal_name: "Sok Dara",
+        phone_number: "012 345 678",
+        active: true,
+      } as CustomerDetail),
+    );
+    const read = vi.fn<CustomerLedgerApi["read"]>().mockResolvedValue({
+      section: "history",
+      items: [],
+      position: { credit_usd_cents: "2500", total_owed_usd_cents: "45000" },
+    } as unknown as LedgerReply);
+    const customerPaidOnTime = vi
+      .fn()
+      .mockResolvedValue({ on_time: 9, invoice_count: 11 });
+    const customers = customerApi();
+    render(
+      <InvoicesPage
+        active
+        actorId="actor-1"
+        capabilities={null}
+        customerApi={{ ...customers, get }}
+        invoiceApi={invoiceApi()}
+        language="en"
+        leaseApi={leaseApi()}
+        ledgerApi={{ read }}
+        propertyId="property-1"
+        reports={{ customerPaidOnTime }}
+        today={TODAY}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("link", { name: "INV260001" }));
+    const card = box(
+      (await screen.findByRole("heading", { name: "Customer" })).closest(
+        "section",
+      ),
+    );
+    expect(await within(card).findByText("012 345 678")).toBeTruthy();
+    expect(await within(card).findByText("9 of 11 Invoices")).toBeTruthy();
+    expect(get).toHaveBeenCalledWith("cust-sok");
+    expect(
+      screen
+        .getByRole("link", { name: "All Invoices for U101" })
+        .getAttribute("href"),
+    ).toBe("#/invoices/for%3Acust-sok");
+    expect(screen.getByRole("link", { name: "Open Lease" })).toBeTruthy();
   });
 
   it("TEST-FE-2248 A raise refused on a fully paid line offers Bill the missed amount: it makes a Draft Invoice for the same Customer and Lease that names the missed line, saves once after no answer, opens the Draft, and needs invoices.create", async () => {

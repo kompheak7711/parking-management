@@ -10,8 +10,13 @@ import "../shell/screens.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon, type ShellIcon } from "../shell/icons";
-import { hashForPage } from "../shell/navigation";
-import { openPageInAddress, useHashDetail } from "../shell/useHashPage";
+import { TabHead } from "../shell/layouts";
+import { hashForPage, pageName } from "../shell/navigation";
+import {
+  openPageInAddress,
+  useHashDetail,
+  useShowFromAddress,
+} from "../shell/useHashPage";
 import { Chip, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import { MonthlyReport } from "./MonthlyReport";
@@ -28,6 +33,7 @@ import {
   problemsApi as defaultProblemsApi,
 } from "./problemsClient";
 import { pt } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface ProblemReportsPageProps {
   language: Language;
@@ -102,7 +108,13 @@ export function whereText(language: Language, report: ProblemReport): string {
         : report.problem_place.name_en;
   return [
     shared,
-    report.floor === null ? null : pt(language, "floor", report.floor),
+    // Property fix 3 (owner 14/11/2026): a floor typed as a name ("Floor 3") shows as typed,
+    // so it never reads "floor Floor 3"; a bare number gets the word.
+    report.floor === null
+      ? null
+      : /^\d+$/.test(report.floor.trim())
+        ? pt(language, "floor", report.floor.trim())
+        : report.floor,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -161,9 +173,27 @@ export function ProblemReportsPage({
     capabilities === null || capabilities.has(capability);
   const [reports, setReports] = useState<ProblemReport[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [tab, setTab] = useState<Tab>("open");
+  const [tab, setTabState] = useState<Tab>("open");
   const [kind, setKind] = useState("");
   const [type, setType] = useState("");
+  // UI v81 round 11: Home's "Problem reports" card opens "#/problems?show=open" (every kind and
+  // type, as the card counts them); a tab chosen by hand is kept in the address too.
+  const keepShow = useShowFromAddress("problems", (show) => {
+    if (
+      show !== "open" &&
+      show !== "urgent" &&
+      show !== "late" &&
+      show !== "done"
+    )
+      return;
+    setTabState(show);
+    setKind("");
+    setType("");
+  });
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    keepShow(next === "open" ? null : next);
+  };
   const [flash, setFlash] = useState<string | null>(null);
   const sequence = useRef(0);
   const moment = now ?? new Date();
@@ -224,15 +254,36 @@ export function ProblemReportsPage({
       />
     );
   }
+  // UI v81 (B4): the list and the Monthly report are two tabs of one page. Property fix 4
+  // (owner 14/11/2026): the tab row is the page's head, as on Utilities: no title or sub-line
+  // above it, and the page's buttons at its right end.
+  const views = may("problem_reports.plan") && (
+    <nav aria-label={pt(language, "views")} className="ui-subtabs">
+      <a
+        aria-current={detail === "month" ? undefined : "page"}
+        href={hashForPage("problems")}
+      >
+        {pt(language, "v_list")}
+      </a>
+      <a
+        aria-current={detail === "month" ? "page" : undefined}
+        href={hashForPage("problems", "month")}
+      >
+        {pt(language, "m_title")}
+      </a>
+    </nav>
+  );
   if (detail === "month" && may("problem_reports.plan")) {
     return (
-      <MonthlyReport
-        api={api}
-        key={propertyId}
-        language={language}
-        now={now}
-        propertyId={propertyId}
-      />
+      <TabHead tabs={views} title={pageName("problems", language)}>
+        <MonthlyReport
+          api={api}
+          key={propertyId}
+          language={language}
+          now={now}
+          propertyId={propertyId}
+        />
+      </TabHead>
     );
   }
   const saved = (made: ProblemReport) => {
@@ -331,19 +382,13 @@ export function ProblemReportsPage({
   );
   const filtering = kind !== "" || type !== "";
 
-  return (
+  const list = (
     <>
       {failure}
-      <div className="ui-head">
+      <PageHead>
         <p>{pt(language, "sub")}</p>
-        {(may("problem_reports.plan") || may("problem_reports.add")) && (
+        {may("problem_reports.add") && (
           <div className="ui-actions">
-            {may("problem_reports.plan") && (
-              <a className="ui-btn" href={hashForPage("problems", "month")}>
-                <Icon name="reports" />
-                {pt(language, "m_title")}
-              </a>
-            )}
             {may("problem_reports.add") && (
               <a
                 className="ui-btn primary"
@@ -355,8 +400,8 @@ export function ProblemReportsPage({
             )}
           </div>
         )}
-      </div>
-      <div className="ui-filters">
+      </PageHead>
+      <div className="ui-filters ui-filters-even">
         <div aria-label={pt(language, "tabs")} className="ui-seg" role="group">
           {(["open", "urgent", "late", "done"] as const).map((value) => (
             <button
@@ -432,18 +477,15 @@ export function ProblemReportsPage({
         ) : (
           <>
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              {/* Property fix 3 (owner 14/11/2026): no Kind column (UP or BP in the number says
+                  it), the source sits small under the type, and on a phone each report is a
+                  card, so the Status always shows. */}
+              <table className="ui-table ui-pcards ui-problist">
                 <thead>
                   <tr>
                     <th scope="col">{pt(language, "c_no")}</th>
-                    <th className="ui-wide" scope="col">
-                      {pt(language, "c_kind")}
-                    </th>
                     <th scope="col">{pt(language, "c_type")}</th>
                     <th scope="col">{pt(language, "c_where")}</th>
-                    <th className="ui-wide" scope="col">
-                      {pt(language, "c_src")}
-                    </th>
                     <th scope="col">{pt(language, "c_status")}</th>
                     <th className="ui-wide" scope="col">
                       {pt(language, "c_who")}
@@ -482,15 +524,15 @@ export function ProblemReportsPage({
                             )}
                           </span>
                         </td>
-                        <td className="ui-wide">
-                          {pt(language, `k_${report.kind}`)}
-                        </td>
-                        <td>
+                        <td className="ui-wrapcell pc-full pc-later">
                           <Icon name={typeIcon(report.problem_type)} small />{" "}
                           {typeName(language, report.problem_type)}
                           <span className="ui-sub2">{report.description}</span>
+                          <span className="ui-sub2">
+                            {pt(language, `src_${report.source}`)}
+                          </span>
                         </td>
-                        <td>
+                        <td className="pc-full pc-later pc-small">
                           {whereText(language, report)}
                           {report.kind === "UNIT" && (
                             <span className="ui-sub2">
@@ -498,10 +540,7 @@ export function ProblemReportsPage({
                             </span>
                           )}
                         </td>
-                        <td className="ui-wide">
-                          {pt(language, `src_${report.source}`)}
-                        </td>
-                        <td>
+                        <td className="pc-end">
                           <StatusChip
                             language={language}
                             state={report.state}
@@ -515,7 +554,7 @@ export function ProblemReportsPage({
                             </span>
                           )}
                         </td>
-                        <td className="ui-wide">
+                        <td className="ui-wide pc-hide">
                           {report.technician === null ? (
                             <span className="ui-muted">
                               {pt(language, "not_planned")}
@@ -535,7 +574,7 @@ export function ProblemReportsPage({
                             </>
                           )}
                         </td>
-                        <td className="ui-wide ui-num">
+                        <td className="ui-wide ui-num pc-hide">
                           {ageText(language, report.created_at, moment)}
                         </td>
                       </tr>,
@@ -553,23 +592,22 @@ export function ProblemReportsPage({
                               {pt(language, "joined_to", report.report_number)}
                             </span>
                           </td>
-                          <td className="ui-wide">
-                            {pt(language, `k_${kid.kind}`)}
-                          </td>
-                          <td>
+                          <td className="ui-wrapcell pc-full pc-later">
                             <span className="ui-muted">{kid.description}</span>
+                            <span className="ui-sub2">
+                              {pt(language, `src_${kid.source}`)}
+                            </span>
                           </td>
-                          <td>{whereText(language, kid)}</td>
-                          <td className="ui-wide">
-                            {pt(language, `src_${kid.source}`)}
+                          <td className="pc-full pc-later pc-small">
+                            {whereText(language, kid)}
                           </td>
-                          <td>
+                          <td className="pc-end">
                             <StatusChip language={language} state="JOINED" />
                           </td>
-                          <td className="ui-wide ui-muted">
+                          <td className="ui-wide ui-muted pc-hide">
                             {pt(language, "follows", report.report_number)}
                           </td>
-                          <td className="ui-wide ui-num">
+                          <td className="ui-wide ui-num pc-hide">
                             {ageText(language, kid.created_at, moment)}
                           </td>
                         </tr>
@@ -588,5 +626,12 @@ export function ProblemReportsPage({
         )}
       </div>
     </>
+  );
+  return views === false ? (
+    list
+  ) : (
+    <TabHead tabs={views} title={pageName("problems", language)}>
+      {list}
+    </TabHead>
   );
 }

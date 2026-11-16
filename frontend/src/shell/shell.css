@@ -11,7 +11,8 @@
   --border-strong: #79776f;
   --text: #252a28;
   --text-2: #5c625e;
-  --muted: #79776f;
+  /* Design v81 --muted (Home batch, 08/11/2026); was the edge colour #79776f. */
+  --muted: #6b6962;
   --heading: #4d6153;
   --primary: #4d6153;
   --primary-hover: #445549;
@@ -23,13 +24,15 @@
   --link: #4d6153;
   --selected: #dee0d9;
   --hover: #ecece6;
-  /* V1-060 B6 (DL-107, owner 28/10/2026): a button never looks like a text box. A text box is
-     Paper with a grey edge; a button has a light green fill, green words and a green edge. */
-  --btn-bg: #d8e0d8;
-  --btn-hover: #cad5cb;
-  --btn-text: #3b493f;
-  --btn-edge: #4d6153;
-  --btn-shadow: 0 1px 2px rgb(37 42 40 / 20%);
+  /* V1-060 B6 (DL-107, owner 28/10/2026): a button never looks like a text box. UI v81 round 3
+     (owner 07/11/2026): a plain button is an outline button as in the design: Paper, a dark
+     edge and bold dark words; a text box keeps its light grey edge and normal words. Only the
+     one main action of an area is a filled (green) button. */
+  --btn-bg: #faf8f3;
+  --btn-hover: #ecece6;
+  --btn-text: #252a28;
+  --btn-edge: #79776f;
+  --btn-shadow: none;
   --nav-bg: #4d6153;
   --nav-text: #f2eee5;
   --nav-muted: #dee0d9;
@@ -79,11 +82,11 @@
     --link: #99bba3;
     --selected: #313c35;
     --hover: #2e3431;
-    --btn-bg: #2f3b33;
-    --btn-hover: #384639;
-    --btn-text: #bcd6c3;
-    --btn-edge: #99bba3;
-    --btn-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+    --btn-bg: #252a28;
+    --btn-hover: #2e3431;
+    --btn-text: #f2eee5;
+    --btn-edge: #79776f;
+    --btn-shadow: none;
     --nav-bg: #1b201e;
     --nav-text: #f2eee5;
     --nav-muted: #999388;
@@ -129,6 +132,21 @@ html[lang="km"] body {
   min-height: 100dvh;
 }
 
+/* UI v81 round 10 (owner 12/11/2026 10:47): the menu's colour fills its column to the bottom of
+   the page. The menu itself stays in the window while the page scrolls; this paints the whole
+   column behind it, so a page longer than the window (or a long picture of it) never shows the
+   page colour under the menu. Not on paper, and not where the menu is a drawer. */
+@media screen and (min-width: 1081px) {
+  .shell {
+    background: linear-gradient(var(--nav-bg), var(--nav-bg)) left top /
+      var(--nav-width) 100% no-repeat;
+  }
+
+  html.shell-rail .shell {
+    background-size: 84px 100%;
+  }
+}
+
 .shell-icon {
   width: 20px;
   height: 20px;
@@ -157,6 +175,12 @@ html[lang="km"] body {
   padding: 22px 14px 16px;
   background: var(--nav-bg);
   color: var(--nav-text);
+}
+
+/* A menu taller than the screen scrolls; no part of it shrinks (the drawer's close button kept
+   44 px of its height only when the menu fit the screen). */
+.shell-nav > * {
+  flex: none;
 }
 
 .shell-brand {
@@ -221,20 +245,74 @@ html[lang="km"] body {
   list-style: none;
 }
 
-.shell-group-label {
-  padding: 0 10px 4px;
+/* UI v81 side menu (owner 08/11/2026, section D; design app23.js). The group header is a
+   button that folds and unfolds its group; folded, it shows the item count and "›". The header
+   is 44px tall (design 36px) for the 44px touch rule. */
+.shell-grph {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
   color: var(--nav-muted);
-  font-size: 0.7rem;
+  font: inherit;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.1em;
+  text-align: left;
   text-transform: uppercase;
+  cursor: pointer;
 }
 
-html[lang="km"] .shell-group-label {
+.shell-grph > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+html[lang="km"] .shell-grph {
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
+}
+
+.shell-grph:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+.shell-grph .shell-icon {
+  transform: rotate(90deg);
+  transition: transform 0.22s ease;
+}
+
+.shell-grph[aria-expanded="false"] .shell-icon {
+  transform: none;
+}
+
+.shell-cnt {
+  margin-right: 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.shell-grph[aria-expanded="true"] .shell-cnt {
+  display: none;
+}
+
+/* The folded group that holds the open page keeps a thin bar, as in the design. */
+.shell-group.cur > .shell-grph[aria-expanded="false"] {
+  color: var(--nav-text);
+  box-shadow: inset 3px 0 0 var(--nav-active-bg);
+}
+
+.shell-col {
+  display: grid;
 }
 
 .shell-item {
@@ -254,6 +332,207 @@ html[lang="km"] .shell-group-label {
 }
 
 .shell-item[aria-current="page"] {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+  font-weight: 600;
+}
+
+/* "Collapse menu" under the brand (design .railbtn). Wide screens only. */
+.shell-railbtn {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  margin-top: -8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--nav-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell-railbtn:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+/* A menu item row: the link, then the "⌄" of an item with tabs (design .nitem). */
+.shell-nitem {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-radius: 7px;
+}
+
+.shell-nitem > .shell-item {
+  min-width: 0;
+}
+
+.shell-nitem > .shell-item > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The open page's item stays marked while one of its sub-items is the current one. */
+.shell-nitem.cur > .shell-item:not([aria-current]) {
+  background: var(--nav-hover);
+  font-weight: 600;
+}
+
+.shell-subtog {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--nav-text);
+  cursor: pointer;
+}
+
+.shell-subtog:hover {
+  background: var(--nav-hover);
+}
+
+.shell-subtog .shell-icon {
+  width: 18px;
+  height: 18px;
+  transform: rotate(90deg);
+  transition: transform 0.22s ease;
+}
+
+.shell-subtog[aria-expanded="true"] .shell-icon {
+  transform: rotate(-90deg);
+}
+
+.shell-nitem > .shell-col {
+  grid-column: 1 / -1;
+}
+
+/* The sub-items: the page's tabs, each with a dot (design ul.sub). 44px rows (design 40px). */
+.shell-group .shell-sub {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 6px;
+  padding: 0 0 0 22px;
+  list-style: none;
+}
+
+.shell-sub a {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 10px 6px 20px;
+  border-radius: 7px;
+  color: var(--nav-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.shell-sub a::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.shell-sub a:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+.shell-sub a[aria-current="page"] {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+  font-weight: 600;
+}
+
+.shell-sub a[aria-current="page"]::before {
+  opacity: 1;
+}
+
+/* The fly-out of the collapsed rail: the item's name and its sub-items (design .fly23). */
+.shell-fly {
+  position: fixed;
+  left: 84px;
+  z-index: 60;
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  box-shadow: var(--shadow);
+}
+
+.shell-fly-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  color: var(--nav-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.shell-fly-title:hover {
+  background: var(--nav-hover);
+}
+
+.shell-fly-title[aria-current="page"] {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+}
+
+.shell-group .shell-fly-subs {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 0;
+  padding: 4px 0 0;
+  border-top: 1px solid var(--nav-hover);
+  list-style: none;
+}
+
+.shell-fly-subs a {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 10px 6px 14px;
+  border-radius: 7px;
+  color: var(--nav-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.shell-fly-subs a:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+.shell-fly-subs a[aria-current="page"] {
   background: var(--nav-active-bg);
   color: var(--nav-active-text);
   font-weight: 600;
@@ -412,17 +691,33 @@ html[lang="km"] .shell-group-label {
   font-weight: 500;
 }
 
+/* UI v81 round 2: the design's views are wide (#view.wide), so the work area has no largest
+   width; forms keep their own (.ui-form, .ui-split-form). */
 .shell-view {
   display: grid;
   align-content: start;
   gap: 22px;
   width: 100%;
-  max-width: 1280px;
+  min-width: 0;
   padding: 24px 24px 64px;
 }
 
 .shell-view:focus {
   outline: none;
+}
+
+/* UI v81 round 2: the design's head row (app.css .head): the title with its sub-line on the
+   left, the page's buttons on the right; the buttons wrap under on a narrow screen. */
+.shell-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.shell-head-text {
+  min-width: 0;
 }
 
 .shell-head h1 {
@@ -433,12 +728,136 @@ html[lang="km"] .shell-group-label {
   line-height: 1.25;
 }
 
+/* UI v81 Utilities batch: the buttons in the head sit in one row with a gap, and a "Manager
+   only" note beside a button is centred on it. */
+.shell-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.shell-head-sub:empty,
+.shell-head-actions:empty {
+  display: none;
+}
+
+.shell-head-sub > * {
+  margin: 2px 0 0;
+  color: var(--text-2);
+}
+
+/* Owner 13/11/2026 (Operations screen, Payments): a period switch sent as the sub-line sits on
+   the title's row, to the right of the title, and wraps under it on a narrow screen. */
+.shell-head-text:has(> .shell-head-sub > .ui-headseg) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+}
+
+body .shell-head-sub > .ui-headseg {
+  margin: 0;
+  color: inherit;
+}
+
+/* When the head wraps, the page's buttons stay on the right. */
+.shell-head:has(.ui-headseg) > .shell-head-actions {
+  margin-left: auto;
+}
+
+/* Owner 13/11/2026: the buttons of that switch share its width equally. On a phone they are
+   chips that wrap, and each row of chips fills the width. */
+.shell-head-sub > .ui-headseg {
+  display: inline-grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+}
+
+/* Owner 13/11/2026 23:25 (iPad): where the title, the switch and Receive payment do not fit on
+   one row, the title and the page's buttons share the first row and the switch takes the full
+   width under them (never a button under the switch). */
+@media (min-width: 640px) and (max-width: 1399px) {
+  body .shell-head:has(.ui-headseg) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  body .shell-head:has(.ui-headseg) > .shell-head-text {
+    display: contents;
+  }
+
+  body .shell-head:has(.ui-headseg) > .shell-head-text > h1 {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  body .shell-head:has(.ui-headseg) > .shell-head-actions {
+    grid-row: 1;
+    grid-column: 2;
+    margin-left: 0;
+  }
+
+  body .shell-head:has(.ui-headseg) > .shell-head-text > .shell-head-sub {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  body .shell-head-sub > .ui-headseg {
+    display: grid;
+    width: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  .shell-head-text:has(> .shell-head-sub > .ui-headseg),
+  .shell-head-sub:has(> .ui-headseg) {
+    width: 100%;
+  }
+
+  /* Owner 13/11/2026 (phone): the switch fills the width, three buttons on the first row and
+     two on the second, each row split equally; Receive payment fills the width under it. */
+  .shell-head-sub > .ui-headseg {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-auto-flow: row;
+  }
+
+  .shell-head-sub > .ui-headseg button {
+    grid-column: span 2;
+    padding: 0 8px;
+  }
+
+  .shell-head-sub > .ui-headseg button:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+
+  .shell-head:has(.ui-headseg) > .shell-head-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .shell-head:has(.ui-headseg) > .shell-head-actions > .ui-actions {
+    display: flex;
+    flex: 1 1 auto;
+  }
+
+  .shell-head:has(.ui-headseg) > .shell-head-actions .ui-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 html[lang="km"] .shell-head h1 {
   line-height: 1.5;
 }
 
 .shell-page {
   display: grid;
+  /* UI v81 round 3: a tab strip that scrolls sideways never widens the page (phone). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   min-width: 0;
 }
@@ -560,6 +979,142 @@ html[lang="km"] .shell-head h1 {
   outline-offset: 2px;
 }
 
+/* ---------- the collapsed menu (design html.rail23), wide screens only ---------- */
+
+@media (min-width: 1081px) {
+  html.shell-rail .shell {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  html.shell-rail .shell-nav {
+    gap: 12px;
+    padding: 18px 12px 14px;
+    overflow-x: hidden;
+  }
+
+  html.shell-rail .shell-brand {
+    justify-items: center;
+    padding: 0 0 10px;
+  }
+
+  html.shell-rail .shell-appname {
+    justify-items: center;
+  }
+
+  html.shell-rail .shell-appname img {
+    width: 44px;
+    height: 38px;
+    object-fit: cover;
+    object-position: left center;
+  }
+
+  html.shell-rail .shell-appname span,
+  html.shell-rail .shell-property {
+    display: none;
+  }
+
+  html.shell-rail .shell-railbtn {
+    justify-content: center;
+    margin-top: 0;
+    padding: 8px 0;
+  }
+
+  html.shell-rail .shell-railbtn span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  html.shell-rail .shell-nav nav {
+    gap: 10px;
+  }
+
+  html.shell-rail .shell-group {
+    gap: 4px;
+  }
+
+  /* A group header is a thin line; every group stays open. */
+  html.shell-rail .shell-grph {
+    width: auto;
+    height: 1px;
+    min-height: 0;
+    margin: 2px 10px;
+    padding: 0;
+    background: var(--nav-hover);
+    font-size: 0;
+    pointer-events: none;
+  }
+
+  html.shell-rail .shell-grph .shell-icon,
+  html.shell-rail .shell-grph .shell-cnt {
+    display: none;
+  }
+
+  html.shell-rail .shell-nitem {
+    grid-template-columns: 1fr;
+  }
+
+  html.shell-rail .shell-nitem > .shell-item {
+    position: relative;
+    justify-content: center;
+    width: 56px;
+    height: 48px;
+    min-height: 48px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  html.shell-rail .shell-nitem > .shell-item > span,
+  html.shell-rail .shell-subtog,
+  html.shell-rail .shell-nitem > .shell-col {
+    display: none;
+  }
+
+  /* A small corner arrow marks an item that has sub-items. */
+  html.shell-rail .shell-nitem.has-sub > .shell-item::after {
+    content: "";
+    position: absolute;
+    right: 6px;
+    bottom: 8px;
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    opacity: 0.7;
+  }
+
+  html.shell-rail .shell-nitem.cur > .shell-item {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+  }
+
+  html.shell-rail .shell-me {
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  html.shell-rail .shell-me-text,
+  html.shell-rail .shell-build {
+    display: none;
+  }
+
+  html.shell-rail .shell-signout {
+    justify-content: center;
+    width: 48px;
+    height: 44px;
+    padding: 0;
+  }
+
+  html.shell-rail .shell-signout span {
+    display: none;
+  }
+}
+
 /* ---------- narrow screens (DESIGN.md breakpoints) ---------- */
 
 @media (max-width: 1080px) {
@@ -590,6 +1145,12 @@ html[lang="km"] .shell-head h1 {
   .shell-menu-button {
     display: inline-grid;
   }
+
+  /* The drawer is the whole menu; no Collapse button and no fly-out on a phone or tablet. */
+  .shell-railbtn,
+  .shell-fly {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -615,7 +1176,9 @@ html[lang="km"] .shell-head h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell-nav {
+  .shell-nav,
+  .shell-grph .shell-icon,
+  .shell-subtog .shell-icon {
     transition: none;
   }
 }
@@ -675,4 +1238,268 @@ a.shell-me-text[aria-current="page"] b {
   border-color: rgb(242 238 229 / 40%);
   background: transparent;
   color: var(--nav-text);
+}
+
+/* UI v81: the top-bar search. */
+.shell-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+}
+
+.shell-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.shell-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.shell-search-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  list-style: none;
+}
+
+.shell-search-list [role="option"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.shell-search-list [role="option"] small {
+  margin-left: auto;
+}
+
+.shell-search-list [aria-selected="true"],
+.shell-search-list [role="option"]:hover {
+  background: var(--hover);
+}
+
+.shell-search-note {
+  padding: 12px;
+  color: var(--text-2);
+}
+
+@media (max-width: 640px) {
+  .shell-topbar {
+    flex-wrap: wrap;
+  }
+
+  .shell-search {
+    flex-basis: 100%;
+    order: 10;
+    max-width: none;
+  }
+}
+
+/* Owner 13/11/2026 23:44 (iPad): the tab row is the head of Invoices and Quotations; the page's
+   buttons sit at its right end, above the line under the tabs. */
+.shell-head.shell-head-tabbed {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-head-tabbed > .shell-tabs {
+  flex: 1 1 auto;
+  margin-top: 0;
+  border-bottom: 0;
+}
+
+.shell-head-tabbed > .shell-head-actions {
+  margin-left: auto;
+  padding-bottom: 6px;
+}
+
+/* Administration review fix 2 (owner 13/11/2026): a row of page tabs is one line that slides
+   sideways (the 11 Ledger tabs filled 2 rows on a laptop and 5 on a phone); the open tab is
+   scrolled into view (AppShell). The side menu lists the same tabs. */
+.shell-tabs {
+  flex-wrap: nowrap;
+  min-width: 0;
+  /* Its width comes from the page, never from its tabs, so a long row never widens the page. */
+  contain: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.shell-tabs > .shell-tab {
+  flex: none;
+  white-space: nowrap;
+}
+
+.shell-head-tabbed > .shell-tabs {
+  flex: 1 1 0;
+}
+
+/* On a phone the tab row takes the whole width and the page's buttons sit under it, full
+   width and of equal size. */
+@media (max-width: 640px) {
+  .shell-head.shell-head-tabbed > .shell-tabs,
+  .shell-head.shell-head-tabbed > .ui-subtabs {
+    flex: 1 1 100%;
+  }
+
+  .shell-head.shell-head-tabbed > .shell-head-actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    flex: 1 1 100%;
+    margin-left: 0;
+    padding-bottom: 0;
+  }
+
+  .shell-head.shell-head-tabbed > .shell-head-actions .ui-btn {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* Owner 16/11/2026: with many tabs (Ledger, 11) the page's buttons sit on their own row under
+   the tab row, at its right end, so the tabs keep the whole width. */
+.shell-head.shell-head-tabbed.shell-head-many {
+  flex-wrap: wrap;
+  row-gap: 12px;
+  border-bottom: 0;
+}
+
+.shell-head-tabbed.shell-head-many > .shell-tabs {
+  flex: 1 1 100%;
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-head-tabbed.shell-head-many > .shell-head-actions {
+  flex: 1 1 100%;
+  padding-bottom: 0;
+}
+
+/* Owner 16/11/2026: on a phone the buttons under a long tab row share one row, equal width. */
+@media (max-width: 640px) {
+  .shell-head.shell-head-many > .shell-head-actions > .ui-actions,
+  .shell-head.shell-head-grouped > .shell-head-actions > .ui-actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 8px;
+  }
+}
+
+/* Owner 16/11/2026 (Ledger 11 tabs -> 5 groups): the open group's pages are picked with a small
+   switch under the tab row (the same look as Bank reconciliation / Cash count). On a phone the
+   switch comes right under the tabs and the page's buttons after it. */
+.shell-head.shell-head-tabbed.shell-head-grouped {
+  flex-wrap: wrap;
+  row-gap: 12px;
+  border-bottom: 0;
+}
+
+.shell-head-grouped > .shell-tabs {
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-head-grouped > .shell-head-actions {
+  align-self: center;
+  padding-bottom: 0;
+}
+
+.shell-groupsw {
+  order: 5;
+  display: flex;
+  flex: 1 1 100%;
+  min-width: 0;
+  contain: inline-size;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.shell-groupsw > a {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 44px;
+  margin-left: -1px;
+  padding: 0 16px;
+  border: 1px solid var(--btn-edge);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.shell-groupsw > a:first-child {
+  margin-left: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.shell-groupsw > a:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.shell-groupsw > a:hover {
+  background: var(--btn-hover);
+}
+
+.shell-groupsw > a[aria-current="page"] {
+  background: var(--selected);
+  box-shadow: inset 0 -3px 0 var(--primary);
+  color: var(--heading);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .shell-head.shell-head-grouped > .shell-groupsw {
+    order: 1;
+  }
+
+  .shell-head.shell-head-grouped > .shell-head-actions {
+    order: 2;
+  }
+
+  .shell-groupsw {
+    contain: none;
+    overflow-x: visible;
+  }
+
+  /* Equal parts across the phone; a long name ("Chart of accounts") takes two lines. */
+  .shell-groupsw > a {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding: 4px 8px;
+    text-align: center;
+    white-space: normal;
+  }
 }

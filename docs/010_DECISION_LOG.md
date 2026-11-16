@@ -3366,6 +3366,16 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Links:** DL-226, DL-223, DL-225; BR-UNIT-002, BR-UNIT-004, BR-UNIT-008, BR-UNIT-009.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-16.
 
+## DL-236 — A Housekeeping task is given to one cleaner, who gets and ticks it in the Staff bot
+
+- **Source:** the owner on 13 and 14 Nov 2026 in the thread "Improve the Leasing screen": "no assign to task to who?" (decision card: "Yes, assign to a person"), "after assign, send task to cleaning via telegram?", then "how could cleaner can tap my task, if the cleaner can not access the application" (decision card: "Telegram: get and tick tasks").
+- **Before.** A Housekeeping task belonged to nobody. Anyone with the housekeeping right ticked any task in the app, and the list did not say who did it.
+- **Now.** The front desk (`short_stays.desk`) gives a task still to do to one cleaner from the staff list (HR: job Cleaner, or reports as Cleaner in the Staff bot), to another, or to nobody. The Staff bot sends the cleaner the task in Khmer (task, room, day) with the buttons Cleaned and Not cleaned; Not cleaned asks why (guest asked no cleaning, guest did not open the door, Do not disturb sign). The tap finishes the task in the app and the bot answers. The list shows "Given to" and "Done by". A cleaner with no linked Staff bot shows "(no Telegram)" in the box; the front desk ticks for them. A room check is still done on the booking page (its message has no buttons). Anyone with the housekeeping right may still finish any task in the app. A finished task is not given to anyone any more. The History keeps each change.
+- **Not changed.** No money, Invoice or Unit status. Tasks made before stay given to nobody. The office app has no "My tasks"; cleaners see their tasks in Telegram.
+- **Database:** migration `20270725_410` (DB-HK-001). **API:** API-HK-001. **Telegram:** the Staff bot reads the button taps (`telegram_staff_bot.py`). **Screens:** Housekeeping tab: "Assign to" box for the front desk, "Given to", "Done by".
+- **Links:** DL-174, DL-222, PR-SS-STEP5.
+- **Decision date:** 2026-11-14.
+
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 
 - **Type:** `OWNER DECISION`.
@@ -3391,3 +3401,21 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open.** The Lease text (Article 2.3) must name the new days, and the owner's lawyer should say whether the Lease lets a notice go by Telegram (told to the owner on 14 Nov 2026 as a risk of point 1: a court may ask for proof on paper). A native Khmer check of the new messages and screen words.
 - **Links:** DL-073, DL-210, DL-217; BR-LEASE-024, BR-LEASE-026, BR-DEP-023.
 - **Decision date:** 2026-11-13.
+
+## DL-238 — Short-stay guests get four notices by the Tenant bot
+
+- **Type:** `OWNER DECISION`.
+- **Source.** The owner on 14 Nov 2026 in the thread "Build short-stay guest notices": "Let's start building notice for short stay". Claude proposed four notices with advice; the owner chose "Yes, build all four" on the decision card the same day. The notices for short stays had been put "later" on 13 Nov 2026 (Leasing menu: Notices for long and short stays).
+- **Before.** A guest linked by the check-in QR (DL-214) got Receipts (DL-215) and the office's building notices (DL-216). Notices was a page for Leases only.
+- **Now.** Four notices, sent by the Tenant bot to the guest's Telegram, in the language the guest chose:
+  1. **Check-out reminder**, by itself at 18:00 the evening before check-out: the check-out time and the late check-out (until 18:00, $5, free for 7 nights or more, as the Business rules), or the later time when late check-out is already added.
+  2. **Late check-out notice**, by itself 30 minutes after the time to leave when the guest is still checked in. No money is added by itself; the front desk decides.
+  3. **House-rule warning**, written by staff with the reason: warning 1, then the final warning 2. After the final warning a Manager may end the stay early with the early check-out rule (unused nights stay paid). The app does not end a stay by itself.
+  4. **Unpaid charge notice**, by itself from 09:00 the day after staff add a fee, an extension or a damage charge to the stay that is still not fully paid.
+- **A guest with no Telegram.** No message. The Notices page shows the notice as "Tell the guest in person" until staff mark it told. No paper letter for short stays.
+- **How the build read the rest** (technical, Claude): no message at night (a reminder is recorded from 18:00 to 22:00, a late notice until 22:00, an unpaid-charge notice from 09:00 to 21:00; a run outside that waits); each notice once; the message keeps the words of the day it was made; the late notice goes only on the check-out day.
+- **Kept.** The prices, fees and the early check-out rule of DL-150 to DL-159. Building notices (DL-216) still reach guests.
+- **Database:** migration `20270727_414` (DB-SSN-001). **API:** API-SSN-001. **Telegram:** texts `tenant.ss_check_out`, `tenant.ss_check_out_free`, `tenant.ss_check_out_late`, `tenant.ss_late`, `tenant.ss_warning_1`, `tenant.ss_warning_2`, `tenant.ss_unpaid`, English and Khmer; the pull job calls `app.short_stay_notices_run`. **Screen:** Notices has two tabs, Long stays (as before) and Short stays (the notices, "Give a warning", "Told in person").
+- **Open.** A native Khmer check of the new messages and screen words.
+- **Links:** DL-214, DL-215, DL-216, DL-217, DL-237.
+- **Decision date:** 2026-11-14.

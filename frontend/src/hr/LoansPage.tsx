@@ -35,6 +35,7 @@ import {
   type LoanState,
 } from "./hrClient";
 import { codeText, ht } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface LoansPageProps {
   language: Language;
@@ -98,7 +99,7 @@ export function LoansPage({
     <>
       <Done text={done} />
       <section aria-labelledby="hr-l-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="hr-l-title">{ht(language, "l_title")}</h2>
             <p>{ht(language, "l_sub")}</p>
@@ -117,7 +118,7 @@ export function LoansPage({
               {ht(language, "l_new")}
             </button>
           )}
-        </div>
+        </PageHead>
         {data !== null && (
           <p className="ui-muted ui-small">
             {ht(language, "l_rule", percent(data.loan_pct), data.open_max)}

@@ -3,6 +3,7 @@
 // are not in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   pay_title: ["Payments", "ការបង់ប្រាក់"],
@@ -20,7 +21,7 @@ const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
   // new
   failed: [
-    "This could not be read just now. Check the connection and try again.",
+    "This could not be loaded. Check the connection and try again.",
     "មិនអាចអានបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -173,6 +174,24 @@ const TEXT = {
   rc_matched_to: ["Paid for", "បង់សម្រាប់"],
   fx_system: ["App rate (rounded up)", "អត្រាកម្មវិធី (បង្គត់ឡើង)"],
   fx_usd: ["Worth in US dollars", "តម្លៃជាដុល្លារ"],
+  // UI v81 module batch 2 (Payments): the "Exchange rate for riel" card, words of design v81.
+  fx_t: ["Exchange rate for riel", "អត្រាប្តូរប្រាក់រៀល"],
+  fx_aba: ["ABA sell rate", "អត្រាលក់ ABA"],
+  fx_src: ["Automatic, {0}", "ស្វ័យប្រវត្តិ {0}"],
+  fx_markup: ["Plus {0}%", "បូក {0}%"],
+  fx_khr_of: ["In riel at this rate", "ជារៀល តាមអត្រានេះ"],
+  fx_pay: ["To pay {0} in riel", "ដើម្បីបង់ {0} ជារៀល"],
+  fx_calc: ["{0} × {1} = {2}", "{0} × {1} = {2}"],
+  fx_calc_up: ["{0} × {1} = {2}, rounded up", "{0} × {1} = {2} បង្គត់ឡើង"],
+  fx_note: [
+    "The app works these out. Nobody can change them.",
+    "កម្មវិធីគណនាតួលេខទាំងនេះ។ គ្មាននរណាអាចកែបានទេ។",
+  ],
+  fx_usd_note: [
+    "Shown for every payment, so staff can tell a Customer the riel amount before they pay.",
+    "បង្ហាញសម្រាប់ការបង់ប្រាក់គ្រប់ពេល ដើម្បីឱ្យបុគ្គលិកប្រាប់អតិថិជនពីចំនួនរៀល មុនពេលបង់។",
+  ],
+  fx_none: ["Not available", "មិនទាន់មាន"], // the words of Settings › Exchange
   dlg_pay_t: ["Receive this payment?", "ទទួលការបង់ប្រាក់នេះ?"],
   // changed: the Receipt number is given by the server when it is saved
   dlg_pay_c: [
@@ -230,7 +249,7 @@ const TEXT = {
   pc_today: ["Today", "ថ្ងៃនេះ"],
   pc_month: ["This month", "ខែនេះ"],
   pc_last: ["Last month", "ខែមុន"],
-  pc_pick: ["Pick dates", "ជ្រើសថ្ងៃ"],
+  pc_pick: ["Custom range", "ជ្រើសថ្ងៃ"],
   f_all: ["All", "ទាំងអស់"],
   pc_from: ["From", "ពី"],
   pc_to: ["To", "ដល់"],
@@ -245,23 +264,23 @@ const TEXT = {
     "គ្មានការបង់ប្រាក់ក្នុងរយៈពេលនេះទេ។",
   ],
   pc_addup: [
-    "The seven category cards ({0}) and {1} not matched yet add up to {2}.",
-    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) និង {1} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {2}។",
+    "The category cards ({0}) and {1} not matched yet add up to {2}.",
+    "ប័ណ្ណប្រភេទទាំងអស់ ({0}) និង {1} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {2}។",
   ],
   pc_addup0: [
-    "The seven category cards add up to {0}.",
-    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ស្មើនឹង {0}។",
+    "The category cards add up to {0}.",
+    "ប័ណ្ណប្រភេទទាំងអស់ ស្មើនឹង {0}។",
   ],
-  // new: money refunded straight from a payment is in none of the seven cards (decided by
+  // new: money refunded straight from a payment is in none of the category cards (decided by
   // Claude, 25/10/2026).
   pc_addup_r: [
-    "The seven category cards ({0}), {1} refunded and {2} not matched yet add up to {3}.",
-    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3}។",
+    "The category cards ({0}), {1} refunded and {2} not matched yet add up to {3}.",
+    "ប័ណ្ណប្រភេទទាំងអស់ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3}។",
   ],
   // new: shown when the cards, refunds and money left do not add up to Total received.
   pc_addup_bad: [
-    "The seven category cards ({0}), {1} refunded and {2} not matched yet add up to {3}, not {4}. Tell the Owner.",
-    "ប័ណ្ណប្រភេទទាំងប្រាំពីរ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3} មិនមែន {4} ទេ។ សូមប្រាប់ម្ចាស់។",
+    "The category cards ({0}), {1} refunded and {2} not matched yet add up to {3}, not {4}. Tell the Owner.",
+    "ប័ណ្ណប្រភេទទាំងអស់ ({0}) {1} ដែលបានសងវិញ និង {2} ដែលមិនទាន់ផ្គូផ្គង ស្មើនឹង {3} មិនមែន {4} ទេ។ សូមប្រាប់ម្ចាស់។",
   ],
   pc_rev_note: ["{0} reversed, not counted", "{0} បានត្រឡប់វិញ មិនរាប់ទេ"],
   pc_none_left: [
@@ -287,6 +306,14 @@ const TEXT = {
   col_for: ["Paid for", "បង់សម្រាប់"],
   col_status: ["Status", "ស្ថានភាព"],
   c_total: ["Total received", "ប្រាក់ទទួលសរុប"],
+  // Operations fix 1 (owner 13/11/2026); new: the Khmer words need the native check.
+  c_more: ["More cards", "កាតបន្ថែម"],
+  c_more_s: [
+    "$0.00 in this period. Tap to show them.",
+    "$0.00 ក្នុងរយៈពេលនេះ។ ចុចដើម្បីបង្ហាញ។",
+  ],
+  c_fewer: ["Fewer cards", "កាតតិចជាងនេះ"],
+  c_fewer_s: ["Hide the cards with $0.00.", "លាក់កាតដែលមាន $0.00។"],
   c_unm: ["{0} not matched yet", "{0} មិនទាន់ផ្គូផ្គង"],
   c_allm: ["Nothing left to match", "គ្មានប្រាក់ត្រូវផ្គូផ្គងទៀត"],
   c_n: ["{0} payments", "ការបង់ប្រាក់ {0}"],
@@ -301,7 +328,8 @@ const TEXT = {
     "Trash Collection and other Services",
     "ការប្រមូលសំរាម និងសេវាផ្សេងទៀត",
   ],
-  c_LATE: ["Late-payment charges", "ថ្លៃពិន័យបង់យឺត"],
+  // Owner 12/11/2026 11:03: the card is "Late-payment" (it was "Late-payment charges").
+  c_LATE: ["Late-payment", "ថ្លៃពិន័យបង់យឺត"],
   // new: the app adds the charge itself (DL-076, slice 11g); no manager confirms it.
   c_LATE_s: [
     "Added by the app after the Due Date",
@@ -309,11 +337,25 @@ const TEXT = {
   ],
   c_DEPOSIT: ["Deposits", "ប្រាក់កក់"],
   c_DEPOSIT_s: ["Held, not income", "រក្សាទុក មិនមែនចំណូល"],
-  c_MOVEOUT: ["Move-out charges", "ថ្លៃពេលចាកចេញ"],
-  // new: other one-time charges count here too (decided by Claude, 25/10/2026).
-  c_MOVEOUT_s: [
-    "Cleaning, damage and other one-time charges",
-    "ការសម្អាត ការខូចខាត និងថ្លៃមួយដងផ្សេងទៀត",
+  // UI v81 round 9 (owner 12/11/2026): "Move-out charges" is divided by the type of the Invoice
+  // (DL-221), with the type's own name, so the list and the Receipt page say the same words.
+  // The notes are new Khmer and need the native check.
+  c_SHORT_STAY: ["Short stay", "ការស្នាក់នៅខ្លី"],
+  c_SHORT_STAY_s: [
+    "Daily and weekly guests",
+    "ភ្ញៀវប្រចាំថ្ងៃ និងប្រចាំសប្ដាហ៍",
+  ],
+  c_PRODUCTS: ["Products", "ផលិតផល"],
+  c_PRODUCTS_s: ["Sold with a Quotation", "លក់តាមសម្រង់តម្លៃ"],
+  c_DAMAGE: ["Damage", "ការខូចខាត"],
+  c_DAMAGE_s: [
+    "Move-out and short-stay damage",
+    "ការខូចខាតពេលចាកចេញ និងស្នាក់នៅខ្លី",
+  ],
+  c_OTHER: ["Other charges", "ថ្លៃផ្សេងៗ"],
+  c_OTHER_s: [
+    "Cleaning and other one-time charges",
+    "ការសម្អាត និងថ្លៃមួយដងផ្សេងទៀត",
   ],
   // Parking Step 5: no cleaning charge on Parking
   c_MOVEOUT_s_parking: [
@@ -390,7 +432,7 @@ const TEXT = {
   ],
   // new
   rc_names_failed: [
-    "The Customer names could not be read, so the Receipt cannot print yet.",
+    "The Customer names could not be loaded, so the Receipt cannot print yet.",
     "មិនអាចអានឈ្មោះអតិថិជនបានទេ ដូច្នេះមិនទាន់អាចបោះពុម្ពបង្កាន់ដៃបាន។",
   ],
   // new
@@ -428,8 +470,10 @@ export function pyt(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "en" ? 0 : 1];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }

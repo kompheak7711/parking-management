@@ -183,8 +183,8 @@ describe("sign-in screens", () => {
     const username = screen.getByLabelText("Username");
     const password = screen.getByLabelText("Password");
     expect(username).toHaveAttribute("aria-invalid", "true");
-    expect(username).toHaveAccessibleDescription("Type your username.");
-    expect(password).toHaveAccessibleDescription("Type your password.");
+    expect(username).toHaveAccessibleDescription("Enter your username.");
+    expect(password).toHaveAccessibleDescription("Enter your password.");
     expect(username).toHaveFocus();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(client.signIn).not.toHaveBeenCalled();
@@ -283,14 +283,14 @@ describe("sign-in screens", () => {
     fireEvent.change(code, { target: { value: "12a" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(code).toHaveAccessibleDescription(
-      "The code changes every 30 seconds. Type the 6 digits from your phone.",
+      "The code changes every 30 seconds. Enter the 6 digits from your phone.",
     );
     expect(completeMfa).not.toHaveBeenCalled();
 
     fireEvent.change(code, { target: { value: "123 456" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "That code is not right. Type the newest code from your phone.",
+      "That code is not right. Enter the newest code from your phone.",
     );
     expect(screen.getByLabelText("6-digit code")).toHaveValue("");
 
@@ -311,7 +311,7 @@ describe("sign-in screens", () => {
     await waitFor(() => {
       expect(onAuthenticated).toHaveBeenCalledWith(
         { phase: "authenticated", session },
-        "Signed in as Sokha Chan.",
+        "",
       );
     });
     expect(completeMfa).toHaveBeenNthCalledWith(1, {
@@ -367,7 +367,7 @@ describe("sign-in screens", () => {
     const staff = screen.getByRole("region", { name: "Staff and Managers" });
     expect(staff).toHaveTextContent(/Ask the Owner/);
     const owner = screen.getByRole("region", { name: "Owner" });
-    expect(owner).toHaveTextContent(/server emergency procedure/);
+    expect(owner).toHaveTextContent(/emergency reset/);
     expect(within(owner).queryByRole("button")).not.toBeInTheDocument();
     expect(
       screen.getByText(
@@ -418,7 +418,7 @@ describe("sign-in screens", () => {
     fireEvent.change(first, {
       target: { value: "my blue door opens at seven" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "my blue door opens at seven" },
     });
     const met = within(rules)
@@ -513,7 +513,7 @@ describe("sign-in screens", () => {
     );
     expect(onAuthenticated).toHaveBeenCalledWith(
       { phase: "authenticated", session },
-      "Signed in as Sokha Chan.",
+      "",
     );
     expect(screen.queryByText("first-recovery-code")).not.toBeInTheDocument();
   });
@@ -538,7 +538,7 @@ describe("sign-in screens", () => {
     await waitFor(() => {
       expect(onAuthenticated).toHaveBeenCalledWith(
         { phase: "authenticated", session },
-        "Signed in as Sokha Chan. Two-step sign-in is set up, but your recovery codes were not made. Make new codes in your account soon.",
+        "Two-step sign-in is set up, but your recovery codes were not made. Make new codes in your account soon.",
       );
     });
   });
@@ -609,7 +609,7 @@ describe("sign-in screens", () => {
     fireEvent.change(await screen.findByLabelText("New password"), {
       target: { value: "my blue door opens at seven" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "my blue door opens at seven" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
@@ -668,7 +668,7 @@ describe("sign-in screens", () => {
     fireEvent.change(await screen.findByLabelText("New password"), {
       target: { value: "my blue door opens at seven" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "my blue door opens at seven" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
@@ -828,13 +828,13 @@ describe("sign-in screens", () => {
 
     signIn("sokha.chan", "k7m2-x9qp-4hrt-w3nd");
     expect(await screen.findByLabelText("New password")).toHaveValue("");
-    expect(screen.getByLabelText("Type the new password again")).toHaveValue(
+    expect(screen.getByLabelText("Enter the new password again")).toHaveValue(
       "",
     );
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "my blue door opens at seven" },
     });
-    fireEvent.change(screen.getByLabelText("Type the new password again"), {
+    fireEvent.change(screen.getByLabelText("Enter the new password again"), {
       target: { value: "my blue door opens at seven" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save new password" }));
@@ -887,9 +887,8 @@ describe("sign-in layer in the app", () => {
     });
     expect(screen.getByRole("main")).toHaveAccessibleName("Home");
     expect(screen.getByText("Sokha Chan")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Signed in as Sokha Chan.",
-    );
+    // UI v81 round 2: no welcome banner (the design has none; the name is in the menu).
+    expect(screen.queryByText(/Signed in as/)).not.toBeInTheDocument();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });

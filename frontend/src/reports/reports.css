@@ -63,19 +63,55 @@
 .rp-group {
   margin: 0;
   color: var(--text-2);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  /* UI v81 (B4): report group titles in normal case, not ALL CAPS. */
 }
 
+/* UI v81 round 3 (responsive rule): on a desktop three per row, the last rows balanced so no card
+   is alone: 4 = 2 + 2, 5 = 3 + 2, 7 = 3 + 2 + 2, 8 = 3 + 3 + 2, 10 = 3 + 3 + 2 + 2. A tablet
+   (640 to 1023px) keeps three per row; a phone shows two per row (an odd last card fills the row). */
 .rp-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.rp-cards > li {
+  grid-column: span 2;
+}
+
+@media (min-width: 640px) {
+  .rp-cards:has(> :nth-child(1):last-child) > li {
+    grid-column: span 6;
+  }
+
+  .rp-cards:has(> :nth-child(2):last-child) > li,
+  .rp-cards:has(> :nth-child(4):last-child) > li,
+  .rp-cards:has(> :nth-child(5):last-child) > :nth-child(n + 4),
+  .rp-cards:has(> :nth-child(7):last-child) > :nth-child(n + 4),
+  .rp-cards:has(> :nth-child(8):last-child) > :nth-child(n + 7),
+  .rp-cards:has(> :nth-child(10):last-child) > :nth-child(n + 7),
+  .rp-cards:has(> :nth-child(11):last-child) > :nth-child(n + 10) {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 639px) {
+  .rp-cards {
+    gap: 10px;
+  }
+
+  .rp-cards > li {
+    grid-column: span 3;
+  }
+
+  .rp-cards > :nth-child(odd):last-child {
+    grid-column: span 6;
+  }
 }
 
 .shell-view a.rp-card,
@@ -143,18 +179,6 @@ a.rp-card:hover {
   margin-left: auto;
   color: var(--link);
   font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .rp-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .rp-cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* ---------- a report page ---------- */

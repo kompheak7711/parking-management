@@ -13,11 +13,16 @@ import {
   useState,
 } from "react";
 
-import { momentText } from "../shell/format";
+import { momentText, todayInPhnomPenh } from "../shell/format";
+import { SiteCalendars } from "../shortstays/SiteCalendars";
+import {
+  type ShortStaysApi,
+  shortStaysApi,
+} from "../shortstays/shortStaysClient";
 import { Icon, type ShellIcon } from "../shell/icons";
-import { hashForPage } from "../shell/navigation";
+import { hashForPage, pageName } from "../shell/navigation";
 import { useHashDetail } from "../shell/useHashPage";
-import { Chip } from "../shell/ui";
+import { Chip, SubTabPanel, SubTabs, useSubTab } from "../shell/ui";
 import type { ReauthenticationRequest } from "../authClient";
 import type { Language } from "../signInText";
 import {
@@ -30,10 +35,35 @@ import { type SettingsTextKey, sst } from "./text";
 import { type BusinessApi, BusinessTab } from "./BusinessTab";
 import { type RatesApi, RatesTab } from "./RatesTab";
 import { type SetupApi, UnitSetupTab } from "./UnitSetupTab";
+import { AccessHistory } from "./AccessHistory";
 import { type StaffLookup, type UsersApi, UsersTab } from "./UsersTab";
 import type { RolesApi } from "../access/rolesClient";
+import { TabHead } from "../shell/layouts";
 
-export type SettingsTab = "business" | "rates" | "units" | "users" | "health";
+export type SettingsTab =
+  | "business"
+  | "rates"
+  | "services"
+  | "units"
+  | "users"
+  | "sites"
+  | "health";
+
+/** UI v81: the sub-tabs of the Users and access page (moved out of Settings). */
+export type AccessTab = "users" | "roles" | "signin" | "history";
+
+const ACCESS_TAB_IDS: readonly AccessTab[] = [
+  "users",
+  "roles",
+  "signin",
+  "history",
+];
+const ACCESS_TABS: readonly { tab: AccessTab; label: SettingsTextKey }[] = [
+  { tab: "users", label: "ac_users" },
+  { tab: "roles", label: "ac_roles" },
+  { tab: "signin", label: "ac_signin" },
+  { tab: "history", label: "ac_history" },
+];
 
 const TABS: readonly {
   tab: SettingsTab;
@@ -54,16 +84,24 @@ const TABS: readonly {
     needs: ["settings.manage"],
   },
   {
+    tab: "services",
+    label: "se_tab_msvc",
+    icon: "list",
+    needs: ["settings.manage"],
+  },
+  {
     tab: "units",
     label: "se_tab_units",
     icon: "units",
     needs: ["settings.manage"],
   },
+  // Owner 13/11/2026 (Leasing thread): the booking sites' calendar links, set up once, moved
+  // here from Short stays. For the Owner and the Manager, as before.
   {
-    tab: "users",
-    label: "se_tab_users",
-    icon: "customers",
-    needs: ["identity.manage_access"],
+    tab: "sites",
+    label: "se_tab_sites",
+    icon: "calendar",
+    needs: ["short_stays.approve"],
   },
   {
     tab: "health",
@@ -92,6 +130,12 @@ export interface SettingsPageProps {
   reauthenticate: (request: ReauthenticationRequest) => Promise<void>;
   /** The earlier forms of the tabs not rebuilt yet (English only). */
   earlier: Partial<Record<SettingsTab, ReactNode>>;
+  /** UI v81: "access" draws the Users and access page instead of Settings. */
+  mode?: "settings" | "access";
+  /** These screens are a test app (not the real install): System health says so calmly. */
+  testApp?: boolean;
+  /** The Booking sites tab (tests pass a fake). */
+  stayApi?: ShortStaysApi;
 }
 
 function Earlier({
@@ -119,6 +163,9 @@ function Earlier({
   );
 }
 
+/** The server's note that this computer has no health records (operations_status_api.py). */
+const NOT_SET_UP = "operations_status_not_set_up";
+
 /** "Not yet", or the time of the last success, or when it last failed. */
 function recordText(language: Language, record: HealthRecord | null): string {
   if (record === null) return sst(language, "never");
@@ -139,10 +186,12 @@ function HealthTab({
   language,
   active,
   api,
+  testApp,
 }: {
   language: Language;
   active: boolean;
   api: HealthApi;
+  testApp: boolean;
 }) {
   const [status, setStatus] = useState<HealthStatus | null>(null);
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
@@ -193,8 +242,17 @@ function HealthTab({
     );
   }
 
-  const healthy = status.database === "ok" && status.warnings.length === 0;
-  const critical = status.warnings.some((warning) => warning.critical);
+  // Owner 12/11/2026: on a test computer the health records are not set up, and that is normal:
+  // the real install sets them up. There the page says so calmly instead of "Needs attention".
+  // `testApp` is the screens' own label (the "DEVELOPMENT" mark in the menu): the local server
+  // always calls itself "production". On the real computer the same note still needs attention.
+  const testComputer =
+    testApp && status.warnings.some((warning) => warning.code === NOT_SET_UP);
+  const warnings = testComputer
+    ? status.warnings.filter((warning) => warning.code !== NOT_SET_UP)
+    : status.warnings;
+  const healthy = status.database === "ok" && warnings.length === 0;
+  const critical = warnings.some((warning) => warning.critical);
   const time = (value: string | null) =>
     value === null ? sst(language, "never") : momentText(value);
   const rows: [SettingsTextKey, string][] = [
@@ -253,7 +311,11 @@ function HealthTab({
       <section aria-labelledby="settings-health" className="ui-card">
         <header className="ui-chead">
           <h2 id="settings-health">{sst(language, "se_health")}</h2>
-          {healthy ? (
+          {healthy && testComputer ? (
+            <Chip icon="info" tone="info">
+              {sst(language, "health_test")}
+            </Chip>
+          ) : healthy ? (
             <Chip icon="check" tone="ok">
               {sst(language, "se_ok")}
             </Chip>
@@ -275,14 +337,20 @@ function HealthTab({
           {sst(language, "checked_at", momentText(status.generated_at))}
         </p>
       </section>
-      {status.warnings.length > 0 && (
+      {testComputer && (
+        <div className="ui-notice info" role="note">
+          <Icon name="info" />
+          <p>{sst(language, "health_test_n")}</p>
+        </div>
+      )}
+      {warnings.length > 0 && (
         <section aria-labelledby="settings-health-warn" className="ui-card">
           <h2 id="settings-health-warn">{sst(language, "warn_h")}</h2>
           {language === "km" && (
             <p className="ui-small ui-muted">{sst(language, "warn_lang")}</p>
           )}
           <ul className="ui-apps">
-            {status.warnings.map((warning) => (
+            {warnings.map((warning) => (
               <li key={warning.code}>
                 <span lang="en">{warning.message}</span>
                 <Chip icon="alert" tone={warning.critical ? "err" : "warn"}>
@@ -316,8 +384,18 @@ export function SettingsPage({
   myUserId,
   reauthenticate,
   earlier,
+  mode = "settings",
+  testApp = false,
+  stayApi = shortStaysApi,
 }: SettingsPageProps) {
-  const detail = useHashDetail("settings");
+  const detail = useHashDetail(mode === "access" ? "access" : "settings");
+  const [accessTab] = useSubTab<AccessTab>(ACCESS_TAB_IDS, "users");
+  // UI v81: Users and sign-in moved to its own menu item; an old address goes there.
+  useEffect(() => {
+    if (mode === "settings" && active && detail === "users")
+      window.location.replace(hashForPage("access"));
+  }, [mode, active, detail]);
+
   const allowed = TABS.filter(
     (item) =>
       capabilities === null ||
@@ -330,104 +408,240 @@ export function SettingsPage({
 
   return (
     <>
-      <div className="ui-head">
-        <p>{sst(language, "se_sub")}</p>
-      </div>
-      {allowed.length > 1 && (
-        <nav aria-label={sst(language, "tabs")} className="ui-subtabs">
-          {allowed.map((item) => (
-            <a
-              aria-current={item.tab === tab ? "page" : undefined}
-              href={hashForPage("settings", item.tab)}
-              key={item.tab}
-            >
-              <Icon name={item.icon} small />
-              {sst(language, item.label)}
-            </a>
-          ))}
-        </nav>
-      )}
-      {tab === undefined && (
-        <div className="ui-notice warn" role="status">
-          <Icon name="alert" />
-          <p>{sst(language, "no_tab")}</p>
-        </div>
-      )}
-      {tab === "health" && (
-        <HealthTab active={active} api={healthApi} language={language} />
-      )}
-      {tab !== undefined && tab !== "health" && (
-        <p className="ui-small ui-muted">{sst(language, "set_who")}</p>
-      )}
-      {noProperty && (
-        <div className="ui-notice warn" role="status">
-          <Icon name="alert" />
-          <p>{sst(language, "no_property")}</p>
-        </div>
-      )}
-      {tab === "units" && !noProperty && (
-        <UnitSetupTab
+      {mode === "access" && (
+        <AccessPage
           active={active}
-          api={unitApi}
-          language={language}
-          propertyId={propertyId}
-        />
-      )}
-      {tab === "business" && !noProperty && (
-        <BusinessTab
-          active={active}
-          api={businessApi}
-          language={language}
-          propertyId={propertyId}
-        />
-      )}
-      {tab === "rates" && !noProperty && (
-        <RatesTab
-          active={active}
-          api={ratesApi}
-          language={language}
-          propertyId={propertyId}
-        />
-      )}
-      {tab === "users" && !noProperty && (
-        <UsersTab
-          active={active}
-          api={usersApi}
-          rolesApi={rolesApi}
           language={language}
           myUserId={myUserId}
+          propertyId={propertyId}
+          reauthenticate={reauthenticate}
+          rolesApi={rolesApi}
           staff={
             capabilities === null || capabilities.has("hr.employees.read")
               ? staff
               : undefined
           }
-          propertyId={propertyId}
-          reauthenticate={reauthenticate}
+          usersApi={usersApi}
         />
       )}
-      {/* The earlier forms stay mounted, so what was typed in one survives a tab change; each
-          checks its own rights with the server. */}
-      {TABS.map(
-        (item) =>
-          earlier[item.tab] !== undefined && (
-            <div hidden={item.tab !== tab} key={item.tab}>
-              <Earlier
-                language={language}
-                note={
-                  item.tab === "users"
-                    ? "earlier_kept"
-                    : item.tab === "business"
-                      ? "earlier_same"
-                      : item.tab === "rates"
-                        ? "earlier_rates"
-                        : "earlier_note"
-                }
-              >
-                {earlier[item.tab]}
-              </Earlier>
-            </div>
-          ),
+      {/* The earlier forms stay mounted, as before, so what was typed survives a page change
+          (open question in 01_UI_AUDIT_REPORT.md). Administration review fix 10 (owner
+          13/11/2026): the new tabs do everything they did, so they show only at the foot of the
+          History tab, closed, until the old screens are removed. */}
+      {earlier.users !== undefined && (
+        <div hidden={mode !== "access" || accessTab !== "history"}>
+          <Earlier language={language} note="earlier_kept">
+            {earlier.users}
+          </Earlier>
+        </div>
       )}
+      {/* One wrapper, so the earlier forms stay mounted; "ui-settings" keeps the normal space
+        between its cards and notes (owner 12/11/2026). */}
+      <div className="ui-settings" hidden={mode === "access"}>
+        <OwnHead
+          own={mode === "settings"}
+          tabs={
+            allowed.length > 1 && (
+              <nav aria-label={sst(language, "tabs")} className="ui-subtabs">
+                {allowed.map((item) => (
+                  <a
+                    aria-current={item.tab === tab ? "page" : undefined}
+                    href={hashForPage("settings", item.tab)}
+                    key={item.tab}
+                  >
+                    <Icon name={item.icon} small />
+                    {sst(language, item.label)}
+                  </a>
+                ))}
+              </nav>
+            )
+          }
+          title={pageName("settings", language)}
+        >
+          {tab === undefined && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{sst(language, "no_tab")}</p>
+            </div>
+          )}
+          {tab === "health" && (
+            <HealthTab
+              active={active}
+              api={healthApi}
+              language={language}
+              testApp={testApp}
+            />
+          )}
+          {tab !== undefined && tab !== "health" && (
+            <p className="ui-small ui-muted">{sst(language, "set_who")}</p>
+          )}
+          {noProperty && (
+            <div className="ui-notice warn" role="status">
+              <Icon name="alert" />
+              <p>{sst(language, "no_property")}</p>
+            </div>
+          )}
+          {tab === "sites" && !noProperty && (
+            <SiteCalendars
+              api={stayApi}
+              key={propertyId}
+              language={language}
+              propertyId={propertyId}
+              today={todayInPhnomPenh()}
+            />
+          )}
+          {tab === "units" && !noProperty && (
+            <UnitSetupTab
+              active={active}
+              api={unitApi}
+              language={language}
+              propertyId={propertyId}
+            />
+          )}
+          {tab === "business" && !noProperty && (
+            <BusinessTab
+              active={active}
+              api={businessApi}
+              language={language}
+              propertyId={propertyId}
+            />
+          )}
+          {(tab === "rates" || tab === "services") && !noProperty && (
+            <RatesTab
+              active={active}
+              api={ratesApi}
+              language={language}
+              part={tab === "rates" ? "utility" : "services"}
+              propertyId={propertyId}
+            />
+          )}
+          {/* The earlier forms stay mounted, so what was typed in one survives a tab change; each
+          checks its own rights with the server. */}
+          {TABS.map(
+            (item) =>
+              earlier[item.tab] !== undefined && (
+                <div
+                  className="ui-earlier"
+                  hidden={item.tab !== tab}
+                  key={item.tab}
+                >
+                  <Earlier
+                    language={language}
+                    note={
+                      item.tab === "business"
+                        ? "earlier_same"
+                        : item.tab === "rates"
+                          ? "earlier_rates"
+                          : "earlier_note"
+                    }
+                  >
+                    {earlier[item.tab]}
+                  </Earlier>
+                </div>
+              ),
+          )}
+        </OwnHead>
+      </div>
     </>
+  );
+}
+
+/**
+ * Administration review fix 1 (owner 13/11/2026): Settings and Users and access take the same
+ * head as Invoices and Utilities: the tab row is the head, with no title line and no sub-line.
+ * `own` is false for the copy of Settings that sits hidden on the Users and access page, so it
+ * never takes that page's head.
+ */
+function OwnHead({
+  own,
+  title,
+  tabs,
+  children,
+}: {
+  own: boolean;
+  title: string;
+  tabs: ReactNode;
+  children: ReactNode;
+}) {
+  if (!own) return <>{children}</>;
+  return (
+    <TabHead tabs={tabs} title={title}>
+      {children}
+    </TabHead>
+  );
+}
+
+/** UI v81 (B4): Users and access, its own menu item: Users, Roles, Sign-in and security, History. */
+function AccessPage({
+  language,
+  propertyId,
+  active,
+  usersApi,
+  rolesApi,
+  staff,
+  myUserId,
+  reauthenticate,
+}: {
+  language: Language;
+  propertyId: string;
+  active: boolean;
+  usersApi: UsersApi;
+  rolesApi: RolesApi;
+  staff?: StaffLookup;
+  myUserId: string | null;
+  reauthenticate: (request: ReauthenticationRequest) => Promise<void>;
+}) {
+  // Administration review 13/11/2026: follow the address, so the side menu's sub-items
+  // (Roles, Sign-in and security, History) switch the tab when this page is already open.
+  const [tab, setTab] = useSubTab<AccessTab>(ACCESS_TAB_IDS, "users");
+  return (
+    <TabHead
+      tabs={
+        <SubTabs
+          current={tab}
+          idPrefix="access"
+          label={sst(language, "ac_tabs")}
+          onChange={(id) => {
+            setTab(id as AccessTab);
+          }}
+          tabs={ACCESS_TABS.map((item) => ({
+            id: item.tab,
+            label: sst(language, item.label),
+          }))}
+        />
+      }
+      title={pageName("access", language)}
+    >
+      {propertyId === "" ? (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{sst(language, "no_property")}</p>
+        </div>
+      ) : (
+        <SubTabPanel id={tab} idPrefix="access">
+          {tab === "history" ? (
+            <AccessHistory
+              active={active}
+              api={usersApi}
+              language={language}
+              myUserId={myUserId}
+              propertyId={propertyId}
+            />
+          ) : (
+            <UsersTab
+              active={active}
+              api={usersApi}
+              language={language}
+              myUserId={myUserId}
+              part={tab}
+              propertyId={propertyId}
+              reauthenticate={reauthenticate}
+              rolesApi={rolesApi}
+              staff={staff}
+            />
+          )}
+        </SubTabPanel>
+      )}
+    </TabHead>
   );
 }

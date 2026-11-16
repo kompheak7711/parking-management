@@ -398,23 +398,25 @@ describe("Expense requests", () => {
     show("exreqs", fakeApi());
     expect(
       await screen.findByText(
-        "You approve requests up to $100.00. Above that, the Owner approves. You give advances, record bills and pay staff back.",
+        "You approve requests up to $100.00. Above that, the Owner approves. You give advances, record bills and reimburse staff.",
       ),
     ).toBeInTheDocument();
     const wait = screen.getByRole("button", {
-      name: /^Waiting for approval: 3/,
+      name: /^Pending approval: 3/,
     });
     expect(wait).toHaveTextContent("$640.00 · 1 for you");
     expect(
-      screen.getByRole("button", { name: /^Advances not cleared: \$60\.00/ }),
+      screen.getByRole("button", { name: /^Outstanding advances: \$60\.00/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /^Money owed to staff: \$25\.00/ }),
+      screen.getByRole("button", {
+        name: /^Owed to staff: \$25\.00/,
+      }),
     ).toBeInTheDocument();
     expect(
       within(await rowOf("ER270001")).getByRole("button", { name: "Approve" }),
     ).toBeInTheDocument();
-    expect(await rowOf("ER270002")).toHaveTextContent("Waits for the Owner");
+    expect(await rowOf("ER270002")).toHaveTextContent("Pending Owner approval");
     expect(await rowOf("ER270003")).toHaveTextContent("Late");
     expect(
       within(await rowOf("ER270003")).getByRole("button", {
@@ -423,7 +425,7 @@ describe("Expense requests", () => {
     ).toBeInTheDocument();
     expect(
       within(await rowOf("ER270004")).getByRole("button", {
-        name: "Pay back staff",
+        name: "Reimburse staff",
       }),
     ).toBeInTheDocument();
     expect(await rowOf("ER270005")).toHaveTextContent(
@@ -446,7 +448,7 @@ describe("Expense requests", () => {
     expect(
       await screen.findByText(/You see only your own requests\./),
     ).toBeInTheDocument();
-    expect(await rowOf("ER270001")).toHaveTextContent("Waits for approval");
+    expect(await rowOf("ER270001")).toHaveTextContent("Pending approval");
     expect(await rowOf("ER270004")).toHaveTextContent("Accountant's step");
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
@@ -495,7 +497,7 @@ describe("Expense requests", () => {
     });
     expect(api.addSupplier).toHaveBeenCalledWith("prop-1", "Heng Electric");
     expect(
-      await screen.findByText("ER270001 sent. It waits for approval."),
+      await screen.findByText("ER270001 submitted for approval."),
     ).toBeInTheDocument();
     expect(window.location.hash).toBe("#/exreqs/ER270001");
   });
@@ -548,7 +550,7 @@ describe("Expense requests", () => {
     });
     fireEvent.click(within(second).getByRole("button", { name: "Send" }));
     expect(second).toHaveTextContent(
-      "From $500.00, choose an asset account (business rule).",
+      "For $500.00 or more, choose an asset account (business rule).",
     );
     expect(again.submitRequest).not.toHaveBeenCalled();
   });
@@ -580,7 +582,7 @@ describe("Expense requests", () => {
     fireEvent.change(within(dialog).getByLabelText(/Bill amount/), {
       target: { value: "50" },
     });
-    expect(dialog).toHaveTextContent("Change returned: $10.00");
+    expect(dialog).toHaveTextContent("Unspent cash returned: $10.00");
     fireEvent.change(within(dialog).getByLabelText("Reference"), {
       target: { value: "SH-2210" },
     });
@@ -624,19 +626,21 @@ describe("Expense requests", () => {
     show("exreqs", api);
     fireEvent.click(
       within(await rowOf("ER270004")).getByRole("button", {
-        name: "Pay back staff",
+        name: "Reimburse staff",
       }),
     );
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("Pay back Chan Sophea: $25.00 · ER270004");
+    expect(dialog).toHaveTextContent(
+      "Reimburse Chan Sophea: $25.00 · ER270004",
+    );
     fireEvent.change(within(dialog).getByLabelText("Pay from"), {
       target: { value: "1020" },
     });
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Pay back staff" }),
+      within(dialog).getByRole("button", { name: "Reimburse staff" }),
     );
     expect(
-      await screen.findByText("Paid back. Entry JE270012."),
+      await screen.findByText("Reimbursed. Entry JE270012."),
     ).toBeInTheDocument();
     expect(api.payBack).toHaveBeenCalledWith(
       "prop-1",
@@ -661,7 +665,9 @@ describe("Expense requests", () => {
     expect(
       screen.getByText("Bill of $50.00 recorded by Sok Chenda"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Change returned: $10.00")).toBeInTheDocument();
+    expect(
+      screen.getByText("Unspent cash returned: $10.00"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Entry JE270011" }),
     ).toHaveAttribute("href", "#/journal/JE270011");
@@ -706,7 +712,7 @@ describe("Expense requests", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Void" }));
     expect(
       await within(dialog).findByText(
-        "The app refused this: This request is already done",
+        "This could not be completed: This request is already done",
       ),
     ).toBeInTheDocument();
     expect(api.voidRequest).toHaveBeenCalledWith("prop-1", "r-1", "Sent twice");
@@ -805,7 +811,9 @@ describe("Expenses", () => {
     expect(dialog).toHaveTextContent("1400 · debit $50.00");
     expect(dialog).toHaveTextContent("6050 · credit $50.00");
     fireEvent.click(within(dialog).getByRole("button", { name: "Void" }));
-    expect(await within(dialog).findByText("Say why.")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Enter a reason."),
+    ).toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
       target: { value: "Recorded twice" },
     });
@@ -830,9 +838,11 @@ describe("Supplier bills", () => {
     expect(
       await screen.findByRole("button", { name: /^Still to pay: \$265\.00/ }),
     ).toBeInTheDocument();
-    const late = screen.getByRole("button", { name: /^Late: \$220\.00/ });
+    const late = screen.getByRole("button", {
+      name: /^Overdue: \$220\.00/,
+    });
     expect(screen.getByText("SB270001").closest("tr")).toHaveTextContent(
-      "11 days late",
+      "11 days overdue",
     );
     expect(screen.getByText("SB270002").closest("tr")).toHaveTextContent(
       "Not yet due",
@@ -853,7 +863,7 @@ describe("Supplier bills", () => {
     if (row === null) throw new Error("no row");
     fireEvent.click(within(row).getByRole("button", { name: "Pay" }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("Sok Hardware · Left to pay $45.00");
+    expect(dialog).toHaveTextContent("Sok Hardware · Balance due $45.00");
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), {
       target: { value: "50" },
     });
@@ -960,7 +970,7 @@ describe("Supplier bills", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      await screen.findByText("This list could not be read just now."),
+      await screen.findByText("This list could not be loaded. Try again."),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("No supplier bills here."),

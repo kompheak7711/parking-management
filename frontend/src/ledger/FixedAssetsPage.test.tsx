@@ -197,7 +197,7 @@ describe("Fixed assets", () => {
     expect(screen.getByText("Matches")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Depreciation so far equals Accumulated depreciation (1590): $90.00.",
+        "Accumulated depreciation matches account 1590: $90.00.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "JE261031" })).toHaveAttribute(

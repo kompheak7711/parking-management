@@ -442,7 +442,9 @@ export interface NewComplaint {
 
 export interface NewQuote {
   unit_id: string;
-  guest_name: string;
+  /** Leasing batch: New booking names a picked guest by the Customer, else by name. */
+  customer_id?: string;
+  guest_name?: string;
   guest_contact?: string;
   guest_count: number;
   check_in_on: string;
@@ -572,12 +574,27 @@ export interface CleaningTask {
   guest_name: string | null;
   /** Due on an earlier day and not done yet (shown today). */
   late: boolean;
+  /** DL-236: the cleaner (an employee) the task is given to (null: nobody yet). */
+  assigned_to: string | null;
+  assigned_name: string | null;
+  /** The person who ticked it done or not cleaned (in the app or the Staff bot). */
+  done_by_name: string | null;
+}
+
+/** DL-236: a cleaner from the staff list (HR) a Housekeeping task may be given to. */
+export interface Cleaner {
+  employee_id: string;
+  name: string;
+  name_km: string;
+  /** The Staff bot can send this cleaner the task, to tick in Telegram. */
+  telegram: boolean;
 }
 
 export interface CleaningDay {
   day: string;
   today: string;
   tasks: CleaningTask[];
+  cleaners: Cleaner[];
 }
 
 export interface NewBooking {
@@ -625,6 +642,12 @@ export interface ShortStaysApi {
     propertyId: string,
     taskId: string,
     finish: { skip: boolean; note?: string },
+  ) => Promise<CleaningDay>;
+  /** DL-236: gives a task still to do to one cleaner, or to nobody (short_stays.desk). */
+  assignTask: (
+    propertyId: string,
+    taskId: string,
+    employeeId: string | null,
   ) => Promise<CleaningDay>;
   siteCalendars: (propertyId: string) => Promise<SiteCalendar[]>;
   saveSiteCalendar: (
@@ -1290,6 +1313,18 @@ export function cleaningOf(value: unknown): CleaningDay {
         booking_number: maybeText(task.booking_number),
         guest_name: maybeText(task.guest_name),
         late: task.late === true,
+        assigned_to: maybeText(task.assigned_to),
+        assigned_name: maybeText(task.assigned_name),
+        done_by_name: maybeText(task.done_by_name),
+      };
+    }),
+    cleaners: list(row.cleaners ?? []).map((entry) => {
+      const person = record(entry);
+      return {
+        employee_id: text(person.employee_id),
+        name: text(person.name),
+        name_km: text(person.name_km),
+        telegram: person.telegram === true,
       };
     }),
   };
@@ -1368,6 +1403,13 @@ export const shortStaysApi: ShortStaysApi = {
       await request(
         `${base(propertyId)}/housekeeping/${encodeURIComponent(taskId)}`,
         post(finish),
+      ),
+    ),
+  assignTask: async (propertyId, taskId, employeeId) =>
+    cleaningOf(
+      await request(
+        `${base(propertyId)}/housekeeping/${encodeURIComponent(taskId)}/assign`,
+        post({ employee_id: employeeId }),
       ),
     ),
   siteCalendars: async (propertyId) =>
@@ -1467,3 +1509,166 @@ export function daysBetween(from: string, to: string): number {
       86400000,
   );
 }
+
+// DL-238 (owner 14 Nov 2026): the notices the Tenant bot sends short-stay guests. The check-out
+// reminder, the late check-out notice and the unpaid-charge notice come by themselves; staff
+// write the house-rule warnings and mark a notice told to a guest with no Telegram.
+export const GUEST_NOTICE_KINDS = [
+  "CHECK_OUT_REMINDER",
+  "LATE_CHECK_OUT",
+  "HOUSE_RULE_WARNING",
+  "UNPAID_CHARGE",
+] as const;
+export type GuestNoticeKind = (typeof GUEST_NOTICE_KINDS)[number];
+const GUEST_NOTICE_TELEGRAM = [
+  "SENT",
+  "WAITING",
+  "NOT_DELIVERED",
+  "NO_TELEGRAM",
+] as const;
+export type GuestNoticeTelegram = (typeof GUEST_NOTICE_TELEGRAM)[number];
+
+export interface GuestNotice {
+  notice_id: string;
+  kind: GuestNoticeKind;
+  notice_on: string;
+  created_at: string;
+  warning_number: number | null;
+  reason: string | null;
+  invoice_number: string | null;
+  amount: string | null;
+  time: string | null;
+  booking_id: string;
+  booking_number: string;
+  booking_status: string;
+  check_out_on: string;
+  unit_number: string;
+  guest_name: string;
+  automatic: boolean;
+  given_by_name: string | null;
+  telegram: GuestNoticeTelegram;
+  told_at: string | null;
+  told_by_name: string | null;
+}
+
+/** A guest checked in now, who may get a house-rule warning. */
+export interface WarnableStay {
+  booking_id: string;
+  booking_number: string;
+  unit_number: string;
+  guest_name: string;
+  check_out_on: string;
+  warnings: number;
+  telegram: boolean;
+}
+
+export interface GuestNotices {
+  notices: GuestNotice[];
+  stays: WarnableStay[];
+  rules: {
+    days: number;
+    reminder_at: string;
+    late_after_minutes: number;
+    unpaid_at: string;
+  };
+}
+
+export interface GuestWarningGiven {
+  notice_id: string;
+  warning_number: number;
+  telegram_messages: number;
+}
+
+export interface GuestNoticesApi {
+  notices: (propertyId: string) => Promise<GuestNotices>;
+  /** Warning 1, then the final warning 2 (short_stays.desk). */
+  warn: (
+    propertyId: string,
+    bookingId: string,
+    reason: string,
+  ) => Promise<GuestWarningGiven>;
+  /** A notice told to the guest in person (short_stays.desk). */
+  told: (propertyId: string, noticeId: string) => Promise<GuestNotices>;
+}
+
+function flag(value: unknown): boolean {
+  if (typeof value !== "boolean") throw new ShortStaysError();
+  return value;
+}
+
+function guestNoticeOf(value: unknown): GuestNotice {
+  const row = record(value);
+  return {
+    notice_id: text(row.notice_id),
+    kind: oneOf(GUEST_NOTICE_KINDS, row.kind),
+    notice_on: text(row.notice_on),
+    created_at: text(row.created_at),
+    warning_number: maybeWhole(row.warning_number),
+    reason: maybeText(row.reason),
+    invoice_number: maybeText(row.invoice_number),
+    amount: maybeText(row.amount),
+    time: maybeText(row.time),
+    booking_id: text(row.booking_id),
+    booking_number: text(row.booking_number),
+    booking_status: text(row.booking_status),
+    check_out_on: text(row.check_out_on),
+    unit_number: text(row.unit_number),
+    guest_name: text(row.guest_name),
+    automatic: flag(row.automatic),
+    given_by_name: maybeText(row.given_by_name),
+    telegram: oneOf(GUEST_NOTICE_TELEGRAM, row.telegram),
+    told_at: maybeText(row.told_at),
+    told_by_name: maybeText(row.told_by_name),
+  };
+}
+
+export function guestNoticesOf(value: unknown): GuestNotices {
+  const page = record(value);
+  const rules = record(page.rules);
+  return {
+    notices: list(page.notices).map(guestNoticeOf),
+    stays: list(page.stays).map((item) => {
+      const stay = record(item);
+      return {
+        booking_id: text(stay.booking_id),
+        booking_number: text(stay.booking_number),
+        unit_number: text(stay.unit_number),
+        guest_name: text(stay.guest_name),
+        check_out_on: text(stay.check_out_on),
+        warnings: whole(stay.warnings),
+        telegram: flag(stay.telegram),
+      };
+    }),
+    rules: {
+      days: whole(rules.days),
+      reminder_at: text(rules.reminder_at),
+      late_after_minutes: whole(rules.late_after_minutes),
+      unpaid_at: text(rules.unpaid_at),
+    },
+  };
+}
+
+export const guestNoticesApi: GuestNoticesApi = {
+  notices: async (propertyId) =>
+    guestNoticesOf(await request(`${base(propertyId)}/notices`)),
+  warn: async (propertyId, bookingId, reason) => {
+    const given = record(
+      await request(
+        `${base(propertyId)}/bookings/${encodeURIComponent(bookingId)}/warning`,
+        post({ reason }),
+      ),
+    );
+    return {
+      notice_id: text(given.notice_id),
+      warning_number: whole(given.warning_number),
+      telegram_messages: whole(given.telegram_messages),
+    };
+  },
+  told: async (propertyId, noticeId) =>
+    guestNoticesOf(
+      await request(
+        `${base(propertyId)}/notices/${encodeURIComponent(noticeId)}/told`,
+        post(null),
+      ),
+    ),
+};

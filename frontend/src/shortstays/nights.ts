@@ -84,3 +84,25 @@ export function freeForStay(
   );
   return !taken && !leased && !held;
 }
+
+/**
+ * Owner 14/11/2026: the Calendar shows only the Units a short-stay guest can have. A Unit not
+ * for rent is left out, and so is a Unit whose Lease covers every night from today (or the
+ * first day shown, if later) to the last day shown. A Unit whose tenant moves out within the
+ * days shown stays, with its Lease bar up to the move-out. A Unit that has a booking in the days
+ * shown always stays.
+ */
+export function forShortStays(
+  unit: CalendarUnit,
+  today: string,
+  from: string,
+  lastDay: string,
+): boolean {
+  if (unit.bookings.length > 0) return true;
+  if (!unit.for_rent) return false;
+  const start = from > today ? from : today;
+  if (start > lastDay) return true;
+  return !unit.leases.some(
+    (lease) => lease.start_date <= start && lease.end_date >= lastDay,
+  );
+}

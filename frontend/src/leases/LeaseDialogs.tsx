@@ -28,6 +28,7 @@ import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import type { UnitApi } from "../unitClient";
 import { lt, type LeaseTextKey } from "./text";
+import { leaseNo } from "./leasesData";
 
 export type Outcome = "unknown" | "refused" | null;
 
@@ -376,7 +377,7 @@ export function EditDraftDialog({
             ? lt(language, "try_again")
             : lt(language, "save")
       }
-      title={lt(language, "edit_title", lease.unit_number)}
+      title={lt(language, "edit_title", leaseNo(lease))}
     >
       <p className="ui-small ui-muted">{lt(language, "edit_note")}</p>
       {field(
@@ -555,7 +556,7 @@ export function CancelDraftDialog({
             ? lt(language, "try_again")
             : lt(language, "cancel_ok")
       }
-      title={lt(language, "cancel_title", lease.unit_number)}
+      title={lt(language, "cancel_title", leaseNo(lease))}
     >
       <p className="ui-small">{lt(language, "cancel_note")}</p>
       <div className="ui-field">
@@ -753,7 +754,7 @@ export function MoveInDialog({
             ? lt(language, "try_again")
             : lt(language, "movein_ok")
       }
-      title={lt(language, "movein_title", lease.unit_number)}
+      title={lt(language, "movein_title", leaseNo(lease))}
     >
       <div className="ui-field">
         <label htmlFor="lease-movein-day">{lt(language, "movein_day")}</label>
@@ -1035,7 +1036,7 @@ export function AddOccupantDialog({
             ? lt(language, "try_again")
             : lt(language, "save")
       }
-      title={lt(language, "ao_title", lease.unit_number)}
+      title={lt(language, "ao_title", leaseNo(lease))}
     >
       <div className="ui-field">
         <label htmlFor="lease-occupant-name">

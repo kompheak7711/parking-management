@@ -97,6 +97,8 @@ class ReservationExtensionNotice:
     new_expiration_date: date
     approved_at: datetime
     reason_memo: str | None
+    # UI v81 (owner: History names the person for every step): who approved it.
+    approved_by_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +108,7 @@ class ReservationReceipt:
     amount_usd_cents: int
     occurred_at: datetime
     actor_id: UUID
+    actor_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +123,7 @@ class ReservationLifecycleEvidence:
     occurred_at: datetime
     business_date: date
     actor_id: UUID
+    actor_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,6 +136,7 @@ class ReservationDepositOutcomeEvidence:
     occurred_at: datetime
     actor_id: UUID
     authorization_reference: str
+    actor_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +169,8 @@ class ReservationResource:
     # V1.1 step 2b: the deposit the app suggested when the Reservation was made.
     suggested_deposit_usd_cents: int | None = None
     suggested_deposit_rate_basis_points: int | None = None
+    # UI v81 (owner: History names the person for every step): who made the Reservation.
+    made_by_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -689,13 +696,54 @@ class PostgresReservationResourceFlow:
                         (reservation_id, reservation_id, reservation_id, reservation_id),
                     ).fetchall()
                 )
+                made_by, approved_by = cast(
+                    tuple[object, object],
+                    connection.execute(
+                        "SELECT reservation.created_by,notice.approved_by "
+                        "FROM app.reservations AS reservation "
+                        "LEFT JOIN app.reservation_extension_notices AS notice "
+                        "ON notice.reservation_id=reservation.id WHERE reservation.id=%s",
+                        (reservation_id,),
+                    ).fetchone()
+                    or (None, None),
+                )
+                ids = {
+                    *(item.actor_id for item in receipts),
+                    *(item.actor_id for item in lifecycle),
+                    *(item.actor_id for item in outcomes),
+                    *(UUID(str(value)) for value in (made_by, approved_by) if value is not None),
+                }
+                # UI v81 (owner: History names the person for every step): the account name of
+                # the person who recorded each step. Read only; nothing stored changes.
+                names = {
+                    UUID(str(row[0])): str(row[1])
+                    for row in connection.execute(
+                        "SELECT actor_id,display_name FROM app.user_accounts "
+                        "WHERE actor_id = ANY(%s)",
+                        (list(ids),),
+                    ).fetchall()
+                }
         except psycopg.Error as exc:
             raise ReservationResourceUnavailable from exc
+
+        def name(value: object) -> str | None:
+            return None if value is None else names.get(UUID(str(value)))
+
         return replace(
             resource,
-            receipts=receipts,
-            lifecycle_events=lifecycle,
-            deposit_outcomes=outcomes,
+            receipts=tuple(replace(item, actor_name=name(item.actor_id)) for item in receipts),
+            lifecycle_events=tuple(
+                replace(item, actor_name=name(item.actor_id)) for item in lifecycle
+            ),
+            deposit_outcomes=tuple(
+                replace(item, actor_name=name(item.actor_id)) for item in outcomes
+            ),
+            extension_notice=(
+                None
+                if resource.extension_notice is None
+                else replace(resource.extension_notice, approved_by_name=name(approved_by))
+            ),
+            made_by_name=name(made_by),
         )
 
     def _service(self, property_id: UUID, actor: AuthenticatedActor) -> PostgresReservationService:

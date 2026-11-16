@@ -367,6 +367,7 @@ database_test_suites='
   tests/test_problem_report_costs_migration.py
   tests/test_problem_report_month_migration.py
   tests/test_problem_report_from_finding_migration.py
+  tests/test_problem_type_short_names_migration.py
   tests/test_hr_employees_migration.py
   tests/test_hr_payroll_migration.py
   tests/test_hr_attendance_migration.py
@@ -413,9 +414,14 @@ database_test_suites='
   tests/test_telegram_notices_migration.py
   tests/test_telegram_warnings_migration.py
   tests/test_telegram_tenant_invoices_migration.py
+  tests/test_gl_account_names_migration.py
+  tests/test_lease_number_migration.py
+  tests/test_payments_paid_for_migration.py
+  tests/test_home_page_earlier_fixes_migration.py
   tests/test_aba_invoice_qr_migration.py
   tests/test_aba_qr_payment_method_migration.py
   tests/test_riel_rate_no_markup_migration.py
+  tests/test_housekeeping_task_assign_migration.py
   tests/test_v12_hand_back_days_used_migration.py
   tests/test_rent_notice_days_migration.py
   tests/test_v12_missed_amount_type_migration.py
@@ -425,6 +431,7 @@ database_test_suites='
   tests/test_v12_draft_delete_migration.py
   tests/test_v12_unit_holder_from_dates_migration.py
   tests/test_v12_invoice_type_stored_migration.py
+  tests/test_short_stay_guest_notices_migration.py
 '
 # The General Ledger suites run first, in a pytest run of their own on the new database: the other
 # suites leave balances on the one Property (up to the largest bigint) that no books can hold.

@@ -37,6 +37,7 @@ import { Dialog } from "../shell/ui";
 import { serverWords } from "../shell/serverText";
 import type { Language } from "../signInText";
 import { lt } from "./text";
+import { leaseNo } from "./leasesData";
 
 export function ReceiveDepositDialog({
   language,
@@ -223,7 +224,7 @@ export function ReceiveDepositDialog({
             ? lt(language, "try_again")
             : lt(language, "rd_save")
       }
-      title={lt(language, "rd_title", lease.unit_number)}
+      title={lt(language, "rd_title", leaseNo(lease))}
       wide
     >
       <p className="ui-muted">

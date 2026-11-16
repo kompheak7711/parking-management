@@ -114,7 +114,7 @@ describe("Budget", () => {
     expect(
       await screen.findByRole("heading", { name: "Budget 2027" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Waits for the Owner")).toBeInTheDocument();
+    expect(screen.getByText("Pending approval")).toBeInTheDocument();
     expect(screen.getByText(/^Prepared by Sok Chenda/)).toBeInTheDocument();
     const income = screen.getByRole("row", { name: /^Total income/ });
     expect(within(income).getByText("$36,000.00")).toBeInTheDocument();
@@ -135,7 +135,9 @@ describe("Budget", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Send back" }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Send back" }));
-    expect(await within(dialog).findByText("Say why.")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Enter a reason."),
+    ).toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText(/^Reason/), {
       target: { value: "Repairs look low" },
     });

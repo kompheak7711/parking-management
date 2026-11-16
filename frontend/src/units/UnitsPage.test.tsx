@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { InvoiceApi, InvoiceResource } from "../invoiceClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
@@ -375,12 +376,14 @@ function show(
     capabilities?: ReadonlySet<string> | null;
     utilities?: UtilityPricesApi;
     services?: RentTermsServicesApi;
+    invoices?: Pick<InvoiceApi, "list">;
   } = {},
 ) {
   return render(
     <UnitsPage
       active
       capabilities={options.capabilities ?? null}
+      invoiceApi={options.invoices ?? invoiceApi([])}
       language="en"
       leaseApi={options.leases ?? leaseApi()}
       propertyId="property-1"
@@ -390,6 +393,47 @@ function show(
       utilityApi={options.utilities ?? utilityApi()}
     />,
   );
+}
+
+function invoice(
+  id: string,
+  status: InvoiceResource["status"],
+  due: string,
+  balance: number,
+): InvoiceResource {
+  return {
+    id,
+    property_id: "property-1",
+    customer_id: "customer-1",
+    lease_id: "lease-1",
+    invoice_number: id.toUpperCase(),
+    category: "RENT",
+    status,
+    invoice_date: "2026-11-01",
+    due_date: due,
+    billing_period: null,
+    version: 1,
+    original_total: { currency: "USD", minor_units: 50000 },
+    adjusted_total: { currency: "USD", minor_units: 50000 },
+    active_application_total: { currency: "USD", minor_units: 50000 - balance },
+    outstanding_balance: { currency: "USD", minor_units: balance },
+    lines: [],
+    adjustments: [],
+    void_event: null,
+    evidence: {} as InvoiceResource["evidence"],
+  };
+}
+
+function invoiceApi(items: InvoiceResource[]): Pick<InvoiceApi, "list"> {
+  return {
+    list: vi.fn((_property: string, filters?: { status?: string }) =>
+      Promise.resolve({
+        items: items.filter((item) => item.status === filters?.status),
+        next_cursor: null,
+        capabilities: [],
+      }),
+    ),
+  };
 }
 
 function rowOf(number: string): HTMLElement {
@@ -495,10 +539,10 @@ describe("Parking list", () => {
     const card = (name: RegExp) => screen.getByRole("button", { name });
 
     expect(card(/^Occupied: 1/)).toBeInTheDocument();
-    expect(card(/^Not available: 1/)).toBeInTheDocument();
-    fireEvent.click(card(/^Not available/));
-    expect(card(/^Not available/)).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText(/Showing: Not available\./)).toBeInTheDocument();
+    expect(card(/^Unavailable: 1/)).toBeInTheDocument();
+    fireEvent.click(card(/Unavailable/));
+    expect(card(/^Unavailable/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/Showing: Unavailable\./)).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(screen.getAllByRole("row")).toHaveLength(5);
@@ -548,7 +592,7 @@ describe("Parking list", () => {
     show(client);
     expect(
       await screen.findByText(
-        "The Parking could not be read. Retry when the service is available.",
+        "The Units could not be loaded. Retry when the service is available.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -570,6 +614,34 @@ describe("Parking list", () => {
     await waitFor(() => {
       expect(client.get).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('TEST-FE-1949 (owner 12/11/2026: "check all card is link to correct place") "#/units?show=vacant" opens the list on the Vacant card, on every floor and type; a card chosen by hand is kept in the address and Show all gives the plain address again', async () => {
+    window.location.hash = "#/units?show=vacant";
+    show(unitApi());
+    expect(await screen.findByText(/Showing: Vacant\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Vacant: 1/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    // Only U201 is Vacant.
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    expect(rowOf("U201")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Unavailable: 1/ }));
+    expect(window.location.hash).toBe("#/units?show=na");
+    expect(rowOf("U202")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+    expect(window.location.hash).toBe("#/units");
+    expect(screen.getAllByRole("row")).toHaveLength(5);
+
+    // The card's address opened again while a floor is chosen: every floor shows again.
+    fireEvent.click(screen.getByRole("button", { name: "Floor 1" }));
+    expect(screen.getByText("2 Units")).toBeInTheDocument();
+    window.location.hash = "#/units?show=vacant";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    expect(await screen.findByText(/Showing: Vacant\./)).toBeInTheDocument();
+    expect(rowOf("U201")).toBeInTheDocument();
   });
 });
 
@@ -612,13 +684,10 @@ describe("Parking page", () => {
     expect(
       await screen.findByRole("heading", { name: "U101" }),
     ).toBeInTheDocument();
+    // Owner 14/11/2026: no line under the title; the Unit details card has these facts.
     expect(
-      screen.getByText(
-        HOME_FIELDS
-          ? "Floor 1 · Studio · 36 m² · CHETANA Parking"
-          : "Floor 1 · Studio · CHETANA Parking",
-      ),
-    ).toBeInTheDocument();
+      screen.queryByText("Floor 1 · Studio · 36 m² · CHETANA Residence"),
+    ).toBeNull();
     for (const name of [
       "Parking details",
       "Current Lease",
@@ -661,7 +730,38 @@ describe("Parking page", () => {
     }
   });
 
-  it("TEST-FE-1105 the Parking page shows each Meter with the price in force and the next one, and a kind with no Meter is not billed (V1-061)", async () => {
+  it("TEST-FE-2210 (Property fix 5, owner 14/11/2026) the Unit page lists the running Lease's unpaid and part-paid Invoices by due date, each opening its Invoice, with no builder notes", async () => {
+    window.location.hash = "#/units/unit-U101";
+    const invoices = invoiceApi([
+      invoice("inv-2", "PARTIALLY_PAID", "2026-11-05", 12000),
+      invoice("inv-1", "UNPAID", "2026-10-05", 50000),
+      invoice("inv-3", "PAID", "2026-09-05", 0),
+    ]);
+    show(unitApi(), { invoices });
+
+    const card = (
+      await screen.findByRole("heading", { name: "Invoices for this Unit" })
+    ).closest("section");
+    if (card === null) throw new Error("no Invoices card");
+    await waitFor(() => {
+      expect(within(card).getAllByRole("listitem")).toHaveLength(2);
+    });
+    const lines = within(card).getAllByRole("listitem");
+    expect(lines[0]).toHaveTextContent("INV-1due 05/10/2026$500.00");
+    expect(lines[1]).toHaveTextContent("INV-2due 05/11/2026$120.00");
+    expect(within(card).getByRole("link", { name: "INV-1" })).toHaveAttribute(
+      "href",
+      hashForPage("invoices", "inv-1"),
+    );
+    expect(invoices.list).toHaveBeenCalledWith("property-1", {
+      lease_id: "lease-1",
+      status: "UNPAID",
+    });
+    expect(screen.queryByText(/V1\.2|step R5|file storage/)).toBeNull();
+    expect(screen.getByText("No photo yet")).toBeInTheDocument();
+  });
+
+  it("TEST-FE-1105 the Unit page shows each Meter with the price in force and the next one, and a kind with no Meter is not billed (V1-061)", async () => {
     window.location.hash = "#/units/unit-U101";
     const utilities = utilityApi([
       {
@@ -965,7 +1065,7 @@ describe("Parking page", () => {
 
     let view = await open("U201");
     expect(hrefs("New Lease")).toEqual(["#/leases/unit%3Aunit-U201"]);
-    expect(hrefs("Make Reservation")).toEqual([
+    expect(hrefs("New Reservation")).toEqual([
       "#/reservations/new%3Aunit-U201",
     ]);
     view.unmount();
@@ -987,11 +1087,8 @@ describe("Parking page", () => {
     view.unmount();
 
     await open("U101");
-    // The head and the Current Lease card.
-    expect(hrefs("Open Lease")).toEqual([
-      "#/leases/lease-1",
-      "#/leases/lease-1",
-    ]);
+    // Property fix 4 (owner 14/11/2026): Open Lease is in the Current Lease card only.
+    expect(hrefs("Open Lease")).toEqual(["#/leases/lease-1"]);
     expect(screen.queryByRole("link", { name: "New Lease" })).toBeNull();
   });
 
@@ -1008,7 +1105,7 @@ describe("Parking page", () => {
       await screen.findByRole("button", { name: "Change status" }),
     );
     expect(screen.getByRole("dialog")).toHaveTextContent(
-      "This Parking has a signed Lease. Its status changes only through Move-out.",
+      "This Unit has a signed Lease. Its status changes only through a move-out.",
     );
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -1554,7 +1651,7 @@ describe("For rent (V1.1 rework part 1)", () => {
     if (details === null) throw new Error("no details card");
     expect(details).toHaveTextContent("For rentYes");
     expect(
-      screen.getByRole("link", { name: "Make Reservation" }),
+      screen.getByRole("link", { name: "New Reservation" }),
     ).toBeInTheDocument();
     fireEvent.click(within(details).getByRole("button", { name: "Change" }));
     const dialog = await screen.findByRole("dialog", {
@@ -1575,7 +1672,7 @@ describe("For rent (V1.1 rework part 1)", () => {
     await waitFor(() => {
       expect(details).toHaveTextContent("For rentNot for rent");
     });
-    expect(screen.queryByRole("link", { name: "Make Reservation" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "New Reservation" })).toBeNull();
     expect(screen.queryByRole("link", { name: "New Lease" })).toBeNull();
     expect(details).toHaveTextContent("it is left out of every renting screen");
     expect(screen.queryByRole("dialog")).toBeNull();

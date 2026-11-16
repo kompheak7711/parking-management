@@ -457,12 +457,15 @@ def run_pull(
 
 
 def queue_warnings(store: TelegramStore) -> None:
-    """The messages about unpaid Rent and Lease warnings of this run."""
+    """The messages about unpaid Rent, Lease warnings and short-stay guest notices of this run."""
     # The unpaid-Rent notice of day 10, 20 or 25, by itself from 09:00 (DL-237). It comes
     # first, so the same run queues its message.
     store.rent_notices_run()
     # Each Rent notice, termination letter and Lease warning, to the Lease's links (DL-217).
     store.warnings_queue()
+    # Short-stay guests: the check-out reminder, the late check-out notice, a charge still
+    # unpaid, and what staff wrote that was not sent yet (DL-238).
+    store.short_stay_notices_run()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

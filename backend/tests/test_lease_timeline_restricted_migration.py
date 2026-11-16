@@ -134,6 +134,9 @@ def todays_pages(lease: UUID) -> list[tuple[list[dict[str, object]], object]]:
                 "actor_id": str(item.actor_id),
                 "source_reference": item.source_reference,
                 "source_href": item.source_href,
+                # UI v81 (owner 08/11/2026): History names the person for every step.
+                "actor_name": item.actor_name,
+                "subject_name": item.subject_name,
             }
             for item in page.items
         ]

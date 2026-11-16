@@ -1,0 +1,499 @@
+{
+ "log": {
+  "version": "1.2",
+  "creator": {
+   "name": "Playwright",
+   "version": "1.63.0"
+  },
+  "browser": {
+   "name": "chromium",
+   "version": "153.0.8010.12"
+  },
+  "entries": [
+   {
+    "startedDateTime": "2026-11-11T21:56:00.458Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 443,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-11T21:51:39.660762Z\",\"last_activity_at\":\"2026-11-11T21:55:22.816409Z\",\"idle_expires_at\":\"2026-11-11T22:25:22.816409Z\",\"absolute_expires_at\":\"2026-11-12T21:51:39.660762Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":\"2026-11-11T21:51:39.666996Z\",\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"d7719446-ed69-450d-a12d-e071b0a98194\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.460Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/session"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 443,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"authenticated_at\":\"2026-11-11T21:51:39.660762Z\",\"last_activity_at\":\"2026-11-11T21:55:22.816409Z\",\"idle_expires_at\":\"2026-11-11T22:25:22.816409Z\",\"absolute_expires_at\":\"2026-11-12T21:51:39.660762Z\",\"mfa_assurance\":\"totp\",\"reauthenticated_at\":\"2026-11-11T21:51:39.666996Z\",\"display_name\":\"Kompheak\",\"account_class\":\"owner\"},\"meta\":{\"request_id\":\"65d89fd6-5ee4-4ae0-9f99-2787f0c196f3\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.613Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/identity/me/access"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 12713,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"capabilities\":[{\"capability\":\"audit.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"audit.view\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"billing.generate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"configuration.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.applications.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.apply\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.recognize\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"credits.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customer_ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"customers.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"damage_charges.bill\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"data.export\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"deposits.refund.qualify\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"exchange_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.approve_over_limit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"expenses.request\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"final_settlements.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"financial.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.attendance.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.employees.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.loans.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.overtime.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.payroll.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"hr.salaries.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.manage_access\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"identity.read_self\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.issue\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"invoices.void\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.charge_correction\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.final_decision\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"late_payment.review\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"lease_signers.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.draft\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.inspect\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.move_out\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.sign\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.terminate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"leases.warn\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.accounts.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.adjustments.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.budgets.prepare\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.cash_count\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.close\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.fixed_assets\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.money_move\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.opening_balances\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.owner_money\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.petty_cash\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.reconcile\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"ledger.write_off\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"operations.status.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.allocations.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"payments.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.add\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.costs\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.join\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.plan\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"problem_reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.prices\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"products.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"property.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.lower_price\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.make\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"quotations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"receipts.reprint\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.corrections.reverse\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"refunds.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent.below_default\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.case_manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.event_post\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"rent_nonpayment.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reports.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.dispose\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.override\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservation_deposits.refund\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.cancel\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.complete\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.create\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.extend\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"reservations.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"service_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"settings.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.approve\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.credit\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.desk\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.housekeeping\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"short_stays.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.adjust\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.purchase\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"stock.transfer\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"supplier_bills.pay\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.contact\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.faq\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.operate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"telegram.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"units.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.calculate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.estimate\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_meters.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_rates.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.correct\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"utility_readings.record\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.manage\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.read\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]},{\"capability\":\"visit_requests.work\",\"property_ids\":[\"005abbee-4a7d-4683-b4ee-06f2b26d393e\"]}]},\"meta\":{\"request_id\":\"4bd63ba8-df84-40dc-a35d-68625a3aa030\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.613Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/auth/recovery-codes"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 198,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"set_id\":\"54836803-c09d-4123-8156-842aab6dff73\",\"created_at\":\"2026-11-11T21:51:23.344472Z\",\"made_by\":\"other\",\"usable_count\":10},\"meta\":{\"request_id\":\"8044490f-4cf4-4972-9456-cda59c7b9f12\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.616Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/financial-workspaces?limit=100"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 717,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":[{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"capabilities\":{\"payments.read\":true,\"payments.record\":true,\"payments.allocate\":true,\"payments.allocations.reverse\":true,\"payments.reverse\":true,\"receipts.read\":true,\"receipts.reprint\":true,\"credits.read\":true,\"credits.recognize\":true,\"credits.reverse\":true,\"credits.apply\":true,\"credits.applications.reverse\":true,\"refunds.read\":true,\"refunds.create\":true,\"refunds.correct\":true,\"refunds.corrections.reverse\":true,\"exchange_rates.manage\":true}}],\"page\":{\"limit\":100,\"next_cursor\":null},\"meta\":{\"request_id\":\"ea14c69d-4c63-4dde-b281-e97b322c612d\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.616Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/lease-enforcement-workspaces?limit=50"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 413,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"items\":[{\"name\":\"CHETANA Residence\",\"timezone\":\"Asia/Phnom_Penh\",\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"capabilities\":{\"leases.read\":true,\"leases.warn\":true,\"rent_nonpayment.read\":true,\"rent_nonpayment.case_manage\":true,\"rent_nonpayment.event_post\":true}}],\"next_cursor\":null},\"meta\":{\"request_id\":\"c829be8d-1f7c-4335-9c73-46341ad15c50\",\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.859Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/home"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 2515,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"jobs\":{\"last_billing_at\":null,\"rate_updated_at\":null,\"next_billing_date\":\"2026-11-25\"},\"todo\":[{\"date\":\"2026-11-16\",\"kind\":\"reservation_expiring\",\"unit_id\":\"aa388ed8-ff9c-47bf-8170-33869a72099b\",\"customer_id\":\"db2182d8-a9b5-4bd8-9e11-d69df8fbb398\",\"unit_number\":\"U406\",\"customer_name\":\"Tep Sreymom\",\"reservation_id\":\"92d57534-59d6-4505-b519-50ccaef139bb\",\"group\":\"this_week\"},{\"date\":\"2026-11-30\",\"kind\":\"lease_ending\",\"unit_id\":\"37afd63c-99a1-4bb1-9fc7-ed3275cf4dc9\",\"lease_id\":\"235675e9-dafa-4a05-9ec6-6b5d2e1b02e9\",\"customer_id\":\"ae7a4fa4-b01c-4d9b-8fb1-3a8ec140e1fc\",\"unit_number\":\"U201\",\"customer_name\":\"Ouk Chanthy\",\"group\":\"later\"},{\"date\":\"2026-11-30\",\"kind\":\"lease_ending\",\"unit_id\":\"6a38f03f-a92c-4c14-afde-3ff6c86e7816\",\"lease_id\":\"5eee91bd-343f-46fe-8d5f-e324c8d438a7\",\"customer_id\":\"01d5c28f-e8cd-4c96-9601-71090dc61c2a\",\"unit_number\":\"U402\",\"customer_name\":\"Hun Sovann\",\"group\":\"later\"},{\"date\":\"2026-12-15\",\"kind\":\"lease_ending\",\"unit_id\":\"9187c8ea-e71f-4650-9b1d-618bfd9fb0bc\",\"lease_id\":\"9a290c39-5ad7-4e8c-84ca-a13795e1c1d6\",\"customer_id\":\"cd9d81d5-8331-42b8-9c06-cff45732881c\",\"unit_number\":\"U302\",\"customer_name\":\"Touch Sreyleak\",\"group\":\"later\"},{\"date\":\"2026-12-31\",\"kind\":\"lease_ending\",\"unit_id\":\"a9f7dd87-0f5c-4ba7-87d0-7c9abec52cc1\",\"lease_id\":\"3c13918c-37b7-4f88-a2ff-77989072624d\",\"customer_id\":\"7531b039-b268-4556-93b8-2b3b3bb0aa1d\",\"unit_number\":\"U104\",\"customer_name\":\"Heng Malis\",\"group\":\"later\"}],\"as_of\":\"2026-11-11T21:56:01.004796+00:00\",\"cards\":{\"overdue\":{\"invoice_count\":3,\"amount_usd_cents\":113000},\"birthdays\":{\"to\":\"2026-11-19\",\"from\":\"2026-11-12\",\"count\":3},\"letters_due\":{\"count\":0,\"day_20\":0,\"day_30\":0},\"paid_on_time\":{\"on_time\":0,\"invoice_count\":18},\"lease_renewal\":{\"count\":4,\"end_on_or_before\":\"2027-01-11\"},\"units_occupied\":{\"total\":23,\"vacant\":0,\"occupied\":21,\"reserved\":1},\"paid_this_month\":{\"invoice_count\":19,\"payment_count\":17,\"billed_usd_cents\":674280,\"received_usd_cents\":571280,\"billed_paid_usd_cents\":561280},\"pending_payment\":{\"invoice_count\":3,\"amount_usd_cents\":113000},\"waiting_for_approval\":{\"count\":0,\"money_out_count\":0,\"money_out_usd_cents\":0},\"meter_readings_missing\":{\"count\":46,\"reading_date\":\"2026-11-24\"}},\"timezone\":\"Asia/Phnom_Penh\",\"business_date\":\"2026-11-12\",\"todo_counts\":{\"overdue\":0,\"today\":0,\"this_week\":1,\"later\":4},\"sections\":[\"units\",\"invoices\",\"payments\",\"leases\",\"reservations\",\"approvals\",\"deposit_decisions\",\"readings\",\"letters\",\"settlements\",\"birthdays\"]},\"meta\":{\"request_id\":\"aae709a5-3ded-460f-b8e9-5b57eecb8975\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.860Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/problem-report-summary"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 120,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"late\":0,\"open\":0,\"urgent\":0,\"costs_to_check\":[]},\"meta\":{\"request_id\":\"ae79b33a-2a21-47ae-b8b0-cf57cb1761e2\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.860Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/visit-requests"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 440,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"me\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"month\":{\"new\":0,\"month\":\"2026-11\",\"steps\":{\"SPAM\":0,\"CLOSED\":0,\"NO_SHOW\":0,\"VISITED\":0,\"RESERVED\":0,\"VISIT_BOOKED\":0},\"joined\":0,\"reasons\":[],\"sources\":[]},\"today\":\"2026-11-12\",\"address\":\"Phnom Penh\",\"workers\":[{\"id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"name\":\"Kompheak\"}],\"can_work\":true,\"requests\":[],\"can_manage\":true},\"meta\":{\"request_id\":\"0d1a09fd-872c-45d6-aded-baa69e27f10c\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.861Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 5951,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":[{\"note\":null,\"lines\":[{\"kind\":\"NIGHTS\",\"reason\":null,\"position\":1,\"quantity\":3,\"amount_usd_cents\":6930,\"unit_price_usd_cents\":3300,\"discount_basis_points\":3000}],\"cleans\":[],\"credit\":null,\"nights\":3,\"refund\":null,\"source\":\"TELEGRAM\",\"status\":\"BOOKED\",\"damages\":[],\"deposit\":null,\"history\":[{\"kind\":\"BOOKED\",\"note\":null,\"details\":{\"check_in_on\":\"2026-11-21\",\"check_out_on\":\"2026-11-24\",\"total_usd_cents\":6930},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:54:24.090692+00:00\"}],\"invoice\":null,\"payment\":\"NOT_BILLED\",\"unit_id\":\"d97219fe-b7f5-4a34-bfb8-0e66bc1a700f\",\"version\":1,\"site_name\":null,\"unit_type\":\"TWO_BEDROOM\",\"booking_id\":\"1708680b-4823-4be5-af3f-494941c37c84\",\"created_at\":\"2026-11-11T21:54:24.090692+00:00\",\"guest_name\":\"Mao Sophea\",\"room_check\":null,\"check_in_on\":\"2026-11-21\",\"customer_id\":\"1f467b7b-d975-4a06-bef1-67dc67f72adb\",\"guest_count\":2,\"guest_phone\":\"016 618 942\",\"lease_offer\":null,\"unit_number\":\"U305\",\"unit_status\":\"SHORT_STAY\",\"cancellation\":null,\"cancelled_at\":null,\"check_out_on\":\"2026-11-24\",\"guest_has_id\":true,\"id_copy_made\":false,\"lease_drafts\":[],\"cancel_reason\":null,\"check_in_time\":840,\"checked_in_at\":null,\"fee_usd_cents\":500,\"price_version\":1,\"problem_guest\":false,\"booking_number\":\"ST260003\",\"check_out_time\":720,\"checked_out_at\":null,\"early_check_in\":false,\"extra_invoices\":[],\"late_check_out\":false,\"paid_usd_cents\":0,\"site_reference\":null,\"returning_guest\":false,\"review_asked_at\":null,\"total_usd_cents\":6930,\"free_cancel_until\":\"2026-11-19\",\"house_rules_signed\":false,\"lease_off_usd_cents\":5000,\"late_check_out_until\":1080},{\"note\":null,\"lines\":[{\"kind\":\"NIGHTS\",\"reason\":null,\"position\":1,\"quantity\":2,\"amount_usd_cents\":5280,\"unit_price_usd_cents\":3300,\"discount_basis_points\":2000}],\"cleans\":[],\"credit\":null,\"nights\":2,\"refund\":null,\"source\":\"PHONE\",\"status\":\"BOOKED\",\"damages\":[],\"deposit\":null,\"history\":[{\"kind\":\"BOOKED\",\"note\":null,\"details\":{\"check_in_on\":\"2026-11-16\",\"check_out_on\":\"2026-11-18\",\"total_usd_cents\":5280},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:54:23.956217+00:00\"}],\"invoice\":null,\"payment\":\"NOT_BILLED\",\"unit_id\":\"d97219fe-b7f5-4a34-bfb8-0e66bc1a700f\",\"version\":1,\"site_name\":null,\"unit_type\":\"TWO_BEDROOM\",\"booking_id\":\"ead1b038-c52a-4b6a-806f-fb3e62aee005\",\"created_at\":\"2026-11-11T21:54:23.956217+00:00\",\"guest_name\":\"Sam Nary\",\"room_check\":null,\"check_in_on\":\"2026-11-16\",\"customer_id\":\"097a1f71-9497-4e22-93c7-072a87754762\",\"guest_count\":2,\"guest_phone\":\"015 877 513\",\"lease_offer\":null,\"unit_number\":\"U305\",\"unit_status\":\"SHORT_STAY\",\"cancellation\":null,\"cancelled_at\":null,\"check_out_on\":\"2026-11-18\",\"guest_has_id\":true,\"id_copy_made\":false,\"lease_drafts\":[],\"cancel_reason\":null,\"check_in_time\":840,\"checked_in_at\":null,\"fee_usd_cents\":500,\"price_version\":1,\"problem_guest\":false,\"booking_number\":\"ST260002\",\"check_out_time\":720,\"checked_out_at\":null,\"early_check_in\":false,\"extra_invoices\":[],\"late_check_out\":false,\"paid_usd_cents\":0,\"site_reference\":null,\"returning_guest\":false,\"review_asked_at\":null,\"total_usd_cents\":5280,\"free_cancel_until\":\"2026-11-14\",\"house_rules_signed\":false,\"lease_off_usd_cents\":5000,\"late_check_out_until\":1080},{\"note\":null,\"lines\":[{\"kind\":\"NIGHTS\",\"reason\":null,\"position\":1,\"quantity\":2,\"amount_usd_cents\":5280,\"unit_price_usd_cents\":3300,\"discount_basis_points\":2000}],\"cleans\":[{\"note\":null,\"status\":\"TO_DO\",\"task_id\":\"f11c0105-1de8-4b30-9591-2f7f66d462f7\",\"task_on\":\"2026-11-13\"}],\"credit\":null,\"nights\":2,\"refund\":null,\"source\":\"WALK_IN\",\"status\":\"CHECKED_IN\",\"damages\":[],\"deposit\":{\"kind\":\"CASH\",\"status\":\"HELD\",\"end_note\":null,\"ended_at\":null,\"taken_at\":\"2026-11-11T21:54:52.302127+00:00\",\"card_last4\":null,\"deposit_id\":\"48a3caac-c65f-4385-87a1-642076ba413f\",\"hold_reference\":null,\"kept_usd_cents\":0,\"amount_usd_cents\":5000},\"history\":[{\"kind\":\"BOOKED\",\"note\":null,\"details\":{\"check_in_on\":\"2026-11-12\",\"check_out_on\":\"2026-11-14\",\"total_usd_cents\":5280},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:54:23.823127+00:00\"},{\"kind\":\"BILLED\",\"note\":null,\"details\":{\"invoice_id\":\"95b27f20-7265-4bd2-927e-327dfe1f796d\",\"invoice_number\":\"INV260019\",\"total_usd_cents\":5280},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:54:36.807756+00:00\"},{\"kind\":\"DEPOSIT_TAKEN\",\"note\":null,\"details\":{\"kind\":\"CASH\",\"amount_usd_cents\":5000},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:54:52.302127+00:00\"},{\"kind\":\"CHECKED_IN\",\"note\":null,\"details\":{},\"actor_id\":\"3f81f72d-b022-4389-b736-6447326774b6\",\"occurred_at\":\"2026-11-11T21:55:04.325457+00:00\"}],\"invoice\":{\"status\":\"PAID\",\"invoice_id\":\"95b27f20-7265-4bd2-927e-327dfe1f796d\",\"due_usd_cents\":5280,\"invoice_number\":\"INV260019\",\"total_usd_cents\":5280},\"payment\":\"PAID\",\"unit_id\":\"d97219fe-b7f5-4a34-bfb8-0e66bc1a700f\",\"version\":3,\"site_name\":null,\"unit_type\":\"TWO_BEDROOM\",\"booking_id\":\"5c76f4ad-9034-4f17-b1ed-f12cd04e3ee4\",\"created_at\":\"2026-11-11T21:54:23.823127+00:00\",\"guest_name\":\"Hun Sovann\",\"room_check\":null,\"check_in_on\":\"2026-11-12\",\"customer_id\":\"01d5c28f-e8cd-4c96-9601-71090dc61c2a\",\"guest_count\":2,\"guest_phone\":\"012 766 354\",\"lease_offer\":null,\"unit_number\":\"U305\",\"unit_status\":\"SHORT_STAY\",\"cancellation\":null,\"cancelled_at\":null,\"check_out_on\":\"2026-11-14\",\"guest_has_id\":true,\"id_copy_made\":true,\"lease_drafts\":[],\"cancel_reason\":null,\"check_in_time\":840,\"checked_in_at\":\"2026-11-11T21:55:04.325457+00:00\",\"fee_usd_cents\":500,\"price_version\":1,\"problem_guest\":false,\"booking_number\":\"ST260001\",\"check_out_time\":720,\"checked_out_at\":null,\"early_check_in\":false,\"extra_invoices\":[],\"late_check_out\":false,\"paid_usd_cents\":5280,\"site_reference\":null,\"returning_guest\":false,\"review_asked_at\":null,\"total_usd_cents\":5280,\"free_cancel_until\":\"2026-11-10\",\"house_rules_signed\":true,\"lease_off_usd_cents\":5000,\"late_check_out_until\":1080}],\"meta\":{\"request_id\":\"eba6d82f-9f38-42d5-b96d-521612466d6c\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.861Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/products"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 2899,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"rules\":{\"mark_up_basis_points\":2000,\"min_mark_up_basis_points\":1500,\"max_mark_up_basis_points\":null,\"price_round_up_usd_cents\":10},\"categories\":[{\"code\":\"FURNITURE\",\"name_en\":\"Furniture\",\"name_kh\":\"គ្រឿងសង្ហារិម\",\"kind\":\"ITEM\"},{\"code\":\"APPLIANCES\",\"name_en\":\"Appliances\",\"name_kh\":\"គ្រឿងអគ្គិសនី\",\"kind\":\"ITEM\"},{\"code\":\"BEDDING\",\"name_en\":\"Bedding supplies\",\"name_kh\":\"គ្រឿងគេង\",\"kind\":\"ITEM\"},{\"code\":\"KEYS\",\"name_en\":\"Keys and locks\",\"name_kh\":\"សោ និងគន្លឹះ\",\"kind\":\"ITEM\"},{\"code\":\"SERVICES\",\"name_en\":\"Services\",\"name_kh\":\"សេវាកម្ម\",\"kind\":\"SERVICE\"}],\"products\":[{\"product_id\":\"e55fff03-0e7f-40b3-96f5-1bd63706d7d0\",\"sku\":\"P0001\",\"name_en\":\"LED bulb 9W\",\"name_kh\":\"អំពូល LED 9W\",\"description\":null,\"category_code\":\"APPLIANCES\",\"kind\":\"ITEM\",\"measure_unit\":\"PIECE\",\"cost_usd_cents\":null,\"mark_up_basis_points\":2000,\"min_mark_up_basis_points\":1500,\"max_mark_up_basis_points\":null,\"price_usd_cents\":null,\"real_mark_up_basis_points\":null,\"reorder_level\":10,\"reorder_quantity\":20,\"discontinued\":false,\"version\":1,\"updated_at\":\"2026-11-11T21:53:40.022932+00:00\",\"stock\":\"0\",\"low_stock\":true},{\"product_id\":\"d6236e08-b907-40f6-918c-085d78d2e5a5\",\"sku\":\"P0002\",\"name_en\":\"Door lock set\",\"name_kh\":\"សោទ្វារ\",\"description\":null,\"category_code\":\"KEYS\",\"kind\":\"ITEM\",\"measure_unit\":\"PIECE\",\"cost_usd_cents\":null,\"mark_up_basis_points\":2000,\"min_mark_up_basis_points\":1500,\"max_mark_up_basis_points\":null,\"price_usd_cents\":null,\"real_mark_up_basis_points\":null,\"reorder_level\":2,\"reorder_quantity\":4,\"discontinued\":false,\"version\":1,\"updated_at\":\"2026-11-11T21:53:40.128090+00:00\",\"stock\":\"0\",\"low_stock\":true},{\"product_id\":\"e1dccca4-0095-4318-84a6-b434b9dfe694\",\"sku\":\"P0003\",\"name_en\":\"Bed sheet set\",\"name_kh\":\"កម្រាលពូក\",\"description\":null,\"category_code\":\"BEDDING\",\"kind\":\"ITEM\",\"measure_unit\":\"PIECE\",\"cost_usd_cents\":null,\"mark_up_basis_points\":2000,\"min_mark_up_basis_points\":1500,\"max_mark_up_basis_points\":null,\"price_usd_cents\":null,\"real_mark_up_basis_points\":null,\"reorder_level\":6,\"reorder_quantity\":12,\"discontinued\":false,\"version\":1,\"updated_at\":\"2026-11-11T21:53:40.216688+00:00\",\"stock\":\"0\",\"low_stock\":true},{\"product_id\":\"a6a90558-97cd-4941-8cad-ba694cdc0fc1\",\"sku\":\"P0004\",\"name_en\":\"Office chair\",\"name_kh\":\"កៅអីការិយាល័យ\",\"description\":null,\"category_code\":\"FURNITURE\",\"kind\":\"ITEM\",\"measure_unit\":\"PIECE\",\"cost_usd_cents\":null,\"mark_up_basis_points\":2000,\"min_mark_up_basis_points\":1500,\"max_mark_up_basis_points\":null,\"price_usd_cents\":null,\"real_mark_up_basis_points\":null,\"reorder_level\":null,\"reorder_quantity\":null,\"discontinued\":false,\"version\":1,\"updated_at\":\"2026-11-11T21:53:40.307286+00:00\",\"stock\":\"0\",\"low_stock\":false}]},\"meta\":{\"request_id\":\"7bc9b904-222f-4d2e-be9f-3fc7bc83361b\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.862Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/hr/attendance/day"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 815,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"day\":\"2026-11-12\",\"today\":\"2026-11-12\",\"locked\":false,\"people\":[],\"shifts\":[{\"code\":\"MORNING\",\"ends_at\":\"15:30\",\"name_en\":\"Morning\",\"name_km\":\"វេនព្រឹក\",\"starts_at\":\"06:30\",\"break_ends_at\":null,\"break_starts_at\":null},{\"code\":\"AFTERNOON\",\"ends_at\":\"23:30\",\"name_en\":\"Afternoon\",\"name_km\":\"វេនរសៀល\",\"starts_at\":\"14:30\",\"break_ends_at\":null,\"break_starts_at\":null},{\"code\":\"NIGHT\",\"ends_at\":\"07:30\",\"name_en\":\"Night\",\"name_km\":\"វេនយប់\",\"starts_at\":\"22:30\",\"break_ends_at\":null,\"break_starts_at\":null},{\"code\":\"OFFICE\",\"ends_at\":\"17:00\",\"name_en\":\"Office hours\",\"name_km\":\"ម៉ោងការិយាល័យ\",\"starts_at\":\"07:00\",\"break_ends_at\":\"13:00\",\"break_starts_at\":\"11:00\"}],\"can_manage\":true},\"meta\":{\"request_id\":\"76082036-7bb6-4597-ac3d-caba4992f8a1\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.863Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/billing-capabilities"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 380,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"billing_capabilities\":[\"invoices.create\",\"invoices.issue\",\"invoices.adjust\",\"invoices.void\",\"billing.generate\",\"damage_charges.bill\",\"property.manage\",\"settings.manage\",\"late_payment.review\",\"late_payment.final_decision\",\"late_payment.charge_correction\"]},\"meta\":{\"request_id\":\"f180c568-50bc-4b6b-9805-455cff1ca93f\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:00.864Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/billing-capabilities"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 380,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"property_id\":\"005abbee-4a7d-4683-b4ee-06f2b26d393e\",\"billing_capabilities\":[\"invoices.create\",\"invoices.issue\",\"invoices.adjust\",\"invoices.void\",\"billing.generate\",\"damage_charges.bill\",\"property.manage\",\"settings.manage\",\"late_payment.review\",\"late_payment.final_decision\",\"late_payment.charge_correction\"]},\"meta\":{\"request_id\":\"bb53f2a3-9ec8-467b-ba4a-8c67421d154f\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.094Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/balance-sheet?as_of=2026-11-12"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 792,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"balance-sheet\",\"title\":\"Balance sheet\",\"period\":\"As at 12/11/2026\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"amount\",\"label\":\"Amount\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"heading\",\"code\":null,\"name\":\"Owner's equity\"},{\"line\":\"account\",\"code\":null,\"name\":\"Profit this year not closed yet\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Total owner's equity\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Total assets\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Owed plus Owner's equity\",\"amount\":0}],\"check\":{\"ok\":true,\"text\":\"Assets equal what is owed plus the Owner's equity\"},\"profit_this_year_cents\":0},\"meta\":{\"request_id\":\"0e20b541-c57e-48c7-866b-9a46f8a1248f\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/customer-aging"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1340,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"customer-aging\",\"title\":\"Customer debt aging\",\"period\":\"As at today, 12/11/2026\",\"state\":\"As at today\",\"columns\":[{\"key\":\"customer_name\",\"label\":\"Customer\",\"kind\":\"text\"},{\"key\":\"unit_number\",\"label\":\"Unit\",\"kind\":\"text\"},{\"key\":\"not_due\",\"label\":\"Not yet due\",\"kind\":\"money\"},{\"key\":\"days_1_30\",\"label\":\"1-30 days\",\"kind\":\"money\"},{\"key\":\"days_31_60\",\"label\":\"31-60 days\",\"kind\":\"money\"},{\"key\":\"days_61_90\",\"label\":\"61-90 days\",\"kind\":\"money\"},{\"key\":\"over_90\",\"label\":\"Over 90 days\",\"kind\":\"money\"},{\"key\":\"total\",\"label\":\"Total\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"account\",\"customer_name\":\"Hun Sovann\",\"unit_number\":\"U402\",\"not_due\":0,\"days_1_30\":40000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":40000},{\"line\":\"account\",\"customer_name\":\"Mao Sophea\",\"unit_number\":\"U304\",\"not_due\":0,\"days_1_30\":38000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":38000},{\"line\":\"account\",\"customer_name\":\"Sok Dara\",\"unit_number\":\"U203\",\"not_due\":0,\"days_1_30\":35000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":35000},{\"line\":\"total\",\"customer_name\":\"Total\",\"unit_number\":null,\"not_due\":0,\"days_1_30\":113000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":113000}],\"check\":{\"ok\":false,\"text\":\"The total and 1100 + 1110 in the books differ by $1,130.00\"}},\"meta\":{\"request_id\":\"262bb5e1-4ac0-4f70-98ca-74cc5a248d9d\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/budget?month=2026-11-01"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1002,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"budget\",\"title\":\"Budget vs actual\",\"period\":\"November 2026 and the year to date\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"budget_month\",\"label\":\"Budget this month\",\"kind\":\"money\"},{\"key\":\"actual_month\",\"label\":\"Actual this month\",\"kind\":\"money\"},{\"key\":\"difference_month\",\"label\":\"Difference this month\",\"kind\":\"money\"},{\"key\":\"month_off\",\"label\":\"Marked this month\",\"kind\":\"bool\"},{\"key\":\"budget_year\",\"label\":\"Budget year to date\",\"kind\":\"money\"},{\"key\":\"actual_year\",\"label\":\"Actual year to date\",\"kind\":\"money\"},{\"key\":\"difference_year\",\"label\":\"Difference year to date\",\"kind\":\"money\"},{\"key\":\"year_off\",\"label\":\"Marked year to date\",\"kind\":\"bool\"}],\"rows\":[],\"check\":{\"ok\":false,\"text\":\"There is no approved budget for this year\"},\"budget_version\":null,\"warning\":{\"percent_hundredths\":1000,\"smallest_cents\":5000}},\"meta\":{\"request_id\":\"85d0c244-7c0d-48a2-94da-549d269f552f\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/profit-and-loss?month=2026-11-01"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 2096,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"profit-and-loss\",\"title\":\"Profit and loss\",\"period\":\"November 2026 (01/11/2026 to 30/11/2026)\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"this_month\",\"label\":\"This month\",\"kind\":\"money\"},{\"key\":\"last_month\",\"label\":\"Last month\",\"kind\":\"money\"},{\"key\":\"same_month_last_year\",\"label\":\"Same month last year\",\"kind\":\"money\"},{\"key\":\"year_to_date\",\"label\":\"Year to date\",\"kind\":\"money\"},{\"key\":\"difference\",\"label\":\"Difference\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"heading\",\"code\":null,\"name\":\"Income\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total income\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Cost of products sold\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total cost of products sold\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Gross profit\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Expenses\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total expenses\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Profit (or loss)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Margins\"},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: products (4080 less 5010)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: electricity (4030 less 6010)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: water (4040 less 6020)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0}],\"check\":{\"ok\":true,\"text\":\"Profit this year matches the Balance sheet\"}},\"meta\":{\"request_id\":\"6bddf652-4ce9-4e4d-a1e3-d2dda442b18a\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/balance-sheet?as_of=2026-11-12"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 792,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"balance-sheet\",\"title\":\"Balance sheet\",\"period\":\"As at 12/11/2026\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"amount\",\"label\":\"Amount\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"heading\",\"code\":null,\"name\":\"Owner's equity\"},{\"line\":\"account\",\"code\":null,\"name\":\"Profit this year not closed yet\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Total owner's equity\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Total assets\",\"amount\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Owed plus Owner's equity\",\"amount\":0}],\"check\":{\"ok\":true,\"text\":\"Assets equal what is owed plus the Owner's equity\"},\"profit_this_year_cents\":0},\"meta\":{\"request_id\":\"6ef85f4e-0419-4a4e-9d57-44fe2bce7bbd\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.095Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/customer-aging"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1340,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"customer-aging\",\"title\":\"Customer debt aging\",\"period\":\"As at today, 12/11/2026\",\"state\":\"As at today\",\"columns\":[{\"key\":\"customer_name\",\"label\":\"Customer\",\"kind\":\"text\"},{\"key\":\"unit_number\",\"label\":\"Unit\",\"kind\":\"text\"},{\"key\":\"not_due\",\"label\":\"Not yet due\",\"kind\":\"money\"},{\"key\":\"days_1_30\",\"label\":\"1-30 days\",\"kind\":\"money\"},{\"key\":\"days_31_60\",\"label\":\"31-60 days\",\"kind\":\"money\"},{\"key\":\"days_61_90\",\"label\":\"61-90 days\",\"kind\":\"money\"},{\"key\":\"over_90\",\"label\":\"Over 90 days\",\"kind\":\"money\"},{\"key\":\"total\",\"label\":\"Total\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"account\",\"customer_name\":\"Hun Sovann\",\"unit_number\":\"U402\",\"not_due\":0,\"days_1_30\":40000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":40000},{\"line\":\"account\",\"customer_name\":\"Mao Sophea\",\"unit_number\":\"U304\",\"not_due\":0,\"days_1_30\":38000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":38000},{\"line\":\"account\",\"customer_name\":\"Sok Dara\",\"unit_number\":\"U203\",\"not_due\":0,\"days_1_30\":35000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":35000},{\"line\":\"total\",\"customer_name\":\"Total\",\"unit_number\":null,\"not_due\":0,\"days_1_30\":113000,\"days_31_60\":0,\"days_61_90\":0,\"over_90\":0,\"total\":113000}],\"check\":{\"ok\":false,\"text\":\"The total and 1100 + 1110 in the books differ by $1,130.00\"}},\"meta\":{\"request_id\":\"add030f2-9b26-4849-87f8-073544430d69\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.096Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/budget?month=2026-11-01"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 1002,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"budget\",\"title\":\"Budget vs actual\",\"period\":\"November 2026 and the year to date\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"budget_month\",\"label\":\"Budget this month\",\"kind\":\"money\"},{\"key\":\"actual_month\",\"label\":\"Actual this month\",\"kind\":\"money\"},{\"key\":\"difference_month\",\"label\":\"Difference this month\",\"kind\":\"money\"},{\"key\":\"month_off\",\"label\":\"Marked this month\",\"kind\":\"bool\"},{\"key\":\"budget_year\",\"label\":\"Budget year to date\",\"kind\":\"money\"},{\"key\":\"actual_year\",\"label\":\"Actual year to date\",\"kind\":\"money\"},{\"key\":\"difference_year\",\"label\":\"Difference year to date\",\"kind\":\"money\"},{\"key\":\"year_off\",\"label\":\"Marked year to date\",\"kind\":\"bool\"}],\"rows\":[],\"check\":{\"ok\":false,\"text\":\"There is no approved budget for this year\"},\"budget_version\":null,\"warning\":{\"percent_hundredths\":1000,\"smallest_cents\":5000}},\"meta\":{\"request_id\":\"a4705bf2-9952-4e45-bd8d-7d3d601b1507\"}}"
+     }
+    }
+   },
+   {
+    "startedDateTime": "2026-11-11T21:56:01.096Z",
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/ledger/reports/profit-and-loss?month=2026-11-01"
+    },
+    "response": {
+     "status": 200,
+     "headers": [
+      {
+       "name": "content-type",
+       "value": "application/json"
+      }
+     ],
+     "content": {
+      "size": 2096,
+      "mimeType": "application/json",
+      "compression": 0,
+      "text": "{\"data\":{\"report\":\"profit-and-loss\",\"title\":\"Profit and loss\",\"period\":\"November 2026 (01/11/2026 to 30/11/2026)\",\"state\":\"Open, may still change\",\"columns\":[{\"key\":\"code\",\"label\":\"Account\",\"kind\":\"text\"},{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"},{\"key\":\"this_month\",\"label\":\"This month\",\"kind\":\"money\"},{\"key\":\"last_month\",\"label\":\"Last month\",\"kind\":\"money\"},{\"key\":\"same_month_last_year\",\"label\":\"Same month last year\",\"kind\":\"money\"},{\"key\":\"year_to_date\",\"label\":\"Year to date\",\"kind\":\"money\"},{\"key\":\"difference\",\"label\":\"Difference\",\"kind\":\"money\"}],\"rows\":[{\"line\":\"heading\",\"code\":null,\"name\":\"Income\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total income\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Cost of products sold\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total cost of products sold\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Gross profit\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Expenses\"},{\"line\":\"total\",\"code\":null,\"name\":\"Total expenses\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Profit (or loss)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"heading\",\"code\":null,\"name\":\"Margins\"},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: products (4080 less 5010)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: electricity (4030 less 6010)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0},{\"line\":\"total\",\"code\":null,\"name\":\"Margin: water (4040 less 6020)\",\"this_month\":0,\"last_month\":0,\"same_month_last_year\":0,\"year_to_date\":0,\"difference\":0}],\"check\":{\"ok\":true,\"text\":\"Profit this year matches the Balance sheet\"}},\"meta\":{\"request_id\":\"2baf0c7e-88fa-47a9-b932-c5eee15fb4e5\"}}"
+     }
+    }
+   }
+  ]
+ }
+}

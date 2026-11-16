@@ -35,6 +35,7 @@ import {
 } from "./lettersData";
 import { addDays } from "../reservations/reservationsData";
 import { ltr, monthText, storedText } from "./text";
+import { leaseNo } from "../leases/leasesData";
 
 type Outcome = "unknown" | "refused" | null;
 
@@ -694,7 +695,7 @@ export function RecordWarningDialog({
             >
               {live.map((item) => (
                 <option key={item.lease_id} value={item.lease_id}>
-                  {ltr(language, "lease_name", item.unit_number)} ·{" "}
+                  {ltr(language, "lease_name", leaseNo(item))} ·{" "}
                   {item.primary_tenant_name}
                 </option>
               ))}

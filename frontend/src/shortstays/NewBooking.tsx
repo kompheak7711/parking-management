@@ -4,6 +4,7 @@
 // from the owner's rules in Settings, and shows the monthly hint and why a Unit cannot be booked.
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { BackLink } from "../shell/backNav";
 
 import {
   type CustomerApi,
@@ -19,7 +20,9 @@ import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import { freeForStay } from "./nights";
+import { quoteMessage } from "./Quotes";
 import { nightsText, unitTypeText } from "./ShortStaysPage";
+import { copyText } from "./StaySteps";
 import {
   addDays,
   type Booking,
@@ -34,6 +37,7 @@ import {
   type StayPrice,
 } from "./shortStaysClient";
 import { hasText, st } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export const SITES = ["Booking.com", "Agoda", "Airbnb"];
 
@@ -178,6 +182,14 @@ export function NewBookingForm({
   const [checked, setChecked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  // Leasing batch (owner 13/11/2026): the Quotes tab is gone; the price message for the guest
+  // is copied here. It is still kept as a quote (SQ…) on the server, as before.
+  const [priceText, setPriceText] = useState<string | null>(null);
+  const [priceCopied, setPriceCopied] = useState(false);
+  const [priceBusy, setPriceBusy] = useState(false);
+  const [priceTextProblem, setPriceTextProblem] = useState<
+    "pm_name" | "failed" | null
+  >(null);
   // One Customer id and command key per new-guest form, so a retry never adds the guest twice.
   const command = useRef<{ text: string; id: string; key: string } | null>(
     null,
@@ -248,6 +260,13 @@ export function NewBookingForm({
       current = false;
     };
   }, [api, propertyId, unitId, checkIn, checkOut]);
+
+  // A copied message is for one Unit, dates and guest count; any change makes a new one.
+  useEffect(() => {
+    setPriceText(null);
+    setPriceCopied(false);
+    setPriceTextProblem(null);
+  }, [unitId, checkIn, checkOut, guestCount]);
 
   const adding = guest === null && mayAddGuest;
   // The words to look for: the phone when typed, else the name (2 letters at least).
@@ -408,18 +427,48 @@ export function NewBookingForm({
     save();
   };
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("shortstays");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {st(language, "back")}
-    </button>
-  );
+  const copyPriceMessage = () => {
+    const guestName = guest?.legal_name ?? name.trim();
+    const contact = guest?.phone ?? phone.trim();
+    if (price === null || priceBusy) return;
+    if (guest === null && guestName === "") {
+      setPriceTextProblem("pm_name");
+      document.getElementById("sb-name")?.focus();
+      return;
+    }
+    if (!(Number.isInteger(count) && count >= 1 && count <= 10)) {
+      document.getElementById("sb-guests")?.focus();
+      return;
+    }
+    setPriceBusy(true);
+    setPriceTextProblem(null);
+    void api
+      .quote(propertyId, {
+        unit_id: price.unit_id,
+        ...(guest === null
+          ? {
+              guest_name: guestName,
+              ...(contact === "" ? {} : { guest_contact: contact }),
+            }
+          : { customer_id: guest.customer_id }),
+        guest_count: count,
+        check_in_on: price.check_in_on,
+        check_out_on: price.check_out_on,
+      })
+      .then(async (quote) => {
+        const text = quoteMessage(language, quote);
+        setPriceText(text);
+        setPriceCopied(await copyText(text));
+      })
+      .catch(() => {
+        setPriceTextProblem("failed");
+      })
+      .finally(() => {
+        setPriceBusy(false);
+      });
+  };
+
+  const back = <BackLink language={language} parent="shortstays" />;
 
   const pickGuest = (item: CustomerListItem) => {
     setGuest({
@@ -471,6 +520,39 @@ export function NewBookingForm({
           </p>
           {price.charged_as_whole_weeks && (
             <p className="ui-small ui-muted">{st(language, "as_weeks")}</p>
+          )}
+          {price.blockers.length === 0 && (
+            <div className="ss-pricemsg">
+              <button
+                className="ui-btn"
+                disabled={priceBusy}
+                onClick={copyPriceMessage}
+                type="button"
+              >
+                <Icon name="send" small />
+                {st(language, "pm_copy")}
+              </button>
+              <p className="ui-small ui-muted">{st(language, "pm_note")}</p>
+              {priceTextProblem !== null && (
+                <p className="ui-small" role="alert">
+                  {st(language, priceTextProblem)}
+                </p>
+              )}
+              {priceText !== null && (
+                <>
+                  <textarea
+                    aria-label={st(language, "pm_copy")}
+                    className="ss-message"
+                    readOnly
+                    rows={7}
+                    value={priceText}
+                  />
+                  <p className="ui-small" role="status">
+                    {st(language, priceCopied ? "rv_copied" : "pm_select")}
+                  </p>
+                </>
+              )}
+            </div>
           )}
           {price.suggest_month && price.month_only_usd_cents !== null && (
             <div className="ui-notice info" role="note">
@@ -549,12 +631,12 @@ export function NewBookingForm({
   return (
     <>
       {back}
-      <div className="ui-head">
+      <PageHead>
         <div>
           <h2>{st(language, "add")}</h2>
           <p>{st(language, "new_sub")}</p>
         </div>
-      </div>
+      </PageHead>
       {checked && wrong.length > 0 && (
         <div className="ui-notice err" role="alert">
           <Icon name="alert" />

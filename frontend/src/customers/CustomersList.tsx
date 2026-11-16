@@ -3,7 +3,7 @@
 // Unit at once; pressing Search also asks the server, which finds a whole ID or passport
 // number without ever sending the number back (SEC-041, DL-078 answer 4).
 
-import { FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 
 import type { CustomerListItem } from "../customerClient";
 import { Icon, type ShellIcon } from "../shell/icons";
@@ -18,6 +18,7 @@ import {
   CustomersData,
   phoneKey,
 } from "./customersData";
+import { PageHead } from "../shell/pageHead";
 
 const KIND_CHIPS: Record<CustomerKind, [Tone, ShellIcon | undefined]> = {
   tenant: ["ok", "check"],
@@ -62,6 +63,7 @@ export function CustomersList({
   searching,
   onSearch,
   onAdd,
+  above,
 }: {
   language: Language;
   data: CustomersData;
@@ -72,6 +74,8 @@ export function CustomersList({
   onSearch: (text: string) => void;
   /** Null when the person may not add Customers. */
   onAdd: (() => void) | null;
+  /** UI v81 round 11: a card drawn under the title (the coming birthdays), when asked for. */
+  above?: ReactNode;
 }) {
   const [text, setText] = useState("");
   const [card, setCard] = useState<Exclude<CustomerKind, "none"> | "all">(
@@ -116,7 +120,7 @@ export function CustomersList({
 
   return (
     <>
-      <div className="ui-head">
+      <PageHead>
         <p>{ct(language, "sub", data.customers.length)}</p>
         {onAdd !== null && (
           <div className="ui-actions">
@@ -126,7 +130,9 @@ export function CustomersList({
             </button>
           </div>
         )}
-      </div>
+      </PageHead>
+      {/* Right under the title, so it is on the first screen of a phone too. */}
+      {above}
       <form className="ui-filters" onSubmit={submit} role="search">
         <label className="ui-sr" htmlFor="customers-search">
           {ct(language, "search")}
@@ -166,7 +172,6 @@ export function CustomersList({
               icon={icon}
               key={value}
               label={ct(language, `c_${value}`)}
-              note={ct(language, `c_${value}_s`)}
               onPress={() => {
                 setCard(card === value ? "all" : value);
               }}

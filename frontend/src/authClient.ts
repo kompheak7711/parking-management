@@ -16,6 +16,9 @@ export interface SessionData {
   reauthenticated_at: string | null;
   // The account's display name, when it has one (shown after sign-in, login sub-slice L6).
   display_name?: string | null;
+  // UI v81 (owner 08/11/2026, side menu): the account's class, named as the role on the menu's
+  // user card ("Kompheak · Owner").
+  account_class?: "owner" | "manager" | "staff" | null;
 }
 
 export interface AuthenticationData {
@@ -211,7 +214,12 @@ function isSessionData(value: unknown): value is SessionData {
       typeof session.reauthenticated_at === "string") &&
     (session.display_name === undefined ||
       session.display_name === null ||
-      typeof session.display_name === "string")
+      typeof session.display_name === "string") &&
+    (session.account_class === undefined ||
+      session.account_class === null ||
+      session.account_class === "owner" ||
+      session.account_class === "manager" ||
+      session.account_class === "staff")
   );
 }
 

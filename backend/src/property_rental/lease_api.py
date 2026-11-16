@@ -171,6 +171,10 @@ class LeaseTimelineEvent:
     actor_id: UUID
     source_reference: str | None
     source_href: str | None
+    # UI v81 (owner 08/11/2026): History names the person of every step. The account name of
+    # the person who recorded it, and for a Signer step the Customer it was about.
+    actor_name: str | None = None
+    subject_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +266,8 @@ class LeaseResource:
     occupancies: tuple[OccupancyResource, ...] = ()
     timeline: tuple[LeaseTimelineEvent, ...] = ()
     timeline_next_cursor: str | None = None
+    # UI v81 (owner 08/11/2026, migration 20270712_363): Unit + "L" + running number.
+    lease_number: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -598,6 +604,10 @@ class PostgresLeaseResourceFlow:
                    FROM app.lease_pet_approvals AS approval
                    WHERE approval.lease_id = lease.id
                    ORDER BY approval.approved_date DESC, approval.id DESC LIMIT 1
+               ),
+               (
+                   SELECT number.lease_number FROM app.lease_numbers AS number
+                   WHERE number.lease_id = lease.id
                )
         FROM app.leases AS lease
         JOIN app.units AS unit ON unit.id = lease.unit_id
@@ -687,6 +697,7 @@ class PostgresLeaseResourceFlow:
             created_at=cast(datetime, row[15]),
             pet_deposit_required=bool(row[16]),
             pet_description=None if row[17] is None else str(row[17]),
+            lease_number=None if row[18] is None else str(row[18]),
         )
 
     def _fetch(self, query: str, parameters: tuple[object, ...]) -> list[tuple[object, ...]]:
@@ -822,12 +833,59 @@ class PostgresLeaseResourceFlow:
                 [*rows, *restricted],
                 key=lambda row: (cast(datetime, row[2]), UUID(str(row[0]))),
             )[: limit + 1]
-        items = tuple(self._timeline_resource(row) for row in rows[:limit])
+        items = self._named(
+            connection, lease_id, tuple(self._timeline_resource(row) for row in rows[:limit])
+        )
         next_cursor = None
         if len(rows) > limit and items:
             last = items[-1]
             next_cursor = _encode_cursor(last.occurred_at, last.event_id)
         return LeaseTimelinePage(items, next_cursor)
+
+    _SIGNER_OPERATIONS: Final = {
+        "lease.signer.add": "ADDED",
+        "lease.signer.sign": "SIGNED",
+        "lease.signer.remove": "REMOVED",
+    }
+
+    def _named(
+        self,
+        connection: psycopg.Connection[tuple[object, ...]],
+        lease_id: UUID,
+        items: tuple[LeaseTimelineEvent, ...],
+    ) -> tuple[LeaseTimelineEvent, ...]:
+        """UI v81 (owner 08/11/2026): the name stored with each step. The account name of the
+        person who recorded it; for a Signer step also the Customer, from the Signer history
+        written in the same statement as the step."""
+        if not items:
+            return items
+        actors = {
+            UUID(str(row[0])): str(row[1])
+            for row in connection.execute(
+                "SELECT actor_id,display_name FROM app.user_accounts WHERE actor_id = ANY(%s)",
+                (list({item.actor_id for item in items}),),
+            ).fetchall()
+        }
+        signers: dict[tuple[str, datetime], str] = {}
+        if any(item.event_kind in self._SIGNER_OPERATIONS for item in items):
+            for row in connection.execute(
+                "SELECT history.operation,history.occurred_at,customer.legal_name "
+                "FROM app.lease_signer_history AS history "
+                "JOIN app.customers AS customer ON customer.id=history.customer_id "
+                "WHERE history.lease_id=%s",
+                (lease_id,),
+            ).fetchall():
+                signers.setdefault((str(row[0]), cast(datetime, row[1])), str(row[2]))
+        return tuple(
+            replace(
+                item,
+                actor_name=actors.get(item.actor_id),
+                subject_name=signers.get(
+                    (self._SIGNER_OPERATIONS.get(item.event_kind, ""), item.occurred_at)
+                ),
+            )
+            for item in items
+        )
 
     def timeline(
         self,

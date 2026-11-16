@@ -33,10 +33,13 @@ afterEach(() => {
 });
 
 const METHODS: PaymentMethodConfiguration[] = [
-  { code: "CASH", display_name: "Cash", accepted: true },
-  { code: "ABA_PAY", display_name: "ABA PAY", accepted: true },
-  { code: "CHEQUE", display_name: "Cheque", accepted: false },
+  { code: "CASH", display_name: "Cash", accepted: true, aba_qr: false },
+  { code: "ABA_PAY", display_name: "ABA PAY", accepted: true, aba_qr: false },
+  { code: "CHEQUE", display_name: "Cheque", accepted: false, aba_qr: false },
 ];
+
+const ON = "Staff can use it on new Receipts";
+const ABA = "Use for ABA QR payments";
 
 const PROPERTY: PropertyBusinessConfiguration = {
   property_id: "property-1",
@@ -260,6 +263,10 @@ function show(api = apiOf(), language: "en" | "km" = "en") {
 }
 
 const card = (name: string) => screen.getByRole("region", { name });
+/** UI v81 round 4: opens a sub-tab of the Business tab (its pill shows the row count too). */
+const openSub = (name: string) => {
+  fireEvent.click(screen.getByRole("tab", { name: new RegExp(`^${name}`) }));
+};
 const pairs = (region: HTMLElement) =>
   Array.from(region.querySelectorAll("dt")).map(
     (term) =>
@@ -287,30 +294,40 @@ describe("Settings: Business", () => {
       "Property: CHETANA Residence",
       "Description: Apartments near Camko",
       "Address: Street 271, Phnom Penh",
-      "Rentable Units: 2Counted from the Units list each time. Never typed.",
+      "Rentable Units: 2Counted from the Units list each time. Never entered.",
     ]);
     expect(pairs(card("Business"))).toEqual([
-      "Business name: Not givenCan differ from the property name.",
+      "Business name: Not setCan differ from the property name.",
     ]);
+    // UI v81 round 4: the tables sit on their own sub-tabs; the pills count their rows.
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "General",
+      "Business rules4",
+      "Invoice types2",
+      "Document numbering2",
+    ]);
+    openSub("Business rules");
     const rules = card("Business rules");
     expect(
       rowsOf(within(rules).getByRole("table", { name: "Billing" })),
     ).toEqual([
       "Other Invoices due | 7 days after issue | — | Edit",
-      "Meters read on Not used yet | Day 24 | 01/01/2026 | Edit",
+      "Meters read on Not in use | 24th of each month | 01/01/2026 | Edit",
       "Late-payment charge | 10%From 01/12/2026: 5% | 01/01/2026 | Edit",
     ]);
     expect(
       rowsOf(within(rules).getByRole("table", { name: "Prices" })),
     ).toEqual([
-      "Round prices up to Not used yet | $0.10 | 01/01/2026 | Edit",
-      "Highest mark-up Not used yet | Not set | — | Edit",
+      "Round prices up to Not in use | $0.10 | 01/01/2026 | Edit",
+      "Highest mark-up Not in use | Not set | — | Edit",
     ]);
     expect(within(rules).queryByRole("table", { name: "Ledger" })).toBeNull();
+    openSub("Invoice types");
     expect(rowsOf(within(card("Invoice types")).getByRole("table"))).toEqual([
       "First Rent | Yes | Change",
       "Utilities | No | Change",
     ]);
+    openSub("General");
     const methods = card("Payment Methods");
     expect(
       within(methods)
@@ -321,14 +338,20 @@ describe("Settings: Business", () => {
       "ABA PAYABA_PAYActiveEdit",
       "ChequeCHEQUETurned offEdit",
     ]);
-    // The newest confirmed rate.
-    const fx = card("Riel exchange rate");
-    expect(fx.textContent).toContain("4,135 ៛ per $1");
-    expect(fx.textContent).toContain("Entered by hand, 24/10/2026 10:00.");
+    // The newest confirmed rate (owner 12/11/2026: the card is "Exchange"). With no read of the
+    // rate now, that line says so.
+    expect(
+      screen.queryByRole("region", { name: "Riel exchange rate" }),
+    ).toBeNull();
+    expect(pairs(card("Exchange"))).toEqual([
+      "Rate now: Not availableThe app cannot read the ABA rate now.",
+      "Last rate used: 4,135 ៛ per $1Entered by hand, 24/10/2026 10:00.",
+    ]);
     expect(pairs(card("App preferences"))).toEqual([
       "Time zone: Asia/Phnom_Penh (UTC+7), from the business location (Cambodia)Due dates, expiry and reading days use Phnom Penh time.",
       "Screen language: Chosen on each phone or iPad; the browser remembers it",
     ]);
+    openSub("Document numbering");
     expect(
       rowsOf(within(card("Document numbering")).getByRole("table")),
     ).toEqual([
@@ -336,6 +359,57 @@ describe("Settings: Business", () => {
       "Receipt | RCPyy000n | RCP260062",
     ]);
     expect(screen.queryByText("Same as this device")).toBeNull();
+  });
+
+  it("TEST-FE-1935 (owner 12/11/2026) the Exchange card shows the riel rate now from the Receive payment read, also before any riel payment; a rate that cannot be read says so; the Business rules tables share their column widths", async () => {
+    // No riel payment yet: the rate now still shows.
+    const first = apiOf();
+    const empty = await first.rates.load();
+    first.rates.load.mockResolvedValue({ ...empty, exchangeRates: [] });
+    const khrRate = vi.fn(() => Promise.resolve({ rate: 4_083 }));
+    show({ ...first, payments: { khrRate } } as never);
+    await screen.findByRole("region", { name: "Property" });
+    await waitFor(() => {
+      expect(pairs(card("Exchange"))).toEqual([
+        "Rate now: 4,083 ៛ per $1",
+        "Last rate used: No riel payment yet.",
+      ]);
+    });
+    expect(khrRate).toHaveBeenCalledWith("property-1");
+    expect(card("Exchange").textContent).toContain(
+      "ABA Sell rate, rounded up to the next 1 ៛.",
+    );
+    cleanup();
+
+    // The app has no rate to give (null), or the read fails: the line says so, calmly.
+    for (const answer of [
+      () => Promise.resolve(null),
+      () => Promise.reject(new Error("down")),
+    ]) {
+      show({ ...apiOf(), payments: { khrRate: vi.fn(answer) } } as never);
+      await screen.findByRole("region", { name: "Property" });
+      await waitFor(() => {
+        expect(pairs(card("Exchange"))).toEqual([
+          "Rate now: Not availableThe app cannot read the ABA rate now.",
+          "Last rate used: 4,135 ៛ per $1Entered by hand, 24/10/2026 10:00.",
+        ]);
+      });
+      cleanup();
+    }
+
+    // Every group's table of the Business rules has the same class, which fixes the widths.
+    show();
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Business rules");
+    const tables = within(card("Business rules")).getAllByRole("table");
+    expect(tables).toHaveLength(2);
+    for (const table of tables)
+      expect(table).toHaveClass("ui-table", "ui-rules");
+    // The other tables of the tab are not Business rules tables.
+    openSub("Document numbering");
+    expect(
+      within(card("Document numbering")).getByRole("table"),
+    ).not.toHaveClass("ui-rules");
   });
 
   it("TEST-FE-951 Edit changes the Property name, description and address; Edit business changes only the business name; a Payment Method is added with a new code, renamed or turned off, but one stays on", async () => {
@@ -385,9 +459,11 @@ describe("Settings: Business", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Add a method: Payment Methods" }),
+      screen.getByRole("button", {
+        name: "Add payment method: Payment Methods",
+      }),
     );
-    dialog = screen.getByRole("dialog", { name: "Add a method" });
+    dialog = screen.getByRole("dialog", { name: "Add payment method" });
     fireEvent.change(within(dialog).getByLabelText(/^Method name/), {
       target: { value: "cash" },
     });
@@ -408,13 +484,14 @@ describe("Settings: Business", () => {
           code: "WING_TRANSFER",
           display_name: "Wing transfer",
           accepted: true,
+          aba_qr: false,
         },
       ],
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit: ABA PAY" }));
     dialog = screen.getByRole("dialog", { name: "Edit method" });
-    fireEvent.click(within(dialog).getByRole("checkbox"));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: ON }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await screen.findByText("ABA PAY saved.");
     expect(api.property.updatePaymentMethods).toHaveBeenLastCalledWith(
@@ -438,12 +515,12 @@ describe("Settings: Business", () => {
     show(api);
     fireEvent.click(await screen.findByRole("button", { name: "Edit: Cash" }));
     let dialog = screen.getByRole("dialog", { name: "Edit method" });
-    fireEvent.click(within(dialog).getByRole("checkbox"));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: ON }));
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
       within(dialog).getByText("Keep at least one method turned on."),
     ).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole("checkbox"));
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: ON }));
     fireEvent.change(within(dialog).getByLabelText(/^Method name/), {
       target: { value: "Cash (USD or riel)" },
     });
@@ -458,12 +535,15 @@ describe("Settings: Business", () => {
     cleanup();
 
     show(apiOf(), "km");
+    await screen.findByRole("region", { name: "អចលនទ្រព្យ" });
+    openSub("ច្បាប់អាជីវកម្ម");
     expect(
-      await screen.findByRole("region", { name: "ច្បាប់អាជីវកម្ម" }),
+      screen.getByRole("region", { name: "ច្បាប់អាជីវកម្ម" }),
     ).toBeTruthy();
     expect(screen.getAllByText("មិនទាន់ប្រើ").length).toBe(3);
+    expect(screen.getByText("ថ្ងៃទី 24 នៃខែនីមួយៗ")).toBeTruthy();
+    openSub("ប្រភេទវិក្កយបត្រ");
     expect(screen.getByText("ថ្លៃឈ្នួលដំបូង")).toBeTruthy();
-    expect(screen.getByText("ថ្ងៃទី 24")).toBeTruthy();
     cleanup();
 
     let fail = true;
@@ -523,11 +603,13 @@ describe("Settings: Business", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Saved.")).toBeTruthy();
     fireEvent.click(
-      screen.getByRole("button", { name: "Add a method: Payment Methods" }),
+      screen.getByRole("button", {
+        name: "Add payment method: Payment Methods",
+      }),
     );
     const save = () =>
       within(
-        screen.getByRole("dialog", { name: "Add a method" }),
+        screen.getByRole("dialog", { name: "Add payment method" }),
       ).getByRole<HTMLButtonElement>("button", { name: "Save" });
     expect(save().disabled).toBe(true);
     finish.read?.({ ...PROPERTY, version: 5 });
@@ -568,10 +650,86 @@ describe("Settings: Business", () => {
     expect(race.property.load).toHaveBeenLastCalledWith("property-2");
   });
 
+  it("TEST-FE-2141 a Payment Method can be used for ABA QR payments: the list marks it, ticking another method says the mark moves and the save takes it off the first one, a method that is off cannot have it, and untick saves no mark (DL-227)", async () => {
+    const marked = METHODS.map((method) =>
+      method.code === "ABA_PAY" ? { ...method, aba_qr: true } : method,
+    );
+    const api = apiOf(() =>
+      Promise.resolve({ ...PROPERTY, payment_methods: marked }),
+    );
+    api.property.updatePaymentMethods.mockImplementation(() =>
+      Promise.resolve({ ...PROPERTY, payment_methods: marked }),
+    );
+    show(api);
+    const row = (await screen.findByText("ABA PAY")).closest("li");
+    expect(row).not.toBeNull();
+    expect(within(row as HTMLElement).getByText("ABA QR")).toBeTruthy();
+    expect(
+      within(screen.getByText("Cash").closest("li") as HTMLElement).queryByText(
+        "ABA QR",
+      ),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Cash" }));
+    let dialog = screen.getByRole("dialog", { name: "Edit method" });
+    const aba = within(dialog).getByRole("checkbox", { name: ABA });
+    expect((aba as HTMLInputElement).checked).toBe(false);
+    expect(
+      within(dialog).getByText(/Only one method can have it\./),
+    ).toBeTruthy();
+    fireEvent.click(aba);
+    expect(
+      within(dialog).getByText(
+        "ABA PAY is used for ABA QR payments now. Saving moves it to this method.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await screen.findByText("Cash saved.");
+    expect(api.property.updatePaymentMethods).toHaveBeenLastCalledWith(
+      expect.anything(),
+      [
+        { ...METHODS[0], aba_qr: true },
+        { ...METHODS[1], aba_qr: false },
+        METHODS[2],
+      ],
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit: Cheque" }));
+    dialog = screen.getByRole("dialog", { name: "Edit method" });
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: ABA }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      within(dialog).getByText(
+        "Turn this method on to use it for ABA QR payments.",
+      ),
+    ).toBeTruthy();
+    expect(api.property.updatePaymentMethods).toHaveBeenCalledTimes(1);
+    expect(document.activeElement?.id).toBe("pm-aba");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit: ABA PAY" }));
+    dialog = screen.getByRole("dialog", { name: "Edit method" });
+    const held = within(dialog).getByRole("checkbox", { name: ABA });
+    expect((held as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(held);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => {
+      expect(api.property.updatePaymentMethods).toHaveBeenLastCalledWith(
+        expect.anything(),
+        [METHODS[0], { ...METHODS[1], aba_qr: false }, METHODS[2]],
+      );
+    });
+  });
+
   it("TEST-FE-1135 a business rule change needs a value that fits, a start day today or later and a reason, shows the history, and a day already used says so; Add rule makes a code from the English name and starts Not used yet", async () => {
     const api = show();
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Business rules");
     fireEvent.click(
-      await screen.findByRole("button", { name: "Edit: Late-payment charge" }),
+      screen.getByRole("button", { name: "Edit: Late-payment charge" }),
     );
     let dialog = screen.getByRole("dialog", {
       name: "Change: Late-payment charge",
@@ -589,10 +747,12 @@ describe("Settings: Business", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      within(dialog).getByText("Type a value that fits the unit."),
+      within(dialog).getByText("Enter a value that fits the unit."),
     ).toBeTruthy();
     expect(
-      within(dialog).getByText("Type a real date, dd/mm/yyyy, today or later."),
+      within(dialog).getByText(
+        "Enter a real date, dd/mm/yyyy, today or later.",
+      ),
     ).toBeTruthy();
     expect(within(dialog).getByText("Say why.")).toBeTruthy();
     expect(api.settings.setRule).not.toHaveBeenCalled();
@@ -629,7 +789,7 @@ describe("Settings: Business", () => {
     );
     dialog = screen.getByRole("dialog", { name: "Add a business rule" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(within(dialog).getAllByText("Type the rule name.").length).toBe(2);
+    expect(within(dialog).getAllByText("Enter the rule name.").length).toBe(2);
     fireEvent.change(within(dialog).getByLabelText(/^Name in English/), {
       target: { value: "Key copy price" },
     });
@@ -661,8 +821,11 @@ describe("Settings: Business", () => {
 
   it("TEST-FE-2170 the late-payment charge takes only a whole percent from 0 to 10: more, or a part of a percent, is refused in the dialog with the reason and nothing is sent; another percent rule still takes 0.5 (DL-226)", async () => {
     const api = show();
+    // On design v81 the rules are on their own sub-tab of Business.
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Business rules");
     fireEvent.click(
-      await screen.findByRole("button", { name: "Edit: Late-payment charge" }),
+      screen.getByRole("button", { name: "Edit: Late-payment charge" }),
     );
     const dialog = screen.getByRole("dialog", {
       name: "Change: Late-payment charge",
@@ -715,6 +878,8 @@ describe("Settings: Business", () => {
       },
     ]);
     show(api);
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Invoice types");
     await screen.findByRole("button", { name: "Change: First Rent" });
     expect(rowsOf(within(card("Invoice types")).getByRole("table"))).toEqual([
       "First Rent | Yes | Change",
@@ -728,9 +893,9 @@ describe("Settings: Business", () => {
 
   it("TEST-FE-1136 late payment for an Invoice type changes with a reason; new letters for a document must be 2 to 5 capitals no other document uses and show the next number", async () => {
     const api = show();
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Change: First Rent" }),
-    );
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Invoice types");
+    fireEvent.click(screen.getByRole("button", { name: "Change: First Rent" }));
     let dialog = screen.getByRole("dialog", {
       name: "Late payment: First Rent",
     });
@@ -752,13 +917,14 @@ describe("Settings: Business", () => {
       "Paid at signing",
     );
 
+    openSub("Document numbering");
     fireEvent.click(
-      screen.getByRole("button", { name: "Change the letters for Receipt" }),
+      screen.getByRole("button", { name: "Change the prefix for Receipt" }),
     );
     dialog = screen.getByRole("dialog", {
-      name: "Change the letters for Receipt",
+      name: "Change the prefix for Receipt",
     });
-    const letters = within(dialog).getByLabelText(/^Letters/);
+    const letters = within(dialog).getByLabelText(/Prefix/);
     fireEvent.change(letters, { target: { value: "INV" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
@@ -783,7 +949,9 @@ describe("Settings: Business", () => {
 
   it("TEST-FE-1138 the days after issue for other Invoices show with the Billing rules and keep the V1 setting: whole days 1 to 90 with a reason, at the Property's version", async () => {
     const api = show();
-    const billing = await screen.findByRole("table", { name: "Billing" });
+    await screen.findByRole("region", { name: "Property" });
+    openSub("Business rules");
+    const billing = screen.getByRole("table", { name: "Billing" });
     expect(api.dueDays.get).toHaveBeenCalledWith("property-1");
     expect(within(billing).getByText("7 days after issue")).toBeTruthy();
     fireEvent.click(

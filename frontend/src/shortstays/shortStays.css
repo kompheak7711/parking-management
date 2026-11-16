@@ -1,109 +1,449 @@
 /* Daily and weekly rent: the calendar (one row per Unit, one square per night) and the price
    box. Every square has an icon and a word, never colour only (mock-up round 28). */
 
-table.ss-cal {
-  border-collapse: separate;
-  border-spacing: 3px;
-  min-width: 100%;
-  font-size: 0.82rem;
+/* Leasing batch (owner 13/11/2026, design FINAL): the Calendar as a booking chart. One bar per
+   stay with the guest's name; the colour is never the only sign (the bar has the name, an unpaid
+   bar has a dot and says "not paid" to a screen reader, a closed night has a word). */
+
+:root {
+  --ss-booked-bg: #dce7fa;
+  --ss-booked-edge: #36607e;
+  --ss-in-bg: #d5eedf;
+  --ss-in-edge: #2f6b4a;
+  --ss-site-bg: #ece4fb;
+  --ss-site-edge: #5b4a8b;
+  --ss-dot: #c2570c;
 }
 
-table.ss-cal th {
-  font-weight: 600;
-  color: var(--text-2);
-  text-align: center;
-  white-space: nowrap;
-  padding: 4px 2px;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ss-booked-bg: #1f2d3d;
+    --ss-booked-edge: #8fb3d3;
+    --ss-in-bg: #1f3326;
+    --ss-in-edge: #8ec7a1;
+    --ss-site-bg: #2c2640;
+    --ss-site-edge: #b9a8e6;
+    --ss-dot: #f08a45;
+  }
 }
 
-table.ss-cal thead th span {
-  display: block;
+:root[data-theme="dark"] {
+  --ss-booked-bg: #1f2d3d;
+  --ss-booked-edge: #8fb3d3;
+  --ss-in-bg: #1f3326;
+  --ss-in-edge: #8ec7a1;
+  --ss-site-bg: #2c2640;
+  --ss-site-edge: #b9a8e6;
+  --ss-dot: #f08a45;
 }
 
-table.ss-cal thead th.today {
-  color: var(--primary);
+/* Owner 13/11/2026 evening: the quick numbers on top and the chart under them at full width;
+   Arriving, Leaving and Not paid open the Today and Not paid panels from the right. */
+.ss-calgrid {
+  display: grid;
+  gap: 16px;
 }
 
-table.ss-cal tbody th {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--surface);
-  text-align: left;
-  padding: 4px 8px;
-  min-width: 96px;
+.ss-calmain {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
 }
 
-.ss-wd {
-  font-weight: 400;
+.ss-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
 }
 
-td.ss-night {
-  min-width: 64px;
-  height: 44px;
-  padding: 0;
+/* Owner 14/11/2026: each card's number sits at its top right, beside the card's name; the note
+   runs under both. */
+.ss-kpi {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-content: start;
+  align-items: start;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--sunken);
-  vertical-align: middle;
-}
-
-td.ss-night > a,
-td.ss-night > span {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  min-height: 44px;
-  padding: 2px 4px;
-  overflow: hidden;
+  background: var(--surface);
   color: var(--text);
   text-decoration: none;
 }
 
-td.ss-night > a > span:last-child,
-td.ss-night > span > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+button.ss-kpi {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-td.ss-free {
-  background: var(--surface);
-  border-style: dashed;
-}
-
-td.ss-free > a {
-  color: var(--link);
-  justify-content: center;
-}
-
-td.ss-free > a:hover {
+button.ss-kpi:hover {
   background: var(--hover);
 }
 
-td.ss-booked {
-  background: var(--info-bg);
-  border-color: var(--info);
-}
-
-td.ss-checked_in {
-  background: var(--ok-bg);
-  border-color: var(--ok);
-}
-
-td.ss-checked_out {
-  background: var(--sunken);
-}
-
-td.ss-lease,
-td.ss-reserved {
-  background: var(--warn-bg);
-  border-color: var(--warn);
-}
-
-td.ss-not_for_rent,
-td.ss-closed {
+.ss-kpi > span:first-child {
   color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ss-kpi > b {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: var(--heading);
+}
+
+.ss-kpi > b.ss-kpitime {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.ss-kpi > span:first-child {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
+}
+
+.ss-kpi > span:not(:first-child) {
+  grid-column: 1 / -1;
+  color: var(--text-2);
+  font-size: 0.78rem;
+}
+
+.ss-kpi.warn {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.ss-kpi.warn > b,
+.ss-kpi > span.bad {
+  color: var(--warn);
+}
+
+.ss-kpi > span.ok {
+  color: var(--ok);
+}
+
+.ss-today {
+  display: grid;
+  gap: 12px;
+}
+
+.ss-today h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ss-today h2 .ui-muted {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.ss-today h3 {
+  margin: 4px 0 0;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ss-guests {
+  display: grid;
+  gap: 6px;
+}
+
+.ss-guests > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.ss-guests > li > a {
+  display: grid;
+  min-height: 44px;
+  align-content: center;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ss-guests > li > a:hover b {
+  text-decoration: underline;
+}
+
+/* Owner 13/11/2026: every button in the Today panel has the same width. */
+.ss-guests > li > .ui-btn {
+  flex: none;
+  width: 9.5rem;
+}
+
+.ss-warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.ui-btn.ss-step {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.shell-view a.ui-btn.ss-step {
+  color: var(--warn);
+}
+
+.ss-link44 {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Owner 13/11/2026 ("why is the booking chart so short?"): the chart is not a list table, so the
+   page's table fitting (shell/tableFit.ts) leaves it alone and every Unit shows. Only a chart
+   taller than the screen scrolls in its own box, with the days stuck at its top. */
+.ss-chartwrap {
+  position: relative;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table.ss-chart {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 100%;
+  font-size: 0.82rem;
+  table-layout: fixed;
+}
+
+table.ss-chart th,
+table.ss-chart td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0;
+  height: 44px;
+}
+
+table.ss-chart thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-width: 52px;
+  padding: 4px 2px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+table.ss-chart thead th > span {
+  display: block;
+}
+
+table.ss-chart thead th.today {
+  background: var(--selected);
+  color: var(--heading);
+  box-shadow: inset 0 -3px 0 var(--primary);
+}
+
+table.ss-chart th.ss-unitcol {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 104px;
+  min-width: 104px;
+  padding: 4px 8px;
+  background: var(--surface);
+  text-align: left;
+}
+
+table.ss-chart thead th.ss-unitcol {
+  z-index: 3;
+}
+
+table.ss-chart th.ss-unitcol b {
+  display: block;
+  color: var(--text);
+}
+
+.ss-room {
+  display: block;
+  color: var(--text-2);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.ss-room.ok {
+  color: var(--ok);
+}
+
+.ss-room.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+tr.ss-grp > th,
+tr.ss-grp > td {
+  height: 30px;
+  background: var(--sunken);
+  color: var(--text-2);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+tr.ss-grp > th.ss-unitcol {
+  background: var(--sunken);
+  color: var(--heading);
+}
+
+tr.ss-grp > td.full {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+td.ss-cell {
+  padding: 3px 2px;
+  vertical-align: middle;
+}
+
+td.ss-free > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 6px;
+  color: var(--link);
+  font-size: 1.1rem;
+  text-decoration: none;
+  opacity: 0.35;
+}
+
+td.ss-free > a:hover,
+td.ss-free > a:focus-visible {
+  background: var(--hover);
+  opacity: 1;
+}
+
+.ss-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: var(--sunken);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ss-bar > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+a.ss-bar:hover {
+  filter: brightness(0.96);
+}
+
+.ss-bar.booked,
+.ss-sw.booked {
+  border-color: var(--ss-booked-edge);
+  background: var(--ss-booked-bg);
+}
+
+.ss-bar.in,
+.ss-sw.in {
+  border-color: var(--ss-in-edge);
+  background: var(--ss-in-bg);
+}
+
+.ss-bar.out {
+  border-color: var(--border);
+  background: var(--sunken);
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.ss-bar.site,
+.ss-sw.site {
+  border-color: var(--ss-site-edge);
+  background: var(--ss-site-bg);
+}
+
+.ss-bar.lease,
+.ss-sw.lease {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.ss-bar.closed,
+.ss-sw.closed {
+  border-color: var(--border);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--sunken) 0 6px,
+    var(--surface) 6px 12px
+  );
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* Our booking on a night a booking site also holds. */
+td.ss-clash .ss-bar {
+  outline: 2px solid var(--err);
+  outline-offset: -2px;
+}
+
+.ss-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ss-dot);
+}
+
+.ss-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+
+.ss-legend > li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-sw {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  border: 1px solid;
+  border-left-width: 3px;
+  border-radius: 3px;
 }
 
 .ss-lines li {
@@ -135,11 +475,6 @@ td.ss-closed {
 }
 
 /* Step 3: a booking not paid yet shows a dashed square on the calendar. */
-td.ss-unpaid {
-  border-style: dashed;
-  border-width: 2px;
-}
-
 .ss-ready li {
   display: flex;
   align-items: center;
@@ -200,15 +535,109 @@ fieldset.ss-problems > legend {
   gap: 8px;
 }
 
-/* Step 5a: nights a booking site holds, and our booking on a night a site also holds. */
-td.ss-hold {
-  background: var(--sunken);
-  border-style: dashed;
+/* Owner 13/11/2026: Housekeeping is one card of short rows (what, booking, guest at the left;
+   Done and Skip at the right), the late ones first in red; done and skipped fold under it. */
+.ss-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-td.ss-clash {
-  outline: 2px solid var(--err);
-  outline-offset: -2px;
+.ss-task {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ss-task:last-child {
+  border-bottom: 0;
+}
+
+.ss-task.late {
+  box-shadow: inset 4px 0 0 var(--err);
+  background: var(--err-bg);
+}
+
+.ss-taskwhat {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ss-taskwhat .ui-hrow {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.ss-taskwhat p {
+  margin: 0;
+}
+
+.ss-latedate {
+  color: var(--err);
+  font-weight: 600;
+}
+
+/* DL-236: the person a task is given to (a box for the front desk). */
+.ss-assign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+
+.ss-assign > span {
+  color: var(--text-2);
+}
+
+.ss-assign > select {
+  min-width: 12rem;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 6px 36px 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background-color: var(--input);
+  color: var(--text);
+  font: inherit;
+}
+
+.ss-given {
+  margin: 0;
+  color: var(--text-2);
+}
+
+.ss-taskdo {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ss-taskdone > summary {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ss-taskdone[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 639px) {
+  .ss-task {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ss-taskdo {
+    justify-content: flex-start;
+  }
 }
 
 /* Step 5b: a message to copy for the guest (quote, review request) and the guest's notes. */
@@ -273,4 +702,146 @@ form.ss-form .ui-date input {
   width: auto;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Leasing batch (owner 13/11/2026): Copy price message in the New booking price box. */
+.ss-pricemsg {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.ss-pricemsg > .ss-message {
+  justify-self: stretch;
+}
+
+/* Owner 13/11/2026: the Week / 2 weeks / Month switch buttons each have the same width. The
+   Short stays tabs are the page head's tabs (owner 14/11/2026, like Invoices). */
+.ss-views {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 6.5rem);
+}
+
+.ss-views > button {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .ss-views {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Owner 13/11/2026: on a phone each booking is a small card, so the dates, Total and Status
+   never sit off the screen. Row 1: number and status; row 2: guest and total; row 3: the dates and
+   the Unit. The column headings stay for screen readers only. */
+@media (max-width: 639px) {
+  table.ui-table.ss-booklist,
+  table.ui-table.ss-booklist tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  table.ui-table.ss-booklist thead,
+  table.ui-table.ss-booklist thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+
+  table.ui-table.ss-booklist tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.ui-table.ss-booklist tr:last-child {
+    border-bottom: 0;
+  }
+
+  table.ui-table.ss-booklist td {
+    display: block;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(1) {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(6) {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(2) {
+    grid-row: 2;
+    grid-column: 1;
+    font-weight: 600;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(5) {
+    grid-row: 2;
+    grid-column: 2;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(4) {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(3) {
+    grid-row: 3;
+    grid-column: 2;
+    text-align: right;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(7) {
+    display: none;
+  }
+
+  table.ui-table.ss-booklist td .ui-sub2 {
+    display: block;
+  }
+}
+
+/* The tab row is the page head (owner 14/11/2026): one line under it, the head's, as on
+   Invoices. */
+.shell-head-tabbed > .ss-tabs {
+  flex: 1 1 auto;
+  margin: 0;
+  border-bottom: 0;
+}
+
+/* On a phone the three tabs share the row in equal parts, so Housekeeping is never cut, and
+   a booking card's dates fit on one line. */
+@media (max-width: 639px) {
+  .shell-head-tabbed > .ss-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .shell-head-tabbed > .ss-tabs a {
+    justify-content: center;
+    padding: 8px 4px;
+  }
+
+  table.ui-table.ss-booklist td:nth-child(4) {
+    font-size: 0.875rem;
+  }
 }

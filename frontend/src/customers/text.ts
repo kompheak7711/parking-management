@@ -3,10 +3,11 @@
 // are not in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   sub: [
-    "{0} people with a Lease, a Reservation or a history here",
+    "{0} people with a Lease, a Reservation or a history here.",
     "មនុស្ស {0} នាក់ដែលមានកិច្ចសន្យា ការកក់ ឬប្រវត្តិនៅទីនេះ",
   ],
   add: ["Add Customer", "បន្ថែមអតិថិជន"],
@@ -20,7 +21,7 @@ const TEXT = {
   loading: ["Loading the Customers…", "កំពុងផ្ទុកអតិថិជន…"],
   // new
   failed: [
-    "The Customers could not be read. Retry when the service is available.",
+    "The Customers could not be loaded. Retry when the service is available.",
     "មិនអាចអានអតិថិជនបានទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
   ],
   // new
@@ -55,7 +56,7 @@ const TEXT = {
     "Holding a Parking, Lease not signed yet",
     "កំពុងកក់ចំណត មិនទាន់ចុះហត្ថលេខាកិច្ចសន្យា",
   ],
-  c_former: ["Former", "ពីមុន"],
+  c_former: ["Past customers", "ពីមុន"],
   c_former_s: [
     "No current Lease or Reservation",
     "គ្មានកិច្ចសន្យា ឬការកក់បច្ចុប្បន្ន",
@@ -70,6 +71,21 @@ const TEXT = {
   n1: ["1 Customer", "អតិថិជន 1"],
   n: ["{0} Customers", "អតិថិជន {0}"],
   none: ["No Customers match.", "គ្មានអតិថិជនត្រូវនឹងការស្វែងរកទេ។"],
+  // UI v81 round 11: the coming birthdays (mock-up i18n bd_*; the lines marked "new" are not
+  // in the mock-up).
+  bd_title: ["Birthdays", "ថ្ងៃកំណើត"],
+  bd_week: ["Today and the next 7 days", "ថ្ងៃនេះ និង ៧ ថ្ងៃបន្ទាប់"],
+  bd_later: ["Later this month", "ក្រោយមកក្នុងខែនេះ"],
+  bd_none: ["No birthdays in these days.", "គ្មានថ្ងៃកំណើតក្នុងថ្ងៃទាំងនេះទេ។"],
+  bd_primary: ["Primary Tenant", "អ្នកជួលចម្បង"],
+  bd_occupant: ["Occupant", "អ្នកស្នាក់នៅ"],
+  bd_today: ["today", "ថ្ងៃនេះ"], // new
+  bd_tomorrow: ["tomorrow", "ថ្ងៃស្អែក"], // new
+  bd_in: ["in {0} days", "ក្នុង {0} ថ្ងៃទៀត"], // new
+  bd_hide: ["Hide", "លាក់"], // new
+  bd_open: ["Open Customer", "បើកអតិថិជន"], // new
+  bd_loading: ["Loading the birthdays…", "កំពុងផ្ទុកថ្ងៃកំណើត…"], // new
+  bd_failed: ["The birthdays could not be loaded.", "មិនអាចអានថ្ងៃកំណើតបានទេ។"], // new
   // new
   money_later: [
     "Unpaid and Customer Credit for each Customer show on the Customer page. The list columns come with Invoices and Payments (step R5).",
@@ -79,7 +95,7 @@ const TEXT = {
   k_tenant: ["Tenant", "អ្នកជួល"],
   k_other: ["Signer or occupant", "អ្នកចុះហត្ថលេខា ឬអ្នករស់នៅ"],
   k_res: ["Reservation", "ការកក់"],
-  k_former: ["Former", "ពីមុន"],
+  k_former: ["Past customers", "ពីមុន"],
   // new
   deactivated: ["Deactivated", "បានបិទ"],
   back: ["Back", "ត្រឡប់ក្រោយ"],
@@ -92,7 +108,7 @@ const TEXT = {
   role_signer: ["Lease Signer", "អ្នកចុះហត្ថលេខាកិច្ចសន្យា"],
   role_occupant: ["Occupant", "អ្នករស់នៅ"],
   role_res: ["Reservation Customer", "អតិថិជនកក់"],
-  role_former: ["Former tenant", "អ្នកជួលពីមុន"],
+  role_former: ["Past tenant", "អ្នកជួលពីមុន"],
   no_rels: ["No Lease or Reservation yet.", "មិនទាន់មានកិច្ចសន្យា ឬការកក់។"],
   edit: ["Edit contact", "កែទំនាក់ទំនង"],
   contact: ["Contact and identity", "ទំនាក់ទំនង និងអត្តសញ្ញាណ"],
@@ -163,6 +179,11 @@ const TEXT = {
     "Each unpaid Invoice and the latest Receipts show here when Invoices and Payments are rebuilt (step R5).",
     "វិក្កយបត្រមិនទាន់បង់នីមួយៗ និងបង្កាន់ដៃចុងក្រោយនឹងបង្ហាញនៅទីនេះ ពេលរៀបចំវិក្កយបត្រ និងការបង់ប្រាក់ឡើងវិញ (ជំហាន R5)។",
   ],
+  receipts_none: ["No Receipts yet.", "មិនទាន់មានបង្កាន់ដៃទេ។"], // new
+  receipts_unknown: [
+    "The Receipts could not be read. Try again later.",
+    "មិនអាចអានបង្កាន់ដៃបានទេ។ សូមព្យាយាមម្តងទៀតពេលក្រោយ។",
+  ], // new
   history: ["History", "ប្រវត្តិ"],
   // new
   history_none: ["No history yet.", "មិនទាន់មានប្រវត្តិ។"],
@@ -199,7 +220,7 @@ const TEXT = {
     "Enter an email like name@example.com.",
     "សូមបញ្ចូលអ៊ីមែលដូចជា name@example.com។",
   ],
-  e_dob: ["Pick a date.", "សូមជ្រើសរើសកាលបរិច្ឆេទ។"],
+  e_dob: ["Choose a date.", "សូមជ្រើសរើសកាលបរិច្ឆេទ។"],
   e_id_taken: [
     "Another Customer already has this ID number or passport number.",
     "អតិថិជនម្នាក់ទៀតមានលេខអត្តសញ្ញាណ ឬលេខលិខិតឆ្លងដែននេះរួចហើយ។",
@@ -317,7 +338,9 @@ export function ct(
   key: CustomerTextKey,
   ...values: (string | number)[]
 ): string {
-  return TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
-    String(values[Number(n)] ?? ""),
+  return singular(
+    TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
+      String(values[Number(n)] ?? ""),
+    ),
   );
 }

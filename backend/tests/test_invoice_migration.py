@@ -602,7 +602,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270803_421",
+            "20270803_417",
         )
         expected = {
             "actor_identities",
@@ -736,7 +736,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270803_421",
+            "20270803_417",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -7993,6 +7993,14 @@ def test_v1_045_typed_sources_keep_category_and_controlling_id_together(
     assert source(obligation_resource) == expected[obligation_invoice_id]
     for invoice_id, expected_source in expected.items():
         assert source(service.get(invoice_id, actor=authenticated)) == expected_source
+    # UI v81 (History names the person): the one-Invoice read adds the account name of each
+    # person who made or issued it; a step without an account has no name.
+    with psycopg.connect(migrated_database_url) as check:
+        account = check.execute(
+            "SELECT display_name FROM app.user_accounts WHERE actor_id=%s", (actor_id,)
+        ).fetchone()
+    read = service.get(obligation_invoice_id, actor=authenticated)
+    assert read["actor_names"] == ({} if account is None else {str(actor_id): str(account[0])})
 
     list_response = client.get(
         f"/api/v1/properties/{property_id}/invoices",

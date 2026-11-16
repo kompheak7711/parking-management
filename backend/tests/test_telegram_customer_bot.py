@@ -107,7 +107,7 @@ def test_an_inquiry_asks_each_question_then_saves_the_request() -> None:
         "note": "I would like a high floor.",
     }
     text = render("customer.check", "en", summary[0]["details"])
-    assert "Visit: Mon 09/11, Afternoon" in text and "Move in: December 2026" in text
+    assert "Viewing: Mon 09/11, Afternoon" in text and "Move-in: December 2026" in text
     # Anything but the button shows the request again.
     assert codes(say(store, "ok")) == [("customer.check", "customer.send")]
 

@@ -7,6 +7,8 @@ export interface ExtensionNotice {
   new_expiration_date: string;
   approved_at: string;
   reason_memo: string | null;
+  /** UI v81 batch 6: who approved it (History names the person). */
+  approved_by_name?: string | null;
 }
 
 export interface ReservationResource {
@@ -38,6 +40,7 @@ export interface ReservationResource {
     amount_usd_cents: number;
     occurred_at: string;
     actor_id: string;
+    actor_name?: string | null;
   }[];
   lifecycle_events: {
     event_id: string;
@@ -50,6 +53,7 @@ export interface ReservationResource {
     occurred_at: string;
     business_date: string;
     actor_id: string;
+    actor_name?: string | null;
   }[];
   deposit_outcomes: {
     outcome_id: string;
@@ -60,11 +64,14 @@ export interface ReservationResource {
     occurred_at: string;
     actor_id: string;
     authorization_reference: string;
+    actor_name?: string | null;
   }[];
   extension_days_remaining: number | null;
   /** V1.1 step 2b: the deposit suggested when the Reservation was made, and its rate. */
   suggested_deposit_usd_cents?: number | null;
   suggested_deposit_rate_basis_points?: number | null;
+  /** UI v81 batch 6: the account name of the person who made it (History). */
+  made_by_name?: string | null;
   /** Today's Reservation rules (one Reservation's read only). */
   rules?: ReservationRules;
 }

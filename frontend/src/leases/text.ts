@@ -3,6 +3,7 @@
 // in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   sub: [
@@ -13,7 +14,7 @@ const TEXT = {
   loading: ["Loading the Leases…", "កំពុងផ្ទុកកិច្ចសន្យា…"],
   // new
   failed: [
-    "The Leases could not be read just now. Check the connection and try again.",
+    "The Leases could not be loaded. Check the connection and try again.",
     "មិនអាចអានកិច្ចសន្យាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -72,7 +73,7 @@ const TEXT = {
   ],
   // new
   load_failed: [
-    "The Lease could not be read just now. Check the connection and try again.",
+    "The Lease could not be loaded. Check the connection and try again.",
     "មិនអាចអានកិច្ចសន្យាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -191,7 +192,7 @@ const TEXT = {
   ao_name_req: ["Choose the person.", "សូមជ្រើសរើសអ្នកនោះ។"],
   ao_loading: ["Reading the Customers…", "កំពុងអានអតិថិជន…"],
   ao_failed: [
-    "The Customers could not be read just now. Close and try again.",
+    "The Customers could not be loaded. Close and try again.",
     "មិនអាចអានអតិថិជនបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   ao_date: ["Move-in date", "កាលបរិច្ឆេទចូលស្នាក់នៅ"],
@@ -229,7 +230,7 @@ const TEXT = {
   ],
   // new
   history_incomplete: [
-    "Some earlier events could not be read just now.",
+    "Some earlier events could not be loaded.",
     "ព្រឹត្តិការណ៍មុនៗខ្លះមិនអាចអានបានទេឥឡូវនេះ។",
   ],
   initial_due_note: [
@@ -242,6 +243,8 @@ const TEXT = {
     "វិក្កយបត្រថ្លៃឈ្នួលនៅថ្ងៃទី 25 រៀងរាល់ខែ ត្រូវបង់ត្រឹមថ្ងៃទី 5។ គ្មានអ្វីបន្ទាប់ពីថ្ងៃបញ្ចប់ បើគ្មានការបន្តបានចុះហត្ថលេខា។",
   ],
   services: ["Services", "សេវា"],
+  // UI v81 pilot: the design's "Due date" row of the Rent and services card.
+  due_t: ["Due date", "ថ្ងៃផុតកំណត់"],
   services_note: [
     "Billed on the Rent Invoice each month.",
     "គិតលើវិក្កយបត្រថ្លៃឈ្នួលរៀងរាល់ខែ។",
@@ -257,7 +260,8 @@ const TEXT = {
   dep_pet: ["Pet Deposit", "ប្រាក់កក់សត្វចិញ្ចឹម"],
   dep_req: ["Required", "តម្រូវ"],
   dep_rcv: ["Received", "បានទទួល"],
-  dep_out: ["Outstanding", "នៅសល់"],
+  // UI v81 pilot (owner 08/11/2026): "Outstanding" reads "Balance due".
+  dep_out: ["Balance due", "សមតុល្យត្រូវបង់"],
   dep_rest_due: [
     "{0} due by {1}, with the Initial Rent.",
     "{0} ត្រូវបង់ត្រឹម {1} ជាមួយថ្លៃឈ្នួលដំបូង។",
@@ -281,7 +285,7 @@ const TEXT = {
   ],
   // new
   deposits_failed: [
-    "The deposits could not be read just now.",
+    "The deposits could not be loaded.",
     "មិនអាចអានប្រាក់កក់បានទេឥឡូវនេះ។",
   ],
   dep_note: [
@@ -362,6 +366,12 @@ const TEXT = {
   ],
   // new
   e_other: ["Lease event", "ព្រឹត្តិការណ៍កិច្ចសន្យា"],
+  // UI v81 (owner 08/11/2026): History names the person of every step.
+  h_by: ["{0} by {1}", "{0} ដោយ {1}"], // new
+  // UI v81 (owner 08/11/2026): the Leases list names each Lease by its number.
+  col_lease: ["Lease", "កិច្ចសន្យា"], // new
+  h_signed_by: ["Signed by {0}", "បានចុះហត្ថលេខាដោយ {0}"], // new
+  h_recorded_by: ["Recorded by {0}", "កត់ត្រាដោយ {0}"], // new
   // new
   records: ["Earlier Lease forms", "ទម្រង់កិច្ចសន្យាពីមុន"],
   // new
@@ -396,12 +406,12 @@ const TEXT = {
   ],
   // new
   sign_res_failed: [
-    "The Reservations could not be read. If this Parking is Reserved, the signing will be refused; ask someone who can see Reservations.",
-    "មិនអាចអានការកក់បានទេ។ បើចំណតនេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
+    "The Reservations could not be loaded. If this Unit is Reserved, signing will be blocked; ask someone who can see Reservations.",
+    "មិនអាចអានការកក់បានទេ។ បើបន្ទប់នេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
   ],
   // new
   sign_refused: [
-    "The server refused the signing. Nothing was saved. Check the details, or ask the Owner.",
+    "The signing could not be saved. Nothing was saved. Check the details, or ask the Owner.",
     "ម៉ាស៊ីនមេបានបដិសេធការចុះហត្ថលេខា។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
   ],
   // new
@@ -441,7 +451,7 @@ const TEXT = {
   ],
   // new
   refused: [
-    "The server refused this. Nothing was saved. Check the details, or ask the Owner.",
+    "This could not be saved. Nothing was saved. Check the details, or ask the Owner.",
     "ម៉ាស៊ីនមេបានបដិសេធ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។ សូមពិនិត្យព័ត៌មាន ឬសួរម្ចាស់។",
   ],
   // new
@@ -511,8 +521,8 @@ const TEXT = {
   renew_title: ["Renew Lease", "បន្តកិច្ចសន្យា"],
   // new
   new_sub: [
-    "A draft first; it is signed when every Signer has signed the paper Lease.",
-    "ជាសេចក្តីព្រាងសិន វាចុះហត្ថលេខាពេលអ្នកចុះហត្ថលេខាទាំងអស់បានចុះលើក្រដាស។",
+    "Draft the Lease, then sign it when every Signer has signed the paper.",
+    "ព្រាងកិច្ចសន្យាសិន រួចចុះហត្ថលេខាពេលអ្នកចុះហត្ថលេខាទាំងអស់បានចុះលើក្រដាស។",
   ],
   // new
   from_booking: [
@@ -526,16 +536,16 @@ const TEXT = {
   ],
   // new
   form_failed: [
-    "The Parking and Customers could not be read just now. Check the connection and your access, and try again.",
-    "មិនអាចអានចំណត និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
+    "The Units and Customers could not be loaded. Check the connection and your access, and try again.",
+    "មិនអាចអានបន្ទប់ និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
   ],
   terms: ["Lease terms", "លក្ខខណ្ឌកិច្ចសន្យា"],
   // new
   choose_unit: ["Choose a Parking", "ជ្រើសចំណត"],
   // new
   unit_help: [
-    "Vacant, cleaning or maintenance Parking. A Reserved Parking gets its Lease from its Booking.",
-    "ចំណតទំនេរ កំពុងសម្អាត ឬកំពុងជួសជុល។ ចំណតដែលបានកក់ ទទួលកិច្ចសន្យាពីការកក់របស់វា។",
+    "Vacant Units, Units being cleaned or maintained, and the Unit of an active Reservation.",
+    "បន្ទប់ទំនេរ បន្ទប់កំពុងសម្អាត ឬជួសជុល និងបន្ទប់នៃការកក់ដែលកំពុងដំណើរការ។",
   ],
   // new
   choose_customer: ["Choose a Customer", "ជ្រើសអតិថិជន"],
@@ -548,8 +558,8 @@ const TEXT = {
   remove: ["Remove {0}", "ដក {0}"],
   // new
   end_help: [
-    "Filled in as one year, to the last day of a month.",
-    "បំពេញជាមួយឆ្នាំ ដល់ថ្ងៃចុងក្រោយនៃខែ។",
+    "Filled in as one year. Change it if the agreement differs.",
+    "បំពេញជាមួយឆ្នាំ។ ប្តូរវាប្រសិនបើកិច្ចព្រមព្រៀងខុសគ្នា។",
   ],
   pet_ok: ["A pet is approved", "សត្វចិញ្ចឹមត្រូវបានអនុញ្ញាត"],
   // new
@@ -620,7 +630,7 @@ const TEXT = {
   services_t: ["Services", "សេវា"],
   svc_loading: ["Reading the Services…", "កំពុងអានសេវា…"],
   svc_failed: [
-    "The Services could not be read just now. Press Retry; the draft waits for them.",
+    "The Services could not be loaded. Press Retry; the draft waits for them.",
     "មិនអាចអានសេវាបានទេឥឡូវនេះ។ សូមចុចព្យាយាមម្តងទៀត សេចក្តីព្រាងរង់ចាំវា។",
   ],
   svc_dates: [
@@ -679,7 +689,7 @@ const TEXT = {
   ],
   confirm_no_services: ["No Services.", "គ្មានសេវា។"],
   // new
-  save_draft: ["Save draft", "រក្សាទុកសេចក្តីព្រាង"],
+  save_draft: ["Save as draft", "រក្សាទុកជាសេចក្តីព្រាង"],
   preview: ["What will be billed", "អ្វីដែលនឹងចេញវិក្កយបត្រ"],
   // new
   preview_wait: [
@@ -755,11 +765,11 @@ const TEXT = {
   ],
   // new
   draft_refused: [
-    "The server refused the draft. Another Lease may already cover this Parking for these dates, or the details do not fit the rules. Nothing more was saved.",
-    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់ចំណតនេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
+    "The draft could not be saved. Another Lease may already cover this Unit for these dates, or the details do not fit the rules.",
+    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់បន្ទប់នេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
   ],
   // Terminate dialog (mock-up i18n3.js "tg_"; lines marked new are not in the mock-up)
-  terminate: ["Terminate", "បញ្ចប់កិច្ចសន្យា"],
+  terminate: ["Terminate Lease", "បញ្ចប់កិច្ចសន្យា"],
   tg_t: ["Terminate the Lease · {0}", "បញ្ចប់កិច្ចសន្យា · {0}"],
   tg_ground: ["Ground", "មូលដ្ឋាន"],
   tg_EARLY: ["Customer leaves early", "អតិថិជនចាកចេញមុនកំណត់"],
@@ -815,7 +825,7 @@ const TEXT = {
   ],
   // new
   tg_warnings_few: [
-    "This Lease has {0} written warnings. A violation termination needs 3. Record them on the Letters page.",
+    "This Lease has {0} written warnings. A violation termination needs 3. Record them on the Notices page.",
     "កិច្ចសន្យានេះមានការព្រមាន {0}។ ការបញ្ចប់ដោយបំពានត្រូវការ 3។ សូមកត់ត្រានៅទំព័រលិខិត។",
   ],
   // new
@@ -892,12 +902,12 @@ const TEXT = {
   ],
   // new
   tg_refused: [
-    "The server refused the termination. The ground, the date, the warnings or the notice do not fit the rules, or the unpaid amount was paid meanwhile. Nothing was saved.",
+    "The termination could not be saved. The ground, the date, the warnings or the notice do not fit the rules, or the unpaid amount was paid meanwhile. Nothing was saved.",
     "ម៉ាស៊ីនមេបានបដិសេធការបញ្ចប់។ មូលដ្ឋាន ថ្ងៃ ការព្រមាន ឬការជូនដំណឹង មិនត្រូវតាមច្បាប់ ឬចំនួនមិនទាន់បង់ត្រូវបានបង់រួចហើយ។ គ្មានអ្វីត្រូវបានរក្សាទុកទេ។",
   ],
   // new
   tg_load_failed: [
-    "The warnings or notices of this Lease could not be read just now.",
+    "The warnings or notices of this Lease could not be loaded.",
     "មិនអាចអានការព្រមាន ឬការជូនដំណឹងនៃកិច្ចសន្យានេះបានទេឥឡូវនេះ។",
   ],
   // new: Record termination notice
@@ -917,7 +927,7 @@ const TEXT = {
     "The date given must be today or earlier, and the end on or after it.",
     "ថ្ងៃផ្តល់ត្រូវជាថ្ងៃនេះ ឬមុន ហើយថ្ងៃបញ្ចប់នៅ ឬក្រោយវា។",
   ],
-  nt_number: ["Letter number", "លេខលិខិត"],
+  nt_number: ["Notice number", "លេខលិខិត"],
   nt_number_e: ["Write the letter number.", "សូមសរសេរលេខលិខិត។"],
   nt_text: ["What the letter says", "ខ្លឹមសារលិខិត"],
   nt_text_e: ["Write what the letter says.", "សូមសរសេរខ្លឹមសារលិខិត។"],
@@ -953,11 +963,11 @@ const TEXT = {
   ],
   rd_save: ["Save the deposit", "រក្សាទុកប្រាក់កក់"],
   rd_err_required: [
-    "Type the full Security Deposit, for example 500.00.",
+    "Enter the full Security Deposit, for example 500.00.",
     "សូមវាយប្រាក់កក់សុវត្ថិភាពពេញ ឧទាហរណ៍ 500.00។",
   ],
   rd_err_received: [
-    "Type the money received, more than 0 and not more than what is still to receive.",
+    "Enter the money received, more than 0 and not more than what is still to receive.",
     "សូមវាយប្រាក់ដែលបានទទួល លើសពី 0 និងមិនលើសពីចំនួនដែលនៅសល់។",
   ],
   rd_unknown: [
@@ -989,11 +999,11 @@ const TEXT = {
   // new (V1-060 B6, DL-100): the walk-in draft's Security Deposit and paying at signing.
   deposit_box: ["Security Deposit (USD)", "ប្រាក់កក់សុវត្ថិភាព (ដុល្លារ)"],
   deposit_help: [
-    "Usually one month's Rent. The customer pays it when the Lease is signed.",
-    "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។ អតិថិជនបង់វាពេលចុះហត្ថលេខាកិច្ចសន្យា។",
+    "Usually one month's Rent. Due within 5 days after the Start Date, with the Initial Rent.",
+    "ជាធម្មតាថ្លៃឈ្នួលមួយខែ។ ត្រូវបង់ក្នុង ៥ ថ្ងៃបន្ទាប់ពីថ្ងៃចាប់ផ្តើម ជាមួយថ្លៃឈ្នួលដំបូង។",
   ],
   err_deposit: [
-    "Type the Security Deposit, more than 0.",
+    "Enter the Security Deposit, more than 0.",
     "សូមវាយប្រាក់កក់សុវត្ថិភាព ច្រើនជាង ០។",
   ],
   // DL-101 (owner 27/10/2026): a Lease from a Reservation records its Security Deposit too.
@@ -1031,7 +1041,7 @@ const TEXT = {
     "កំពុងអានប្រាក់កក់សុវត្ថិភាព…",
   ],
   dep_term_failed: [
-    "The Security Deposit could not be read just now. Reload the page to see it.",
+    "The Security Deposit could not be loaded. Reload the page to see it.",
     "មិនអាចអានប្រាក់កក់សុវត្ថិភាពបានទេឥឡូវនេះ។ សូមផ្ទុកទំព័រឡើងវិញដើម្បីមើលវា។",
   ],
   sp_money: [
@@ -1056,7 +1066,7 @@ const TEXT = {
   ],
   sp_loading: ["Reading the amounts…", "កំពុងអានចំនួនទឹកប្រាក់…"],
   sp_failed: [
-    "The amounts could not be read. Close and try again.",
+    "The amounts could not be loaded. Close and try again.",
     "មិនអាចអានចំនួនទឹកប្រាក់បានទេ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   sp_no_terms: [
@@ -1068,7 +1078,7 @@ const TEXT = {
     "មិនអាចធ្វើវិក្កយបត្រថ្លៃឈ្នួលដំបូងបានទេ៖ {0} គ្របដណ្តប់តែផ្នែកខ្លះនៃខែ ឬគ្មានតម្លៃ។ សូមកែសេវាជាមុនសិន។",
   ],
   sp_no_booking: [
-    "The Booking of this Lease could not be read, so the rest of its deposit is not known. Close and try again, or ask someone who can see Bookings.",
+    "The Booking of this Lease could not be loaded, so the rest of its deposit is not known. Close and try again, or ask someone who can see Bookings.",
     "មិនអាចអានការកក់នៃកិច្ចសន្យានេះបានទេ ដូច្នេះមិនដឹងប្រាក់កក់ដែលនៅសល់។ សូមបិទ ហើយព្យាយាមម្តងទៀត ឬសួរអ្នកដែលអាចមើលការកក់។",
   ],
   // DL-101: a walk-in draft records its Security Deposit before it is signed.
@@ -1093,7 +1103,10 @@ const TEXT = {
     "The draft is saved. No answer came back for its Security Deposit, so it is not known whether it was saved. Try again sends the same one; it is saved only once. Close opens the draft.",
     "សេចក្តីព្រាងត្រូវបានរក្សាទុកហើយ។ មិនមានចម្លើយសម្រាប់ប្រាក់កក់សុវត្ថិភាពរបស់វាទេ ដូច្នេះមិនដឹងថាវាត្រូវបានរក្សាទុកឬអត់។ «ព្យាយាមម្តងទៀត» ផ្ញើប្រាក់កក់ដដែល វាត្រូវបានរក្សាទុកតែម្តងប៉ុណ្ណោះ។ «បិទ» បើកសេចក្តីព្រាង។",
   ],
-  part_refused: ["The server did not save it.", "ម៉ាស៊ីនមេមិនបានរក្សាទុកវាទេ។"],
+  part_refused: [
+    "This could not be saved. Try again.",
+    "ម៉ាស៊ីនមេមិនបានរក្សាទុកវាទេ។",
+  ],
   // BR-RENT-009: the Initial Rent Invoice cannot be issued after its Due Date.
   sp_due_passed: [
     "The Initial Rent Due Date ({0}) has passed, so the Initial Rent Invoice cannot be made today. Ask the Owner or a Manager to set a new Due Date first.",
@@ -1152,7 +1165,7 @@ const TEXT = {
     "បង់ពេលចុះហត្ថលេខាកិច្ចសន្យា",
   ],
   lp_no_amounts: [
-    "The amounts could not be read. Add the Start Date and the Rent, or try again.",
+    "The amounts could not be loaded. Add the Start Date and the Rent, or try again.",
     "មិនអាចអានចំនួនទឹកប្រាក់បានទេ។ សូមបន្ថែមថ្ងៃចាប់ផ្តើម និងថ្លៃឈ្នួល ឬព្យាយាមម្តងទៀត។",
   ],
   lp_checked: [
@@ -1214,6 +1227,57 @@ const TEXT = {
     "អ្នកជួលចម្បង៖ ចាកចេញបានតែជាមួយកិច្ចសន្យា។",
   ],
   "e_lease.occupant_moved_out": ["Occupant moved out", "អ្នករស់នៅបានចាកចេញ"],
+  // UI v81 pilot (owner 08/11/2026 06:55): the shared PageHeader, the Customer card and the
+  // New Lease form as in design v81.
+  mgr_only: ["Manager only", "សម្រាប់អ្នកគ្រប់គ្រងប៉ុណ្ណោះ"], // new
+  req_mark: ["Required", "ត្រូវបំពេញ"], // new
+  opt_mark: ["Optional", "ស្រេចចិត្ត"], // new
+  cancel_form: ["Cancel", "បោះបង់"], // new
+  pet_help2: [
+    "Only then is a Pet Deposit required.",
+    "ទើបត្រូវការប្រាក់កក់សត្វចិញ្ចឹម។",
+  ], // new
+  signers_help: [
+    "Each one is responsible for the whole balance.",
+    "ម្នាក់ៗទទួលខុសត្រូវលើសមតុល្យទាំងមូល។",
+  ], // new
+  occupants_help: [
+    "People who will live there without signing. Recorded at move-in.",
+    "អ្នកដែលនឹងរស់នៅដោយមិនចុះហត្ថលេខា។ កត់ត្រាពេលចូលស្នាក់នៅ។",
+  ], // new
+  next_t: ["Next step", "ជំហានបន្ទាប់"], // new
+  next_1: [
+    "The Lease is saved as a draft. Nothing is billed yet.",
+    "កិច្ចសន្យារក្សាទុកជាសេចក្តីព្រាង។ មិនទាន់ចេញវិក្កយបត្រទេ។",
+  ], // new
+  next_2: [
+    "Print it, and let every Signer sign the paper.",
+    "បោះពុម្ពវា ហើយឱ្យអ្នកចុះហត្ថលេខាទាំងអស់ចុះលើក្រដាស។",
+  ], // new
+  next_3: [
+    "A Manager records the signing. The Unit becomes Occupied and the Initial Rent Invoice is made.",
+    "អ្នកគ្រប់គ្រងកត់ត្រាការចុះហត្ថលេខា។ បន្ទប់ក្លាយជាមានអ្នកជួល ហើយវិក្កយបត្រថ្លៃឈ្នួលដំបូងត្រូវបានបង្កើត។",
+  ], // new
+  next_4: [
+    "Record the move-in when the keys are handed over.",
+    "កត់ត្រាការចូលស្នាក់នៅពេលប្រគល់កូនសោ។",
+  ], // new
+  cu_title: ["Customer", "អតិថិជន"], // new
+  cu_open: ["Open Customer", "បើកអតិថិជន"], // new
+  cu_role: ["Primary Tenant · {0}", "អ្នកជួលចម្បង · {0}"], // new
+  cu_phone: ["Phone", "ទូរស័ព្ទ"], // new
+  cu_ontime: ["Paid on time", "បង់ទាន់ពេល"], // new
+  cu_ontime_v: ["{0} of {1} Invoices", "{0} នៃ {1} វិក្កយបត្រ"], // new
+  cu_ontime_none: ["No Invoice due yet", "មិនទាន់មានវិក្កយបត្រដល់កំណត់"], // new
+  cu_ontime_note: [
+    "Invoices paid in full on or before the Due Date, in the last 12 months. Only Invoices whose Due Date has passed count. It changes no money.",
+    "វិក្កយបត្រដែលបង់គ្រប់ចំនួននៅ ឬមុនថ្ងៃផុតកំណត់ ក្នុង ១២ ខែចុងក្រោយ។ រាប់តែវិក្កយបត្រដែលថ្ងៃផុតកំណត់កន្លងផុតហើយ។ វាមិនប្តូរលុយទេ។",
+  ], // new
+  cu_credit: ["Customer Credit", "ឥណទានអតិថិជន"], // new
+  cu_unpaid: ["Unpaid Invoices", "វិក្កយបត្រមិនទាន់បង់"], // new
+  cu_loading: ["Reading…", "កំពុងអាន…"], // new
+  cu_failed: ["Could not be read now.", "មិនអាចអានបានឥឡូវនេះ។"], // new
+  cu_inactive: ["Deactivated", "បានបិទ"], // new
 } as const;
 
 export type LeaseTextKey = keyof typeof TEXT;
@@ -1228,7 +1292,9 @@ export function lt(
   key: LeaseTextKey,
   ...values: (string | number)[]
 ): string {
-  return TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
-    String(values[Number(n)] ?? ""),
+  return singular(
+    TEXT[key][language === "en" ? 0 : 1].replace(/\{(\d)\}/g, (_, n) =>
+      String(values[Number(n)] ?? ""),
+    ),
   );
 }

@@ -3,10 +3,11 @@
 // in the mock-up.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   se_sub: [
-    "Changed by the Owner, or by a user the Owner allows. Every change is dated and kept in History.",
+    "Changed by the Owner, or by a user the Owner allows. Every change is dated and kept in the audit log.",
     "ប្តូរដោយម្ចាស់ ឬអ្នកប្រើដែលម្ចាស់អនុញ្ញាត។ ការប្តូរនីមួយៗមានកាលបរិច្ឆេទ និងរក្សាក្នុងប្រវត្តិ។",
   ],
   set_who: [
@@ -14,16 +15,65 @@ const TEXT = {
     "ការប្តូរចាប់ផ្តើមពីថ្ងៃដែលបង្ហាញ ហើយមិនប្តូរវិក្កយបត្រ ឬបង្កាន់ដៃដែលបានធ្វើរួចទេ។",
   ],
   tabs: ["Settings tabs", "ផ្ទាំងការកំណត់"],
-  se_tab_biz: ["Business", "អាជីវកម្ម"],
-  se_tab_rates: ["Rates and services", "អត្រា និងសេវា"],
-  se_tab_units: ["Parking setup", "ការរៀបចំចំណត"],
-  se_tab_users: ["Users and sign-in", "អ្នកប្រើ និងការចូល"],
+  // UI v81: General first; Rates split into Utility rates and Monthly services.
+  se_tab_biz: ["Business", "អាជីវកម្ម"], // UI v81 round 4: "Business" again, so it does not clash with the General sub-tab
+  // UI v81 round 4 (owner 08/11/2026): the sub-tabs of Settings › Business, Utility rates and
+  // Monthly services (one per table), kept in the address ("?tab=").
+  bz_tabs: ["Sections of Business", "ផ្នែកនៃអាជីវកម្ម"],
+  bz_general: ["General", "ទូទៅ"],
+  rt_tabs: ["Sections of Utility rates", "ផ្នែកនៃអត្រាទឹកភ្លើង"],
+  sv_tabs: ["Sections of Monthly services", "ផ្នែកនៃសេវាប្រចាំខែ"],
+  se_tab_rates: ["Utility rates", "អត្រាទឹកភ្លើង"], // new
+  se_tab_msvc: ["Monthly services", "សេវាប្រចាំខែ"], // new
+  se_tab_units: ["Unit setup", "ការរៀបចំបន្ទប់"],
+  se_tab_users: ["Users and access", "អ្នកប្រើ និងសិទ្ធិ"], // new
+  // UI v81: the Users and access page and its sub-tabs.
+  ac_sub: [
+    "Who can sign in, what each role may do, and the sign-in rules.",
+    "អ្នកណាអាចចូល តួនាទីនីមួយៗអាចធ្វើអ្វី និងច្បាប់ចូល។",
+  ], // new
+  ac_tabs: ["Users and access sections", "ផ្នែកអ្នកប្រើ និងសិទ្ធិ"], // new
+  ac_users: ["Users", "អ្នកប្រើ"], // new
+  ac_roles: ["Roles", "តួនាទី"], // new
+  ac_signin: ["Sign-in and security", "ការចូល និងសុវត្ថិភាព"], // new
+  ac_history: ["History", "ប្រវត្តិ"], // new
+  // Administration review fix 10 (13/11/2026): the History tab lists the access changes.
+  // All new: the Khmer needs the native check.
+  ah_when: ["When", "ពេលណា"],
+  ah_who: ["Who", "អ្នកណា"],
+  ah_what: ["What happened", "អ្វីបានកើតឡើង"],
+  ah_user: ["User", "អ្នកប្រើ"],
+  ah_you: ["{0} (you)", "{0} (អ្នក)"],
+  ah_loading: ["Loading the access changes…", "កំពុងផ្ទុកការប្តូរសិទ្ធិ…"],
+  ah_none: ["No access change yet.", "មិនទាន់មានការប្តូរសិទ្ធិនៅឡើយ។"],
+  ah_failed: [
+    "The access changes could not be read. Try again in a moment.",
+    "មិនអាចអានការប្តូរសិទ្ធិបានទេ។ សូមព្យាយាមម្តងទៀតបន្តិចក្រោយ។",
+  ],
+  ah_refused: ["Refused", "បានបដិសេធ"],
+  ah_note: [
+    "Newest first. Nothing here can be edited or deleted. Every change is also in the Audit log.",
+    "ថ្មីបំផុតមុនគេ។ មិនអាចកែ ឬលុបអ្វីនៅទីនេះបានទេ។ រាល់ការប្តូរក៏មាននៅក្នុងកំណត់ហេតុសវនកម្មដែរ។",
+  ],
+  ah_created: ["User added", "បានបន្ថែមអ្នកប្រើ"],
+  ah_updated: ["User details changed", "បានប្តូរព័ត៌មានអ្នកប្រើ"],
+  ah_disabled: ["User disabled", "បានបិទអ្នកប្រើ"],
+  ah_otp: ["One-time password given", "បានផ្តល់ពាក្យសម្ងាត់ប្រើម្តង"],
+  ah_sessions: ["All sessions ended", "បានបញ្ចប់វគ្គទាំងអស់"],
+  ah_role_given: ["Role given", "បានផ្តល់តួនាទី"],
+  ah_role_removed: ["Role removed", "បានដកតួនាទី"],
+  ah_role_made: ["Role added", "បានបន្ថែមតួនាទី"],
+  ah_role_changed: ["Role permissions changed", "បានប្តូរសិទ្ធិតួនាទី"],
+  ah_settings_given: ["Settings access given", "បានផ្តល់សិទ្ធិការកំណត់"],
+  ah_settings_removed: ["Settings access removed", "បានដកសិទ្ធិការកំណត់"],
+  se_tab_sites: ["Booking sites", "គេហទំព័រកក់"],
   se_tab_health: ["System health", "សុខភាពប្រព័ន្ធ"],
   // new: tabs not rebuilt yet keep the earlier forms.
   earlier: ["Earlier forms (English)", "ទម្រង់មុន (អង់គ្លេស)"],
   // V1-061 Fix 4 (owner bug list 29/10/2026): the tabs waited forever with no Property open.
+  // UI v81: the Business tab is called General now. // new
   no_property: [
-    "No Property is open yet. On the Business tab, open “Earlier forms (English)”, type the Property identifier and press “Load business configuration”. Then every tab fills in.",
+    "No Property is open yet. On the Business tab, open “Earlier forms (English)”, enter the Property identifier and press “Load business configuration”. Then every tab fills in.",
     "មិនទាន់មានអគារបើកនៅឡើយទេ។ នៅផ្ទាំងអាជីវកម្ម សូមបើក “ទម្រង់មុន (អង់គ្លេស)” វាយលេខសម្គាល់អគារ ហើយចុច “Load business configuration”។ បន្ទាប់មក ផ្ទាំងទាំងអស់នឹងបង្ហាញព័ត៌មាន។",
   ],
   // new
@@ -32,9 +82,10 @@ const TEXT = {
     "ផ្ទាំងនេះនឹងរៀបចំឡើងវិញនៅជំហានក្រោយ។ រហូតដល់ពេលនោះ ទម្រង់មុនខាងក្រោមនៅតែប្រើបាន។",
   ],
   // new: the Users tab is rebuilt; role bundles are not in the mock-up.
+  // Administration review fix 10: the old forms show only under History now. // new
   earlier_kept: [
-    "Role bundles and the full list of access changes are still in the earlier forms below.",
-    "កញ្ចប់តួនាទី និងបញ្ជីពេញនៃការប្តូរសិទ្ធិ នៅតែមាននៅក្នុងទម្រង់មុនខាងក្រោម។",
+    "The older English forms below do the same things as the tabs above. They go when the old screens are removed.",
+    "ទម្រង់អង់គ្លេសចាស់ខាងក្រោម ធ្វើរឿងដដែលនឹងផ្ទាំងខាងលើ។ វានឹងដកចេញ ពេលអេក្រង់ចាស់ត្រូវដកចេញ។",
   ],
   // new: the Business tab is rebuilt; the earlier forms stay until the old screens go.
   earlier_same: [
@@ -51,6 +102,12 @@ const TEXT = {
   se_health: ["System health", "សុខភាពប្រព័ន្ធ"],
   se_ok: ["Healthy", "ល្អ"],
   se_warn: ["Needs attention", "ត្រូវការការយកចិត្តទុកដាក់"],
+  // Owner 12/11/2026: a test computer has no health records, and that is normal.
+  health_test: ["Test computer", "កុំព្យូទ័រសាកល្បង"],
+  health_test_n: [
+    "This is a test computer. Backups and health checks are set up when the app is installed on the real computer, so they show “Not yet” here. Nothing needs fixing.",
+    "នេះជាកុំព្យូទ័រសាកល្បង។ ការបម្រុងទុក និងការពិនិត្យសុខភាពត្រូវបានរៀបចំនៅពេលដំឡើងកម្មវិធីលើកុំព្យូទ័រពិត ដូច្នេះនៅទីនេះវាបង្ហាញ «មិនទាន់»។ គ្មានអ្វីត្រូវជួសជុលទេ។",
+  ],
   se_version: ["App version", "កំណែកម្មវិធី"],
   se_db: ["Database", "មូលដ្ឋានទិន្នន័យ"],
   se_migration: ["Migration", "ការធ្វើចំណាកស្រុក"],
@@ -96,14 +153,14 @@ const TEXT = {
   warn_h: ["What needs attention", "អ្វីដែលត្រូវយកចិត្តទុកដាក់"],
   // new
   warn_lang: [
-    "These notes come from the server in English.",
+    "These notes are only available in English.",
     "កំណត់ចំណាំទាំងនេះមកពីម៉ាស៊ីនមេជាភាសាអង់គ្លេស។",
   ],
   // new
   health_loading: ["Reading System health…", "កំពុងអានសុខភាពប្រព័ន្ធ…"],
   // new
   health_failed: [
-    "System health could not be read just now. The app may still be working; try again.",
+    "System health could not be loaded. The app may still be working; try again.",
     "មិនអាចអានសុខភាពប្រព័ន្ធបានទេឥឡូវនេះ។ កម្មវិធីអាចនៅដំណើរការ សូមព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -132,7 +189,7 @@ const TEXT = {
   cf_one_ITEM_TYPE: ["Item type", "ប្រភេទរបស់របរ"],
   cf_ftype: ["Feature type", "ប្រភេទលក្ខណៈ"],
   cf_e_ftype: [
-    "Pick a Feature type. Add one in the Feature types list first.",
+    "Choose a Feature type. Add one in the Feature types list first.",
     "សូមជ្រើសប្រភេទលក្ខណៈ។ សូមបន្ថែមវានៅក្នុងបញ្ជីប្រភេទលក្ខណៈជាមុន។",
   ],
   cf_UNIT_FEATURE_note: [
@@ -207,7 +264,7 @@ const TEXT = {
   units_loading: ["Reading the lists…", "កំពុងអានបញ្ជី…"],
   // new
   units_failed: [
-    "The lists could not be read just now. Check the connection and try again.",
+    "The lists could not be loaded. Check the connection and try again.",
     "មិនអាចអានបញ្ជីបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -217,7 +274,7 @@ const TEXT = {
   ],
   // new
   refused: [
-    "The server did not accept this. Check the name and try again.",
+    "This could not be saved. Check the name and try again.",
     "ម៉ាស៊ីនមេមិនទទួលយកទេ។ សូមពិនិត្យឈ្មោះ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -269,14 +326,14 @@ const TEXT = {
   ],
   // new: replaces the mock-up's note, because only the Owner can open this tab.
   users_note: [
-    "Only the Owner sees and changes this tab. Every change is kept in History.",
+    "Only the Owner sees and changes this tab. Every change is kept in the audit log.",
     "មានតែម្ចាស់ទេ ដែលឃើញ និងប្តូរផ្ទាំងនេះ។ ការប្តូរនីមួយៗរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   se_bundles: ["What each role can do", "តួនាទីនីមួយៗធ្វើអ្វីបាន"],
   se_cap: ["Work", "ការងារ"],
   cap_daily: [
-    "Daily work: Payments, Invoices, readings, Parking, Customers, Reservations, Leases, move-out steps",
-    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន ចំណត អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
+    "Operations: Payments, Invoices, readings, Units, Customers, Reservations, Leases, move-out steps",
+    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន បន្ទប់ អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
   ],
   cap_drafts: [
     "Prepare drafts: Final Settlements, Refunds, corrections",
@@ -287,7 +344,7 @@ const TEXT = {
     "ការអនុម័តហិរញ្ញវត្ថុ៖ លុបចោល កែតម្រូវ ថ្លៃពិន័យ ប្រាក់កក់ខុសគ្នា ចុះហត្ថលេខា និងបញ្ចប់កិច្ចសន្យា បញ្ជាក់ការទូទាត់ និងការសងវិញ",
   ],
   cap_reports: [
-    "All reports, History and exports",
+    "All reports, the audit log and exports",
     "របាយការណ៍ទាំងអស់ ប្រវត្តិ និងការនាំចេញ",
   ],
   cap_ops: [
@@ -310,7 +367,7 @@ const TEXT = {
     "ចូលក្នុងមូលដ្ឋានដោយឈ្មោះ និងពាក្យសម្ងាត់; គ្មានម្ចាស់ដំបូងបង្កើតពីវេប។",
   ],
   se_signin_2: [
-    "Owner and Managers must use a second code (MFA app), with recovery codes kept safe.",
+    "Owner and Managers must use two-step sign-in, with recovery codes kept safe.",
     "ម្ចាស់ និងអ្នកគ្រប់គ្រង ត្រូវប្រើកូដទីពីរ (កម្មវិធី MFA) ជាមួយកូដសង្គ្រោះរក្សាសុវត្ថិភាព។",
   ],
   se_signin_3: [
@@ -339,11 +396,11 @@ const TEXT = {
     "មានម្ចាស់តែម្នាក់។ បន្ថែមបុគ្គលិក ឬអ្នកគ្រប់គ្រងនៅទីនេះ។",
   ],
   se_user_note: [
-    "The new user sets a password at first sign-in. Owners and Managers must also set up the MFA app.",
+    "The new user sets a password at first sign-in. Owners and Managers must also set up two-step sign-in.",
     "អ្នកប្រើថ្មីកំណត់ពាក្យសម្ងាត់ពេលចូលលើកដំបូង។ ម្ចាស់ និងអ្នកគ្រប់គ្រងត្រូវរៀបចំកម្មវិធី MFA ផងដែរ។",
   ],
   // new
-  e_username: ["Type a username.", "សូមវាយឈ្មោះអ្នកប្រើ។"],
+  e_username: ["Enter a username.", "សូមវាយឈ្មោះអ្នកប្រើ។"],
   se_e_dup: ["{0} already exists.", "{0} មានរួចហើយ។"],
   se_user_saved: ["{0} added.", "បានបន្ថែម {0}។"],
   // One-time password
@@ -407,7 +464,7 @@ const TEXT = {
     "ឧទាហរណ៍៖ បានសួរនៅកន្លែងទទួលភ្ញៀវ 19/10 08:10",
   ],
   ur_conseq: [
-    "{0} is signed out everywhere at once. This is written to History.",
+    "{0} is signed out everywhere at once. This is written to the audit log.",
     "{0} ត្រូវចាកចេញពីគ្រប់កន្លែងភ្លាមៗ។ វាត្រូវកត់ក្នុងប្រវត្តិ។",
   ],
   ur_ok: ["Reset now", "កំណត់ឡើងវិញឥឡូវ"],
@@ -425,7 +482,7 @@ const TEXT = {
   // Settings access
   ua_title: ["Who can change settings", "អ្នកដែលអាចប្តូរការកំណត់"],
   ua_note: [
-    "The Owner can always change settings. Tick the users you trust to change them too. Every change is kept in History.",
+    "The Owner can always change settings. Tick the users you trust to change them too. Every change is kept in the audit log.",
     "ម្ចាស់អាចប្តូរការកំណត់ជានិច្ច។ សូមធីកអ្នកប្រើដែលអ្នកទុកចិត្ត ឲ្យប្តូរបានដែរ។ ការប្តូរនីមួយៗរក្សាទុកក្នុងប្រវត្តិ។",
   ],
   // new: the server keeps a reason with each change.
@@ -448,14 +505,14 @@ const TEXT = {
   // Confirm it is you (new: the server asks for the password and code again after 15 minutes)
   ra_t: ["Confirm it is you", "បញ្ជាក់ថាជាអ្នក"],
   ra_s: [
-    "This changes who may use the app. Type your password and the 6-digit code from your phone. The app asks again after 15 minutes.",
+    "This changes who may use the app. Enter your password and the 6-digit code from your phone. The app asks again after 15 minutes.",
     "សកម្មភាពនេះប្តូរអ្នកដែលអាចប្រើកម្មវិធី។ សូមវាយពាក្យសម្ងាត់ និងលេខកូដ ៦ ខ្ទង់ពីទូរស័ព្ទរបស់អ្នក។ កម្មវិធីសួរម្តងទៀតបន្ទាប់ពី ១៥ នាទី។",
   ],
   ra_pw: ["Your password", "ពាក្យសម្ងាត់របស់អ្នក"],
   ra_code: ["6-digit code", "លេខកូដ ៦ ខ្ទង់"],
-  ra_e_pw: ["Type your password.", "សូមវាយពាក្យសម្ងាត់។"],
+  ra_e_pw: ["Enter your password.", "សូមវាយពាក្យសម្ងាត់។"],
   ra_e_code: [
-    "Type the 6 digits from your phone.",
+    "Enter the 6 digits from your phone.",
     "សូមវាយលេខ ៦ ខ្ទង់ពីទូរស័ព្ទ។",
   ],
   ra_bad: [
@@ -474,17 +531,14 @@ const TEXT = {
   // Users answers (new)
   users_loading: ["Reading the users…", "កំពុងអានអ្នកប្រើ…"],
   users_failed: [
-    "The users could not be read just now. Check the connection and try again.",
+    "The users could not be loaded. Check the connection and try again.",
     "មិនអាចអានអ្នកប្រើបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   users_changed: [
     "Someone changed this account. The list was read again; check and try again.",
     "មាននរណាម្នាក់បានប្តូរគណនីនេះ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យ ហើយព្យាយាមម្តងទៀត។",
   ],
-  users_refused: [
-    "Not done. The server said:",
-    "មិនបានធ្វើទេ។ ម៉ាស៊ីនមេនិយាយថា៖",
-  ],
+  users_refused: ["Not done. Reason:", "មិនបានធ្វើទេ។ ម៉ាស៊ីនមេនិយាយថា៖"],
   users_unknown: [
     "The answer did not come back. The list was read again; check before trying again.",
     "ចម្លើយមិនបានត្រឡប់មកវិញទេ។ បញ្ជីត្រូវបានអានម្តងទៀត សូមពិនិត្យមុននឹងព្យាយាមម្តងទៀត។",
@@ -499,8 +553,8 @@ const TEXT = {
   // new
   address: ["Address", "អាសយដ្ឋាន"],
   // new
-  no_address: ["Not given", "មិនទាន់ផ្តល់"],
-  se_units: ["Parking", "ចំណត"],
+  no_address: ["Not set", "មិនទាន់កំណត់"], // UI v81 round 4: "Not set" everywhere
+  se_units: ["Units", "បន្ទប់"],
   se_tz: ["Time zone", "ល្វែងម៉ោង"],
   se_tz_n: [
     "Due dates, expiry and reading days use Phnom Penh time.",
@@ -550,7 +604,7 @@ const TEXT = {
     "ទាំងនេះធ្វើតាមច្បាប់អាជីវកម្មសិន។ ការប្តូរនៅទីនេះនឹងមកក្នុងជំហានក្រោយ។",
   ],
   se_methods: ["Payment Methods", "វិធីបង់ប្រាក់"],
-  pm_add: ["Add a method", "បន្ថែមវិធី"],
+  pm_add: ["Add payment method", "បន្ថែមវិធីបង់ប្រាក់"], // new (UI v81 round 2)
   pm_edit: ["Edit method", "កែវិធី"],
   pm_off: ["Turned off", "បានបិទ"],
   pm_note: [
@@ -562,12 +616,35 @@ const TEXT = {
     "Staff can use it on new Receipts",
     "បុគ្គលិកអាចប្រើវានៅលើបង្កាន់ដៃថ្មី",
   ],
+  // DL-227 (PR #34): the Payment Method that records ABA QR payments.
+  pm_aba: ["Use for ABA QR payments", "ប្រើសម្រាប់ការបង់ប្រាក់តាម ABA QR"],
+  pm_aba_note: [
+    "Money paid by the ABA QR on an Invoice is recorded with this method. Only one method can have it.",
+    "ប្រាក់ដែលបង់តាម ABA QR លើវិក្កយបត្រ ត្រូវកត់ត្រាជាមួយវិធីនេះ។ មានតែវិធីមួយប៉ុណ្ណោះ។",
+  ],
+  pm_aba_move: [
+    "{0} is used for ABA QR payments now. Saving moves it to this method.",
+    "{0} កំពុងប្រើសម្រាប់ ABA QR។ ការរក្សាទុកនឹងប្តូរមកវិធីនេះ។",
+  ],
+  pm_e_aba: [
+    "Turn this method on to use it for ABA QR payments.",
+    "សូមបើកវិធីនេះសិន ដើម្បីប្រើសម្រាប់ការបង់ប្រាក់តាម ABA QR។",
+  ],
+  pm_aba_chip: ["ABA QR", "ABA QR"],
   pm_e_last: [
     "Keep at least one method turned on.",
     "ត្រូវបើកយ៉ាងហោចណាស់មួយវិធី។",
   ],
   sv_saved: ["{0} saved.", "បានរក្សា {0}។"],
-  se_fx: ["Riel exchange rate", "អត្រាប្តូរប្រាក់រៀល"],
+  // Owner 12/11/2026: the card is "Exchange" and always shows the rate now.
+  se_fx: ["Exchange", "អត្រាប្តូរប្រាក់"],
+  fx_now: ["Rate now", "អត្រាឥឡូវនេះ"],
+  fx_now_none: ["Not available", "មិនទាន់មាន"],
+  fx_now_none_n: [
+    "The app cannot read the ABA rate now.",
+    "កម្មវិធីមិនអាចអានអត្រា ABA បានទេឥឡូវនេះ។",
+  ],
+  fx_used: ["Last rate used", "អត្រាដែលបានប្រើចុងក្រោយ"],
   // new
   fx_last: ["{0} ៛ per $1", "{0} ៛ ក្នុង $1"],
   // new
@@ -582,7 +659,7 @@ const TEXT = {
     "អត្រាត្រូវយកពេលទទួលការបង់ជារៀល៖ អត្រាលក់ ABA បង្គត់ឡើងទៅ 1 ៛ បន្ទាប់។",
   ],
   // new
-  fx_cannot: ["The rate could not be read.", "មិនអាចអានអត្រាបានទេ។"],
+  fx_cannot: ["The rate could not be loaded.", "មិនអាចអានអត្រាបានទេ។"],
   se_numbers: ["Numbers", "លេខ"],
   se_inv_no: ["Invoice numbers", "លេខវិក្កយបត្រ"],
   se_rcp_no: ["Receipt numbers", "លេខបង្កាន់ដៃ"],
@@ -606,7 +683,7 @@ const TEXT = {
   biz_loading: ["Reading the business settings…", "កំពុងអានការកំណត់អាជីវកម្ម…"],
   // new
   biz_failed: [
-    "The business settings could not be read just now. Check the connection and try again.",
+    "The business settings could not be loaded. Check the connection and try again.",
     "មិនអាចអានការកំណត់អាជីវកម្មបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -627,7 +704,7 @@ const TEXT = {
   ],
   ro_kind: ["Kind", "ប្រភេទ"],
   ro_rate: ["Rate", "អត្រា"],
-  ro_since: ["Since", "ចាប់ពី"],
+  ro_since: ["Effective from", "មានប្រសិទ្ធភាពពី"], // UI v81 round 4
   ro_until: ["Until", "ដល់"],
   // new: the server keeps when and how the tenants were told.
   ro_told: ["Tenants told", "ជូនដំណឹងអ្នកជួល"],
@@ -683,7 +760,7 @@ const TEXT = {
   ],
   se_util_saved: ["New {0} Rate from {1}.", "អត្រា{0}ថ្មី ចាប់ពី {1}។"],
   // V1.1 (DL-115 (I)): renamed from "Services", beside the new Regular services.
-  se_svc: ["Monthly Services", "សេវាប្រចាំខែ"],
+  se_svc: ["Monthly services", "សេវាប្រចាំខែ"],
   se_svc_n: [
     "Billed in advance on the Rent Invoice. Each Lease ticks its Services on the New Lease form. A new rate starts on the first day of a month and never changes Invoices already issued.",
     "គិតថ្លៃជាមុននៅលើវិក្កយបត្រថ្លៃឈ្នួល។ កិច្ចសន្យានីមួយៗធីកសេវារបស់ខ្លួននៅលើទម្រង់កិច្ចសន្យាថ្មី។ អត្រាថ្មីចាប់ផ្តើមនៅថ្ងៃទីមួយនៃខែ ហើយមិនប្តូរវិក្កយបត្រដែលចេញរួចទេ។",
@@ -728,7 +805,7 @@ const TEXT = {
   sv_added: ["{0} added.", "បានបន្ថែម {0}។"],
   sv_changed: ["{0} saved.", "បានរក្សាទុក {0}។"],
   sv_read_failed: [
-    "The Service names and types could not be read just now, so they cannot be changed. The rates still show.",
+    "The Service names and types could not be loaded, so they cannot be changed. The rates still show.",
     "មិនអាចអានឈ្មោះ និងប្រភេទសេវាបានទេឥឡូវនេះ ដូច្នេះមិនអាចប្តូរបានទេ។ អត្រានៅតែបង្ហាញ។",
   ],
   // V1.1 part 4 (DL-121): renamed, as Regular services become Service products.
@@ -738,7 +815,7 @@ const TEXT = {
     "Enter the first day of this month or a later month, like 01/12/2026.",
     "បញ្ចូលថ្ងៃទីមួយនៃខែនេះ ឬខែក្រោយ ដូចជា 01/12/2026។",
   ],
-  st_add: ["Add a Service type", "បន្ថែមប្រភេទសេវា"],
+  st_add: ["Add a type", "បន្ថែមប្រភេទ"], // new (UI v81 round 2)
   st_rule: ["Per Lease", "ក្នុងមួយកិច្ចសន្យា"],
   st_one: ["Only one per Lease", "តែមួយក្នុងមួយកិច្ចសន្យា"],
   st_many: ["One or more per Lease", "មួយ ឬច្រើនក្នុងមួយកិច្ចសន្យា"],
@@ -755,7 +832,7 @@ const TEXT = {
     "បញ្ចូលឈ្មោះពី 1 ដល់ 100 តួអក្សរ។",
   ],
   f_lease_two: [
-    "A Lease holds two Services of this type, so this change is refused. End one of them on that Lease first.",
+    "A Lease holds two Services of this type, so this change cannot be saved. End one of them on that Lease first.",
     "កិច្ចសន្យាមួយមានសេវាពីរនៃប្រភេទនេះ ដូច្នេះការប្តូរនេះត្រូវបានបដិសេធ។ សូមបញ្ចប់សេវាមួយនៅលើកិច្ចសន្យានោះជាមុនសិន។",
   ],
   f_type_has: [
@@ -794,7 +871,7 @@ const TEXT = {
   rs_edit_t: ["Change a Regular service", "ប្តូរសេវាធម្មតា"],
   rs_none: ["No Regular services yet.", "មិនទាន់មានសេវាធម្មតា។"],
   rs_note: [
-    "Staff cannot type a price on the Invoice: it always comes from this list. A new price is used for new Invoices only; Invoices already made keep their price. Every change is kept in History.",
+    "Staff cannot enter a price on the Invoice: it always comes from this list. A new price is used for new Invoices only; Invoices already made keep their price. Every change is kept in the audit log.",
     "បុគ្គលិកមិនអាចវាយតម្លៃលើវិក្កយបត្របានទេ៖ វាមកពីបញ្ជីនេះជានិច្ច។ តម្លៃថ្មីប្រើសម្រាប់វិក្កយបត្រថ្មីប៉ុណ្ណោះ វិក្កយបត្រដែលធ្វើរួចរក្សាតម្លៃដើម។ ការផ្លាស់ប្តូរទាំងអស់រក្សាទុកក្នុងប្រវត្តិ។",
   ],
   rs_block: [
@@ -802,7 +879,7 @@ const TEXT = {
     "ប្រើលើមុខវិក្កយបត្រ {0} ឆ្នាំនេះ។ អាចដកចេញនៅឆ្នាំក្រោយ។",
   ],
   rs_read_failed: [
-    "The Regular services could not be read just now. Check the connection and try again.",
+    "The Regular services could not be loaded. Check the connection and try again.",
     "មិនអាចអានសេវាធម្មតាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   rs_name_taken: [
@@ -837,12 +914,12 @@ const TEXT = {
   ],
   cl_chip: ["No cleaning rate", "គ្មានអត្រាសម្អាត"],
   cl_read_failed: [
-    "The cleaning rates could not be read just now. Check the connection and try again.",
+    "The cleaning rates could not be loaded. Check the connection and try again.",
     "មិនអាចអានអត្រាសម្អាតបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   f_needs_rate: [
-    "A Parking Type that has Parking needs a cleaning rate. Put it in another rate first. The list was read again.",
-    "ប្រភេទចំណតដែលមានចំណត ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
+    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first. The list has been refreshed.",
+    "ប្រភេទបន្ទប់ដែលមានបន្ទប់ ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
   ],
   // new
   note_l: ["Note", "កំណត់ចំណាំ"],
@@ -851,7 +928,7 @@ const TEXT = {
   rates_loading: ["Reading the rates…", "កំពុងអានអត្រា…"],
   // new
   rates_failed: [
-    "The rates could not be read just now. Check the connection and try again.",
+    "The rates could not be loaded. Check the connection and try again.",
     "មិនអាចអានអត្រាបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new: the same key makes a second Save safe.
@@ -861,7 +938,7 @@ const TEXT = {
   ],
   // new
   rates_refused: [
-    "The server did not accept this. Check the values and try again.",
+    "This could not be saved. Check the values and try again.",
     "ម៉ាស៊ីនមេមិនទទួលយកទេ។ សូមពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
@@ -873,10 +950,10 @@ const TEXT = {
   se20_desc: ["Description", "ការពិពណ៌នា"],
   se20_units: ["Rentable Units", "បន្ទប់សម្រាប់ជួល"],
   se20_units_n: [
-    "Counted from the Units list each time. Never typed.",
+    "Counted from the Units list each time. Never entered.",
     "រាប់ពីបញ្ជីបន្ទប់រាល់ពេល។ មិនវាយទេ។",
   ],
-  se20_biz: ["Business", "អាជីវកម្ម"],
+  se20_biz: ["Business", "អាជីវកម្ម"], // UI v81 round 4: the card with the business name is "Business"
   se20_biz_name: ["Business name", "ឈ្មោះអាជីវកម្ម"],
   se20_biz_n: [
     "Can differ from the property name.",
@@ -900,9 +977,9 @@ const TEXT = {
   br_add: ["Add rule", "បន្ថែមច្បាប់"],
   br_rule: ["Rule", "ច្បាប់"],
   br_value: ["Value", "តម្លៃ"],
-  br_since: ["Since", "ចាប់ពី"],
+  br_since: ["Effective from", "មានប្រសិទ្ធភាពពី"], // UI v81 round 4
   br_notset: ["Not set", "មិនទាន់កំណត់"],
-  br_unused: ["Not used yet", "មិនទាន់ប្រើ"],
+  br_unused: ["Not in use", "មិនទាន់ប្រើ"], // UI v81 round 4 (owner 08/11/2026)
   br_unused_s: [
     "The app is not built to use this rule yet. It needs a small program change first.",
     "កម្មវិធីមិនទាន់ប្រើច្បាប់នេះទេ។ ត្រូវការការកែកម្មវិធីតិចតួចជាមុន។",
@@ -914,14 +991,17 @@ const TEXT = {
   br_from: ["Starts on", "ចាប់ផ្ដើមនៅ"],
   br_reason: ["Reason", "មូលហេតុ"],
   br_hist: ["History", "ប្រវត្តិ"],
-  br_e_val: ["Type a value that fits the unit.", "សូមវាយតម្លៃដែលត្រូវនឹងឯកតា។"],
+  br_e_val: [
+    "Enter a value that fits the unit.",
+    "សូមវាយតម្លៃដែលត្រូវនឹងឯកតា។",
+  ],
   // DL-226: the late-payment charge is at most 10%, in whole percent.
   br_e_late: [
     "The late-payment charge is a whole percent from 0 to 10.",
     "ថ្លៃបង់យឺតគឺជាភាគរយគត់ ចាប់ពី 0 ដល់ 10។",
   ],
   br_e_date: [
-    "Type a real date, dd/mm/yyyy, today or later.",
+    "Enter a real date, dd/mm/yyyy, today or later.",
     "សូមវាយកាលបរិច្ឆេទពិត dd/mm/yyyy ថ្ងៃនេះ ឬក្រោយ។",
   ],
   br_e_reason: ["Say why.", "សូមប្រាប់មូលហេតុ។"],
@@ -944,9 +1024,9 @@ const TEXT = {
   br_name_kh: ["Name in Khmer", "ឈ្មោះជាភាសាខ្មែរ"],
   br_unit: ["Value unit", "ឯកតាតម្លៃ"],
   br_area: ["Group", "ក្រុម"],
-  br_e_name: ["Type the rule name.", "សូមវាយឈ្មោះច្បាប់។"],
+  br_e_name: ["Enter the rule name.", "សូមវាយឈ្មោះច្បាប់។"],
   br_add_note: [
-    'A new rule shows "Not used yet" until the app is built to use it.',
+    'A new rule shows "Not in use" until the app is built to use it.',
     'ច្បាប់ថ្មីបង្ហាញ "មិនទាន់ប្រើ" រហូតដល់កម្មវិធីត្រូវបានធ្វើឱ្យប្រើវា។',
   ],
   br_added: ["Rule added: {0}", "បានបន្ថែមច្បាប់៖ {0}"],
@@ -1012,18 +1092,18 @@ const TEXT = {
   it_same: ["Nothing changed.", "គ្មានអ្វីប្ដូរទេ។"],
   nr_title: ["Document numbering", "លេខរៀងឯកសារ"],
   nr21_sub: [
-    "One row for each kind of document and year. Tap a document to change its letters.",
-    "មួយជួរសម្រាប់ឯកសារនីមួយៗ និងឆ្នាំនីមួយៗ។ ចុចលើឯកសារ ដើម្បីប្ដូរអក្សររបស់វា។",
+    "One row for each kind of document and year. Choose a document to change its prefix.",
+    "មួយជួរសម្រាប់ឯកសារនីមួយៗ និងឆ្នាំនីមួយៗ។ ជ្រើសឯកសារ ដើម្បីប្ដូរបុព្វបទរបស់វា។",
   ],
   nr_doc: ["Document", "ឯកសារ"],
   nr_fmt: ["Format", "ទម្រង់"],
   nr_next: ["Next number", "លេខបន្ទាប់"],
   nr_note: [
-    "The app locks the row while it takes a number, so two documents never get the same one. A change of letters is used for new numbers only; printed numbers never change.",
-    "កម្មវិធីចាក់សោជួរ ពេលយកលេខ ដូច្នេះឯកសារពីរមិនបានលេខដូចគ្នាទេ។ ការប្តូរអក្សរប្រើសម្រាប់លេខថ្មីប៉ុណ្ណោះ; លេខដែលបោះពុម្ពរួចមិនប្តូរទេ។",
+    "The app locks the row while it takes a number, so two documents never get the same one. A change of prefix is used for new numbers only; printed numbers never change.",
+    "កម្មវិធីចាក់សោជួរ ពេលយកលេខ ដូច្នេះឯកសារពីរមិនបានលេខដូចគ្នាទេ។ ការប្តូរបុព្វបទប្រើសម្រាប់លេខថ្មីប៉ុណ្ណោះ; លេខដែលបោះពុម្ពរួចមិនប្តូរទេ។",
   ],
-  nr_edit_t: ["Change the letters for {0}", "ប្តូរអក្សរសម្រាប់ {0}"],
-  nr_letters: ["Letters", "អក្សរ"],
+  nr_edit_t: ["Change the prefix for {0}", "ប្តូរបុព្វបទសម្រាប់ {0}"],
+  nr_letters: ["Prefix", "បុព្វបទ"],
   nr_e: [
     "Use 2 to 5 capital letters that no other document uses.",
     "ប្រើអក្សរធំ 2 ដល់ 5 ដែលឯកសារផ្សេងមិនប្រើ។",
@@ -1041,20 +1121,30 @@ const TEXT = {
   // new
   nr_FIXED_ASSET: ["Fixed asset", "ទ្រព្យសកម្មរយៈពេលវែង"],
   // new
-  nr_MONEY_MOVEMENT: ["Money move", "ការផ្ទេរប្រាក់"],
+  nr_MONEY_MOVEMENT: ["Fund transfer", "ការផ្ទេរប្រាក់"],
   // new
   nr_STOCK_MOVEMENT: ["Stock movement", "ចលនាស្តុក"],
   nr_QUOTATION: ["Quotation", "សម្រង់តម្លៃ"],
   nr_UNIT_PROBLEM: ["Unit Problem", "បញ្ហាបន្ទប់"],
   nr_BUILDING_PROBLEM: ["Building problem", "បញ្ហាអគារ"],
   // new: Telegram bots step 3a (DL-171).
-  nr_VISIT_REQUEST: ["Visit request", "សំណើមកមើលបន្ទប់"],
+  nr_VISIT_REQUEST: ["Viewing request", "សំណើមកមើលបន្ទប់"],
   // Daily and weekly rent.
   nr_SHORT_STAY: ["Short-stay booking", "ការកក់ស្នាក់នៅខ្លី"],
   nr_SHORT_STAY_QUOTE: ["Short-stay price quote", "សម្រង់តម្លៃស្នាក់នៅខ្លី"],
+  // UI v81 (B4): every document type has a name; the code never shows.
+  nr_PAYROLL: ["Payroll", "បញ្ជីប្រាក់ខែ"], // new
+  nr_PAYSLIP: ["Payslip", "បង្កាន់ដៃប្រាក់ខែ"], // new
+  nr_SALARY_LOAN: ["Salary loan", "ប្រាក់កម្ចីប្រាក់ខែ"], // new
+  nr_OVERTIME: ["Overtime", "ម៉ោងបន្ថែម"], // new
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type SettingsTextKey = keyof typeof TEXT;
+
+/** UI v81: is there a Settings text with this key? */
+export function hasSettingsText(key: string): key is SettingsTextKey {
+  return Object.prototype.hasOwnProperty.call(TEXT, key);
+}
 
 /** The words for `key`, with {0}, {1} … filled in. */
 export function sst(
@@ -1063,8 +1153,10 @@ export function sst(
   ...values: (string | number)[]
 ): string {
   const text = TEXT[key][language === "km" ? 1 : 0];
-  return text.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    text.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }

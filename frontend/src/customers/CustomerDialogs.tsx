@@ -1,6 +1,7 @@
 // V1-058 R2 step C2: Add Customer (a form page), Edit contact and Deactivate (dialogs), from
 // DESIGN.md "Customers (round 2)" (owner, 13/10/2026 18:27). The saves are in commands.ts.
 
+import { BackLink } from "../shell/backNav";
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
 import {
@@ -383,10 +384,7 @@ export function AddCustomerPage({
     <>
       {!inDialog && (
         <>
-          <button className="ui-crumb" onClick={onCancel} type="button">
-            <Icon name="back" small />
-            {ct(language, "back")}
-          </button>
+          <BackLink language={language} onBack={onCancel} parent="customers" />
           <div className="ui-head">
             <div>
               <h2>{ct(language, "add")}</h2>

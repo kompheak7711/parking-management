@@ -23,6 +23,7 @@ import {
 } from "./monthEndClient";
 import { Done, Failure, useBusy } from "./SpendingPage";
 import { type LedgerTextKey, lt, monthLabel } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface MonthEndPageProps {
   language: Language;
@@ -153,12 +154,12 @@ export function MonthEndPage({
     <>
       <Done text={done} />
       <section aria-labelledby="cl-title" className="ui-card">
-        <div className="ui-head">
+        <PageHead>
           <div>
             <h2 id="cl-title">{lt(language, "gl_c_t")}</h2>
             <p>{lt(language, "cl_head")}</p>
           </div>
-        </div>
+        </PageHead>
       </section>
       {data === null ? (
         <Waiting
@@ -238,7 +239,7 @@ function NextMonth({
       <section className="ui-card">
         <p>
           {now === undefined
-            ? lt(language, "cl_none", "—", "—")
+            ? lt(language, "cl_none_yet")
             : lt(
                 language,
                 "cl_none",

@@ -221,7 +221,7 @@ describe("Settings: Users and sign-in", () => {
     let dialog = screen.getByRole("dialog", { name: "Add user" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Enter a name.")).toBeTruthy();
-    expect(within(dialog).getByText("Type a username.")).toBeTruthy();
+    expect(within(dialog).getByText("Enter a username.")).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText(/^Name/), {
       target: { value: " Mony " },
     });
@@ -267,7 +267,7 @@ describe("Settings: Users and sign-in", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset: Dara" }));
     dialog = screen.getByRole("dialog", { name: "Reset sign-in for Dara" });
     expect(dialog.textContent).toContain(
-      "Dara is signed out everywhere at once. This is written to History.",
+      "Dara is signed out everywhere at once. This is written to the audit log.",
     );
     fireEvent.click(within(dialog).getByRole("button", { name: "Reset now" }));
     expect(within(dialog).getByText("Choose what to reset.")).toBeTruthy();
@@ -336,9 +336,9 @@ describe("Settings: Users and sign-in", () => {
     dialog = await screen.findByRole("dialog", { name: "Confirm it is you" });
     expect(roles.takeRole).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
-    expect(within(dialog).getByText("Type your password.")).toBeTruthy();
+    expect(within(dialog).getByText("Enter your password.")).toBeTruthy();
     expect(
-      within(dialog).getByText("Type the 6 digits from your phone."),
+      within(dialog).getByText("Enter the 6 digits from your phone."),
     ).toBeTruthy();
     fireEvent.change(within(dialog).getByLabelText("Your password"), {
       target: { value: "my blue door opens" },
@@ -444,7 +444,7 @@ describe("Settings: Users and sign-in", () => {
     );
     expect(said.getAttribute("lang")).toBe("en");
     expect(screen.getByRole("dialog").textContent).toContain(
-      "Not done. The server said:",
+      "Not done. Reason:",
     );
   });
 

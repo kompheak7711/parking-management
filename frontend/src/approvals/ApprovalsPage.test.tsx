@@ -182,20 +182,21 @@ describe("Waiting for approval", () => {
     const { api } = show(() => Promise.resolve(PAGE));
     expect(await screen.findByText("Refund: Reservation Deposit")).toBeTruthy();
     expect(api.waiting).toHaveBeenCalledWith("property-1");
+    // Owner 13/11/2026 23:44: the line under the title is gone.
     expect(
-      screen.getByText(
+      screen.queryByText(
         /Drafts move no money until the Owner or a Manager confirms them/,
       ),
-    ).toBeTruthy();
+    ).toBeNull();
 
     const cards = screen
       .getAllByRole("button", { pressed: false })
       .map((button) => button.getAttribute("aria-label"));
     expect(cards).toEqual([
-      "Waiting: 4. Drafts to confirm",
-      "Money out: $200.00. Refunds waiting",
-      "Deposits kept: $400.00. Forfeitures waiting",
-      "Decided today: 1. Confirmed or rejected",
+      "Pending approval: 4.",
+      "Refunds pending: $200.00.",
+      "Deposit forfeitures pending: $400.00.",
+      "Processed today: 1.",
     ]);
     expect(rowLabels()).toEqual([
       "Refund: Reservation Deposit",
@@ -211,22 +212,26 @@ describe("Waiting for approval", () => {
     expect(first.textContent).toContain("Long Sreyneang");
     expect(first.textContent).toContain("Sok Dara02/11/2026 09:15");
     expect(first.textContent).toContain("$200.00");
-    expect(first.textContent).toContain("Waiting");
+    expect(first.textContent).toContain("Pending approval");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Deposits kept:/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Deposit forfeitures pending:/ }),
+    );
     expect(rowLabels()).toEqual(["Keep: Security Deposit"]);
-    expect(screen.getByText(/Showing: Deposits kept/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /^Decided today:/ }));
+    expect(
+      screen.getByText(/Showing: Deposit forfeitures pending/),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Processed today:/ }));
     expect(rowLabels()).toEqual(["Refund: Customer Credit"]);
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(rowLabels()).toHaveLength(4);
 
     expect(
       screen.getByText(
-        "The person who prepared a draft may also confirm it only if they have approval rights. Both names are kept in History.",
+        "The person who prepared a draft may also confirm it only if they have approval rights. Both names are kept in the audit log.",
       ),
     ).toBeTruthy();
-    const done = screen.getByRole("region", { name: "Decided today" });
+    const done = screen.getByRole("region", { name: "Processed today" });
     expect(done.textContent).toContain(
       "Refund: Customer Credit · U406 · Tep Sreymom",
     );
@@ -242,7 +247,7 @@ describe("Waiting for approval", () => {
     const { api } = show(() => Promise.resolve(page), { decisionApi });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Refund: Reservation Deposit",
+        name: "Review: Refund: Reservation Deposit",
       }),
     );
     const dialog = screen.getByRole("dialog", {
@@ -280,7 +285,7 @@ describe("Waiting for approval", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Keep: Security Deposit",
+        name: "Review: Keep: Security Deposit",
       }),
     );
     expect(
@@ -325,7 +330,7 @@ describe("Waiting for approval", () => {
     });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Move payment to the right Parking",
+        name: "Review: Move payment to the right Unit",
       }),
     );
     const dialog = screen.getByRole("dialog");
@@ -380,7 +385,7 @@ describe("Waiting for approval", () => {
     const { api } = show(() => Promise.resolve(PAGE), { decisionApi: refused });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Correction: extra charge",
+        name: "Review: Correction: extra charge",
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
@@ -401,17 +406,18 @@ describe("Waiting for approval", () => {
     );
     expect(
       await screen.findByText(
-        "The drafts could not be read just now. Check the connection and try again.",
+        "The drafts could not be loaded. Check the connection and try again.",
       ),
     ).toBeTruthy();
     fail = false;
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(
       await screen.findByText(
-        "Nothing is waiting. Every draft has been decided.",
+        "Nothing is pending. Every draft has been processed.",
       ),
     ).toBeTruthy();
-    expect(screen.getAllByText("Nothing decided yet today.")).toHaveLength(1);
+    // Operations fix 7: no empty "Processed today" box.
+    expect(screen.queryAllByText("Nothing decided yet today.")).toHaveLength(0);
     expect(api.waiting).toHaveBeenCalledTimes(2);
     cleanup();
 
@@ -464,7 +470,7 @@ describe("Waiting for approval", () => {
     show(() => Promise.resolve(page), { decisionApi });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Open: Refund: Reservation Deposit",
+        name: "Review: Refund: Reservation Deposit",
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
@@ -506,8 +512,96 @@ describe("Waiting for approval", () => {
     ).toBeTruthy();
     expect(
       screen
-        .getByRole("button", { name: /^Money out:/ })
+        .getByRole("button", { name: /^Refunds pending:/ })
         .getAttribute("aria-label"),
-    ).toBe("Money out: $200.00. Refunds waiting · 1 worked out at confirm");
+    ).toBe(
+      "Refunds pending: $200.00. Refunds pending approval · 1 calculated when confirmed",
+    );
+  });
+
+  it("TEST-FE-2143 (round 15) the row button says Review; Review shows the Refund method by name and the reference note; a name that could not be read leaves its row out; a Customer with no Unit is written as plain text in the list", async () => {
+    const CREDIT = draft(
+      "d-7",
+      "REFUND",
+      {
+        variant: "USD",
+        amount_usd_cents: 6_930,
+        direction: "OUT",
+        customer_name: "Mao Sophea",
+      },
+      {
+        payload: {
+          source_kind: "CREDIT",
+          refund_method_id: "method-cash",
+          reference_note: "Cash at the front desk",
+        },
+      },
+    );
+    const page = { ...PAGE, waiting: [CREDIT] };
+    const refundMethods = vi.fn(() =>
+      Promise.resolve([
+        { id: "method-bank", display_name: "Bank transfer" },
+        { id: "method-cash", display_name: "Cash" },
+      ]),
+    );
+    show(() => Promise.resolve(page), {
+      decisionApi: { ...decisions(), refundMethods },
+    });
+    const button = await screen.findByRole("button", {
+      name: "Review: Refund: Customer Credit",
+    });
+    expect(button.textContent).toBe("Review");
+    const cell = screen.getByText("Mao Sophea");
+    expect(cell.tagName).toBe("TD");
+    fireEvent.click(button);
+    let dialog = screen.getByRole("dialog", {
+      name: "Refund: Customer Credit",
+    });
+    const facts = () =>
+      Array.from(dialog.querySelectorAll("dt")).map((term) => [
+        term.textContent,
+        term.nextElementSibling?.textContent,
+      ]);
+    await waitFor(() => {
+      expect(facts()).toContainEqual(["Refund method", "Cash"]);
+    });
+    expect(facts()).toContainEqual(["Reference", "Cash at the front desk"]);
+    expect(facts()).toContainEqual(["Reason", "Reason of d-7"]);
+    expect(refundMethods).toHaveBeenCalledWith("property-1");
+    cleanup();
+
+    show(() => Promise.resolve(page), {
+      decisionApi: {
+        ...decisions(),
+        refundMethods: vi.fn(() => Promise.reject(new Error("down"))),
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Review: Refund: Customer Credit",
+      }),
+    );
+    dialog = screen.getByRole("dialog", { name: "Refund: Customer Credit" });
+    expect(facts().map(([term]) => term)).not.toContain("Refund method");
+    expect(facts()).toContainEqual(["Reference", "Cash at the front desk"]);
+  });
+});
+
+describe("Operations screen (owner 13/11/2026)", () => {
+  it("TEST-FE-2196 (owner 13/11/2026) the drafts table carries the phone card look, and the Processed today box shows only when something was decided today", async () => {
+    show(() => Promise.resolve({ ...PAGE, decided_today: [] }));
+    expect(await screen.findByText("Refund: Reservation Deposit")).toBeTruthy();
+    expect(screen.getByRole("table").classList.contains("ui-applist")).toBe(
+      true,
+    );
+    expect(
+      screen.queryByRole("region", { name: "Processed today" }),
+    ).toBeNull();
+    cleanup();
+
+    show(() => Promise.resolve(PAGE));
+    expect(
+      await screen.findByRole("region", { name: "Processed today" }),
+    ).toBeTruthy();
   });
 });

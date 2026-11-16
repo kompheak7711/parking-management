@@ -181,7 +181,7 @@ describe("Bank and cash", () => {
     expect(screen.getByText("$155.50")).toBeInTheDocument();
     expect(screen.getByText("$44.50")).toBeInTheDocument();
     expect(
-      screen.getByText(/Bills not recorded yet: 1, \$28\.00/),
+      screen.getByText(/Unrecorded petty cash receipts: 1, totaling \$28\.00/),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ER260007" })).toHaveAttribute(
       "href",
@@ -211,7 +211,7 @@ describe("Bank and cash", () => {
     fireEvent.change(statement, { target: { value: "15,645.62" } });
     expect(screen.getByText("Does not match")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Mark as matched" }),
+      screen.getByRole("button", { name: "Mark as reconciled" }),
     ).toBeDisabled();
     fireEvent.click(
       screen.getByRole("checkbox", {
@@ -220,7 +220,7 @@ describe("Bank and cash", () => {
     );
     expect(screen.getByText("-$457.95")).toBeInTheDocument();
     expect(screen.getByText("Matches")).toBeInTheDocument();
-    await press("Mark as matched");
+    await press("Mark as reconciled");
     await waitFor(() => {
       expect(api.matchBank).toHaveBeenCalledWith("prop-1", {
         account_code: "1020",
@@ -231,7 +231,7 @@ describe("Bank and cash", () => {
       });
     });
     expect(
-      await screen.findByText("Bank matched for October 2026."),
+      await screen.findByText("Bank reconciled for October 2026."),
     ).toBeInTheDocument();
   });
 
@@ -292,7 +292,9 @@ describe("Bank and cash", () => {
       }),
     );
     expect(screen.getByText("-410,000 ៛")).toBeInTheDocument();
-    const buttons = screen.getAllByRole("button", { name: "Mark as matched" });
+    const buttons = screen.getAllByRole("button", {
+      name: "Mark as reconciled",
+    });
     await waitFor(() => {
       expect(at(buttons, 1)).toBeEnabled();
     });
@@ -341,7 +343,7 @@ describe("Bank and cash", () => {
       })),
     };
     show(fakeApi({ read: vi.fn(() => Promise.resolve(done)) }));
-    expect(await screen.findByText("Matched")).toBeInTheDocument();
+    expect(await screen.findByText("Reconciled")).toBeInTheDocument();
     expect(screen.getByText(/^Done by Dara/)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Mark as matched" }),
@@ -372,7 +374,7 @@ describe("Bank and cash", () => {
     });
     expect(screen.getByText("-$1.00")).toBeInTheDocument();
     await press("Save count");
-    expect(screen.getByText("Say why.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a reason.")).toBeInTheDocument();
     expect(api.countCash).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Reason for any difference"), {
       target: { value: "One dollar short" },
@@ -402,7 +404,7 @@ describe("Bank and cash", () => {
   it("TEST-FE-1186 moves money between places and says which entry it made", async () => {
     const api = fakeApi();
     show(api);
-    await press("Move money");
+    await press("Fund transfer");
     const dialog = await screen.findByRole("dialog");
     const from = within(dialog).getByLabelText("From");
     expect(
@@ -411,22 +413,30 @@ describe("Bank and cash", () => {
     fireEvent.change(within(dialog).getByLabelText("To"), {
       target: { value: "1010" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Move money" }));
-    expect(dialog).toHaveTextContent("Pick two different places.");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Transfer funds" }),
+    );
+    expect(dialog).toHaveTextContent("Choose two different accounts.");
     fireEvent.change(within(dialog).getByLabelText("To"), {
       target: { value: "1020" },
     });
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), {
       target: { value: "600" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Move money" }));
-    expect(dialog).toHaveTextContent("There is not that much money there.");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Transfer funds" }),
+    );
+    expect(dialog).toHaveTextContent(
+      "The From account does not have enough funds. Enter a smaller amount.",
+    );
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), {
       target: { value: "300" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Move money" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Transfer funds" }),
+    );
     expect(
-      await screen.findByText("Money moved. Entry JE260570."),
+      await screen.findByText("Funds transferred. Entry JE260570."),
     ).toBeInTheDocument();
     expect(api.moveMoney).toHaveBeenCalledWith("prop-1", {
       moved_on: "2026-11-03",
@@ -443,27 +453,29 @@ describe("Bank and cash", () => {
   it("TEST-FE-1187 changes riel at the rate typed and shows the gain", async () => {
     const api = fakeApi();
     show(api);
-    await press("Move money");
+    await press("Fund transfer");
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("From"), {
       target: { value: "1011" },
     });
     expect(
-      within(dialog).getByLabelText("Rate (riel for 1 dollar)"),
+      within(dialog).getByLabelText("Exchange rate (riel per $1)"),
     ).toHaveValue("4100");
     fireEvent.change(within(dialog).getByLabelText(/^Riel amount/), {
       target: { value: "205,000" },
     });
     fireEvent.change(
-      within(dialog).getByLabelText("Rate (riel for 1 dollar)"),
+      within(dialog).getByLabelText("Exchange rate (riel per $1)"),
       {
         target: { value: "4000" },
       },
     );
     expect(dialog).toHaveTextContent(
-      "You get $51.25. The books hold this riel at $50.10. Exchange gain $1.15 goes to 4100.",
+      "You receive $51.25. Book value of this riel: $50.10. Exchange gain $1.15 goes to 4100.",
     );
-    fireEvent.click(within(dialog).getByRole("button", { name: "Move money" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Transfer funds" }),
+    );
     await waitFor(() => {
       expect(api.moveMoney).toHaveBeenCalledWith("prop-1", {
         moved_on: "2026-11-03",
@@ -491,7 +503,7 @@ describe("Bank and cash", () => {
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Top up" }));
     expect(dialog).toHaveTextContent(
-      "That is more than the float allows, or more than there is to take.",
+      "This amount is more than the float allows or more than the source account holds. Enter a smaller amount.",
     );
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), {
       target: { value: "44.50" },
@@ -515,7 +527,7 @@ describe("Bank and cash", () => {
       screen.queryByRole("button", { name: "Owner money" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Move money" }),
+      screen.queryByRole("button", { name: "Fund transfer" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Mark as matched" }),
@@ -523,20 +535,22 @@ describe("Bank and cash", () => {
     cleanup();
     const api = fakeApi();
     show(api, new Set(["ledger.read", "ledger.owner_money"]));
-    await press("Owner money");
+    await press("Owner's capital and drawings");
     const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByLabelText(/^Money out/));
+    fireEvent.click(within(dialog).getByLabelText(/^Owner's drawing/));
     fireEvent.change(within(dialog).getByLabelText(/^Amount/), {
       target: { value: "100" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(dialog).toHaveTextContent("Say why.");
+    expect(dialog).toHaveTextContent("Enter a reason.");
     fireEvent.change(within(dialog).getByLabelText(/^Note/), {
       target: { value: "Owner's school fees" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
-      await screen.findByText("Owner money out $100.00. Entry JE260570."),
+      await screen.findByText(
+        "Owner's drawing of $100.00 recorded. Entry JE260570.",
+      ),
     ).toBeInTheDocument();
     expect(api.ownerMoney).toHaveBeenCalledWith("prop-1", {
       direction: "OUT",

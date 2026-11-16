@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  PropertyConfigurationError,
   PropertyConfigurationUnavailableError,
   PropertySavedReadFailedError,
   propertyConfigurationApi,
@@ -123,7 +124,14 @@ describe("Property business configuration client", () => {
           payment_methods: [],
           version: 3,
         },
-        [{ code: "CASH", display_name: "Cash", accepted: true }],
+        [
+          {
+            code: "CASH",
+            display_name: "Cash",
+            accepted: true,
+            aba_qr: false,
+          },
+        ],
       ),
     ).rejects.toBeInstanceOf(PropertySavedReadFailedError);
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("PATCH");
@@ -138,5 +146,91 @@ describe("Property business configuration client", () => {
     await expect(
       propertyConfigurationApi.load("property-1"),
     ).rejects.toBeInstanceOf(PropertyConfigurationUnavailableError);
+  });
+
+  it("TEST-FE-2142 the ABA QR mark of a Payment Method is read as true or false (no mark = false), a mark that is not true or false is refused, and a save sends the mark (DL-227)", async () => {
+    const read = (methods: unknown[]) =>
+      response({
+        property_id: "property-1",
+        timezone_name: "Asia/Phnom_Penh",
+        version: 5,
+        payment_methods: methods,
+      });
+    const source = response({
+      property_id: "property-1",
+      name: "Riverside",
+      address_text: null,
+      timezone_name: "Asia/Phnom_Penh",
+      version: 5,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(source.clone())
+        .mockResolvedValueOnce(
+          read([
+            { code: "CASH", display_name: "Cash", accepted: true },
+            {
+              code: "ABA",
+              display_name: "ABA QR code",
+              accepted: true,
+              aba_qr: true,
+            },
+          ]),
+        ),
+    );
+    const loaded = await propertyConfigurationApi.load("property-1");
+    expect(loaded.payment_methods.map((method) => method.aba_qr)).toEqual([
+      false,
+      true,
+    ]);
+
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(source.clone())
+        .mockResolvedValueOnce(
+          read([
+            {
+              code: "CASH",
+              display_name: "Cash",
+              accepted: true,
+              aba_qr: "yes",
+            },
+          ]),
+        ),
+    );
+    await expect(
+      propertyConfigurationApi.load("property-1"),
+    ).rejects.toBeInstanceOf(PropertyConfigurationError);
+
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=csrf-token",
+    });
+    const save = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response({}))
+      .mockResolvedValueOnce(source.clone())
+      .mockResolvedValueOnce(read([]));
+    vi.stubGlobal("fetch", save);
+    await propertyConfigurationApi.updatePaymentMethods(loaded, [
+      { code: "CASH", display_name: "Cash", accepted: true, aba_qr: true },
+      {
+        code: "ABA",
+        display_name: "ABA QR code",
+        accepted: true,
+        aba_qr: false,
+      },
+    ]);
+    const body = JSON.parse(save.mock.calls[0]?.[1]?.body as string) as {
+      payment_methods: { aba_qr: boolean }[];
+    };
+    expect(body.payment_methods.map((method) => method.aba_qr)).toEqual([
+      true,
+      false,
+    ]);
   });
 });

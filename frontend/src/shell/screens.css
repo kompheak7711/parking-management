@@ -47,7 +47,8 @@
   justify-content: space-between;
 }
 
-.ui-head p {
+.ui-head p,
+.ui-sub {
   margin: 0;
   color: var(--text-2);
 }
@@ -78,6 +79,9 @@
   align-items: center;
   justify-self: start;
   gap: 6px;
+  /* 44 px tall to press (the owner's 44 × 44 rule); the margin gives most of it back. */
+  min-height: 44px;
+  margin: -8px 0 -4px;
   padding: 6px 0;
   border: 0;
   background: none;
@@ -133,8 +137,12 @@
 }
 
 .ui-btn.link {
-  min-height: 0;
-  padding: 4px;
+  /* Still 44 px tall to press; the margin keeps the line as short as before. A short word
+     ("Edit") is still 44 px wide, whatever font the computer has (owner's 44 x 44 rule). */
+  min-width: 44px;
+  min-height: 44px;
+  margin: -6px 0;
+  padding: 4px 6px;
   border: 0;
   background: none;
   box-shadow: none;
@@ -168,7 +176,10 @@
 .ui-card h2 {
   margin: 0;
   color: var(--heading);
-  font-size: 1.15rem;
+  /* Design v81 h2: 1.125rem, weight 600 (owner 08/11/2026: the design's weights). */
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .ui-card.pad0 {
@@ -281,7 +292,8 @@
 }
 
 .ui-seg button {
-  min-height: 42px;
+  /* 44 px tall to press (the owner's 44 × 44 rule), on every screen size. */
+  min-height: 44px;
   padding: 0 14px;
   border: 0;
   border-right: 1px solid var(--btn-edge);
@@ -300,9 +312,11 @@
   background: var(--btn-hover);
 }
 
+/* UI v81 round 3: the chosen segment looks chosen (as the design's), not like a filled button. */
 .ui-seg button[aria-pressed="true"] {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--selected);
+  box-shadow: inset 0 -3px 0 var(--primary);
+  color: var(--heading);
   font-weight: 700;
 }
 
@@ -331,10 +345,224 @@
   font: inherit;
 }
 
+/* UI v81 round 3 (owner 07/11/2026 17:30, responsive rule): a card grid changes with the screen.
+   Phone (under 640px): two cards per row, Owner money one per row. Tablet (640 to 1023px): three
+   per row, Owner money two per row. Desktop (1024px and up): four per row, and the last rows are
+   balanced by the number of cards so no card is alone: 5 = 3 + 2, 7 = 4 + 3, 9 = 3 + 3 + 3,
+   10 = 4 + 3 + 3, 11 = 4 + 4 + 3, 13 = 4 + 3 + 3 + 3, 14 = 4 + 4 + 3 + 3, 15 = 4 + 4 + 4 + 3.
+   One to three cards stretch to fill the row. Twelve columns. A label or note never wraps past two lines; the cards of one row share
+   the row's height. The Home Tasks cards (.ui-tasks) are four in a row, two by two on a phone. */
 .ui-kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 14px;
+  align-items: stretch;
+}
+
+.ui-kpis > * {
+  grid-column: span 3;
+}
+
+@media (min-width: 1024px) {
+  .ui-kpis:has(> :nth-child(1):last-child) > * {
+    grid-column: span 12;
+  }
+
+  .ui-kpis:has(> :nth-child(2):last-child) > * {
+    grid-column: span 6;
+  }
+
+  .ui-kpis:has(> :nth-child(3):last-child) > *,
+  .ui-kpis:has(> :nth-child(6):last-child) > *,
+  .ui-kpis:has(> :nth-child(9):last-child) > *,
+  .ui-kpis:has(> :nth-child(5):last-child) > :nth-child(-n + 3),
+  .ui-kpis:has(> :nth-child(7):last-child) > :nth-child(n + 5),
+  .ui-kpis:has(> :nth-child(10):last-child) > :nth-child(n + 5),
+  .ui-kpis:has(> :nth-child(11):last-child) > :nth-child(n + 9),
+  .ui-kpis:has(> :nth-child(13):last-child) > :nth-child(n + 5),
+  .ui-kpis:has(> :nth-child(14):last-child) > :nth-child(n + 9),
+  .ui-kpis:has(> :nth-child(15):last-child) > :nth-child(n + 13) {
+    grid-column: span 4;
+  }
+
+  .ui-kpis:has(> :nth-child(5):last-child) > :nth-child(n + 4) {
+    grid-column: span 6;
+  }
+
+  .ui-kpis.ui-tasks > * {
+    grid-column: span 3;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .ui-kpis > * {
+    grid-column: span 4;
+  }
+
+  /* 4 = 2 + 2, 7 = 3 + 2 + 2 (one left over: the last four share two rows);
+     5 = 3 + 2, 8 = 3 + 3 + 2 (two left over: the last two share a row). */
+  .ui-kpis:not(.ui-om):not(.ui-tasks):has(> :nth-child(3n + 1):last-child)
+    > :nth-last-child(-n + 4),
+  .ui-kpis:not(.ui-om):not(.ui-tasks):has(> :nth-child(3n + 2):last-child)
+    > :nth-last-child(-n + 2) {
+    grid-column: span 6;
+  }
+
+  .ui-kpis.ui-om > * {
+    grid-column: span 6;
+  }
+
+  .ui-kpis.ui-om > :nth-child(odd):last-child {
+    grid-column: span 12;
+  }
+
+  .ui-kpis.ui-tasks > * {
+    grid-column: span 3;
+  }
+}
+
+/* UI v81 round 10 (owner 12/11/2026 10:47, "5 columns per row"), and since 16/11/2026 for every
+   row of number cards in the app (owner: "make these card design and format as default design
+   for all cards"): the cards are five in a row on an iPad, a laptop and a large screen (700px
+   and up). Here the cards are a wrapping row, so the cards left over in the last row share its
+   width (8 = 5 + 3, 9 = 5 + 4). No card is alone: one left over makes the last six 3 + 3
+   (6 = 3 + 3, 11 = 5 + 3 + 3) and two left over make the last seven 4 + 3 (7 = 4 + 3,
+   12 = 5 + 4 + 3). Under 700px the rules above stay. The gap is the 14px of .ui-kpis; the 1px
+   taken off a card's width keeps five in a row when the widths are rounded. */
+@media (min-width: 700px) {
+  .ui-kpis:not(.ui-tasks) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .ui-kpis:not(.ui-tasks) > * {
+    flex: 1 1 calc((100% - 4 * 14px) / 5 - 1px);
+    min-width: 0;
+  }
+
+  .ui-kpis:not(.ui-tasks):has(> :nth-child(5n + 2):last-child)
+    > :nth-last-child(-n + 7) {
+    flex-basis: calc((100% - 3 * 14px) / 4 - 1px);
+  }
+
+  .ui-kpis:not(.ui-tasks):has(> :nth-child(5n + 1):last-child)
+    > :nth-last-child(-n + 6),
+  .ui-kpis:not(.ui-tasks):has(> :nth-child(5n + 2):last-child)
+    > :nth-last-child(-n + 3) {
+    flex-basis: calc((100% - 2 * 14px) / 3 - 1px);
+  }
+}
+
+/* Five in a row where the menu is a drawer (an upright iPad): a little less space inside a card,
+   so its name and number have more room. */
+@media (min-width: 700px) and (max-width: 1080px) {
+  .shell-view .ui-kpis:not(.ui-tasks) > .ui-kpi {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 639px) {
+  .ui-kpis {
+    gap: 10px;
+  }
+
+  .ui-kpis > * {
+    grid-column: span 6;
+  }
+
+  /* Home screen review (owner 14/11/2026): the Financial summary is two in a row on a phone
+     too, like the other cards; a card left over fills the last row. */
+  .ui-kpis > :nth-child(odd):last-child {
+    grid-column: span 12;
+  }
+
+  /* Home batch: written as .shell-view .ui-kpi so the base card rule further down does not
+     win over it (the phone padding of design v81 .kpi is 12px). */
+  .shell-view .ui-kpi {
+    padding: 12px;
+  }
+
+  /* No icon circle beside a phone-width label, so the label keeps to two lines; a note may take
+     three short lines. */
+  .ui-kpi-label > .ui-kpi-icon {
+    display: none;
+  }
+
+  /* A value scales with the screen; a value made of words may take two lines. */
+  .ui-kpis .ui-kpi .ui-kpi-value {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: clamp(1rem, 5vw, 1.5rem);
+    white-space: normal;
+  }
+
+  /* A number beside its name (Home) stays on one line; it goes under the name when the two do
+     not fit side by side. */
+  .ui-kpis .ui-kpi.ui-kpi-top .ui-kpi-value {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .ui-kpis .ui-kpi .ui-kpi-label {
+    font-size: 0.82rem;
+  }
+
+  .ui-kpis .ui-kpi .ui-kpi-note {
+    font-size: 0.76rem;
+    -webkit-line-clamp: 4;
+  }
+
+  /* A button in a phone table keeps to one line: the table scrolls sideways anyway. */
+  table.ui-table .ui-btn,
+  table.ui-table.ui-numbering .ui-btn.link {
+    white-space: nowrap;
+  }
+
+  /* A value made of words in a key-value list (System health) wraps instead of leaving the card
+     (more specific than the one-line rule written later in this file). */
+  .shell-view .ui-kv.ui-is dd.ui-num {
+    white-space: normal;
+  }
+
+  /* A phone table scrolls sideways in its box, so its headings stay on one line. */
+  table.ui-table th {
+    white-space: nowrap;
+  }
+
+  /* Filter segments become chips that wrap, so none runs off the screen. */
+  .ui-seg {
+    display: flex;
+    gap: 6px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .ui-seg button {
+    min-height: 44px;
+    border: 1px solid var(--btn-edge);
+    border-radius: 8px;
+    background: var(--btn-bg);
+  }
+
+  /* Operations fix 2 (owner 13/11/2026): the desktop rule that drops the last segment's right
+     edge left the last chip open on its right side, so it looked cut. */
+  .ui-seg button:last-child {
+    border-right: 1px solid var(--btn-edge);
+  }
+
+  .ui-seg button[aria-pressed="true"]:last-child {
+    border-right-color: var(--primary);
+  }
+
+  .ui-seg button[aria-pressed="true"] {
+    border-color: var(--primary);
+    background: var(--selected);
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
 }
 
 .ui-kpi {
@@ -369,6 +597,24 @@
   color: var(--text-2);
   font-size: 0.88rem;
   font-weight: 600;
+}
+
+/* UI v81 round 3: a label shows at most two lines, a note at most three (its last line is often
+   a count, such as "0 payments"); a number stays on one line. */
+.ui-kpi-label > :not(.ui-kpi-icon),
+.ui-kpi-note {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ui-kpi-note {
+  -webkit-line-clamp: 3;
+}
+
+.ui-kpi-label > :not(.ui-kpi-icon) {
+  min-width: 0;
 }
 
 .ui-kpi-icon {
@@ -408,9 +654,19 @@
 }
 
 .ui-kpi-value {
+  overflow: hidden;
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.15;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* A value made of words ("Not checked yet") wraps in a narrow card instead of being cut
+   (five cards in a row since 16/11/2026). */
+.ui-kpi-value.ui-kpi-words {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .ui-kpi.none .ui-kpi-value {
@@ -421,6 +677,114 @@
   white-space: pre-line;
   color: var(--text-2);
   font-size: 0.82rem;
+}
+
+/* Owner 12/11/2026 (Home): the number sits at the top right, beside the card's name, so a card
+   is shorter. The name takes the room left of the number and may take three lines. When the two
+   do not fit side by side (a long amount in a narrow card) the number goes under the name, at
+   the right, so nothing is cut. The card measures itself: a narrow card drops the icon circle
+   and draws the number a little smaller. */
+.ui-kpi.ui-kpi-top {
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  container: kpi / inline-size;
+}
+
+.ui-kpi-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+/* Round 10 (owner 12/11/2026, five cards in a row): the name is at least as wide as its longest
+   word (and its icon), so a word is never broken beside the number; when the longest word and
+   the number do not fit side by side, the number goes under the name. Only a word longer than
+   the whole card breaks. The first line is for a browser that does not know the second. */
+.ui-kpi-head > .ui-kpi-label {
+  flex: 1 1 calc(36px + 4.9em);
+  flex-basis: min-content;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.ui-kpi-head > .ui-kpi-label > :not(.ui-kpi-icon) {
+  -webkit-line-clamp: 3;
+}
+
+.ui-kpi.ui-kpi-top .ui-kpi-value {
+  flex: none;
+  max-width: 100%;
+  margin-left: auto;
+  font-size: 1.2rem;
+  font-size: clamp(1.05rem, 7.8cqi, 1.5rem);
+  /* As tall as the icon circle, so the number sits level with the first line of the name. */
+  line-height: 28px;
+}
+
+.ui-kpi.ui-kpi-top .ui-kpi-note {
+  align-self: start;
+}
+
+/* Round 10: in a narrow card the name keeps at least seven tenths of the card, so a short count
+   stays beside it and an amount goes under it; the name is never a column of single words. */
+@container kpi (max-width: 200px) {
+  .ui-kpi-head > .ui-kpi-label {
+    flex-basis: 4.9em;
+    flex-basis: min-content;
+    min-width: 70cqi;
+  }
+
+  .ui-kpi-head .ui-kpi-icon {
+    display: none;
+  }
+
+  .ui-kpi.ui-kpi-top .ui-kpi-value {
+    line-height: 1.3;
+  }
+}
+
+/* Home screen review (owner 14/11/2026): an amount stays at the top right of a narrow card; the
+   name takes two lines beside it ("Pending / payment"). Only when even that does not fit (five
+   in a row on an upright iPad) does the amount go under the name. */
+@container kpi (max-width: 200px) {
+  .ui-kpi-amount .ui-kpi-head > .ui-kpi-label {
+    min-width: 4.6em;
+  }
+
+  .ui-kpi.ui-kpi-amount .ui-kpi-value {
+    font-size: 1rem;
+  }
+}
+
+/* Round 10: a very narrow card (five in a row on an upright iPad, or beside the open menu on an
+   iPad on its side). The name and the note are a little smaller and may take one more line, and
+   the number scales with the card, so an amount of twelve characters ("$999,999.99") still
+   shows in full. The name keeps six tenths of the card here, so a count of four digits still
+   stays beside it. */
+@container kpi (max-width: 130px) {
+  .ui-kpi-head {
+    column-gap: 6px;
+  }
+
+  .ui-kpi-head > .ui-kpi-label {
+    min-width: 60cqi;
+    font-size: 0.84rem;
+  }
+
+  .ui-kpi-head > .ui-kpi-label > :not(.ui-kpi-icon) {
+    -webkit-line-clamp: 4;
+  }
+
+  .ui-kpi.ui-kpi-top .ui-kpi-value {
+    font-size: clamp(0.8rem, 13cqi, 1.05rem);
+  }
+
+  .ui-kpi.ui-kpi-top .ui-kpi-note {
+    font-size: 0.78rem;
+    -webkit-line-clamp: 5;
+  }
 }
 
 .ui-listbar {
@@ -435,8 +799,222 @@
 }
 
 .ui-tablewrap {
+  position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* UI v81 round 3 (owner 07/11/2026 17:30): on a list page the main table scrolls in its own
+   area and its column headings stay at the top of that area (shell/tableFit.ts picks the table
+   and sets the height). On a phone or a short screen the page scrolls and only the headings
+   stick, under the top bar, when the table is not wider than the screen. */
+.ui-tablewrap.ui-tscroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ui-tablewrap.ui-tscroll table.ui-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.ui-tablewrap.ui-tflow {
+  overflow: visible;
+}
+
+/* UI v81 round 4 (owner 08/11/2026): a card that holds several tables (the Business rules by
+   group) scrolls as one area, so every group stays reachable. */
+.ui-card.ui-tscroll {
+  display: block;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ui-card.ui-tscroll > * + * {
+  margin-top: 12px;
+}
+
+body.ui-fit.ui-short .ui-card.ui-tscroll > * + * {
+  margin-top: 10px;
+}
+
+/* UI v81 round 4: a table's group name (the Business rules "Billing") sits on the left, over its
+   first column. */
+.ui-table caption {
+  padding: 4px 14px 8px;
+  color: var(--heading);
+  font-weight: 600;
+  text-align: start;
+  caption-side: top;
+}
+
+/* A card's hidden overflow would push the sticky headings down by the top bar's height. */
+.ui-card:has(> .ui-tablewrap.ui-tflow) {
+  overflow: visible;
+}
+
+.ui-tablewrap.ui-tflow table.ui-table th {
+  position: sticky;
+  top: var(--ui-top, 0px);
+  z-index: 2;
+}
+
+body.ui-fit .shell-view {
+  gap: 14px;
+  padding: 16px 24px;
+}
+
+body.ui-fit .ui-kpis {
+  gap: 10px;
+}
+
+body.ui-fit .ui-kpi {
+  padding: 12px 14px;
+}
+
+/* Round 10 (owner 12/11/2026 11:03): the middle look of a large screen (shell/tableFit.ts). The
+   name and the number share one line and the note stays under them, so a card is shorter but
+   still says everything. */
+body.ui-fit.ui-mid .ui-kpis:not(.ui-tasks) .ui-kpi {
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: center;
+  min-height: 0;
+}
+
+body.ui-fit.ui-mid .ui-kpis:not(.ui-tasks) .ui-kpi .ui-kpi-value {
+  font-size: 1.3rem;
+}
+
+body.ui-fit.ui-mid .ui-kpis:not(.ui-tasks) .ui-kpi .ui-kpi-note {
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
+/* The middle look keeps the page title and its line of text on one line, level with the
+   page's button, so the table has that room. */
+body.ui-fit.ui-mid .shell-head {
+  align-items: center;
+}
+
+body.ui-fit.ui-mid .shell-head-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+/* A short desktop screen (under 1000px tall): the number cards take one line each, so at least
+   eight table rows show. */
+body.ui-fit.ui-short .shell-view {
+  gap: 10px;
+}
+
+body.ui-fit.ui-short .ui-kpis:not(.ui-tasks) .ui-kpi {
+  grid-template-rows: auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: center;
+  min-height: 0;
+  padding: 8px 12px;
+}
+
+body.ui-fit.ui-short .ui-kpis:not(.ui-tasks) .ui-kpi .ui-kpi-note,
+body.ui-fit.ui-short .ui-kpis:not(.ui-tasks) .ui-kpi .ui-home-meter {
+  display: none;
+}
+
+body.ui-fit.ui-short .ui-kpis:not(.ui-tasks) .ui-kpi .ui-kpi-value {
+  font-size: 1.1rem;
+}
+
+body.ui-fit.ui-short .ui-kpis {
+  gap: 8px;
+}
+
+body.ui-fit.ui-short .shell-head h1 {
+  font-size: 1.3rem;
+}
+
+body.ui-fit.ui-short .ui-tablewrap.ui-tscroll table.ui-table th,
+body.ui-fit.ui-short .ui-tablewrap.ui-tscroll table.ui-table td {
+  padding: 8px 14px;
+}
+
+body.ui-fit.ui-short .ui-card {
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+/* Module batch 2 (Payments, 12/11/2026): the tighter look of a short desktop screen saves room
+   in the spacing only. What a person presses (a button, a switch, a tab, a number card) stays
+   44 px tall (the owner's 44 × 44 rule). */
+body.ui-fit.ui-short .shell-view .ui-btn {
+  padding: 6px 14px;
+}
+
+body.ui-fit.ui-short .shell-view {
+  gap: 8px;
+  padding: 10px 24px;
+}
+
+body.ui-fit.ui-short .shell-head {
+  align-items: center;
+}
+
+body.ui-fit.ui-short .shell-head-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+body.ui-fit.ui-short .shell-head h1 {
+  font-size: 1.25rem;
+}
+
+body.ui-fit.ui-short .ui-kpis:not(.ui-tasks) .ui-kpi {
+  min-height: 44px;
+  padding: 6px 12px;
+}
+
+body.ui-fit.ui-short .ui-tablewrap.ui-tscroll table.ui-table td {
+  padding: 5px 12px;
+}
+
+body.ui-fit.ui-short .ui-tablewrap.ui-tscroll table.ui-table th {
+  padding: 6px 12px;
+}
+
+body.ui-fit.ui-short .ui-addup {
+  display: none;
+}
+
+/* The folded Records block under a list keeps its place but gives its room to the table. */
+body.ui-fit.ui-short .ui-records {
+  margin-top: 0;
+  padding-top: 6px;
+}
+
+body.ui-fit.ui-short .ui-records summary {
+  min-height: 44px;
+}
+
+body.ui-fit.ui-short .ui-tfoot {
+  padding: 6px 14px;
+}
+
+body.ui-fit.ui-short .ui-listbar {
+  padding: 6px 16px;
+}
+
+/* A tablet table scrolls sideways in its box too, so its headings stay on one line. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  table.ui-table th {
+    white-space: nowrap;
+  }
 }
 
 table.ui-table {
@@ -512,6 +1090,33 @@ table.ui-table a.ui-no {
   min-width: 0;
 }
 
+/* UI v81 round 4 (owner 08/11/2026): the General sub-tab of Settings › Business. Two cards per
+   row from 1024 px, one below; the cards in a row share their height. */
+.ui-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.ui-grid2 > .ui-card {
+  box-sizing: border-box;
+  height: 100%;
+}
+
+@media (max-width: 1023px) {
+  .ui-grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* UI v81 round 3: under 1024 px the two columns stack, so a rules table never widens the page. */
+@media (max-width: 1023px) {
+  .ui-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .ui-kv {
   display: grid;
   grid-template-columns: minmax(120px, auto) 1fr;
@@ -528,6 +1133,13 @@ table.ui-table a.ui-no {
   margin: 0;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+/* Owner 08/11/2026: amounts, dates and words in a value list use the design's weight (600).
+   A <b> or <strong> inside a value took the browser's "bolder" and came out heavier than the
+   design; it now keeps the value's weight on every page. A total sets its own weight. */
+.shell-view dd :where(b, strong) {
+  font-weight: inherit;
 }
 
 .ui-kv dd.note {
@@ -735,6 +1347,8 @@ table.ui-table a.ui-no {
 
 .ui-fact b {
   font-size: 1.05rem;
+  /* Design v81 .facts b: the figures in a facts row are 600, not bold. */
+  font-weight: 600;
 }
 
 .ui-grp h4 {
@@ -793,10 +1407,6 @@ table.ui-table a.ui-no {
   .ui-split {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .ui-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 760px) {
@@ -842,6 +1452,25 @@ table.ui-table a.ui-no {
   display: block;
   color: var(--text-2);
   font-size: 0.84rem;
+}
+
+/* UI v81 round 9 (owner 12/11/2026): the parts of one Invoice on the Receipt page (Rent,
+   Services), named as on the Payments list. */
+.ui-apps .ui-app-parts {
+  display: grid;
+  flex-basis: 100%;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--border);
+  color: var(--text-2);
+  font-size: 0.88rem;
+  list-style: none;
+}
+
+.ui-apps .ui-app-parts li {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .ui-dlg input:not([type="checkbox"], [type="radio"]),
@@ -959,6 +1588,7 @@ table.ui-table a.ui-no {
 .ui-card h3 {
   margin: 14px 0 6px;
   font-size: 0.95rem;
+  font-weight: 600;
   color: var(--text);
 }
 
@@ -1437,6 +2067,16 @@ table.ui-table.ui-invlist .ui-phone {
     display: block;
     white-space: normal;
   }
+  table.ui-table.ui-invlist {
+    min-width: 0;
+  }
+  table.ui-table.ui-invlist .ui-phone.ui-invstate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+    margin-top: 4px;
+  }
 }
 
 /* V1-058 R5b: Create Invoice. A dollar box with "$" before the number, numbered next steps. */
@@ -1647,13 +2287,17 @@ table.ui-table.ui-paylist .ui-phone {
   background: var(--surface);
 }
 
-/* V1-058 R6: Home cards and the "What to do" list (mock-up v43). */
-.ui-home-kpis {
-  grid-auto-rows: 1fr;
-}
+/* V1-058 R6: Home cards and the "What to do" list (mock-up v43). Owner 12/11/2026: every Home
+   card (the Financial summary, the cards, the Tasks cards) is a .ui-kpi-top card: two rows, the
+   name with its number and the note; the bar of "Paid this month" adds a row of its own. A row
+   of cards is only as tall as its own cards. */
 a.ui-kpi.ui-home-kpi {
-  grid-template-rows: 1fr auto auto auto;
   text-decoration: none;
+}
+/* Home batch (design v81 .kpi .kv): a card that is a link keeps the dark text, not the link
+   green, on every page; red (err) and grey (none) still win. */
+.shell-view a.ui-kpi {
+  color: var(--text);
 }
 .ui-home-kpi.err .ui-kpi-value {
   color: var(--err);
@@ -1665,9 +2309,6 @@ a.ui-kpi.ui-home-kpi {
   border-radius: 4px;
   background: var(--sunken);
 }
-.ui-home-meter.blank {
-  visibility: hidden;
-}
 .ui-home-meter span {
   display: block;
   height: 100%;
@@ -1677,6 +2318,26 @@ a.ui-kpi.ui-home-kpi {
 .ui-card.ui-todo-card {
   gap: 4px;
   padding: 18px 18px 8px;
+}
+/* UI v81 round 3 (owner 07/11/2026 17:30): the Tasks are four cards (Overdue, Today, This week,
+   Later); the chosen card's list opens under them. The Overdue count is red when above 0. */
+.ui-todo-card .ui-kpis.ui-tasks {
+  margin-top: 6px;
+}
+.ui-tasks .ui-kpi.err .ui-kpi-value {
+  color: var(--err);
+}
+.ui-tasks-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 6px;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ui-tasks-hint {
+  margin: 8px 0 0;
 }
 .ui-todo-card > header {
   margin-bottom: 6px;
@@ -1860,9 +2521,6 @@ a.ui-kpi.ui-home-kpi {
     grid-column: 3;
     align-self: center;
   }
-  .ui-home-kpis .ui-kpi-note {
-    min-height: 3.2em;
-  }
 }
 
 /* V1-058 R7a Waiting for approval: the Reject button (mock-up .btn.danger) and the note under
@@ -1884,6 +2542,11 @@ a.ui-kpi.ui-home-kpi {
 .ui-card.pad0 > p.pad {
   margin: 0;
   padding: 10px 24px 14px;
+}
+/* UI v81 round 11: a switch row inside a pad0 card (Products: All, Low stock) lines up with
+   the text above it. */
+.ui-card.pad0 > .ui-filters.pad {
+  padding: 0 24px 14px;
 }
 /* The reason under a draft's name: one line; Open shows it in full. */
 .ui-sub2.ui-clip {
@@ -1938,6 +2601,12 @@ a.ui-kpi.ui-home-kpi {
 /* V1-058 R7b-5: a folded history inside a table card (Service rate history). */
 .ui-card.pad0 > details.ui-hist {
   border-top: 1px solid var(--border);
+}
+
+/* Opened, the history scrolls into view under the top bar, not behind it. */
+.ui-hist {
+  scroll-margin-top: calc(var(--ui-top, 0px) + 12px);
+  scroll-margin-bottom: 16px;
 }
 
 .ui-hist summary {
@@ -2517,6 +3186,737 @@ a.ui-kpi.ui-home-kpi {
   display: block;
 }
 
+/* ---------- UI v81 (B2, owner task 07/11/2026): shared parts ---------- */
+
+/* Add and Edit forms open as a drawer from the right; a full-screen sheet on a phone. */
+.ui-drawer-back {
+  place-items: stretch end;
+  padding: 0;
+}
+
+.ui-dlg.ui-drawer {
+  align-content: start;
+  width: min(560px, 100%);
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 24px;
+  border-radius: 12px 0 0 12px;
+}
+
+.ui-dlg.ui-drawer.wide {
+  width: min(820px, 100%);
+}
+
+.ui-dlg.ui-drawer .ui-dlg-buttons {
+  position: sticky;
+  bottom: -24px;
+  margin: 0 -24px -24px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+@media (max-width: 640px) {
+  .ui-dlg.ui-drawer,
+  .ui-dlg.ui-drawer.wide {
+    width: 100%;
+    padding: 16px;
+    border-radius: 0;
+  }
+
+  .ui-dlg.ui-drawer .ui-dlg-buttons {
+    bottom: -16px;
+    margin: 0 -16px -16px;
+    padding: 12px 16px;
+  }
+}
+
+.ui-discard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+}
+
+.ui-discard p {
+  flex: 1 1 160px;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Sub-tabs (owner 12/11/2026: no round tabs): square and joined, the same look as the filter
+   row on Payments. A row that does not fit wraps inside its box; on a phone the tabs are
+   separate square buttons in one scrolling row. */
+.ui-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.ui-subtabs[role="tablist"] {
+  gap: 0;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--btn-edge);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  box-shadow: var(--btn-shadow);
+}
+
+/* Directly on a page the page's own space follows the tabs, and the panel's parts are spaced as
+   the page's parts are; inside a box the tabs keep their own space. */
+.shell-page > .ui-subtabs[role="tablist"] {
+  margin-bottom: 0;
+}
+
+.shell-page > .ui-stack[role="tabpanel"] {
+  gap: inherit;
+}
+
+/* Settings (owner 12/11/2026): its parts sit in one wrapper, so the page's space did not reach
+   them and cards, notes and filter rows touched. They keep the normal space between them. */
+.ui-settings > :is(.ui-card, .ui-notice, .ui-seg) + :is(.ui-card, .ui-notice),
+.ui-settings > .ui-earlier {
+  margin-top: 16px;
+}
+
+.ui-subtabs [role="tab"] {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  /* The lines between the tabs, also between two rows when the tabs wrap. */
+  box-shadow:
+    1px 0 0 var(--btn-edge),
+    0 1px 0 var(--btn-edge);
+  color: var(--btn-text);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ui-subtabs [role="tab"]:hover {
+  background: var(--btn-hover);
+}
+
+.ui-subtabs [role="tab"]:focus-visible {
+  outline-offset: -3px;
+}
+
+.ui-subtabs [role="tab"][aria-selected="true"] {
+  background: var(--selected);
+  box-shadow:
+    inset 0 -3px 0 var(--primary),
+    1px 0 0 var(--btn-edge),
+    0 1px 0 var(--btn-edge);
+  color: var(--heading);
+  font-weight: 700;
+}
+
+/* The count beside a tab's name: a plain number, as on the Payments filter row. */
+.ui-subtab-count {
+  color: var(--text-2);
+  font-weight: 400;
+}
+
+.ui-subtabs [aria-selected="true"] .ui-subtab-count {
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .ui-subtabs {
+    flex-wrap: nowrap;
+    margin-right: -16px;
+    margin-left: -16px;
+    padding: 0 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ui-subtabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ui-subtabs[role="tablist"] {
+    gap: 6px;
+    width: auto;
+    max-width: none;
+    padding: 2px 16px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .ui-subtabs [role="tab"] {
+    border: 1px solid var(--btn-edge);
+    border-radius: 8px;
+    background: var(--btn-bg);
+    box-shadow: none;
+  }
+
+  .ui-subtabs [role="tab"][aria-selected="true"] {
+    border-color: var(--primary);
+    background: var(--selected);
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
+}
+
+/* Panel header: title, one line, and the "+ Add" button. */
+.ui-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 0 0 16px;
+}
+
+.ui-panel-head h2 {
+  margin: 0;
+  color: var(--heading);
+  font-size: 1.25rem;
+}
+
+.ui-panel-sub {
+  margin: 4px 0 0;
+  color: var(--text-2);
+}
+
+.ui-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Empty state: a heading, one line and an action. */
+.ui-empty-state {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 32px 16px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.ui-empty-state p {
+  margin: 0;
+}
+
+.ui-empty-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* The column choice above a table. */
+.ui-coltoggle {
+  position: relative;
+}
+
+.ui-coltoggle > summary {
+  list-style: none;
+}
+
+.ui-coltoggle-list {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 200px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* Skeleton while data loads. */
+.ui-skeleton {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0;
+}
+
+.ui-skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--sunken),
+    var(--hover),
+    var(--sunken)
+  );
+  background-size: 200% 100%;
+  animation: ui-skeleton 1.2s ease-in-out infinite;
+}
+
+.ui-skeleton-line:nth-child(3n + 2) {
+  width: 80%;
+}
+
+.ui-skeleton-line:nth-child(3n) {
+  width: 60%;
+}
+
+@keyframes ui-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton-line {
+    animation: none;
+  }
+}
+
+/* UI v81: a role hint sits beside its button, never inside it. */
+.ui-role-hint {
+  align-self: center;
+  margin-left: 4px;
+}
+
+/* UI v81 (B4): a count on a chosen (dark) filter button stays readable. */
+.ui-seg button[aria-pressed="true"] .ui-muted,
+.ui-seg button[aria-pressed="true"] .ui-num,
+.ui-seg button[aria-pressed="true"] small {
+  color: inherit;
+}
+
+.ui-seg button[aria-pressed="true"] .ui-count,
+.ui-seg button[aria-pressed="true"] .ui-chip {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* UI v81 (B4): underlined tabs drawn inside a page (Short stays, Problem reports). */
+.ui-tabline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-tabline [role="tab"],
+.ui-tabline > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ui-tabline [role="tab"][aria-selected="true"],
+.ui-tabline > a[aria-current="page"] {
+  border-bottom-color: var(--primary);
+  color: var(--heading);
+}
+
+@media (max-width: 640px) {
+  .ui-tabline {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ui-tabline [role="tab"],
+  .ui-tabline > a {
+    flex: none;
+  }
+}
+
+/* UI v81 (B4): Document numbering fits its card: names wrap, numbers stay on one line. */
+table.ui-numbering {
+  font-size: 0.875rem;
+}
+
+table.ui-numbering th,
+table.ui-numbering td {
+  padding: 8px 10px;
+}
+
+table.ui-numbering .ui-btn.link {
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+table.ui-numbering td.ui-num {
+  white-space: nowrap;
+}
+
+/* Owner 12/11/2026: the Business rules tables, one per group, share their column widths, so
+   Value, Effective from and Edit line up down the card. A long rule name or value wraps. On a
+   phone each table keeps its own widths, so it still fits the screen. */
+@media (min-width: 641px) {
+  table.ui-rules {
+    table-layout: fixed;
+  }
+
+  table.ui-rules th:nth-child(1) {
+    width: 44%;
+  }
+
+  table.ui-rules th:nth-child(2) {
+    width: 25%;
+  }
+
+  table.ui-rules th:nth-child(3) {
+    width: 20%;
+  }
+
+  table.ui-rules th:nth-child(4) {
+    width: 11%;
+  }
+
+  table.ui-table.ui-rules td:nth-child(-n + 2) {
+    white-space: normal;
+  }
+}
+
+/* UI v81 round 2: Property › Inspections, the two places of today's inspection work. */
+.ui-insp-list {
+  display: grid;
+  gap: 12px;
+}
+.ui-insp-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ui-insp-list li > span {
+  flex: 1 1 18rem;
+}
+
+/* ---------- UI v81 shared layouts (owner 08/11/2026 06:55; shell/layouts.tsx) ---------- */
+
+/* PageHeader: the Back link on its own line, then the title with its status chip and one-line
+   summary on the left and the buttons on the right (design v81 .head). The buttons wrap under
+   the title on a narrow screen. */
+.ui-pagehead {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ui-pagehead-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.ui-pagehead-text {
+  min-width: 0;
+}
+
+.ui-pagehead-title {
+  margin: 0;
+  color: var(--heading);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+html[lang="km"] .ui-pagehead-title {
+  line-height: 1.5;
+}
+
+.ui-pagehead-sub {
+  margin: 2px 0 0;
+  color: var(--text-2);
+}
+
+.ui-pagehead-actions {
+  align-items: center;
+}
+
+/* "Manager only" as text beside a button, never inside it. */
+.ui-only {
+  align-self: center;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 639px) {
+  .ui-pagehead-title {
+    font-size: 1.45rem;
+  }
+}
+
+/* DetailLayout: two columns, about 60 / 40 (design v81 .split), one column under 1024 px. */
+.ui-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .ui-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* FormLayout: the fields on the left, the summary panel on the right, which stays in view
+   while the fields scroll (under the sticky top bar). One column under 1024 px. */
+.ui-formlayout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .ui-formlayout-side {
+    position: sticky;
+    top: calc(var(--ui-top, 0px) + 16px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .ui-formlayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The fields of a form card: two short fields per row, one per row on a phone (design .row2). */
+.ui-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.ui-fields > .ui-span2 {
+  display: grid;
+  gap: 16px;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+@media (max-width: 639px) {
+  .ui-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A money box: the "$" in its own box before the number (design .money). */
+.ui-cash {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.ui-cash-cur {
+  display: grid;
+  flex: none;
+  place-items: center;
+  min-width: 52px;
+  border: 1px solid var(--border-strong);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: var(--sunken);
+  color: var(--heading);
+  font-weight: 700;
+}
+
+.shell-view .ui-cash input,
+.ui-cash input {
+  min-width: 0;
+  border-radius: 0 8px 8px 0;
+  font-family: var(--font-num);
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* The facts of a record in columns (design .facts): a small label over each value. */
+.ui-factlist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px 18px;
+  margin: 0;
+}
+
+.ui-factlist > div {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  min-width: 0;
+}
+
+.ui-factlist dt {
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+html[lang="km"] .ui-factlist dt {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ui-factlist dd {
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ui-factlist dd.ui-factlist-note {
+  color: var(--text-2);
+  font-size: 0.86rem;
+  font-weight: 400;
+}
+
+/* The Customer card of a record (design .who, .kv2.cu, .well.cu-open). */
+.ui-who {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.ui-who-av {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--sunken);
+  color: var(--heading);
+  font: 700 1.05rem/1 var(--font-num);
+}
+
+.ui-who-name {
+  color: var(--heading);
+  font-size: 1.15rem;
+}
+
+.ui-who p {
+  margin: 2px 0 0;
+}
+
+.ui-kv2 {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.ui-kv2 dt {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--text-2);
+}
+
+.ui-kv2 dd {
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.ui-kv2 dd.note {
+  grid-column: 1 / -1;
+  margin-top: -6px;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-align: left;
+}
+
+.ui-well {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--sunken);
+}
+
+.ui-well .line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ui-well .line b:first-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--text-2);
+}
+
+/* UI v81 Invoices batch: an amount owed sits on the warm warning ground, so its brown label
+   keeps 4.5:1 (it was 4.27:1 on the sunken ground). */
+.ui-well.owed {
+  background: var(--warn-bg);
+}
+
+.ui-well.owed .line b:first-child {
+  color: var(--warn);
+}
+
+/* A link in running text keeps its place in the line but can be pressed on a 44 px tall and
+   wide area (the owner's 44 × 44 rule): the padding grows the target, the margins give the
+   space back. */
+.shell-view a.ui-no,
+.shell-view .ui-factlist a,
+.shell-view .ui-line a,
+.shell-view .ui-kv a,
+.shell-view .ui-apps a.ui-num {
+  padding: 13px 6px;
+  margin: -13px -6px;
+}
+
+/* The numbered next steps of a form's side panel (design ul.steps). */
+.ui-next {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+}
+
 /* DL-214: the one-time Telegram QR on a Lease or Booking page. White under the code, also in
    dark mode, so the phone camera reads it. */
 .tg-qr-made {
@@ -2533,4 +3933,873 @@ a.ui-kpi.ui-home-kpi {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
+}
+
+/* UI v81 module batch 2 (Payments, owner 12/11/2026): the "Exchange rate for riel" card beside
+   Receive payment (design v81 .fx, .fxpay): the rate lines in a sunken box, the app rate under a
+   rule, then what each unpaid item costs in riel, and the lock note. */
+.ui-well.ui-fx .line {
+  align-items: baseline;
+}
+
+.ui-well.ui-fx .line.total {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.ui-well.ui-fx .line.total b:first-child {
+  color: var(--text);
+}
+
+.ui-fxpay {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-fxpay li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+/* How the riel amount is reached, on its own line under the item (design v81). */
+.ui-fxpay li small {
+  flex: 0 0 100%;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+.ui-fxnote {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.ui-fxnote svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* A paragraph that is one of a card's own parts (a card is a grid with its own gaps) takes no
+   margin of its own, so the gap above and under it is the card's. */
+.ui-card > p.ui-tight {
+  margin: 0;
+}
+
+/* Operations fix 4 (owner 13/11/2026): on a phone the Approvals table is a list of cards, so
+   the amount and the Review button never sit off the screen. The column headings stay for
+   screen readers only. */
+@media (max-width: 639px) {
+  table.ui-table.ui-applist,
+  table.ui-table.ui-applist tbody {
+    display: block;
+    min-width: 0;
+  }
+
+  table.ui-table.ui-applist thead,
+  table.ui-table.ui-applist thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+
+  table.ui-table.ui-applist tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.ui-table.ui-applist tr:last-child {
+    border-bottom: 0;
+  }
+
+  table.ui-table.ui-applist td {
+    display: block;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  table.ui-table.ui-applist td:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+
+  table.ui-table.ui-applist td:nth-child(2) {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  table.ui-table.ui-applist td:nth-child(4) {
+    grid-row: 2;
+    grid-column: 2;
+    font-weight: 700;
+  }
+
+  table.ui-table.ui-applist td:nth-child(3) {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
+  table.ui-table.ui-applist td:nth-child(5) {
+    grid-row: 3;
+    grid-column: 2;
+    text-align: right;
+  }
+
+  table.ui-table.ui-applist td:nth-child(6) {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+  }
+
+  table.ui-table.ui-applist td:nth-child(6) .ui-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  table.ui-table.ui-applist .ui-clip {
+    white-space: normal;
+  }
+}
+
+/* Operations fix 6 (owner 13/11/2026): Meters, one row for each Unit. A cell holds the Unit's
+   meter of that kind (a replaced one under it): number, last reading, state. */
+table.ui-table.ui-meters-unit td {
+  vertical-align: top;
+  white-space: normal;
+}
+
+/* Owner 16/11/2026: a meter is one line where the column has room ("EL-U101  10,050 kWh ·
+   24/10/2026  Working"); in a narrower column the parts wrap onto the next line. */
+.ui-metercell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+}
+
+.ui-metercell + .ui-metercell {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+@media (max-width: 639px) {
+  table.ui-table.ui-meters-unit {
+    min-width: 0;
+  }
+}
+
+/* Property fix 1 (owner 14/11/2026): a row's buttons in one small menu. The list is fixed on
+   the screen (placed by RowMenu), so a scrolling table box never cuts it. */
+.ui-rowmenu > summary {
+  list-style: none;
+  white-space: nowrap;
+}
+.ui-rowmenu > summary::-webkit-details-marker {
+  display: none;
+}
+.ui-rowmenu > summary svg {
+  transform: rotate(90deg);
+}
+.ui-rowmenu-list {
+  position: fixed;
+  z-index: 40;
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.ui-rowmenu-list .ui-btn {
+  justify-content: flex-start;
+  width: 100%;
+  border-color: transparent;
+}
+.ui-rowmenu-list .ui-btn:hover {
+  border-color: var(--border);
+}
+
+/* Property fixes 1, 3, 6, 9 (owner 14/11/2026): on a phone a list table becomes one card per
+   row. Cells marked pc-full take the whole line, pc-hide stay hidden, pc-end sit at the right;
+   the column headings stay for screen readers only. */
+@media (max-width: 639px) {
+  table.ui-table.ui-pcards,
+  table.ui-table.ui-pcards tbody {
+    display: block;
+    min-width: 0;
+  }
+  table.ui-table.ui-pcards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  table.ui-table.ui-pcards tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.ui-table.ui-pcards tr:last-child {
+    border-bottom: 0;
+  }
+  table.ui-table.ui-pcards td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+  table.ui-table.ui-pcards td.pc-full {
+    flex: 1 1 100%;
+  }
+  table.ui-table.ui-pcards td.pc-hide {
+    display: none;
+  }
+  table.ui-table.ui-pcards td.pc-end {
+    margin-left: auto;
+    text-align: right;
+  }
+  table.ui-table.ui-pcards td.pc-small {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+}
+
+/* Property fix 1: on a phone the stock words show beside the number ("In stock 8 Set"). */
+.ui-pcards .pc-label {
+  display: none;
+}
+@media (max-width: 639px) {
+  .ui-pcards .pc-label {
+    display: inline;
+  }
+  table.ui-table.ui-pcards td.pc-name {
+    flex: 1 1 60%;
+  }
+}
+/* Property fix 9: a long Details text wraps in its cell instead of running off the table. */
+table.ui-table td.ui-wrapcell {
+  min-width: 180px;
+  white-space: normal;
+}
+/* Property fix 10: every Unit card has the same Place column, and Holds lists one item a line. */
+table.ui-table.ui-loclist {
+  table-layout: fixed;
+  width: 100%;
+}
+table.ui-table.ui-loclist th:first-child {
+  width: 34%;
+}
+@media (max-width: 639px) {
+  table.ui-table.ui-loclist th:first-child {
+    width: 40%;
+  }
+}
+table.ui-table.ui-loclist td {
+  vertical-align: top;
+  white-space: normal;
+}
+ul.ui-holds {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* A small grey second line inside a table cell (Property fixes 3 and 9). */
+.ui-subline {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+table.ui-table td.pc-name.ui-wrapcell {
+  min-width: 220px;
+}
+table.ui-table.ui-loclist {
+  min-width: 0;
+}
+table.ui-table.ui-loclist td,
+ul.ui-holds li {
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+@media (max-width: 639px) {
+  /* Full-line cells come after the first line (number and status). */
+  table.ui-table.ui-pcards td.pc-later {
+    order: 2;
+  }
+}
+/* Property fix 3: the problem's type and words wrap within the table. */
+table.ui-table.ui-problist {
+  min-width: 0;
+}
+/* Property fix 4: a small box (the Monthly report's month) at the right end of the tab row. */
+.ui-headfield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ui-headfield label {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+/* Property fix 3: on an iPad the Problem reports list leaves out Person in charge and Age. */
+@media (max-width: 1080px) {
+  table.ui-table.ui-problist .ui-wide {
+    display: none;
+  }
+}
+
+/* Property fix 8 (owner 14/11/2026): the New Problem report form. Its text box has the same
+   look as the other boxes (not the typewriter font), and each problem type is a tile: the
+   circle, the icon and the name together, 4 in a row on a laptop, 2 on a phone. */
+.ui-pageform textarea {
+  width: 100%;
+  min-height: 92px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.ui-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 1023px) {
+  .ui-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 639px) {
+  .ui-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ui-chk.ui-tile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  /* Owner 14/11/2026: the circle and the icon stay beside the first line of the name. */
+  align-items: flex-start;
+  align-content: flex-start;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.ui-chk.ui-tile:has(input:checked) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+.ui-chk.ui-tile .ui-tile-name {
+  display: inline-flex;
+  align-items: flex-start;
+  flex: 1 1 0;
+  gap: 5px;
+  min-width: 0;
+  line-height: 1.4;
+}
+.shell-view .ui-chk.ui-tile input {
+  flex: none;
+  margin: 1px 0 0;
+}
+.ui-chk.ui-tile .ui-tile-name .shell-icon {
+  flex: none;
+  margin-top: 0.3em;
+}
+.ui-chk.ui-tile .ui-tile-name > span {
+  min-width: 0;
+}
+/* Owner 14/11/2026: a long name takes two boxes of the row (on a phone a whole row); empty
+   boxes left before it are filled by the next short names. */
+.ui-tiles:has(> .ui-tile-long, > .ui-tile-wide) {
+  grid-auto-flow: row dense;
+}
+.ui-tiles > .ui-tile-wide {
+  grid-column: span 2;
+}
+@media (max-width: 639px) {
+  .ui-tiles > .ui-tile-long {
+    grid-column: span 2;
+  }
+}
+/* Owner 14/11/2026: a short choice (Yes/No, the best time, how we heard) sits in one row of
+   equal boxes; a long list of choices wraps to the next row. */
+.ui-radios.ui-radios-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+  gap: 8px;
+}
+/* Owner 16/11/2026: on a wider screen each box has room for its words on one line. */
+@media (min-width: 640px) {
+  .ui-radios.ui-radios-row {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+  .ui-radios.ui-radios-row > .ui-chk {
+    white-space: nowrap;
+  }
+}
+.ui-radios.ui-radios-row > .ui-chk {
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.ui-radios.ui-radios-row > .ui-chk:has(input:checked) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+.ui-radios.ui-radios-row > :not(.ui-chk) {
+  grid-column: 1 / -1;
+}
+/* Owner 14/11/2026: Cancel and Save at the right, Save last. */
+.ui-probform > .ui-actions {
+  justify-content: flex-end;
+}
+.ui-chk.ui-tile .ui-sub2 {
+  display: inline-block;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+/* Property fix 5 (owner 14/11/2026): with no photo the photo box is a low strip. */
+.ui-photo.ui-photo-small {
+  aspect-ratio: auto;
+  min-height: 88px;
+}
+ul.ui-unitinv {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+ul.ui-unitinv li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+ul.ui-unitinv li b {
+  margin-left: auto;
+}
+
+/* Property fixes 3 and 6 (owner 14/11/2026): on a phone a filter row's buttons share the width
+   equally (2 a row for 4 or 2 buttons, 3 a row for 5 or 6) and its list box is full width. */
+@media (max-width: 639px) {
+  .ui-filters.ui-filters-even {
+    display: grid;
+    gap: 8px;
+  }
+  .ui-filters.ui-filters-even .ui-seg {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+  .ui-filters.ui-filters-even .ui-seg:has(> :nth-child(5)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ui-filters.ui-filters-even .ui-seg > button {
+    justify-content: center;
+    width: 100%;
+    margin: 0;
+  }
+  .shell-view .ui-filters.ui-filters-even select.ui-sel {
+    width: 100%;
+  }
+}
+
+/* Property fix 7: an iPad keeps four small cards in one row (the laptop's short look). */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .ui-kpis.ui-kpis-row:not(.ui-om):not(.ui-tasks):has(
+      > :nth-child(n):last-child
+    )
+    > :nth-child(n) {
+    grid-column: span 3;
+  }
+  .ui-kpis.ui-kpis-row .ui-kpi {
+    grid-template-rows: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+  .ui-kpis.ui-kpis-row .ui-kpi .ui-kpi-note {
+    display: none;
+  }
+  .ui-kpis.ui-kpis-row .ui-kpi .ui-kpi-value {
+    font-size: 1.1rem;
+  }
+}
+
+/* Home screen review (owner 14/11/2026). The two buttons beside the title have the same width;
+   on a phone each one fills the width, one under the other. */
+.ui-pagehead-actions:has(> .ui-homeact) {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.ui-pagehead-actions > .ui-homeact {
+  justify-content: center;
+}
+
+@media (max-width: 639px) {
+  .ui-pagehead-row:has(.ui-homeact) > .ui-pagehead-actions {
+    width: 100%;
+    grid-auto-flow: row;
+  }
+}
+
+/* A warning about the automatic jobs (no billing run, no ABA rate) is a slim bar under the
+   title, not small text under the Tasks. */
+.ui-notice.ui-home-jobs {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+/* Administration review fix 3 (owner 13/11/2026): a card that holds only hidden parts (for
+   example the place a page's head buttons are sent from) draws no empty box. */
+.ui-card:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+/* Administration review fix 9 (owner 13/11/2026): on a phone the tabs of Settings and Users and
+   access are equal buttons, two in a row (an odd last one takes the whole row), as on the
+   Payments switch, so no tab hides past the right edge. */
+@media (max-width: 640px) {
+  .shell-page:is([data-page="settings"], [data-page="access"]) .ui-subtabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: auto;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .shell-page:is([data-page="settings"], [data-page="access"])
+    .ui-subtabs
+    > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .shell-page:is([data-page="settings"], [data-page="access"])
+    .ui-subtabs
+    > :is(a, [role="tab"]) {
+    justify-content: center;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--btn-edge);
+    border-radius: 8px;
+    background: var(--btn-bg);
+    text-align: center;
+    white-space: normal;
+  }
+
+  .shell-page:is([data-page="settings"], [data-page="access"])
+    .ui-subtabs
+    > :is(a[aria-current="page"], [role="tab"][aria-selected="true"]) {
+    border-color: var(--primary);
+    background: var(--selected);
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
+}
+
+/* Administration review fix 6 (owner 13/11/2026): a financial statement's long column names
+   ("Same month last year") wrap on a laptop, so the last column is not cut off. */
+@media (min-width: 1024px) {
+  table.ui-table.ui-stmt th {
+    white-space: normal;
+  }
+
+  table.ui-table.ui-stmt :is(th, td) {
+    padding-inline: 10px;
+  }
+}
+
+/* Administration review fix 6: a table that is a list of cards on a phone ("ui-rowcards"; with
+   "ui-rowcards-md", also on an iPad). Each row is one card: the first cell is its title line,
+   the other cells follow, a cell with data-label says what it is. The column headings stay for
+   screen readers only. */
+@media (max-width: 639px) {
+  table.ui-table.ui-rowcards {
+    min-width: 0;
+  }
+
+  table.ui-table.ui-rowcards,
+  table.ui-table.ui-rowcards tbody {
+    display: block;
+  }
+
+  table.ui-table.ui-rowcards thead,
+  table.ui-table.ui-rowcards thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+
+  table.ui-table.ui-rowcards tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-auto-flow: row dense;
+    gap: 4px 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.ui-table.ui-rowcards tr:last-child {
+    border-bottom: 0;
+  }
+
+  table.ui-table.ui-rowcards td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  table.ui-table.ui-rowcards td[data-label]::before {
+    content: attr(data-label) ": ";
+    color: var(--text-2);
+  }
+
+  table.ui-table.ui-rowcards td.ui-rc-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  table.ui-table.ui-rowcards.ui-rowcards-md {
+    min-width: 0;
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md,
+  table.ui-table.ui-rowcards.ui-rowcards-md tbody {
+    display: block;
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md thead,
+  table.ui-table.ui-rowcards.ui-rowcards-md thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-auto-flow: row dense;
+    gap: 4px 16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md tr:last-child {
+    border-bottom: 0;
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md td[data-label]::before {
+    content: attr(data-label) ": ";
+    color: var(--text-2);
+  }
+
+  table.ui-table.ui-rowcards.ui-rowcards-md td.ui-rc-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Administration review fix 8 (owner 13/11/2026): on Telegram health the first box shows words
+   ("Not checked yet"), not a number, so every box puts its value under its name; the four boxes
+   then read the same way and the name is not squeezed into three short lines. */
+body .shell-page[data-page="tghealth"] .ui-kpis:not(.ui-tasks) .ui-kpi.ui-kpi {
+  grid-template-rows: auto auto;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+}
+
+body
+  .shell-page[data-page="tghealth"]
+  .ui-kpis:not(.ui-tasks)
+  .ui-kpi.ui-kpi
+  .ui-kpi-note {
+  grid-column: 1;
+}
+
+/* UI v81 batch 6, Reservations: the table did not fit an iPad standing up and was cut on a
+   phone. Below 1024px the Reserved on column folds under the Customer; on a phone each
+   Reservation is a card: Unit and status, the Customer, then Expires and the deposit. */
+table.ui-table.ui-reslist .rs-on-sub {
+  display: none;
+}
+@media (max-width: 1023px) {
+  table.ui-table.ui-reslist .rs-on {
+    display: none;
+  }
+  table.ui-table.ui-reslist .rs-on-sub {
+    display: block;
+  }
+}
+@media (max-width: 639px) {
+  /* The headings stay for screen readers; each is as small as its row, so none is cut. */
+  table.ui-table.ui-pcards.ui-reslist thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+  table.ui-table.ui-pcards.ui-reslist td.rs-unit {
+    order: 1;
+    flex: 1 1 auto;
+  }
+  table.ui-table.ui-pcards.ui-reslist td.rs-status {
+    order: 2;
+    margin-left: auto;
+    text-align: right;
+  }
+  table.ui-table.ui-pcards.ui-reslist td.rs-cust {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  table.ui-table.ui-pcards.ui-reslist td.rs-exp {
+    order: 4;
+  }
+  table.ui-table.ui-pcards.ui-reslist td.rs-dep {
+    order: 5;
+    margin-left: auto;
+    text-align: right;
+  }
+}
+
+/* Owner 16/11/2026 (Ledger review): the Journal entries month box lines up with the text
+   above it. */
+.ui-card.pad0 > .ui-qa.pad {
+  padding: 0 24px 4px;
+}
+
+/* Property screen review (owner 16/11/2026): the Monthly report. "Reports by type" and "Reports
+   by place" are narrow cards beside "Late now" on a laptop; on an iPad the two sit side by side
+   and "Late now" takes the row under them. The two repair cost tables share a row on a laptop. */
+.ui-mrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ui-mrow + .ui-card {
+  margin-top: 16px;
+}
+
+.ui-mrow > .ui-card {
+  min-width: 0;
+}
+
+table.ui-table.ui-mcount {
+  min-width: 0;
+}
+
+table.ui-table.ui-mcount th,
+table.ui-table.ui-mcount td {
+  padding: 8px 4px;
+}
+
+/* A row's name reads like the other cells: no heading line under it, no heading weight. */
+.ui-mrow table.ui-table th[scope="row"] {
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  font-weight: 400;
+}
+
+.ui-mrow table.ui-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.ui-mname {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (min-width: 640px) {
+  .ui-mrow-lists {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ui-mrow-lists > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1200px) {
+  .ui-mrow-lists {
+    grid-template-columns:
+      minmax(240px, max-content) minmax(240px, max-content)
+      minmax(0, 1fr);
+  }
+  .ui-mrow-lists > :nth-child(3) {
+    grid-column: auto;
+  }
+  .ui-mrow-cost {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

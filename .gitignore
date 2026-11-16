@@ -72,3 +72,6 @@ tmp/
 # Local agent and tool output
 .codex/
 graphify-out/
+# UI v81 screen checks
+frontend/e2e/results/
+frontend/playwright-report/

@@ -28,6 +28,7 @@ import {
   quotationsApi as defaultQuotationsApi,
 } from "./quotationsClient";
 import { qt, type QuotationsTextKey } from "./text";
+import { PageHead } from "../shell/pageHead";
 
 export interface QuotationsPageProps {
   language: Language;
@@ -212,7 +213,7 @@ export function QuotationsPage({
   return (
     <>
       {failure}
-      <div className="ui-head">
+      <PageHead>
         <p>{qt(language, "sub")}</p>
         {may("quotations.make") && (
           <div className="ui-actions">
@@ -225,7 +226,7 @@ export function QuotationsPage({
             </a>
           </div>
         )}
-      </div>
+      </PageHead>
       <div className="ui-kpis">
         {CARDS.map(([value, icon, tone, key]) => {
           const count = quotations.filter((quotation) =>
@@ -236,12 +237,12 @@ export function QuotationsPage({
               icon={icon}
               key={value}
               label={qt(language, key)}
-              note={qt(language, `${key}_s` as QuotationsTextKey)}
               onPress={() => {
                 setCard(card === value && value !== "all" ? "all" : value);
               }}
               pressed={card === value}
               tone={count === 0 && value !== "all" ? "none" : tone}
+              top
               value={count}
             />
           );

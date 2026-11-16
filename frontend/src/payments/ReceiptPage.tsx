@@ -2,6 +2,15 @@
 // column, what the money paid with links to the Invoices, the reprints, Print Receipt, and
 // Reprint, which records why a copy was made before it prints a copy marked REPRINT (one Receipt
 // per payment; it never changes).
+//
+// UI v81 round 9 (owner 12/11/2026): under an Invoice the card lists the parts the Payments list
+// names ("Rent" and "Services" under a Rent Invoice), so the list and this page say the same
+// words. The printed Receipt does not change.
+//
+// UI v81 module batch 2 (Payments, owner 12/11/2026): the page is on the shared layouts
+// (PageHeader with the Back link on top, DetailLayout about 60 / 40) and has the design's Customer
+// card between "Paid for" and "Reprints". The date under an Invoice says it is the Due Date.
+// Layout and display only.
 
 import {
   type FormEvent,
@@ -14,11 +23,19 @@ import {
 import { InvoiceClientError } from "../invoiceClient";
 import type { InvoicesData } from "../invoices/invoicesData";
 import { SheetFrame } from "../invoices/InvoiceDocument";
-import { dayText, momentText, usdFromCents } from "../shell/format";
+import { BackLink } from "../shell/backNav";
+import {
+  dayText,
+  momentText,
+  todayInPhnomPenh,
+  usdFromCents,
+} from "../shell/format";
 import { Icon } from "../shell/icons";
+import { DetailLayout, PageHeader } from "../shell/layouts";
 import { hashForPage } from "../shell/navigation";
 import { Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
+import { PayerCard, type PayerCardReads } from "./PayerCard";
 import type { PaymentsApi, ReceiptView } from "./paymentsClient";
 import { PaymentChip } from "./PaymentsList";
 import { ReceiptDocument } from "./ReceiptDocument";
@@ -205,6 +222,7 @@ export function ReceiptPage({
   namesFailed,
   onRetryNames,
   mayReprint,
+  payerCard,
 }: {
   language: Language;
   propertyId: string;
@@ -215,6 +233,8 @@ export function ReceiptPage({
   namesFailed: boolean;
   onRetryNames: () => void;
   mayReprint: boolean;
+  /** What the Customer card beside the Receipt reads; left out, the card is not shown. */
+  payerCard?: PayerCardReads;
 }) {
   const [receipt, setReceipt] = useState<ReceiptView | null>(null);
   const [problem, setProblem] = useState<"missing" | "failed" | null>(null);
@@ -250,17 +270,14 @@ export function ReceiptPage({
     if (copy !== null) printSheet();
   }, [copy]);
 
-  const back = (
-    <a className="ui-crumb" href={hashForPage("payments")}>
-      <Icon name="back" small />
-      {pyt(language, "back")}
-    </a>
-  );
+  const back = <BackLink language={language} parent="payments" />;
+  // "Receipt" alone, while the number is not read yet or cannot be.
+  const plainTitle = pyt(language, "rc_title", "").trim();
 
   if (problem !== null)
     return (
       <>
-        {back}
+        <PageHeader back={back} title={plainTitle} />
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
           <p>
@@ -277,7 +294,7 @@ export function ReceiptPage({
   if (receipt === null)
     return (
       <>
-        {back}
+        <PageHeader back={back} title={plainTitle} />
         <p className="ui-muted" role="status">
           {pyt(language, "loading")}
         </p>
@@ -298,53 +315,50 @@ export function ReceiptPage({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">
-              {pyt(language, "rc_title", receipt.receiptNumber ?? "—")}
-            </h2>
-            <PaymentChip
-              language={language}
-              row={{
-                status: receipt.status,
-                left: receipt.left,
-                usdCents: receipt.usdCents,
-              }}
-            />
-          </div>
-          <p>
-            {[name ?? "—", unit, usdFromCents(receipt.usdCents)]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
-        <div className="ui-actions">
-          <button
-            className="ui-btn"
-            disabled={!ready}
-            onClick={printSheet}
-            type="button"
-          >
-            <Icon name="print" />
-            {pyt(language, "rc_print")}
-          </button>
-          {mayReprint && receipt.receiptId !== null && (
+      <PageHeader
+        actions={
+          <>
             <button
               className="ui-btn"
               disabled={!ready}
-              onClick={() => {
-                setReprinting(true);
-              }}
+              onClick={printSheet}
               type="button"
             >
-              <Icon name="invoice" />
-              {pyt(language, "rc_reprint")}
+              <Icon name="print" />
+              {pyt(language, "rc_print")}
             </button>
-          )}
-        </div>
-      </div>
+            {mayReprint && receipt.receiptId !== null && (
+              <button
+                className="ui-btn"
+                disabled={!ready}
+                onClick={() => {
+                  setReprinting(true);
+                }}
+                type="button"
+              >
+                <Icon name="invoice" />
+                {pyt(language, "rc_reprint")}
+              </button>
+            )}
+          </>
+        }
+        back={back}
+        badge={
+          <PaymentChip
+            language={language}
+            row={{
+              status: receipt.status,
+              left: receipt.left,
+              usdCents: receipt.usdCents,
+            }}
+          />
+        }
+        numeric
+        summary={[name ?? "—", unit, usdFromCents(receipt.usdCents)]
+          .filter(Boolean)
+          .join(" · ")}
+        title={pyt(language, "rc_title", receipt.receiptNumber ?? "—")}
+      />
       {namesFailed && (
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />
@@ -366,96 +380,131 @@ export function ReceiptPage({
           <p>{pyt(language, "rp_saved")}</p>
         </div>
       )}
-      <div className="ui-split ui-split-receipt">
-        <SheetFrame>
-          <ReceiptDocument
-            name={name}
-            receipt={receipt}
-            reprint={reprintDay}
-            unit={unit}
-          />
-        </SheetFrame>
-        <div className="ui-stack">
-          <section aria-labelledby="h-mt" className="ui-card">
-            <h3 id="h-mt">{pyt(language, "rc_matched_to")}</h3>
-            {receipt.lines.length === 0 ? (
-              <p className="ui-muted">{pyt(language, "rc_not_matched")}</p>
-            ) : (
-              <ul className="ui-apps">
-                {receipt.lines.map((line, index) => {
-                  const invoiceLink =
-                    line.invoiceId === null ? null : (
-                      <a
-                        className="ui-num"
-                        href={hashForPage("invoices", `inv:${line.invoiceId}`)}
-                      >
-                        {line.invoiceNumber}
-                      </a>
+      <DetailLayout
+        main={
+          <SheetFrame>
+            <ReceiptDocument
+              name={name}
+              receipt={receipt}
+              reprint={reprintDay}
+              unit={unit}
+            />
+          </SheetFrame>
+        }
+        side={
+          <>
+            <section aria-labelledby="h-mt" className="ui-card">
+              <h2 id="h-mt">{pyt(language, "rc_matched_to")}</h2>
+              {receipt.lines.length === 0 ? (
+                <p className="ui-muted ui-tight">
+                  {pyt(language, "rc_not_matched")}
+                </p>
+              ) : (
+                <ul className="ui-apps">
+                  {receipt.lines.map((line, index) => {
+                    const invoiceLink =
+                      line.invoiceId === null ? null : (
+                        <a
+                          className="ui-num"
+                          href={hashForPage(
+                            "invoices",
+                            `inv:${line.invoiceId}`,
+                          )}
+                        >
+                          {line.invoiceNumber}
+                        </a>
+                      );
+                    return (
+                      <li key={index}>
+                        <span>
+                          {line.kind === "INVOICE" ? (
+                            <>
+                              {invoiceLink}
+                              {line.category !== null &&
+                                ` · ${pyt(language, line.category as InvoiceKind)}`}
+                            </>
+                          ) : (
+                            pyt(language, LINE_NAMES[line.kind])
+                          )}
+                          {line.kind === "LATE_PAYMENT_CHARGE" ? (
+                            <small>
+                              {pyt(language, "rc_on")} {invoiceLink}
+                            </small>
+                          ) : (
+                            line.dueDate !== null && (
+                              <small className="ui-num">
+                                {pyt(language, "due_on")}{" "}
+                                {dayText(line.dueDate)}
+                              </small>
+                            )
+                          )}
+                        </span>
+                        <b className="ui-num">{usdFromCents(line.amount)}</b>
+                        {line.parts !== undefined && line.parts.length > 0 && (
+                          <ul className="ui-app-parts">
+                            {line.parts.map((part) => (
+                              <li key={part.kind}>
+                                <span>{pyt(language, `c_${part.kind}`)}</span>
+                                <span className="ui-num">
+                                  {usdFromCents(part.amount)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
                     );
-                  return (
+                  })}
+                </ul>
+              )}
+              {receipt.left > 0 && (
+                <p className="ui-small ui-warnv ui-tight">
+                  {pyt(language, "pf_left", usdFromCents(receipt.left))}
+                </p>
+              )}
+            </section>
+            {payerCard !== undefined && (
+              <PayerCard
+                customerId={receipt.customerId}
+                data={data}
+                headingId="h-rc-cust"
+                language={language}
+                propertyId={propertyId}
+                reads={payerCard}
+                today={todayInPhnomPenh()}
+              />
+            )}
+            <section aria-labelledby="h-rr" className="ui-card">
+              <h2 id="h-rr">{pyt(language, "rc_reprints")}</h2>
+              {receipt.reprints.length === 0 ? (
+                <p className="ui-muted ui-tight">
+                  {pyt(language, "rc_noreprints")}
+                </p>
+              ) : (
+                <ul className="ui-apps">
+                  {receipt.reprints.map((reprint, index) => (
                     <li key={index}>
                       <span>
-                        {line.kind === "INVOICE" ? (
-                          <>
-                            {invoiceLink}
-                            {line.category !== null &&
-                              ` · ${pyt(language, line.category as InvoiceKind)}`}
-                          </>
-                        ) : (
-                          pyt(language, LINE_NAMES[line.kind])
-                        )}
-                        {line.kind === "LATE_PAYMENT_CHARGE" ? (
-                          <small>
-                            {pyt(language, "rc_on")} {invoiceLink}
-                          </small>
-                        ) : (
-                          line.dueDate !== null && (
-                            <small className="ui-num">
-                              {dayText(line.dueDate)}
-                            </small>
-                          )
+                        {pyt(
+                          language,
+                          "rp_row",
+                          momentText(reprint.at),
+                          reprint.by,
+                          reprint.reason,
                         )}
                       </span>
-                      <b className="ui-num">{usdFromCents(line.amount)}</b>
                     </li>
-                  );
-                })}
-              </ul>
-            )}
-            {receipt.left > 0 && (
-              <p className="ui-small ui-warnv">
-                {pyt(language, "pf_left", usdFromCents(receipt.left))}
-              </p>
-            )}
-          </section>
-          <section aria-labelledby="h-rr" className="ui-card">
-            <h3 id="h-rr">{pyt(language, "rc_reprints")}</h3>
-            {receipt.reprints.length === 0 ? (
-              <p className="ui-muted">{pyt(language, "rc_noreprints")}</p>
-            ) : (
-              <ul className="ui-apps">
-                {receipt.reprints.map((reprint, index) => (
-                  <li key={index}>
-                    <span>
-                      {pyt(
-                        language,
-                        "rp_row",
-                        momentText(reprint.at),
-                        reprint.by,
-                        reprint.reason,
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-          <div className="ui-notice info">
-            <Icon name="info" />
-            <p>{pyt(language, "rc_one")}</p>
-          </div>
-        </div>
-      </div>
+                  ))}
+                </ul>
+              )}
+            </section>
+            <div className="ui-notice info">
+              <Icon name="info" />
+              <p>{pyt(language, "rc_one")}</p>
+            </div>
+          </>
+        }
+      />
       {reprinting && (
         <ReprintDialog
           api={api}

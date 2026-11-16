@@ -20,6 +20,8 @@ import {
 import type { CustomerLedgerApi } from "../customerLedgerClient";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import type { ReservationApi, ReservationResource } from "../reservationClient";
+import { todayInPhnomPenh } from "../shell/format";
+import type { BirthdaysApi } from "./Birthdays";
 import { CustomersPage } from "./CustomersPage";
 import type { CustomerCommandGate } from "./commands";
 
@@ -274,12 +276,14 @@ function show(
     reservations?: ReservationApi;
     ledger?: CustomerLedgerApi;
     onOpenLedger?: ((customerId: string) => void) | null;
+    birthdays?: BirthdaysApi;
   } = {},
 ) {
   return render(
     <CustomersPage
       active
       actorId="actor-1"
+      birthdaysApi={options.birthdays}
       capabilities={null}
       customerApi={options.customers ?? customerApi()}
       gate={options.gate ?? commandGate()}
@@ -306,7 +310,7 @@ describe("Customers list", () => {
 
     expect(
       await screen.findByText(
-        "6 people with a Lease, a Reservation or a history here",
+        "6 people with a Lease, a Reservation or a history here.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -317,15 +321,15 @@ describe("Customers list", () => {
     expect(rowOf("Sok Dara")).toHaveTextContent("012 345 678U101Tenant");
     expect(rowOf("Chan Vanna")).toHaveTextContent("U101Signer or occupant");
     expect(rowOf("Lim Srey")).toHaveTextContent("U102Reservation");
-    expect(rowOf("Keo Mony")).toHaveTextContent("U201Former");
+    expect(rowOf("Keo Mony")).toHaveTextContent("U201Past customers");
     expect(rowOf("Pich Rina")).toHaveTextContent("Deactivated");
     expect(rowOf("Pich Rina")).toHaveTextContent("No Lease yet");
-    expect(rowOf("Mok Thida")).toHaveTextContent("U101Former");
+    expect(rowOf("Mok Thida")).toHaveTextContent("U101Past customers");
     for (const label of [
       "Current tenants: 1.",
       "Signers and occupants: 1.",
       "Reservations: 1.",
-      "Former: 2.",
+      "Past customers: 2.",
     ])
       expect(
         screen.getByRole("button", { name: new RegExp(`^${label}`) }),
@@ -338,8 +342,10 @@ describe("Customers list", () => {
     show({ customers: client });
     await screen.findByText("6 Customers");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Former: 2\./ }));
-    expect(screen.getByText("Showing: Former.")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Past customers: 2\./ }),
+    );
+    expect(screen.getByText("Showing: Past customers.")).toBeInTheDocument();
     expect(screen.getByText("2 Customers")).toBeInTheDocument();
     expect(rowOf("Keo Mony")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
@@ -387,6 +393,49 @@ describe("Customers list", () => {
         "Your account cannot read Leases or Reservations.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it('TEST-FE-2127 (owner 12/11/2026: "check all card is link to correct place") "#/customers?show=birthdays" shows the coming birthdays above the Customers list; the plain address does not read them; Hide closes the card and gives the plain address without a new history step', async () => {
+    const birthdays = {
+      birthdays: vi.fn().mockResolvedValue({
+        items: [
+          {
+            customer_id: "customer-1",
+            customer_name: "Sok Dara",
+            role: "PRIMARY",
+            unit_id: "unit-u101",
+            unit_number: "U101",
+            birthday: todayInPhnomPenh(),
+          },
+        ],
+      }),
+    };
+    show({ birthdays });
+    expect(await screen.findByText("6 Customers")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /^Birthdays/ })).toBeNull();
+    expect(birthdays.birthdays).not.toHaveBeenCalled();
+
+    // Home's Birthdays card.
+    window.history.pushState(null, "", "#/customers?show=birthdays");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    const card = await screen.findByRole("region", { name: "Birthdays 1" });
+    expect(birthdays.birthdays).toHaveBeenCalledWith("property-1");
+    expect(within(card).getByText("Sok Dara")).toBeInTheDocument();
+    expect(within(card).getByText("today")).toBeInTheDocument();
+    // The card is above the table of Customers, and the list is still whole.
+    const table = screen.getByRole("table");
+    expect(
+      card.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByText("6 Customers")).toBeInTheDocument();
+
+    const steps = window.history.length;
+    fireEvent.click(within(card).getByRole("button", { name: "Hide" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: /^Birthdays/ })).toBeNull();
+    });
+    expect(window.location.hash).toBe("#/customers");
+    expect(window.history.length).toBe(steps);
   });
 });
 
@@ -494,7 +543,7 @@ describe("Customer page", () => {
         "This Customer was not found, or your account cannot open it.",
       ),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Customers" }));
     expect(window.location.hash).toBe("#/customers");
   });
 });
@@ -589,7 +638,7 @@ describe("Customer dialogs", () => {
     fireEvent.click(
       within(form).getByRole("button", { name: "Save Customer" }),
     );
-    expect(within(form).getByText("Pick a date.")).toBeInTheDocument();
+    expect(within(form).getByText("Choose a date.")).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 

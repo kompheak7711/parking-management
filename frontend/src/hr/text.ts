@@ -4,16 +4,17 @@
 // in that sheet and needs the native check, like every Khmer text before the app is used.
 
 import type { Language } from "../signInText";
+import { singular } from "../shell/plural";
 
 const TEXT = {
   loading: ["Loading…", "កំពុងផ្ទុក…"],
   failed: [
-    "This could not be read just now.",
+    "This could not be loaded.",
     // new
     "មិនអាចអានបានទេឥឡូវនេះ។",
   ],
   retry: ["Try again", "សាកម្តងទៀត"],
-  no_property: ["Choose the Property first.", "សូមជ្រើសរើសអចលនទ្រព្យជាមុនសិន។"],
+  no_property: ["Choose a property first.", "សូមជ្រើសរើសអចលនទ្រព្យជាមុនសិន។"],
   cancel: ["Cancel", "បោះបង់"],
   close: ["Close", "បិទ"],
   save: ["Save", "រក្សាទុក"],
@@ -22,19 +23,19 @@ const TEXT = {
   yes: ["Yes", "បាទ/ចាស"],
   no: ["No", "ទេ"],
   reason: ["Reason", "មូលហេតុ"],
-  say_why: ["Say why.", "សូមប្រាប់មូលហេតុ។"],
+  say_why: ["Enter a reason.", "សូមប្រាប់មូលហេតុ។"],
   // new
   f_right: [
-    "You do not have the right to do this.",
+    "You do not have permission to do this.",
     "អ្នកមិនមានសិទ្ធិធ្វើការនេះទេ។",
   ],
   // new
   f_failed: ["This was not saved. Try again.", "មិនបានរក្សាទុកទេ។ សាកម្តងទៀត។"],
   // new
-  f_refused: ["The app refused this: {0}", "កម្មវិធីបានបដិសេធ៖ {0}"],
+  f_refused: ["This could not be saved: {0}", "កម្មវិធីបានបដិសេធ៖ {0}"],
   // new
   f_stale: [
-    "Someone else changed this. Open it again.",
+    "Someone else changed this. Reload it and try again.",
     "មាននរណាម្នាក់បានកែរួចហើយ។ សូមបើកម្តងទៀត។",
   ],
   not_found: [
@@ -43,16 +44,16 @@ const TEXT = {
     "រកមិនឃើញទេ។",
   ],
   amount_bad: [
-    "Type an amount like 120.00.",
+    "Enter an amount, for example 120.00.",
     // new
     "វាយចំនួនដូចជា 120.00។",
   ],
   day_bad: [
-    "Pick a date.",
+    "Choose a date.",
     // new
     "សូមជ្រើសថ្ងៃ។",
   ],
-  time_bad: ["Type the time like 07:05.", "វាយម៉ោងដូចជា 07:05។"],
+  time_bad: ["Enter a time, for example 07:05.", "វាយម៉ោងដូចជា 07:05។"],
   nothing: ["None.", "គ្មាន។"],
   by: ["By {0}, {1}", "ដោយ {0} {1}"],
   per_month: ["{0} a month", "{0} ក្នុងមួយខែ"],
@@ -62,7 +63,7 @@ const TEXT = {
   sh_AFTERNOON: ["Afternoon shift", "វេនរសៀល"],
   sh_NIGHT: ["Night shift", "វេនយប់"],
   sh_OFFICE: [
-    "Office hours 7:00-11:00, 13:00-17:00",
+    "Office hours (7:00–11:00, 13:00–17:00)",
     // new
     "ម៉ោងការិយាល័យ 7:00-11:00, 13:00-17:00",
   ],
@@ -103,14 +104,14 @@ const TEXT = {
   // Employees
   e_title: ["Employees", "បុគ្គលិក"],
   e_sub: [
-    "Staff details, jobs, Telegram link and history.",
+    "Staff details, job titles, Telegram link and employment history.",
     "ព័ត៌មានបុគ្គលិក ការងារ ការភ្ជាប់ Telegram និងប្រវត្តិ។",
   ],
   e_add: ["Add employee", "បន្ថែមបុគ្គលិក"],
   e_active: ["Active", "សកម្ម"],
-  e_left: ["Left", "បានចាកចេញ"],
+  e_left: ["Past employees", "បានចាកចេញ"],
   e_never: [
-    "Employees are never deleted. A person who leaves moves to Left.",
+    "Employees are never deleted. When someone leaves, they move to Past employees.",
     "បុគ្គលិកមិនដែលត្រូវលុបទេ។ អ្នកចាកចេញ ផ្លាស់ទៅ បានចាកចេញ។",
   ],
   e_none: ["No employees yet.", "មិនទាន់មានបុគ្គលិក។"],
@@ -122,21 +123,21 @@ const TEXT = {
   e_no_signin: ["No app sign-in", "គ្មានគណនីចូលកម្មវិធី"],
   e_start: ["Start date", "ថ្ងៃចាប់ផ្ដើម"],
   e_end: ["End date", "ថ្ងៃបញ្ចប់"],
-  e_job: ["Job", "ការងារ"],
-  e_shift: ["Usual shift", "វេនធម្មតា"],
-  e_dayoff: ["Usual day off", "ថ្ងៃឈប់ធម្មតា"],
+  e_job: ["Job title", "ការងារ"],
+  e_shift: ["Regular shift", "វេនធម្មតា"],
+  e_dayoff: ["Regular day off", "ថ្ងៃឈប់ធម្មតា"],
   e_hours: [
     "Working hours",
     // new
     "ម៉ោងធ្វើការ",
   ],
   e_office_hours: [
-    "Office hours: 7:00 to 11:00 and 13:00 to 17:00. Late counts from 7:00.",
+    "Office hours: 7:00 to 11:00 and 13:00 to 17:00. Lateness is counted from 7:00.",
     // new
     "ម៉ោងការិយាល័យ៖ 7:00 ដល់ 11:00 និង 13:00 ដល់ 17:00។ យឺតរាប់ពី 7:00។",
   ],
   e_monthly_off: [
-    "No usual day off: {0} days off a month, when the person asks. Mark each one on the Weekly plan.",
+    "No regular day off: days off are taken on request, up to {0} per month. Mark each one on the Weekly plan.",
     // new
     "គ្មានថ្ងៃឈប់ធម្មតាទេ៖ ឈប់ {0} ថ្ងៃក្នុងមួយខែ នៅពេលបុគ្គលិកស្នើសុំ។ សូមកត់ថ្ងៃនីមួយៗក្នុងផែនការប្រចាំសប្ដាហ៍។",
   ],
@@ -161,7 +162,7 @@ const TEXT = {
     "JPG, PNG ឬ PDF ធំបំផុត 15 MB។",
   ],
   e_id_photo_big: [
-    "The file is larger than 15 MB.",
+    "The file is larger than 15 MB. Choose a smaller file.",
     // new
     "ឯកសារធំជាង 15 MB។",
   ],
@@ -203,7 +204,7 @@ const TEXT = {
     // new
     "លេខគណនី ABA",
   ],
-  e_id: ["ID card number", "លេខអត្តសញ្ញាណប័ណ្ណ"],
+  e_id: ["ID number", "លេខអត្តសញ្ញាណប័ណ្ណ"],
   e_id_type: [
     "ID type",
     // new
@@ -226,7 +227,7 @@ const TEXT = {
     "ថ្ងៃខែឆ្នាំកំណើត",
   ],
   e_hire_again: [
-    "Hire again: this person worked here before",
+    "Rehire: this person worked here before",
     // new
     "ជួលម្តងទៀត៖ បុគ្គលនេះធ្លាប់ធ្វើការនៅទីនេះ",
   ],
@@ -246,15 +247,15 @@ const TEXT = {
     "អាសយដ្ឋានផ្ទះ",
   ],
   e_pay_hidden: [
-    "Only people with See salaries can see salary, payment and ID numbers.",
+    "Only users with the See salaries permission can see salaries, payment details and ID numbers.",
     "តែអ្នកមានសិទ្ធិ មើលប្រាក់ខែ ទើបឃើញប្រាក់ខែ ការបើកប្រាក់ និងលេខអត្តសញ្ញាណ។",
   ],
   e_pay_later: [
-    "Someone with See salaries adds the salary later.",
+    "A user with the See salaries permission adds the salary later.",
     "អ្នកមានសិទ្ធិ មើលប្រាក់ខែ បន្ថែមប្រាក់ខែពេលក្រោយ។",
   ],
   e_pay_first: [
-    "The salary is the first line of the employment history.",
+    "The salary becomes the first entry in the employment history.",
     "ប្រាក់ខែជាបន្ទាត់ទីមួយនៃប្រវត្តិការងារ។",
   ],
   e_pay_none: [
@@ -274,7 +275,7 @@ const TEXT = {
   ],
   e_history: ["Employment history", "ប្រវត្តិការងារ"],
   e_history_note: [
-    "A change adds a new line with its start date and reason. Old lines are never typed over.",
+    "Each change adds a new entry with its effective date and reason. Earlier entries are never overwritten.",
     "ការកែបន្ថែមបន្ទាត់ថ្មី ជាមួយថ្ងៃចាប់ផ្ដើម និងមូលហេតុ។ បន្ទាត់ចាស់មិនដែលត្រូវសរសេរជាន់ទេ។",
   ],
   ev_HIRED: ["Started", "ចាប់ផ្ដើមធ្វើការ"],
@@ -290,7 +291,7 @@ const TEXT = {
   ],
   ev_LEFT: ["Left", "បានចាកចេញ"],
   ev_PAY: [
-    "Salary",
+    "Salary changed",
     // new
     "ប្រាក់ខែ",
   ],
@@ -307,7 +308,7 @@ const TEXT = {
     "ចំណងជើង",
   ],
   e_doc_kind: [
-    "Kind",
+    "Type",
     // new
     "ប្រភេទ",
   ],
@@ -329,7 +330,7 @@ const TEXT = {
     "ផុតកំណត់នៅ",
   ],
   e_doc_types: [
-    "A JPG, PNG or PDF file, up to 20 MB.",
+    "JPG, PNG or PDF, up to 20 MB.",
     // new
     "ឯកសារ JPG PNG ឬ PDF មិនលើស 20 MB។",
   ],
@@ -344,7 +345,7 @@ const TEXT = {
     "ដកចេញ",
   ],
   e_doc_removed: [
-    "{0} removed. The file is kept in History.",
+    "{0} removed. The file is kept in the audit log.",
     // new
     "{0} ត្រូវដកចេញ។ ឯកសាររក្សាទុកក្នុងប្រវត្តិ។",
   ],
@@ -362,7 +363,7 @@ const TEXT = {
     "ប្ដូរការងារ ឬវេន · {0}",
   ],
   e_changed: [
-    "{0}: new history line added.",
+    "{0}: employment history updated.",
     "{0}៖ បានបន្ថែមបន្ទាត់ប្រវត្តិថ្មី។",
   ],
   e_saved: ["{0} saved.", "{0} បានរក្សាទុក។"],
@@ -390,7 +391,7 @@ const TEXT = {
     "Telegram",
   ],
   e_tg_id: [
-    "Telegram user id",
+    "Telegram user ID",
     // new
     "លេខសម្គាល់អ្នកប្រើ Telegram",
   ],
@@ -423,7 +424,7 @@ const TEXT = {
     "Not in the list? Add the employee first.",
     "មិនមានក្នុងបញ្ជី? សូមបន្ថែមបុគ្គលិកជាមុន។",
   ],
-  sr_roles: ["Tick one or more.", "គូសមួយ ឬច្រើន។"],
+  sr_roles: ["Select one or more.", "គូសមួយ ឬច្រើន។"],
   sr_refused: [
     "Telegram request from {0} refused.",
     "សំណើ Telegram ពី {0} ត្រូវបដិសេធ។",
@@ -436,10 +437,10 @@ const TEXT = {
     "អ្នកថែទាំស្កេនកាតនេះលើទូរស័ព្ទ ឬថេប្លេតការិយាល័យ ពេលបុគ្គលិកគ្មានទូរស័ព្ទ។ រូបថតពាក់កណ្ដាលខ្លួនត្រូវថតរាល់ដង។",
   ],
   c_card: ["Card {0} · since {1}", "កាត {0} · ចាប់ពី {1}"],
-  c_works: ["Works", "ដំណើរការ"],
-  c_stopped: ["Stopped", "ឈប់ប្រើ"],
+  c_works: ["Active", "ដំណើរការ"],
+  c_stopped: ["Deactivated", "ឈប់ប្រើ"],
   c_stopped_left: [
-    "Stopped on {0}, when the employee left.",
+    "Deactivated on {0}, when the employee left.",
     "ឈប់ប្រើនៅ {0} ពេលបុគ្គលិកចាកចេញ។",
   ],
   c_none: [
@@ -448,7 +449,7 @@ const TEXT = {
     "មិនទាន់មានកាត។",
   ],
   c_make: [
-    "Make card",
+    "Create card",
     // new
     "បង្កើតកាត",
   ],
@@ -473,7 +474,7 @@ const TEXT = {
   ],
   l_new: ["New salary loan", "ប្រាក់កម្ចីប្រាក់ខែថ្មី"],
   l_rule: [
-    "Business rule: at most {0} of one month's salary, and {1} open loan per person. The Owner approves. Nobody approves their own.",
+    "Business rule: a loan can be up to {0} of one month's salary, with at most {1} open per employee. The Owner approves loans, and no one can approve their own request.",
     "ច្បាប់អាជីវកម្ម៖ យ៉ាងច្រើន {0} នៃប្រាក់ខែមួយខែ និងប្រាក់កម្ចីមិនទាន់សង {1} ក្នុងមួយនាក់។ ម្ចាស់អនុម័ត។ គ្មាននរណាអនុម័តសំណើខ្លួនឯងទេ។",
   ],
   l_none: [
@@ -481,7 +482,7 @@ const TEXT = {
     // new
     "គ្មានប្រាក់កម្ចីប្រាក់ខែ។",
   ],
-  l_number: ["Loan", "ប្រាក់កម្ចី"],
+  l_number: ["Loan no.", "ប្រាក់កម្ចី"],
   l_amount: [
     "Amount",
     // new
@@ -489,18 +490,18 @@ const TEXT = {
   ],
   l_limit: ["Limit", "កម្រិត"],
   l_repayment: ["Repayment", "ការសងវិញ"],
-  l_left_owed: ["Left", "នៅសល់"],
+  l_left_owed: ["Balance", "នៅសល់"],
   l_next: ["In full from the next salary", "សងទាំងអស់ពីប្រាក់ខែបន្ទាប់"],
   l_each: ["{0} each month", "{0} រៀងរាល់ខែ"],
   l_monthly: [
-    "An amount each month (Owner sets)",
+    "Monthly installment (set by the Owner)",
     "ចំនួនរៀងរាល់ខែ (ម្ចាស់កំណត់)",
   ],
-  l_monthly_amount: ["Amount each month", "ចំនួនរៀងរាល់ខែ"],
-  l_telegram: ["Asked in Telegram", "ស្នើក្នុង Telegram"],
+  l_monthly_amount: ["Monthly installment", "ចំនួនរៀងរាល់ខែ"],
+  l_telegram: ["Requested via Telegram", "ស្នើក្នុង Telegram"],
   l_within: ["Within limit {0}", "ក្នុងកម្រិត {0}"],
   l_over: ["Over the limit {0}", "លើសកម្រិត {0}"],
-  l_send: ["Send to the Owner", "ផ្ញើទៅម្ចាស់"],
+  l_send: ["Send for approval", "ផ្ញើទៅម្ចាស់"],
   l_sent: ["Loan {0} sent to the Owner.", "ប្រាក់កម្ចី {0} បានផ្ញើទៅម្ចាស់។"],
   l_sent_for: [
     "Salary loan for {0} sent to the Owner.",
@@ -541,15 +542,15 @@ const TEXT = {
     "សំណើរបស់អ្នក។ អ្នកផ្សេងអនុម័ត។",
   ],
   l_owner_note: [
-    "Owner's own loan: note why",
+    "Owner's own loan: enter a reason",
     // new
     "ប្រាក់កម្ចីផ្ទាល់របស់ម្ចាស់៖ សរសេរមូលហេតុ",
   ],
-  ls_WAITING: ["Waits for the Owner", "រង់ចាំម្ចាស់"],
+  ls_WAITING: ["Pending approval", "រង់ចាំម្ចាស់"],
   ls_APPROVED: ["Approved, not paid out", "បានអនុម័ត មិនទាន់បើក"],
   ls_PAID_OUT: ["Paid out", "បានបើក"],
-  ls_REPAID: ["Paid back", "បានសងរួច"],
-  ls_REFUSED: ["Not approved", "មិនបានអនុម័ត"],
+  ls_REPAID: ["Repaid", "បានសងរួច"],
+  ls_REFUSED: ["Rejected", "មិនបានអនុម័ត"],
   approve: ["Approve", "អនុម័ត"],
   refuse: ["Refuse", "បដិសេធ"],
 
@@ -560,15 +561,15 @@ const TEXT = {
     "ប្រាក់ខែប្រចាំខែ ពិនិត្យ អនុម័ត និងបើកនៅថ្ងៃបើកប្រាក់ខែ។",
   ],
   p_rule: [
-    "Business rule: salaries are paid on day {0} of the next month. The app makes the list on the 1st, the Accountant checks it by the 3rd, the Owner approves by the 4th. The month cannot be closed until payroll is approved.",
+    "Business rule: salaries are paid on day {0} of the next month. The app prepares payroll on the 1st, the Accountant reviews it by the 3rd and the Owner approves it by the 4th. The month cannot be closed until payroll is approved.",
     "ច្បាប់អាជីវកម្ម៖ ប្រាក់ខែបើកនៅថ្ងៃទី {0} នៃខែបន្ទាប់។ កម្មវិធីបង្កើតបញ្ជីនៅថ្ងៃទី១ គណនេយ្យករពិនិត្យមុនថ្ងៃទី៣ ម្ចាស់អនុម័តមុនថ្ងៃទី៤។ មិនអាចបិទខែបានទេ រហូតបញ្ជីប្រាក់ខែត្រូវអនុម័ត។",
   ],
   p_tax_off: [
-    "Salary tax and NSSF are off until a tax agent confirms the amounts.",
+    "Salary tax and NSSF deductions are turned off until a tax agent confirms the amounts.",
     "ពន្ធលើប្រាក់បៀវត្ស និង ប.ស.ស បិទរហូតភ្នាក់ងារពន្ធបញ្ជាក់ចំនួន។",
   ],
   p_make: [
-    "Make the list for {0}",
+    "Create payroll for {0}",
     // new
     "បង្កើតបញ្ជីសម្រាប់ {0}",
   ],
@@ -578,7 +579,7 @@ const TEXT = {
   p_pay_on: ["Pay on {0}", "បើកនៅ {0}"],
   p_net: ["Net pay", "ប្រាក់ខែសុទ្ធ"],
   p_people: [
-    "People",
+    "Employees",
     // new
     "មនុស្ស",
   ],
@@ -593,17 +594,17 @@ const TEXT = {
     "ការកែតម្រូវ",
   ],
   p_make_correction: [
-    "Make a correction list",
+    "Create correction payroll",
     // new
     "បង្កើតបញ្ជីកែតម្រូវ",
   ],
   p_correction_note: [
-    "An approved list never changes. A correction list adds what was missed, with its own entry.",
+    "An approved payroll cannot be changed. A correction payroll adds anything that was missed, with its own journal entry.",
     // new
     "បញ្ជីដែលបានអនុម័តមិនផ្លាស់ប្ដូរទេ។ បញ្ជីកែតម្រូវបន្ថែមអ្វីដែលខ្វះ ជាមួយធាតុរបស់វា។",
   ],
   ps_LIST_MADE: ["Prepared", "បានរៀបចំ"],
-  ps_SENT_FOR_APPROVAL: ["Checked", "បានពិនិត្យ"],
+  ps_SENT_FOR_APPROVAL: ["Reviewed", "បានពិនិត្យ"],
   ps_SENT_BACK: [
     "Sent back",
     // new
@@ -611,11 +612,11 @@ const TEXT = {
   ],
   ps_APPROVED: ["Approved", "បានអនុម័ត"],
   ps_PAID: ["Paid", "បានបើក"],
-  p_being_checked: ["Being checked", "កំពុងពិនិត្យ"],
+  p_being_checked: ["In review", "កំពុងពិនិត្យ"],
   p_days_worked: ["Days worked", "ថ្ងៃធ្វើការ"],
-  p_lines: ["Additions and deductions", "ប្រាក់បន្ថែម និងប្រាក់កាត់"],
+  p_lines: ["Earnings and deductions", "ប្រាក់បន្ថែម និងប្រាក់កាត់"],
   p_loan: ["Loan repayment", "ការសងប្រាក់កម្ចី"],
-  p_add_line: ["Add a line", "បន្ថែមបន្ទាត់"],
+  p_add_line: ["Add item", "បន្ថែមបន្ទាត់"],
   p_line_added: ["Line added.", "បានបន្ថែមបន្ទាត់។"],
   p_line_removed: [
     "Line removed.",
@@ -628,7 +629,7 @@ const TEXT = {
     "ដកបន្ទាត់",
   ],
   p_component: [
-    "Line",
+    "Type",
     // new
     "បន្ទាត់",
   ],
@@ -637,7 +638,7 @@ const TEXT = {
     "Lines marked with a clock come from Attendance.",
     "បន្ទាត់ដែលមានរូបនាឡិកា មកពីវត្តមាន។",
   ],
-  p_send: ["Send to the Owner", "ផ្ញើទៅម្ចាស់"],
+  p_send: ["Send for approval", "ផ្ញើទៅម្ចាស់"],
   p_sent: ["Sent to the Owner.", "បានផ្ញើទៅម្ចាស់។"],
   p_send_back: [
     "Send back",
@@ -648,17 +649,17 @@ const TEXT = {
   p_approve: ["Approve payroll", "អនុម័តបញ្ជីប្រាក់ខែ"],
   p_approve_t: ["Approve payroll {0}", "អនុម័តបញ្ជីប្រាក់ខែ {0}"],
   p_approve_note: [
-    "{0} people, {1} to pay. One entry per person goes into the books, dated {2}.",
+    "Employees: {0}. Total to pay: {1}. One journal entry per employee is posted, dated {2}.",
     "{0} នាក់ ត្រូវបើក {1}។ ធាតុមួយក្នុងមួយនាក់ចូលសៀវភៅ ចុះថ្ងៃ {2}។",
   ],
   p_own_checked: [
-    "You also checked this list. A note is kept.",
+    "You also reviewed this payroll. This is recorded in the audit log.",
     "អ្នកក៏បានពិនិត្យបញ្ជីនេះដែរ។ កំណត់សម្គាល់ត្រូវរក្សាទុក។",
   ],
   p_approved: ["Payroll {0} approved.", "បញ្ជីប្រាក់ខែ {0} បានអនុម័ត។"],
   p_pay_list: ["Payment list for {0}", "បញ្ជីបើកប្រាក់សម្រាប់ {0}"],
   p_pay_note: [
-    "Pay from the joint ABA account (or cash), then tick each person.",
+    "Pay from the joint ABA account (or in cash), then mark each employee as paid.",
     "បើកពីគណនី ABA រួម (ឬសាច់ប្រាក់) រួចគូសម្នាក់ៗ។",
   ],
   p_mark_paid: ["Mark paid", "គូសថាបានបើក"],
@@ -667,39 +668,36 @@ const TEXT = {
   p_paid: ["Paid {0}", "បានបើក {0}"],
   p_marked: ["{0} marked paid.", "{0} បានគូសថាបានបើក។"],
   p_not_paid: ["Not paid yet", "មិនទាន់បើក"],
-  p_not_paid_n: [
-    "{0} people not marked paid yet",
-    "{0} នាក់មិនទាន់គូសថាបានបើក",
-  ],
+  p_not_paid_n: ["Not yet marked paid: {0}", "{0} នាក់មិនទាន់គូសថាបានបើក"],
   p_bank_ref: [
     "ABA reference",
     // new
     "លេខយោង ABA",
   ],
   p_reverse: [
-    "Undo payment",
+    "Reverse payment",
     // new
     "បញ្ច្រាសការបើក",
   ],
   p_reverse_t: [
-    "Undo the payment to {0}?",
+    "Reverse the payment to {0}?",
     // new
     "បញ្ច្រាសការបើកប្រាក់ឱ្យ {0}?",
   ],
   p_reverse_note: [
-    "A reversing entry goes into the books. The payment line is kept.",
+    "A reversing journal entry is posted. The original payment record is kept.",
     // new
     "ធាតុបញ្ច្រាសចូលសៀវភៅ។ បន្ទាត់ការបើកនៅដដែល។",
   ],
   p_reversed: [
-    "Payment to {0} undone.",
+    "Payment to {0} reversed.",
     // new
     "ការបើកប្រាក់ឱ្យ {0} ត្រូវបញ្ច្រាស។",
   ],
   p_payslip: ["Payslip", "បង្កាន់ដៃប្រាក់ខែ"],
   p_payslip_t: ["Payslip · {0} · {1}", "បង្កាន់ដៃប្រាក់ខែ · {0} · {1}"],
   p_payslip_bot: [
-    "Later, the payslip is also sent in the staff bot.",
+    "In a later update, payslips will also be sent through the staff Telegram bot.",
     "ពេលក្រោយ បង្កាន់ដៃប្រាក់ខែក៏ផ្ញើក្នុងបូតបុគ្គលិកដែរ។",
   ],
   p_earnings: [
@@ -713,7 +711,7 @@ const TEXT = {
     "ប្រាក់កាត់",
   ],
   p_amount: ["Amount", "ចំនួន"],
-  pc_BASE_SALARY: ["Salary for the month", "ប្រាក់ខែប្រចាំខែ"],
+  pc_BASE_SALARY: ["Base salary", "ប្រាក់ខែប្រចាំខែ"],
   pc_BONUS: [
     "Bonus",
     // new
@@ -737,28 +735,28 @@ const TEXT = {
   ],
   pc_LOAN_REPAYMENT: ["Loan repayment", "ការសងប្រាក់កម្ចី"],
   p_locked_month: [
-    "{0} is locked: its payroll was sent for approval. Fixes are not possible.",
+    "{0} is locked because its payroll was sent for approval. Attendance can no longer be corrected.",
     "{0} ត្រូវចាក់សោ៖ បញ្ជីប្រាក់ខែបានផ្ញើសុំអនុម័ត។ មិនអាចកែបានទេ។",
   ],
 
   // Attendance
   a_title: ["Attendance", "វត្តមាន"],
   a_sub: [
-    "Who worked which shift, late, absent or on leave, and overtime approved before the work.",
+    "Shifts worked, lateness, absences, leave and pre-approved overtime.",
     "អ្នកណាធ្វើវេនណា យឺត អវត្តមាន ឬឈប់សម្រាក និងម៉ោងបន្ថែមដែលអនុម័តមុនធ្វើការ។",
   ],
   a_day: ["Daily sheet", "តារាងប្រចាំថ្ងៃ"],
   a_week: ["Weekly plan", "ផែនការប្រចាំសប្ដាហ៍"],
   a_ot: ["Overtime", "ម៉ោងបន្ថែម"],
   a_month: ["Month summary", "សង្ខេបប្រចាំខែ"],
-  a_places: ["QR places", "ទីតាំង QR"],
-  a_day_before: ["Day before", "ថ្ងៃមុន"],
+  a_places: ["QR locations", "ទីតាំង QR"],
+  a_day_before: ["Previous day", "ថ្ងៃមុន"],
   a_next_day: ["Next day", "ថ្ងៃបន្ទាប់"],
   a_today: ["today", "ថ្ងៃនេះ"],
   a_all_shifts: ["All shifts", "វេនទាំងអស់"],
   a_shift: ["Shift", "វេន"],
-  a_in: ["Check-in", "ចូល"],
-  a_out: ["Check-out", "ចេញ"],
+  a_in: ["Clock-in", "ចូល"],
+  a_out: ["Clock-out", "ចេញ"],
   a_status: [
     "Status",
     // new
@@ -768,8 +766,8 @@ const TEXT = {
   a_present: ["Present", "មានវត្តមាន"],
   a_late: ["Late {0} min", "យឺត {0} នាទី"],
   a_not_started: ["Shift not started", "វេនមិនទាន់ចាប់ផ្ដើម"],
-  a_no_in: ["No check-in", "គ្មានការចុះចូល"],
-  a_no_out: ["No check-out", "គ្មានការចុះចេញ"],
+  a_no_in: ["No clock-in", "គ្មានការចុះចូល"],
+  a_no_out: ["No clock-out", "គ្មានការចុះចេញ"],
   st_WORKED: ["Worked", "បានធ្វើការ"],
   st_ABSENT: ["Absent", "អវត្តមាន"],
   st_LEAVE_ANNUAL: ["Annual leave", "ច្បាប់ប្រចាំឆ្នាំ"],
@@ -782,33 +780,33 @@ const TEXT = {
     // new
     "កែម៉ោង · {0} · {1}",
   ],
-  a_fixed: ["Fixed by {0}, {1}: {2}", "កែដោយ {0} {1}៖ {2}"],
+  a_fixed: ["Corrected by {0}, {1}: {2}", "កែដោយ {0} {1}៖ {2}"],
   a_fixed_short: [
-    "Fixed: {0}",
+    "Corrected: {0}",
     // new
     "បានកែ៖ {0}",
   ],
   a_worked_note: [
-    "For Worked, the app shows Present or Late from the check-in time.",
+    "For Worked, the app shows Present or Late based on the clock-in time.",
     "សម្រាប់ បានធ្វើការ កម្មវិធីបង្ហាញ មានវត្តមាន ឬយឺត តាមម៉ោងចូល។",
   ],
   a_old_kept: [
-    "The old times are kept. The fix and the reason go to History.",
+    "The original times are kept. The correction and reason are recorded in the audit log.",
     "ម៉ោងចាស់ត្រូវរក្សាទុក។ ការកែ និងមូលហេតុចូលក្នុងប្រវត្តិ។",
   ],
-  a_saved: ["Attendance fixed for {0}.", "បានកែវត្តមានសម្រាប់ {0}។"],
+  a_saved: ["Attendance corrected for {0}.", "បានកែវត្តមានសម្រាប់ {0}។"],
   a_nobody: [
-    "Nobody is on this shift this day.",
+    "No one is scheduled for this shift on this day.",
     "គ្មាននរណាម្នាក់នៅវេននេះក្នុងថ្ងៃនេះទេ។",
   ],
   a_night_note: [
-    "The night shift belongs to the day it starts.",
+    "A night shift is counted on the day it starts.",
     // new (cut from the approved sentence)
     "វេនយប់ជារបស់ថ្ងៃដែលវាចាប់ផ្ដើម។",
   ],
   a_locked: ["Locked", "ចាក់សោ"],
   a_how: [
-    "How each time came in: Phone = the person scanned the place QR. Card = a caretaker scanned the employee card and took a photo. By hand = entered or fixed in the app, with a reason.",
+    "How each time was recorded: Phone = the employee scanned the location QR code. Card = a caretaker scanned the employee card and took a photo. Manual = entered or corrected in the app, with a reason.",
     // new (shorter than the approved sentence)
     "របៀបដែលម៉ោងនីមួយៗចូលមក៖ ទូរស័ព្ទ = បុគ្គលិកស្កេន QR ទីតាំង។ កាត = អ្នកថែទាំស្កេនកាតបុគ្គលិក ហើយថតរូប។ បញ្ចូលដោយដៃ = បញ្ចូល ឬកែក្នុងកម្មវិធី មានមូលហេតុ។",
   ],
@@ -818,8 +816,8 @@ const TEXT = {
     "ទូរស័ព្ទ",
   ],
   src_QR_CARD: ["Card", "កាត"],
-  src_MANUAL: ["By hand", "បញ្ចូលដោយដៃ"],
-  a_needs_check: ["Needs check", "ត្រូវពិនិត្យ"],
+  src_MANUAL: ["Manual", "បញ្ចូលដោយដៃ"],
+  a_needs_check: ["Needs review", "ត្រូវពិនិត្យ"],
   a_accept: ["Accept", "ទទួលយក"],
   a_accepted: ["Accepted: {0}, {1}.", "បានទទួលយក៖ {0} {1}។"],
   a_accepted_chip: [
@@ -833,7 +831,7 @@ const TEXT = {
     "ទទួលយកការស្កេនរបស់ {0}?",
   ],
   a_accept_note: [
-    "No pay cut. Enter the time from what you know.",
+    "No pay is deducted. Enter the correct time if you know it.",
     "មិនកាត់ប្រាក់ខែ។ បញ្ចូលម៉ោងតាមអ្វីដែលអ្នកដឹង។",
   ],
   a_distance: ["{0} m", "{0} ម"],
@@ -849,18 +847,18 @@ const TEXT = {
   cr_PHONE_LOST: ["Phone lost", "ទូរស័ព្ទបាត់"],
   cr_PHONE_STOLEN: ["Phone stolen", "ទូរស័ព្ទត្រូវគេលួច"],
   cr_OTHER: ["Other", "ផ្សេងទៀត"],
-  a_week_before: ["Week before", "សប្ដាហ៍មុន"],
+  a_week_before: ["Previous week", "សប្ដាហ៍មុន"],
   a_next_week: ["Next week", "សប្ដាហ៍ក្រោយ"],
   a_off: ["Day off", "ឈប់"],
   a_days_off: ["Days off", "ថ្ងៃឈប់"],
-  a_fewer_off: ["Fewer than {0} day off", "តិចជាង {0} ថ្ងៃឈប់"],
+  a_fewer_off: ["Too few days off (minimum {0})", "តិចជាង {0} ថ្ងៃឈប់"],
   a_month_off: [
     "{0}: {1} of {2} days off",
     // new
     "{0}៖ ឈប់ {1} ក្នុងចំណោម {2} ថ្ងៃ",
   ],
   a_past_note: [
-    "Past days cannot change. A person with fewer than {0} day off in the week gets a warning; it does not stop the plan.",
+    "Past days cannot be changed. An employee with fewer days off than the weekly minimum ({0}) gets a warning, but the plan can still be saved.",
     "ថ្ងៃកន្លងហើយមិនអាចប្ដូរ។ អ្នកមានថ្ងៃឈប់តិចជាង {0} ក្នុងសប្ដាហ៍ ទទួលការព្រមាន វាមិនបញ្ឈប់ផែនការទេ។",
   ],
   a_plan_saved: ["Plan saved.", "បានរក្សាទុកផែនការ។"],
@@ -878,7 +876,7 @@ const TEXT = {
   ot_request: ["Request overtime", "ស្នើម៉ោងបន្ថែម"],
   ot_send: ["Send for approval", "ផ្ញើសុំអនុម័ត"],
   ot_ask_note: [
-    "Ask before the work. Hours worked without approval are not paid.",
+    "Request overtime before the work starts. Overtime worked without approval is not paid.",
     "សុំមុនធ្វើការ។ ម៉ោងធ្វើដោយគ្មានការអនុម័តមិនត្រូវបង់ទេ។",
   ],
   ot_sent: [
@@ -892,7 +890,7 @@ const TEXT = {
   ],
   ot_from: ["From", "ពី"],
   ot_to: ["To", "ដល់"],
-  ot_when: ["When", "ពេល"],
+  ot_when: ["Date", "ពេល"],
   ot_hours: ["Hours", "ម៉ោង"],
   ot_h: ["{0} h", "{0} ម៉"],
   ot_night_h: [
@@ -900,8 +898,8 @@ const TEXT = {
     // new
     "{0} ម៉ យប់",
   ],
-  ot_asked: ["Asked by {0}, {1}", "សុំដោយ {0} {1}"],
-  ot_waiting: ["Waiting", "កំពុងរង់ចាំ"],
+  ot_asked: ["Requested by {0}, {1}", "សុំដោយ {0} {1}"],
+  ot_waiting: ["Pending", "កំពុងរង់ចាំ"],
   ot_refused: ["Refused", "បានបដិសេធ"],
   ot_approved_chip: ["Approved", "បានអនុម័ត"],
   ot_own: [
@@ -931,7 +929,7 @@ const TEXT = {
   m_leave: ["Leave", "ច្បាប់"],
   m_ot: ["OT {0}", "ម.ប {0}"],
   m_note: [
-    "Worked, Late and Absent count days in the month. OT = overtime hours approved before the work.",
+    "Worked, Late and Absent show the number of days in the month. OT = pre-approved overtime hours.",
     "ធ្វើការ យឺត និងអវត្តមាន រាប់ថ្ងៃក្នុងខែ។ ម.ប = ម៉ោងបន្ថែមដែលអនុម័តមុនធ្វើការ។",
   ],
   m_no_entry: [
@@ -945,15 +943,15 @@ const TEXT = {
     "ខែ",
   ],
   q_note: [
-    "Staff check in and out by scanning the QR at a place. The phone must be within {0} of the pin.",
+    "Staff clock in and out by scanning the QR code at a location. The phone must be within {0} of the map pin.",
     // new (shorter than the approved sentence)
     "បុគ្គលិកចុះចូល និងចុះចេញ ដោយស្កេន QR នៅទីតាំង។ ទូរស័ព្ទត្រូវនៅក្នុង {0} ពីចំណុចផែនទី។",
   ],
   q_metres: ["{0} metres", "{0} ម៉ែត្រ"],
-  q_place: ["Place", "ទីតាំង"],
+  q_place: ["Location", "ទីតាំង"],
   q_pin: ["Map pin", "ចំណុចផែនទី"],
   q_no_pin: [
-    "No pin: every scan here needs a check.",
+    "No map pin: every scan here needs review.",
     // new
     "គ្មានចំណុច៖ ការស្កេននៅទីនេះត្រូវពិនិត្យទាំងអស់។",
   ],
@@ -968,11 +966,11 @@ const TEXT = {
     "ចំណុចផែនទី · {0}",
   ],
   q_pin_help: [
-    "Type the pin like 11.6045, 104.8902 (from Google Maps: press and hold the place).",
+    "Enter the coordinates, for example 11.6045, 104.8902 (in Google Maps, press and hold the location).",
     "វាយចំណុចដូចជា 11.6045, 104.8902 (ពី Google Maps៖ ចុចជាប់លើទីតាំង)។",
   ],
   q_pin_bad: [
-    "Type two numbers with a comma, like 11.6045, 104.8902.",
+    "Enter two numbers separated by a comma, for example 11.6045, 104.8902.",
     "វាយលេខពីរ មានក្បៀស ដូចជា 11.6045, 104.8902។",
   ],
   q_pin_saved: [
@@ -988,7 +986,7 @@ const TEXT = {
     "មិនទាន់មាន QR។",
   ],
   q_make: [
-    "Make QR",
+    "Create QR code",
     // new
     "បង្កើត QR",
   ],
@@ -1010,7 +1008,7 @@ const TEXT = {
     "មានតែម្ចាស់ទេ ដែលកំណត់ចំណុច និងកូដ QR។",
   ],
   q_none: [
-    "No QR places yet.",
+    "No QR locations yet.",
     // new
     "មិនទាន់មានទីតាំង QR។",
   ],
@@ -1025,10 +1023,12 @@ export function ht(
   ...values: (string | number)[]
 ): string {
   const words: string = TEXT[key][language === "km" ? 1 : 0];
-  return words.replace(/\{(\d+)\}/g, (match, index: string) => {
-    const value = values[Number(index)];
-    return value === undefined ? match : String(value);
-  });
+  return singular(
+    words.replace(/\{(\d+)\}/g, (match, index: string) => {
+      const value = values[Number(index)];
+      return value === undefined ? match : String(value);
+    }),
+  );
 }
 
 /** Words for a code such as a shift, a status or a line kind; the code itself when unknown. */

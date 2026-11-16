@@ -30,7 +30,13 @@ approval; a damage charge that still waits from before is decided with the same 
 (`POST .../bookings/{id}/unit`, `short_stays.desk`; the guest keeps the agreed price) and the
 Owner's or Manager's special discount after a move (`POST .../bookings/{id}/move-discount`,
 `short_stays.approve`). The database functions check the rights again, price the stay from the
-owner's rules and keep one booking per Unit and night.
+owner's rules and keep one booking per Unit and night. DL-236 (migration 20270725_410): the
+front desk gives a Housekeeping task to one person, or to nobody
+(`POST .../housekeeping/{id}/assign`, `short_stays.desk`); the day's list names who it is given to,
+who finished it, and the people a task may be given to. DL-238 (migration 20270727_414): the
+short-stay tab of the Notices page (`GET .../notices`, `short_stays.read`), a house-rule warning
+(`POST .../bookings/{id}/warning`) and a notice told in person (`POST .../notices/{id}/told`),
+both `short_stays.desk`.
 """
 
 from __future__ import annotations
@@ -82,6 +88,7 @@ Action = Literal[
     "fee",
     "extend",
     "finish_task",
+    "assign_task",
     "cancel",
     "credit",
     "link_lease",
@@ -96,6 +103,8 @@ Action = Literal[
     "complaint",
     "end_credit",
     "damage",
+    "warn_guest",
+    "notice_told",
 ]
 # Step 3 (migration 20270602_312): each action is one database function that checks the right
 # again. "version" is the booking version the screen read (refused with 412 when it changed).
@@ -112,6 +121,12 @@ ACTION_SQL: dict[str, str] = {
     "fee": "SELECT app.add_short_stay_fee(%(p)s, %(t)s, %(b)s ->> 'kind', %(v)s, %(a)s, %(c)s)",
     "extend": "SELECT app.extend_short_stay(%(p)s, %(t)s, %(b)s, %(v)s, %(a)s, %(c)s)",
     "finish_task": "SELECT app.finish_housekeeping_task(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
+    # DL-236 (migration 20270725_410): the front desk gives a task to one person, or to nobody.
+    "assign_task": "SELECT app.assign_housekeeping_task(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
+    # DL-238 (migration 20270727_414): a house-rule warning for a checked-in guest, and a notice
+    # told to a guest with no Telegram in person.
+    "warn_guest": "SELECT app.give_short_stay_warning(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
+    "notice_told": "SELECT app.short_stay_notice_told(%(p)s, %(t)s, %(a)s, %(c)s)",
     # Step 4b (migration 20270604_314).
     "cancel": "SELECT app.cancel_short_stay(%(p)s, %(t)s, %(b)s, %(v)s, %(a)s, %(c)s)",
     "credit": "SELECT app.give_short_stay_credit(%(p)s, %(t)s, %(b)s, %(a)s, %(c)s)",
@@ -172,6 +187,8 @@ class ShortStayFlow(Protocol):
 
     def damage_due(self, property_id: UUID, *, actor_id: str) -> list[Json]: ...
 
+    def notices(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
     def act(
         self, property_id: UUID, action: Action, target: UUID, body: Json, *, actor_id: str
     ) -> Json: ...
@@ -217,6 +234,9 @@ class UnavailableShortStayFlow:
         raise ProductUnavailable
 
     def damage_due(self, property_id: UUID, **_: object) -> list[Json]:
+        raise ProductUnavailable
+
+    def notices(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
     def act(self, property_id: UUID, action: Action, target: UUID, body: Json, **_: object) -> Json:
@@ -343,6 +363,11 @@ class PostgresShortStayFlow:
             raise ProductUnavailable("Short-stay persistence is unavailable")
         return [_json(item) for item in found]
 
+    def notices(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one("SELECT app.short_stay_notices_page(%s, %s)", (property_id, UUID(actor_id)))
+        )
+
     def act(
         self, property_id: UUID, action: Action, target: UUID, body: Json, *, actor_id: str
     ) -> Json:
@@ -449,6 +474,22 @@ class Finish(BaseModel):
     # A skipped clean says why ("do not disturb"); the database refuses one without a note.
     skip: bool = False
     note: Note | None = None
+
+
+class Assign(BaseModel):
+    """DL-236: the cleaner (an employee) given a Housekeeping task; none gives it to nobody."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    employee_id: Id | None = None
+
+
+class GuestWarning(BaseModel):
+    """DL-238: a house-rule warning says why; warning 1, then the final warning 2."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    reason: Note
 
 
 class Cancel(Version):
@@ -728,6 +769,27 @@ def create_short_stays_router(
         except REFUSED as exc:
             raise _http(exc) from exc
 
+    # DL-238: the short-stay tab of the Notices page, a house-rule warning, and a notice told in
+    # person. The reminder, the late notice and the unpaid-charge notice come from the pull job.
+    @router.get("/notices")
+    def short_stay_notices(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, SHORT_STAYS_READ, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.notices(property_id, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @router.post("/bookings/{booking_id}/warning")
+    def give_short_stay_warning(
+        property_id: UUID, booking_id: UUID, body: GuestWarning, request: Request
+    ) -> Json:
+        return act(request, property_id, SHORT_STAYS_DESK, "warn_guest", booking_id, body)
+
+    @router.post("/notices/{notice_id}/told")
+    def short_stay_notice_told(property_id: UUID, notice_id: UUID, request: Request) -> Json:
+        return act(request, property_id, SHORT_STAYS_DESK, "notice_told", notice_id, None)
+
     @router.get("/damage-due")
     def short_stay_damage_due(property_id: UUID, request: Request, response: Response) -> Json:
         actor = _require(request, resolver, DAMAGE_CHARGES_BILL, property_id)
@@ -863,6 +925,12 @@ def create_short_stays_router(
         property_id: UUID, task_id: UUID, body: Finish, request: Request
     ) -> Json:
         return act(request, property_id, SHORT_STAYS_HOUSEKEEPING, "finish_task", task_id, body)
+
+    @router.post("/housekeeping/{task_id}/assign")
+    def assign_housekeeping_task(
+        property_id: UUID, task_id: UUID, body: Assign, request: Request
+    ) -> Json:
+        return act(request, property_id, SHORT_STAYS_DESK, "assign_task", task_id, body)
 
     return router
 

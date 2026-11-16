@@ -58,6 +58,7 @@ LANGUAGE: Final = "km"
 MAX_NAME: Final = 120
 MAX_REASON_TEXT: Final = 300
 MAX_QR: Final = 200
+MAX_TAP: Final = 64  # Telegram's callback data limit
 CARD_REASONS: Final = frozenset({"NO_PHONE", "PHONE_BROKEN", "PHONE_LOST", "PHONE_STOLEN", "OTHER"})
 LOCATION_STATES: Final = frozenset({"OK", "NOT_FOUND", "OFF"})
 PHOTO_TYPES: Final = {"image/jpeg": "jpg", "image/png": "png"}
@@ -87,6 +88,21 @@ def _message(plain: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(chat, dict) or chat.get("type") != "private":
         return None
     return message
+
+
+def _task_tap(plain: dict[str, Any]) -> str | None:
+    """The data of a tap on a Housekeeping task button in a private chat ("hk:..."), or None."""
+    payload = plain.get("payload")
+    callback = payload.get("callback_query") if isinstance(payload, dict) else None
+    if not isinstance(callback, dict):
+        return None
+    data = callback.get("data")
+    chat = (callback.get("message") or {}).get("chat")
+    if not isinstance(data, str) or not data.startswith("hk:") or len(data) > MAX_TAP:
+        return None
+    if not isinstance(chat, dict) or chat.get("type") != "private":
+        return None
+    return data
 
 
 def _say(code: str, keyboard: str | None = None, **details: object) -> dict[str, Any]:
@@ -119,9 +135,20 @@ def handle_staff_update(
 ) -> None:
     if bot != BOT:
         return
-    message = _message(plain)
     user = plain.get("telegram_user_id")
     chat = plain.get("chat_id")
+    tap = _task_tap(plain)
+    if tap is not None:
+        # DL-236 (owner 14 Nov 2026): a cleaner taps Cleaned, Not cleaned or a reason on a
+        # Housekeeping task; the database finishes the task and answers in the chat once.
+        inbound = saved.get("inbound_id")
+        if isinstance(inbound, str) and isinstance(user, int) and isinstance(chat, int):
+            try:
+                store.staff_task_tap(inbound, user, chat, tap)
+            except StaffBotUnavailable:
+                store.bot_reply(BOT, user, chat, None, None, LANGUAGE, [_say("staff.not_ready")])
+        return
+    message = _message(plain)
     if message is None or not isinstance(user, int) or not isinstance(chat, int) or user <= 0:
         return
     text = message.get("text")

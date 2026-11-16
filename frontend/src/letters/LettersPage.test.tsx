@@ -319,7 +319,7 @@ describe("Letters page (V1-058 R3)", () => {
     // Cards: a person must give a notice (U101, U104), notices given and waiting (U102),
     // termination letter sent (U103).
     expect(
-      screen.getByRole("button", { name: /^Letters to give: 2\./ }),
+      screen.getByRole("button", { name: /^Notices due: 2\./ }),
     ).toBeTruthy();
     expect(
       screen.getByRole("button", { name: /^Notices given: 1\./ }),
@@ -362,7 +362,9 @@ describe("Letters page (V1-058 R3)", () => {
       within(u103).getByText("Left at the Parking with a witness"),
     ).toBeTruthy();
     const ending = within(u103).getByRole("link", { name: /End the Lease/ });
-    expect(ending.textContent).toContain("MANAGER");
+    // UI v81: the role is a hint beside the button, not inside it.
+    expect(ending.textContent).not.toContain("Manager only");
+    expect(within(u103).getByText("Manager only")).toBeTruthy();
     expect(ending.getAttribute("href")).toBe("#/leases/terminate%3Alease-U103");
 
     // A card filters the table.
@@ -371,6 +373,28 @@ describe("Letters page (V1-058 R3)", () => {
     );
     expect(screen.getByText("Showing: Termination letter sent")).toBeTruthy();
     expect(screen.queryByText("INV26U101 · Day 25")).toBeNull();
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+  });
+
+  it('TEST-FE-2124 (owner 12/11/2026: "check all card is link to correct place") "#/letters?show=due" opens the Rent letters on the Notices due card; a card chosen by hand is kept in the address', async () => {
+    window.location.hash = "#/letters?show=due";
+    setup();
+    expect(
+      await screen.findByRole("button", {
+        name: /^Notices due: 2\./,
+        pressed: true,
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText("Showing: Notices due")).toBeTruthy();
+    // U101 and U104 are due; U102 and U103 have their letter.
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+    expect(rowOf("U101")).toBeTruthy();
+    expect(rowOf("U104")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Termination letter sent/ }),
+    );
+    expect(window.location.hash).toBe("#/letters?show=w30");
     expect(screen.getAllByRole("row")).toHaveLength(2);
   });
 
@@ -428,7 +452,7 @@ describe("Letters page (V1-058 R3)", () => {
     fireEvent.change(within(dialog).getByLabelText(/Details/), {
       target: { value: " the tenant signed our copy " },
     });
-    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+    fireEvent.change(within(dialog).getByLabelText(/Notice number/), {
       target: { value: "L-021" },
     });
     api.recordLetter.mockRejectedValueOnce(new LettersUnavailableError());
@@ -499,7 +523,7 @@ describe("Letters page (V1-058 R3)", () => {
     fireEvent.change(within(dialog).getByLabelText(/Details/), {
       target: { value: "Witness Sok Dara" },
     });
-    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+    fireEvent.change(within(dialog).getByLabelText(/Notice number/), {
       target: { value: "L-025" },
     });
     api.recordLetter.mockRejectedValueOnce(new LettersConflictError());
@@ -540,7 +564,9 @@ describe("Letters page (V1-058 R3)", () => {
     window.location.hash = "#/letters";
     const { api } = setup(new Set(["leases.read"]));
     await screen.findByText("Noise at night 2");
-    expect(screen.queryByRole("link", { name: "Rent letters" })).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Rent arrears notices" }),
+    ).toBeNull();
     expect(api.alerts).not.toHaveBeenCalled();
     cleanup();
 
@@ -582,7 +608,7 @@ describe("Letters page (V1-058 R3)", () => {
     await screen.findByText("Unpaid Rent after day 10");
     // Nobody has to give a letter by hand.
     expect(
-      screen.getByRole("button", { name: /^Letters to give: 0\./ }),
+      screen.getByRole("button", { name: /^Notices due: 0\./ }),
     ).toBeTruthy();
     const u101 = rowOf("U101");
     expect(u101.textContent).toContain("Sent by Telegram · TG-INV26U102-1");
@@ -609,7 +635,7 @@ describe("Letters page (V1-058 R3)", () => {
     fireEvent.change(within(dialog).getByLabelText(/Details/), {
       target: { value: "signed our copy" },
     });
-    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+    fireEvent.change(within(dialog).getByLabelText(/Notice number/), {
       target: { value: "L-020" },
     });
     fireEvent.click(
@@ -637,12 +663,14 @@ describe("Letters page (V1-058 R3)", () => {
     });
     await screen.findByText("Unpaid Rent after day 10");
     expect(
-      screen.getByRole("button", { name: /^Letters to give: 1\./ }),
+      screen.getByRole("button", { name: /^Notices due: 1\./ }),
     ).toBeTruthy();
     const open = within(rowOf("U102")).getByRole("button", {
       name: /Termination letter/,
     });
-    expect(open.textContent).toContain("MANAGER");
+    // UI v81: "Manager only" is a hint beside the button, not inside it.
+    expect(open.textContent).not.toContain("Manager only");
+    expect(within(rowOf("U102")).getByText("Manager only")).toBeTruthy();
     fireEvent.click(open);
     const dialog = await screen.findByRole("dialog", {
       name: "Termination letter · U102",
@@ -661,7 +689,7 @@ describe("Letters page (V1-058 R3)", () => {
         .value,
     ).toBe("");
     expect(
-      within(dialog).getByLabelText<HTMLInputElement>(/Letter number/).value,
+      within(dialog).getByLabelText<HTMLInputElement>(/Notice number/).value,
     ).toBe("TL-INV26U102");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Send termination letter" }),
@@ -816,14 +844,14 @@ describe("Letters page (V1-058 R3)", () => {
       );
     });
     expect(
-      await screen.findByText(/The warnings of U103 could not be read/),
+      await screen.findByText(/The warnings of U103 could not be loaded/),
     ).toBeTruthy();
     second.api.warnings.mockResolvedValue([]);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => {
       expect(screen.queryByText(/The warnings of U103/)).toBeNull();
     });
-    expect(screen.getByText("No Lease rule warnings recorded.")).toBeTruthy();
+    expect(screen.getByText("No Lease breach notices recorded.")).toBeTruthy();
   });
 
   it("TEST-FE-867 Record warning offers moved-in Leases, numbers the warning from the server and checks the dates", async () => {
@@ -922,7 +950,7 @@ describe("Letters page (V1-058 R3)", () => {
     fireEvent.change(within(dialog).getByLabelText(/Details/), {
       target: { value: "signed our copy" },
     });
-    fireEvent.change(within(dialog).getByLabelText(/Letter number/), {
+    fireEvent.change(within(dialog).getByLabelText(/Notice number/), {
       target: { value: "L-021" },
     });
     api.recordLetter.mockRejectedValueOnce(new LettersRequestError());

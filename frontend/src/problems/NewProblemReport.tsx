@@ -6,6 +6,8 @@
 // Unit and the text come from the finding and the source is Inspection.
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { BackLink } from "../shell/backNav";
+import { PageHeader } from "../shell/layouts";
 
 import { Icon } from "../shell/icons";
 import { dayText } from "../shell/format";
@@ -56,18 +58,14 @@ function Missing({
 }
 
 function BackToList({ language }: { language: Language }) {
-  return (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("problems");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {pt(language, "back")}
-    </button>
-  );
+  return <BackLink language={language} parent="problems" />;
+}
+
+/** Owner 14/11/2026: a type name too long for one box takes two boxes on one line instead of
+ *  breaking ("Air conditioner" on a phone; "Safety (fire, gas, smoke)" everywhere). */
+function tileWidth(name: string): string {
+  if (name.length > 20) return " ui-tile-wide";
+  return name.length > 11 ? " ui-tile-long" : "";
 }
 
 /** DL-132: reads the finding, then opens the form filled from it. */
@@ -323,11 +321,13 @@ export function NewProblemReportForm({
 
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <h2>{pt(language, "add_t")}</h2>
-      </div>
-      <form className="ui-card ui-form" noValidate onSubmit={submit}>
+      {/* Property fix 4 (owner 14/11/2026): Back on top, then the form's own title. */}
+      <PageHeader back={back} title={pt(language, "add_t")} />
+      <form
+        className="ui-card ui-form ui-pageform ui-probform"
+        noValidate
+        onSubmit={submit}
+      >
         {finding !== undefined && (
           <div className="ui-notice" role="note">
             <Icon name="info" />
@@ -363,7 +363,7 @@ export function NewProblemReportForm({
                 </label>
               ))}
             </fieldset>
-            <fieldset className="ui-radios">
+            <fieldset className="ui-radios ui-radios-row">
               <legend>{pt(language, "add_how")}</legend>
               {(["PHONE", "WALKIN", "SEEN"] as const).map((value) => (
                 <label className="ui-chk" key={value}>
@@ -541,7 +541,10 @@ export function NewProblemReportForm({
           </legend>
           <div className="ui-tiles">
             {choices.types.map((entry, index) => (
-              <label className="ui-chk ui-tile" key={entry.id}>
+              <label
+                className={`ui-chk ui-tile${tileWidth(typeName(language, entry))}`}
+                key={entry.id}
+              >
                 <input
                   checked={typeId === entry.id}
                   disabled={busy}
@@ -552,11 +555,22 @@ export function NewProblemReportForm({
                   }}
                   type="radio"
                 />
-                <Icon name={typeIcon(entry)} small />
-                {typeName(language, entry)}
-                {entry.always_urgent && (
-                  <span className="ui-sub2 warn">{pt(language, "always")}</span>
-                )}
+                <span className="ui-tile-name">
+                  <Icon name={typeIcon(entry)} small />
+                  {/* Owner 16/11/2026: "Always urgent" follows the name on the same line
+                      and wraps only when there is no room. */}
+                  <span>
+                    {typeName(language, entry)}
+                    {entry.always_urgent && (
+                      <>
+                        {" "}
+                        <span className="ui-sub2 warn">
+                          {pt(language, "always")}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </span>
               </label>
             ))}
           </div>
@@ -599,7 +613,7 @@ export function NewProblemReportForm({
           />
         </div>
         <div className="ui-row2">
-          <fieldset className="ui-radios">
+          <fieldset className="ui-radios ui-radios-row">
             <legend>{pt(language, "add_urgent")}</legend>
             {yesNo("np-urgent", isUrgent, setUrgent, always)}
             <Missing
@@ -609,14 +623,14 @@ export function NewProblemReportForm({
             />
           </fieldset>
           {kind === "UNIT" && (
-            <fieldset className="ui-radios">
+            <fieldset className="ui-radios ui-radios-row">
               <legend>{pt(language, "add_enter")}</legend>
               {yesNo("np-enter", mayEnter, setMayEnter)}
             </fieldset>
           )}
         </div>
         {kind === "UNIT" && (
-          <fieldset className="ui-radios">
+          <fieldset className="ui-radios ui-radios-row">
             <legend>{pt(language, "add_best")}</legend>
             {(["AM", "PM", "ANY"] as const).map((value) => (
               <label className="ui-chk" key={value}>

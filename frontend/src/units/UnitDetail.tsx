@@ -6,7 +6,18 @@
 // Lease and Open Reservation open that record, not the list.
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  LatestNote,
+  RecordViewPage,
+  ViewAllButton,
+  latestOf,
+  rvt,
+  useHashView,
+} from "../shell/recordViews";
+import { BackLink } from "../shell/backNav";
 
+import type { InvoiceApi, InvoiceResource } from "../invoiceClient";
+import { cents } from "../invoices/invoicesData";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
 import type { ProductsApi } from "../products/productsClient";
@@ -20,7 +31,6 @@ import {
 } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { openPageInAddress } from "../shell/useHashPage";
 import { Chip, type Tone } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
@@ -37,6 +47,7 @@ import { UnitChip, floorText } from "./UnitsList";
 import { ut } from "./text";
 import { type UtilityPricesApi, UnitUtilitiesCard } from "./UtilityPrices";
 import { itemName, typeName } from "./unitsData";
+import { PageHeader } from "../shell/layouts";
 
 type LeaseKind = "current" | "draft" | "ended" | "terminated" | "cancelled";
 
@@ -245,6 +256,8 @@ export interface UnitDetailProps {
   servicesApi: RentTermsServicesApi;
   /** V1.1 part 5 (DL-122): the Unit inventory form moves items through stock. */
   productsApi: ProductsApi;
+  /** Property fix 5 (owner 14/11/2026): the current Lease's unpaid Invoices. */
+  invoiceApi?: Pick<InvoiceApi, "list">;
 }
 
 export function UnitDetail({
@@ -262,8 +275,10 @@ export function UnitDetail({
   utilityApi,
   servicesApi,
   productsApi,
+  invoiceApi,
 }: UnitDetailProps) {
   const khmer = language === "km";
+  const view = useHashView();
   const [unit, setUnit] = useState<UnitResource | null>(null);
   const [missing, setMissing] = useState(false);
   const [events, setEvents] = useState<UnitTimelineEvent[]>([]);
@@ -304,18 +319,7 @@ export function UnitDetail({
     load();
   }, [load]);
 
-  const back = (
-    <button
-      className="ui-crumb"
-      onClick={() => {
-        openPageInAddress("units");
-      }}
-      type="button"
-    >
-      <Icon name="back" small />
-      {ut(language, "back")}
-    </button>
-  );
+  const back = <BackLink language={language} parent="units" />;
 
   if (missing) {
     return (
@@ -357,16 +361,6 @@ export function UnitDetail({
     (["VACANT", "CLEANING", "UNDER_MAINTENANCE"].includes(unit.status) ||
       (unit.status === "RESERVED" && reservation !== null && draft === null));
   const type = typeName(lists, unit.unit_type, khmer);
-  const sub = [
-    floorText(language, unit.floor),
-    type,
-    !HOME_FIELDS || unit.size_square_metres === null
-      ? null
-      : ut(language, "m2", Number(unit.size_square_metres)),
-    "CHETANA Parking",
-  ]
-    .filter((part) => part !== null)
-    .join(" · ");
 
   const fact = (label: string, value: ReactNode) => (
     <div className="ui-fact" key={label}>
@@ -507,105 +501,129 @@ export function UnitDetail({
 
   const history = historyLines(language, events, leases ?? [], reservation);
 
+  if (view === "history")
+    return (
+      <RecordViewPage
+        language={language}
+        parent="units"
+        parentDetail={unitId}
+        recordName={unit.unit_number}
+        title={rvt(language, "history_title", unit.unit_number)}
+      >
+        {history.length === 0 ? (
+          <p className="ui-small ui-muted">{ut(language, "history_none")}</p>
+        ) : (
+          <ol className="ui-timeline">
+            {history.map((line, index) => (
+              <li key={`${line.at}-${String(index)}`}>
+                <div>
+                  {line.text}
+                  <small className="ui-num">{when(line.at)}</small>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </RecordViewPage>
+    );
+
   return (
     <>
-      {back}
-      <div className="ui-head">
-        <div>
-          <div className="ui-hrow">
-            <h2 className="ui-num">{unit.unit_number}</h2>
-            <UnitChip language={language} status={unit.status} />
-            {!forRent && <Chip tone="neutral">{ut(language, "fr_no")}</Chip>}
-          </div>
-          <p>{sub}</p>
-        </div>
-        <div className="ui-actions">
-          {forRent &&
-            unit.status === "VACANT" &&
-            unit.lease_starts_on == null &&
-            may("reservations.create") && (
+      {/* Property fix 4 (owner 14/11/2026): one head, as on the Lease page: Back on top, the
+          Unit number with its status, and the buttons on the right. Open Lease is in the
+          Current Lease card only. */}
+      <PageHeader
+        actions={
+          <>
+            {forRent &&
+              unit.status === "VACANT" &&
+              unit.lease_starts_on == null &&
+              may("reservations.create") && (
+                <a
+                  className="ui-btn primary"
+                  href={hashForPage("reservations", `new:${unit.unit_id}`)}
+                >
+                  <Icon name="calendar" />
+                  {ut(language, "make_reservation")}
+                </a>
+              )}
+            {canLease && may("leases.draft") && (
               <a
-                className="ui-btn primary"
-                href={hashForPage("reservations", `new:${unit.unit_id}`)}
+                className={
+                  unit.status === "VACANT" ? "ui-btn" : "ui-btn primary"
+                }
+                href={hashForPage(
+                  "leases",
+                  reservation === null
+                    ? `unit:${unit.unit_id}`
+                    : `new:${reservation.reservation_id}`,
+                )}
               >
-                <Icon name="calendar" />
-                {ut(language, "make_reservation")}
+                <Icon name="lease" />
+                {ut(
+                  language,
+                  reservation === null ? "new_lease" : "new_lease_from_res",
+                )}
               </a>
             )}
-          {canLease && may("leases.draft") && (
-            <a
-              className={unit.status === "VACANT" ? "ui-btn" : "ui-btn primary"}
-              href={hashForPage(
-                "leases",
-                reservation === null
-                  ? `unit:${unit.unit_id}`
-                  : `new:${reservation.reservation_id}`,
-              )}
-            >
-              <Icon name="lease" />
-              {ut(
-                language,
-                reservation === null ? "new_lease" : "new_lease_from_res",
-              )}
-            </a>
-          )}
-          {draft !== null && may("leases.read") && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("leases", draft.lease_id)}
-            >
-              <Icon name="lease" />
-              {ut(language, "open_draft")}
-            </a>
-          )}
-          {current !== null && may("leases.read") && (
-            <a
-              className="ui-btn primary"
-              href={hashForPage("leases", current.lease_id)}
-            >
-              <Icon name="lease" />
-              {ut(language, "open_lease")}
-            </a>
-          )}
-          {reservation !== null && may("reservations.read") && (
-            <a
-              className="ui-btn"
-              href={hashForPage("reservations", reservation.reservation_id)}
-            >
-              <Icon name="calendar" />
-              {ut(language, "open_reservation")}
-            </a>
-          )}
-          {manage && (
-            <>
-              <button
-                className="ui-btn"
-                onClick={() => {
-                  setNotice(null);
-                  setWarning(null);
-                  setDialog("status");
-                }}
-                type="button"
+            {draft !== null && may("leases.read") && (
+              <a
+                className="ui-btn primary"
+                href={hashForPage("leases", draft.lease_id)}
               >
-                <Icon name="swap" />
-                {ut(language, "change_status")}
-              </button>
-              <button
+                <Icon name="lease" />
+                {ut(language, "open_draft")}
+              </a>
+            )}
+            {reservation !== null && may("reservations.read") && (
+              <a
                 className="ui-btn"
-                onClick={() => {
-                  setNotice(null);
-                  setWarning(null);
-                  setDialog("update");
-                }}
-                type="button"
+                href={hashForPage("reservations", reservation.reservation_id)}
               >
-                <Icon name="swap" />
-                {ut(language, "update_unit")}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                <Icon name="calendar" />
+                {ut(language, "open_reservation")}
+              </a>
+            )}
+            {manage && (
+              <>
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    setNotice(null);
+                    setWarning(null);
+                    setDialog("status");
+                  }}
+                  type="button"
+                >
+                  <Icon name="swap" />
+                  {ut(language, "change_status")}
+                </button>
+                <button
+                  className="ui-btn"
+                  onClick={() => {
+                    setNotice(null);
+                    setWarning(null);
+                    setDialog("update");
+                  }}
+                  type="button"
+                >
+                  <Icon name="swap" />
+                  {ut(language, "update_unit")}
+                </button>
+              </>
+            )}
+          </>
+        }
+        back={back}
+        badge={
+          <>
+            <UnitChip language={language} status={unit.status} />
+            {!forRent && <Chip tone="neutral">{ut(language, "fr_no")}</Chip>}
+          </>
+        }
+        numeric
+        title={unit.unit_number}
+      />
       {warning !== null && (
         <div className="ui-notice warn" role="alert">
           <Icon name="alert" />
@@ -624,12 +642,11 @@ export function UnitDetail({
             <h2 id="unit-details">{ut(language, "details")}</h2>
             <div
               aria-label={ut(language, "no_photo")}
-              className="ui-photo"
+              className="ui-photo ui-photo-small"
               role="img"
             >
               <Icon name="units" />
               <span>{ut(language, "no_photo")}</span>
-              <span className="ui-small">{ut(language, "photo_later")}</span>
             </div>
             <div className="ui-facts">
               {fact(
@@ -767,21 +784,28 @@ export function UnitDetail({
             today={today}
             unit={unit}
           />
-          <section aria-labelledby="unit-invoices" className="ui-card">
-            <h2 id="unit-invoices">{ut(language, "invoices")}</h2>
-            <p className="ui-small ui-muted">
-              {ut(language, "invoices_later")}
-            </p>
-          </section>
+          {invoiceApi !== undefined && may("invoices.read") && (
+            <UnitInvoicesCard
+              api={invoiceApi}
+              language={language}
+              lease={current}
+              propertyId={propertyId}
+            />
+          )}
           <section aria-labelledby="unit-history" className="ui-card">
             <h2 id="unit-history">{ut(language, "history")}</h2>
+            <LatestNote
+              language={language}
+              shown={Math.min(5, history.length)}
+              total={history.length}
+            />
             {history.length === 0 ? (
               <p className="ui-small ui-muted">
                 {ut(language, "history_none")}
               </p>
             ) : (
               <ol className="ui-timeline">
-                {history.map((line, index) => (
+                {latestOf(history).map((line, index) => (
                   <li key={`${line.at}-${String(index)}`}>
                     <div>
                       {line.text}
@@ -790,6 +814,13 @@ export function UnitDetail({
                   </li>
                 ))}
               </ol>
+            )}
+            {history.length > 5 && (
+              <ViewAllButton
+                label={rvt(language, "history_btn")}
+                total={history.length}
+                view="history"
+              />
             )}
           </section>
         </div>
@@ -879,5 +910,82 @@ export function UnitDetail({
         />
       )}
     </>
+  );
+}
+
+/** Property fix 5 (owner 14/11/2026): the unpaid Invoices of the Unit's current Lease, each
+ *  one a link to the Invoice. */
+function UnitInvoicesCard({
+  api,
+  language,
+  lease,
+  propertyId,
+}: {
+  api: Pick<InvoiceApi, "list">;
+  language: Language;
+  lease: LeaseResource | null;
+  propertyId: string;
+}) {
+  const leaseId = lease?.lease_id ?? null;
+  const [rows, setRows] = useState<InvoiceResource[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (leaseId === null) return;
+    let live = true;
+    setFailed(false);
+    void Promise.all(
+      (["UNPAID", "PARTIALLY_PAID"] as const).map((status) =>
+        api.list(propertyId, { lease_id: leaseId, status }),
+      ),
+    )
+      .then((pages) => {
+        if (!live) return;
+        setRows(
+          pages
+            .flatMap((page) => page.items)
+            .filter((invoice) => cents(invoice.outstanding_balance) > 0)
+            .sort((left, right) =>
+              (left.due_date ?? "").localeCompare(right.due_date ?? ""),
+            ),
+        );
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, [api, leaseId, propertyId]);
+  let body: ReactNode;
+  if (leaseId === null) body = ut(language, "inv_no_lease");
+  else if (failed) body = ut(language, "inv_failed");
+  else if (rows === null) body = ut(language, "loading");
+  else if (rows.length === 0) body = ut(language, "inv_none");
+  else body = null;
+  return (
+    <section aria-labelledby="unit-invoices" className="ui-card">
+      <h2 id="unit-invoices">{ut(language, "invoices")}</h2>
+      {body !== null ? (
+        <p className="ui-small ui-muted">{body}</p>
+      ) : (
+        <ul className="ui-plain ui-unitinv">
+          {(rows ?? []).map((invoice) => (
+            <li key={invoice.id}>
+              <a className="ui-num" href={hashForPage("invoices", invoice.id)}>
+                {invoice.invoice_number}
+              </a>
+              <span className="ui-muted">
+                {invoice.due_date === null
+                  ? ""
+                  : ut(language, "inv_due", dayText(invoice.due_date))}
+              </span>
+              <b className="ui-num">
+                {usdFromCents(cents(invoice.outstanding_balance))}
+              </b>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

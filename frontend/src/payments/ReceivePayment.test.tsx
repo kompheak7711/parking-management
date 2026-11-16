@@ -139,9 +139,9 @@ async function choose(customer = LIM) {
   fireEvent.change(screen.getByLabelText(/^Customer/), {
     target: { value: customer },
   });
-  await screen.findByText(
-    customer === LIM ? "INV260071" : /has nothing unpaid/,
-  );
+  // The Invoice number is in the pay-for list and, with a rate, in the riel rate card.
+  if (customer === LIM) await screen.findAllByText("INV260071");
+  else await screen.findByText(/has nothing unpaid/);
 }
 
 function type(id: string, value: string) {
@@ -482,7 +482,7 @@ describe("Receive payment", () => {
     expect(await screen.findByText(/Invoices changed meanwhile/)).toBeTruthy();
     expect(receive.mock.calls[0]?.[2]).toBe(receive.mock.calls[1]?.[2]);
     expect(payments.payable).toHaveBeenCalledTimes(2);
-    await screen.findByText("INV260071");
+    await screen.findAllByText("INV260071");
     fireEvent.click(screen.getByRole("button", { name: /Receive payment/ }));
     dialog = await screen.findByRole("dialog");
     fireEvent.click(
@@ -547,7 +547,7 @@ describe("V1-058 R5d Receive payment from the late-payment card", () => {
         propertyId="property-1"
       />,
     );
-    await screen.findByText("INV260071");
+    await screen.findAllByText("INV260071");
     expect(rows().map((row) => row.ticked)).toEqual([false, true, false]);
     expect((document.getElementById("rp-amt") as HTMLInputElement).value).toBe(
       "35.30",
