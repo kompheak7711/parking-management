@@ -392,12 +392,6 @@ from property_rental.unit_inventory_api import (
     UnitInventoryFlow,
     create_unit_inventory_router,
 )
-from property_rental.unpaid_initial_termination_api import (
-    PostgresUnpaidInitialFlow,
-    UnavailableUnpaidInitialFlow,
-    UnpaidInitialFlow,
-    create_unpaid_initial_termination_router,
-)
 from property_rental.utility_api import (
     MeterSerialNumberInUse,
     PostgresUtilityResourceFlow,
@@ -453,10 +447,6 @@ INVOICE_API_PATH_PATTERN: Final = re.compile(
 # V1-060: routes mounted without /api/v1 (the screens reach them through the same proxy).
 UNPREFIXED_API_PATHS: Final = ("/properties/", "/units/", "/unit-setup/", "/reservations/")
 
-UNPAID_INITIAL_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/properties/[^/]+/lease-terminations/[^/]+/"
-    r"unpaid-initial-(?:never-moved-in|moved-in-credit)$"
-)
 LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:invoices/[^/]+/late-payment-(?:review|decision)$|"
     r"late-payment-charges(?:/|$))"
@@ -675,7 +665,6 @@ def create_app(
     invoice_flow: InvoiceFlow | None = None,
     move_out_billing_flow: MoveOutBillingFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
-    unpaid_initial_flow: UnpaidInitialFlow | None = None,
     lease_notice_flow: LeaseNoticeFlow | None = None,
     move_out_flow: MoveOutFlow | None = None,
     move_out_inspection_flow: MoveOutInspectionFlow | None = None,
@@ -1189,7 +1178,6 @@ def create_app(
             or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
             or INVOICE_API_PATH_PATTERN.match(request.url.path)
             or LATE_PAYMENT_API_PATH_PATTERN.match(request.url.path)
-            or UNPAID_INITIAL_API_PATH_PATTERN.match(request.url.path)
             or PAYMENT_API_PATH_PATTERN.match(request.url.path)
             or request.url.path.startswith("/api/v1/lease-enforcement-workspaces")
             or request.url.path.startswith("/api/v1/rent-nonpayment-cases")
@@ -1757,23 +1745,6 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableUtilityLeaseFlow()
-                ),
-            ),
-            resolved_settings,
-        )
-    )
-    include_signed_in(
-        create_unpaid_initial_termination_router(
-            actor_resolver,
-            unpaid_initial_flow
-            or cast(
-                UnpaidInitialFlow,
-                (
-                    PostgresUnpaidInitialFlow(
-                        resolved_settings.financial_database_url.get_secret_value()
-                    )
-                    if resolved_settings.financial_database_url is not None
-                    else UnavailableUnpaidInitialFlow()
                 ),
             ),
             resolved_settings,

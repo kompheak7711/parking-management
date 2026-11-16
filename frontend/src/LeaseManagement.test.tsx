@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -89,44 +88,6 @@ function client(overrides: Partial<LeaseApi> = {}): LeaseApi {
     recordMoveIn: vi.fn().mockResolvedValue(drafted),
     addOccupant: vi.fn().mockResolvedValue(drafted),
     moveOutOccupant: vi.fn().mockResolvedValue(drafted),
-    resolveNeverMovedIn: vi.fn(
-      (
-        _property: string,
-        terminationEvent: string,
-        source: { resolution_id: string; unit_status: "VACANT" | "CLEANING" },
-      ) =>
-        Promise.resolve({
-          resolution_id: source.resolution_id,
-          termination_event_id: terminationEvent,
-          lease_id: "lease-1",
-          path: "NEVER_MOVED_IN" as const,
-          cause: "CUSTOMER_UNPAID_INITIAL_OBLIGATION",
-          resulting_unit_status: source.unit_status,
-          deposit_disposition_id: "disposition-1",
-          invoice_void_event_id: "void-1",
-          adjustment_ids: [],
-          credit_usd_cents: 0,
-        }),
-    ),
-    creditMovedInInitialRent: vi.fn(
-      (
-        _property: string,
-        terminationEvent: string,
-        source: { resolution_id: string },
-      ) =>
-        Promise.resolve({
-          resolution_id: source.resolution_id,
-          termination_event_id: terminationEvent,
-          lease_id: "lease-1",
-          path: "MOVED_IN" as const,
-          cause: "CUSTOMER_UNPAID_INITIAL_OBLIGATION",
-          resulting_unit_status: null,
-          deposit_disposition_id: null,
-          invoice_void_event_id: null,
-          adjustment_ids: ["adjustment-1"],
-          credit_usd_cents: 12345,
-        }),
-    ),
     completeMoveIn: vi.fn().mockResolvedValue({
       event_id: "move-in-1",
       property_id: "property-1",
@@ -528,128 +489,13 @@ describe("Lease staff workflow", () => {
     expect(api.timeline).toHaveBeenCalledWith("lease-1", "cursor-1");
   });
 
-  describe("V1-055 unpaid Initial obligation termination", () => {
+  describe("V1-055 Lease termination forms (C1: no unpaid Initial ending)", () => {
     const signed = {
       ...drafted,
       status: "SIGNED" as const,
       version: 3,
       can_terminate: true,
     };
-    const terminated = {
-      ...drafted,
-      status: "TERMINATED" as const,
-      version: 4,
-      timeline: [
-        {
-          event_id: "termination-event-1",
-          event_kind: "lease.terminate",
-          occurred_at: "2026-09-10T02:00:00Z",
-          reason: "Customer did not pay",
-          actor_id: "actor-1",
-          source_reference: "BR-LEASE-005",
-          source_href: "/api/v1/leases/lease-1#timeline-termination-event-1",
-        },
-      ],
-    };
-    function fillTermination(notice: "none" | "applies" = "none") {
-      fireEvent.change(
-        screen.getByLabelText("Unpaid Initial: actual termination date"),
-        { target: { value: "2026-09-10" } },
-      );
-      fireEvent.change(
-        screen.getByLabelText(
-          "Signed Lease clause that allows this termination",
-        ),
-        { target: { value: "Clause 7.3" } },
-      );
-      fireEvent.change(screen.getByLabelText("Approved grounds"), {
-        target: { value: "Initial Rent unpaid" },
-      });
-      fireEvent.change(
-        screen.getByLabelText("Management authorization reference"),
-        { target: { value: "AUTH-1" } },
-      );
-      fireEvent.change(screen.getByLabelText("Evidence reference"), {
-        target: { value: "LEDGER-1" },
-      });
-      fireEvent.change(screen.getByLabelText("Termination notice"), {
-        target: { value: notice },
-      });
-      if (notice === "applies") {
-        fireEvent.change(
-          screen.getByLabelText("Termination notice identifier"),
-          {
-            target: { value: "notice-1" },
-          },
-        );
-        fireEvent.change(screen.getByLabelText("Notice period end date"), {
-          target: { value: "2026-09-09" },
-        });
-      } else {
-        fireEvent.change(
-          screen.getByLabelText("Reason no notice period applies"),
-          { target: { value: "Clause allows immediate termination" } },
-        );
-      }
-      fireEvent.change(
-        screen.getByLabelText("Unpaid Initial: termination reason"),
-        { target: { value: "Customer did not pay" } },
-      );
-    }
-    it("TEST-FE-651 terminates with the explicit unpaid Initial context and replays the same identities after a failure", async () => {
-      const terminate = vi
-        .fn()
-        .mockRejectedValueOnce(new Error("network"))
-        .mockResolvedValue(terminated);
-      const api = client({
-        get: vi.fn().mockResolvedValue(signed),
-        terminate,
-      });
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      await loadAndOpen(api);
-      fillTermination();
-      const submit = () => {
-        fireEvent.click(
-          screen.getByRole("button", {
-            name: "Terminate for unpaid Initial obligation",
-          }),
-        );
-      };
-      submit();
-      await waitFor(() => {
-        expect(terminate).toHaveBeenCalledTimes(1);
-      });
-      await screen.findByText(/was not completed/);
-      submit();
-      await waitFor(() => {
-        expect(terminate).toHaveBeenCalledTimes(2);
-      });
-      expect(terminate.mock.calls[1]).toEqual(terminate.mock.calls[0]);
-      const [, source, key] = terminate.mock.calls[0] as [
-        unknown,
-        Record<string, unknown>,
-        string,
-      ];
-      expect(key).toMatch(/^[0-9a-f-]{36}$/);
-      expect(source).toMatchObject({
-        actual_termination_date: "2026-09-10",
-        governing_event_reference: "BR-LEASE-005",
-        reason: "Customer did not pay",
-        context: {
-          basis: "UNPAID_INITIAL_OBLIGATION",
-          signed_lease_provision: "Clause 7.3",
-          approved_grounds: "Initial Rent unpaid",
-          management_authorization_reference: "AUTH-1",
-          evidence_reference: "LEDGER-1",
-          notice_required: false,
-          notice_exception_reason: "Clause allows immediate termination",
-        },
-      });
-      expect(source.context).not.toHaveProperty("notice_id");
-      await screen.findByRole("region", {
-        name: "Unpaid Initial obligation follow-up",
-      });
-    });
     it("TEST-FE-678 sends no device time with the authorized termination", async () => {
       const api = client({ get: vi.fn().mockResolvedValue(signed) });
       vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -677,68 +523,11 @@ describe("Lease staff workflow", () => {
         "reason",
       ]);
     });
-    it("TEST-FE-679 sends no device time with the unpaid Initial termination, also on its retry", async () => {
-      const terminate = vi
-        .fn()
-        .mockRejectedValueOnce(new Error("network"))
-        .mockResolvedValue(terminated);
-      const api = client({
-        get: vi.fn().mockResolvedValue(signed),
-        terminate,
-      });
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      await loadAndOpen(api);
-      fillTermination();
-      const submit = () => {
-        fireEvent.click(
-          screen.getByRole("button", {
-            name: "Terminate for unpaid Initial obligation",
-          }),
-        );
-      };
-      submit();
-      await waitFor(() => {
-        expect(terminate).toHaveBeenCalledTimes(1);
-      });
-      await screen.findByText(/was not completed/);
-      submit();
-      await waitFor(() => {
-        expect(terminate).toHaveBeenCalledTimes(2);
-      });
-      for (const call of terminate.mock.calls) {
-        const source = (call as [unknown, Record<string, unknown>])[1];
-        expect(Object.keys(source).sort()).toEqual([
-          "actual_termination_date",
-          "context",
-          "event_id",
-          "governing_event_reference",
-          "reason",
-        ]);
-      }
-    });
-    it("TEST-FE-652 sends the notice identity and period end when a notice applies", async () => {
-      const api = client({ get: vi.fn().mockResolvedValue(signed) });
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      await loadAndOpen(api);
-      fillTermination("applies");
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: "Terminate for unpaid Initial obligation",
-        }),
-      );
-      await waitFor(() => {
-        expect(api.terminate).toHaveBeenCalledTimes(1);
-      });
-      const source = vi.mocked(api.terminate).mock.calls[0]?.[1];
-      expect(source?.context).toMatchObject({
-        notice_required: true,
-        notice_id: "notice-1",
-        notice_period_ends_on: "2026-09-09",
-      });
-      expect(source?.context).not.toHaveProperty("notice_exception_reason");
-    });
-    it("TEST-FE-653 keeps the termination and the follow-up hidden unless the Lease state and capability allow them", async () => {
-      await loadAndOpen(client());
+    it("TEST-FE-653 C1: a signed Lease shows no termination for an unpaid Initial obligation and no follow-up for one", async () => {
+      await loadAndOpen(client({ get: vi.fn().mockResolvedValue(signed) }));
+      expect(
+        screen.getByRole("button", { name: "Apply authorized termination" }),
+      ).toBeInTheDocument();
       expect(
         screen.queryByRole("button", {
           name: "Terminate for unpaid Initial obligation",
@@ -749,136 +538,6 @@ describe("Lease staff workflow", () => {
           name: "Unpaid Initial obligation follow-up",
         }),
       ).not.toBeInTheDocument();
-    });
-    it("TEST-FE-654 resolves never moved in with the timeline event, requires the CLEANING reason and replays after a failure", async () => {
-      const resolveNeverMovedIn = vi
-        .fn()
-        .mockRejectedValueOnce(new Error("network"));
-      const base = client({ get: vi.fn().mockResolvedValue(terminated) });
-      resolveNeverMovedIn.mockImplementation(base.resolveNeverMovedIn);
-      const api = { ...base, resolveNeverMovedIn };
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      await loadAndOpen(api);
-      const region = await screen.findByRole("region", {
-        name: "Unpaid Initial obligation follow-up",
-      });
-      expect(
-        within(region).getByLabelText("Termination event identifier"),
-      ).toHaveValue("termination-event-1");
-      fireEvent.change(within(region).getByLabelText("Parking after release"), {
-        target: { value: "CLEANING" },
-      });
-      fireEvent.change(
-        within(region).getByLabelText("Never moved in: resolution reason"),
-        { target: { value: "Never moved in and did not pay" } },
-      );
-      const submit = () => {
-        fireEvent.click(
-          within(region).getByRole("button", {
-            name: "Resolve never moved in",
-          }),
-        );
-      };
-      submit();
-      expect(resolveNeverMovedIn).not.toHaveBeenCalled();
-      fireEvent.change(
-        within(region).getByLabelText(
-          "Parking status reason (required for CLEANING)",
-        ),
-        { target: { value: "Needs cleaning" } },
-      );
-      submit();
-      await waitFor(() => {
-        expect(resolveNeverMovedIn).toHaveBeenCalledTimes(1);
-      });
-      await screen.findByText(/was not completed/);
-      submit();
-      await waitFor(() => {
-        expect(resolveNeverMovedIn).toHaveBeenCalledTimes(2);
-      });
-      expect(resolveNeverMovedIn.mock.calls[1]).toEqual(
-        resolveNeverMovedIn.mock.calls[0],
-      );
-      expect(resolveNeverMovedIn.mock.calls[0]?.slice(0, 3)).toEqual([
-        "property-1",
-        "termination-event-1",
-        expect.objectContaining({
-          unit_status: "CLEANING",
-          unit_status_reason: "Needs cleaning",
-          reason: "Never moved in and did not pay",
-        }),
-      ]);
-      const recorded = await screen.findByRole("article", {
-        name: "Recorded unpaid Initial follow-up",
-      });
-      expect(recorded).toHaveTextContent("Parking CLEANING");
-      expect(recorded).toHaveTextContent("Security Deposit forfeited");
-    });
-    it("TEST-FE-655 credits the Rent after the termination date for a Customer who moved in", async () => {
-      const api = client({ get: vi.fn().mockResolvedValue(terminated) });
-      vi.spyOn(window, "confirm").mockReturnValue(true);
-      await loadAndOpen(api);
-      fireEvent.change(screen.getByLabelText("Moved in: credit reason"), {
-        target: { value: "Rent after termination" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: "Credit Initial Rent after termination",
-        }),
-      );
-      await waitFor(() => {
-        expect(api.creditMovedInInitialRent).toHaveBeenCalledTimes(1);
-      });
-      expect(api.creditMovedInInitialRent).toHaveBeenCalledWith(
-        "property-1",
-        "termination-event-1",
-        expect.objectContaining({ reason: "Rent after termination" }),
-        expect.any(String),
-      );
-      const recorded = await screen.findByRole("article", {
-        name: "Recorded unpaid Initial follow-up",
-      });
-      expect(recorded).toHaveTextContent("Moved in: credit $123.45");
-    });
-    it("TEST-FE-656 does nothing when the confirmation is declined", async () => {
-      const api = client({ get: vi.fn().mockResolvedValue(terminated) });
-      vi.spyOn(window, "confirm").mockReturnValue(false);
-      await loadAndOpen(api);
-      fireEvent.change(screen.getByLabelText("Moved in: credit reason"), {
-        target: { value: "Rent after termination" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: "Credit Initial Rent after termination",
-        }),
-      );
-      expect(api.creditMovedInInitialRent).not.toHaveBeenCalled();
-    });
-    it("TEST-FE-671 says the Security Deposit stays held before resolving never moved in", async () => {
-      const api = client({ get: vi.fn().mockResolvedValue(terminated) });
-      const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-      await loadAndOpen(api);
-      const region = await screen.findByRole("region", {
-        name: "Unpaid Initial obligation follow-up",
-      });
-      expect(region).toHaveTextContent(
-        "The Security Deposit stays held until a forfeiture draft under BR-LEASE-005 is confirmed by a financial.approve holder.",
-      );
-      expect(region).not.toHaveTextContent("Forfeits the Security Deposit");
-      fireEvent.change(
-        within(region).getByLabelText("Never moved in: resolution reason"),
-        { target: { value: "Never moved in and did not pay" } },
-      );
-      fireEvent.click(
-        within(region).getByRole("button", { name: "Resolve never moved in" }),
-      );
-      expect(confirm).toHaveBeenCalledTimes(1);
-      const message = String(confirm.mock.calls[0]?.[0]);
-      expect(message).toContain(
-        "The Security Deposit stays held until a forfeiture draft is confirmed.",
-      );
-      expect(message).not.toContain("Forfeit the Security Deposit");
-      expect(api.resolveNeverMovedIn).not.toHaveBeenCalled();
     });
   });
 

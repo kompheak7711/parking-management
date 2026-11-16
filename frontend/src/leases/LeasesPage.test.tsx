@@ -3720,7 +3720,7 @@ describe("New Lease and Renew", () => {
     expect(screen.queryByRole("button", { name: /^Terminate/ })).toBeNull();
   });
 
-  it("TEST-FE-873 Try again sends the very same termination and notice, a change gets new ones, and the Initial-unpaid ground waits 5 days", async () => {
+  it("TEST-FE-873 Try again sends the very same termination and notice, a change gets new ones, and there is no Initial-unpaid ground (C1)", async () => {
     window.location.hash = "#/leases/terminate:lease-U101";
     const terminate = vi
       .fn<LeaseApi["terminate"]>()
@@ -3749,13 +3749,11 @@ describe("New Lease and Renew", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Terminate the Lease · U101",
     });
-    // Start Date 3 days ago: the 5 days to pay are not over.
+    // C1 (DL-240): a Lease is no longer ended for unpaid Initial Rent or Security Deposit.
     expect(
-      within(dialog).getByRole<HTMLInputElement>("radio", {
-        name: /Initial Rent not paid/,
-      }).disabled,
-    ).toBe(true);
-    expect(within(dialog).getByText(/^Possible from/)).toBeInTheDocument();
+      within(dialog).queryByRole("radio", { name: /Initial Rent not paid/ }),
+    ).toBeNull();
+    expect(within(dialog).getAllByRole("radio")).toHaveLength(3);
 
     // The notice: an unknown result, Try again, then a changed value.
     fireEvent.click(

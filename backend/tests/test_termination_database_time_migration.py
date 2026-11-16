@@ -127,7 +127,22 @@ def test_http_termination_time_is_the_database_time(migrated_database_url: str) 
     who = actor(source["actor"], source["property"], *ALL)
     path = f"/api/v1/leases/{source['lease']}/terminate"
     version = int(row(url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0])
-    body = terminate_body(url, source)
+    # C1 (DL-240): the route no longer takes the unpaid Initial ground; another signed ground.
+    body = terminate_body(
+        url,
+        source,
+        governing_event_reference="SIGNED-LEASE-TERM-001",
+        reason="Ended under a signed Lease term",
+        context={
+            "basis": "SIGNED_LEASE_OTHER",
+            "signed_lease_provision": "Synthetic signed Lease termination provision",
+            "approved_grounds": "Explicit management-approved synthetic departure",
+            "management_authorization_reference": "Synthetic management decision TERM-001",
+            "evidence_reference": "Signed synthetic termination record TERM-001",
+            "notice_required": False,
+            "notice_exception_reason": "Signed surrender terms expressly approve this exception",
+        },
+    )
 
     refused = api(who).post(
         path,

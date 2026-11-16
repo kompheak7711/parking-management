@@ -3324,7 +3324,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Source.** The owner on 12 Nov 2026 (DL-226, D6, "all yes"): a Draft is changed freely and may be deleted; the history of an Invoice starts at issue.
 - **Before** (BR-INV-015). A Draft was changed with a reason kept in its History, and a Draft that was not wanted became Void with a reason; nothing was deleted.
 - **Now.** A Draft is changed with no reason asked. A Draft made by a person may be deleted with no reason; one audit record says who deleted it, when, and what it held. An issued Invoice never changes and is never deleted.
-- **How the build read the rest (asked to the owner with the pull request).**
+- **How the build read the rest.** These points were asked with the pull request, and the owner said yes to all five on 16 Nov 2026 (card "Yes to all five, merge when green"); pull request #44 was merged that day.
   1. Edit items of a Draft asks no reason. Example: a Draft for a key copy, 2 × $15.00, is changed to 3 × $15.00 and saved; nothing more is typed.
   2. Delete Draft takes the Draft and its items out of the list, with no reason, because nobody ever owed it. The charges it named stay as records.
   3. A Draft that another record uses, or that the app made by itself (the monthly billing), is not deleted; the screen says so and offers Void, as before.
@@ -3334,6 +3334,18 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270802_399` (DB-BS-014), forward-only; no data is changed or deleted by the migration. **API:** `DELETE /invoices/{invoice_id}` and the optional `change_reason` (the amendment of DL-239 in docs/005). **Screen:** Delete Draft on a Draft's page, and Edit items without the reason box (TEST-FE-2278, TEST-FE-2279; TEST-FE-1065 changed).
 - **Open:** the native Khmer check of the new screen text.
 - **Links:** DL-226, DL-103; BR-INV-015, BR-AUTH-010.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
+
+## DL-240 — The ending of an old Lease for unpaid Initial Rent or Security Deposit is taken out of the app (C1 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, C1, "all yes"): taken out of the app after a check that nothing can still reach it.
+- **The check (15 Nov 2026).** No route signs a Lease without its first money: the plain sign route was removed in V1-061, and Sign Lease with payment (DL-100, DL-108) receives the Initial Rent and the Security Deposit in full before signing. So no new Lease can owe its Initial Rent or Security Deposit at signing. The one way the money can be owed again is a reversal of the Sign Lease Payment later (for example money returned by the bank); that case is asked to the owner with the pull request.
+- **Before** (BR-LEASE-001, BR-LEASE-024, BR-DEP-023). Staff could end an old Lease under Article 2.5 from the Terminate dialog ("Initial Rent not paid"), then record "never moved in" or "moved in" as a separate step.
+- **Now.** The Terminate dialog has three grounds: leaving early, a violation, and unpaid Rent. The server refuses the unpaid Initial ground, and the two follow-up steps have no route. The old English forms lost these parts too.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The database steps are not removed: a Lease ended this way before keeps its records, its timeline labels and its Final Settlement rules, and many database tests use those steps to build old cases. No data is changed or deleted, and there is no migration.
+- **Screens:** the Terminate dialog and the old Lease forms (TEST-FE-653, TEST-FE-659, TEST-FE-873 changed; TEST-FE-651, 652, 654 to 658, 671 and 679 removed with the parts they tested). **API:** the amendment of DL-240 in docs/005.
+- **Links:** DL-226, DL-100, DL-108, DL-064; BR-LEASE-001, BR-LEASE-024, BR-DEP-023.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager

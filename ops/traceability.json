@@ -33874,128 +33874,33 @@
       "notes": "The Initial Rent alert route lists the unpaid Invoice read only under rent_nonpayment.read, rejects other capabilities and bad limits, and records no case."
     },
     {
-      "test_id": "test_terminate_route_accepts_the_unpaid_initial_basis_and_rejects_a_mismatched_reference",
+      "test_id": "test_terminate_route_refuses_the_unpaid_initial_basis",
       "upstream_ids": [
         "BR-LEASE-005",
-        "BR-RENT-007",
+        "DL-240",
         "TEST-043"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
       "status": "implemented",
-      "notes": "The terminate route accepts the explicit unpaid Initial context, rejects a mismatched governing reference and an invented field, and replays exactly."
+      "notes": "C1 (DL-240): the terminate route refuses the unpaid Initial basis (422) and the Lease stays signed; no Lease can reach this ending since Sign Lease receives the first money."
     },
     {
-      "test_id": "test_never_moved_in_route_resolves_replays_and_needs_every_capability",
+      "test_id": "test_follow_up_routes_are_taken_out",
       "upstream_ids": [
         "BR-LEASE-005",
-        "BR-RENT-007",
+        "DL-240",
         "TEST-043"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
       "status": "implemented",
-      "notes": "The never-moved-in route needs every capability, validates the Unit status reason, replays exactly and refuses a second resolution."
-    },
-    {
-      "test_id": "test_moved_in_credit_route_credits_once_and_refuses_the_wrong_path",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "integration",
-      "test_path": "backend/tests/test_unpaid_initial_termination_migration.py",
-      "status": "implemented",
-      "notes": "The moved-in credit route credits the days after the termination date once, replays exactly and refuses the never-moved-in path."
-    },
-    {
-      "test_id": "test_never_moved_in_route_builds_the_exact_command_and_hides_nothing_in_the_reply",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
-      "status": "implemented",
-      "notes": "The never-moved-in route builds the exact command from the path, key and body."
-    },
-    {
-      "test_id": "test_credit_route_builds_the_exact_command",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
-      "status": "implemented",
-      "notes": "The moved-in credit route builds the exact command from the path, key and body."
-    },
-    {
-      "test_id": "test_routes_refuse_invalid_input_without_calling_the_flow",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
-      "status": "implemented",
-      "notes": "Invalid status, padded reason, unknown field, bad identity, missing reason and query parameters never reach the service."
-    },
-    {
-      "test_id": "test_routes_need_a_session_browser_origin_and_csrf_token",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
-      "status": "implemented",
-      "notes": "The follow-up routes need a session, the browser Origin, the CSRF token and an idempotency key."
-    },
-    {
-      "test_id": "test_service_failures_map_to_not_found_and_conflict",
-      "upstream_ids": [
-        "BR-LEASE-005",
-        "BR-RENT-007",
-        "TEST-043"
-      ],
-      "test_level": "API",
-      "test_path": "backend/tests/test_unpaid_initial_termination_api.py",
-      "status": "implemented",
-      "notes": "Not found and conflict service failures map to 404 and 409."
-    },
-    {
-      "test_id": "TEST-FE-651",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Terminates with the explicit unpaid Initial context and replays the same identities after a failure; synthetic fixtures only."
-    },
-    {
-      "test_id": "TEST-FE-652",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Sends the notice identity and period end when a termination notice applies; synthetic fixtures only."
+      "notes": "C1 (DL-240): the never-moved-in and moved-in-credit follow-up routes after an unpaid Initial ending are gone (404 or 405)."
     },
     {
       "test_id": "TEST-FE-653",
       "upstream_ids": [
+        "DL-240",
         "UI-042",
         "BR-LEASE-005",
         "API-038"
@@ -34003,71 +33908,12 @@
       "test_level": "UI component",
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
-      "notes": "Hides the unpaid Initial termination and follow-up unless the Lease state and capability allow them; synthetic fixtures only."
-    },
-    {
-      "test_id": "TEST-FE-654",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Resolves never moved in with the timeline termination event, requires the CLEANING reason and replays after a failure; synthetic fixtures only."
-    },
-    {
-      "test_id": "TEST-FE-655",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Credits the Rent after the termination date for a Customer who moved in; synthetic fixtures only."
-    },
-    {
-      "test_id": "TEST-FE-656",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "Sends nothing when the follow-up confirmation is declined; synthetic fixtures only."
-    },
-    {
-      "test_id": "TEST-FE-657",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "unit",
-      "test_path": "frontend/src/leaseClient.test.tsx",
-      "status": "implemented",
-      "notes": "Posts the unpaid Initial resolution to the Property route with CSRF and an idempotency key but no If-Match."
-    },
-    {
-      "test_id": "TEST-FE-658",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "API-038"
-      ],
-      "test_level": "unit",
-      "test_path": "frontend/src/leaseClient.test.tsx",
-      "status": "implemented",
-      "notes": "Rejects an unpaid Initial resolution reply that does not match the request."
+      "notes": "C1 (DL-240): a signed Lease that may be terminated shows the authorized termination but no unpaid Initial termination form and no follow-up section."
     },
     {
       "test_id": "TEST-FE-659",
       "upstream_ids": [
+        "DL-240",
         "UI-042",
         "BR-LEASE-005",
         "API-038"
@@ -34075,7 +33921,7 @@
       "test_level": "unit",
       "test_path": "frontend/src/leaseClient.test.tsx",
       "status": "implemented",
-      "notes": "Posts the moved-in credit and sends the termination context with the Lease termination."
+      "notes": "The Lease termination sends its termination context with If-Match; the unpaid Initial basis and its follow-up calls are taken out (C1, DL-240)."
     },
     {
       "test_id": "TEST-FE-660",
@@ -35626,19 +35472,6 @@
       "test_path": "backend/tests/test_lease_deposit_forfeiture.py",
       "status": "implemented",
       "notes": "The forfeiture draft id is stable for one Property, preparer and command key and differs when any of them changes."
-    },
-    {
-      "test_id": "TEST-FE-671",
-      "upstream_ids": [
-        "UI-042",
-        "BR-LEASE-005",
-        "BR-DEP-026",
-        "BR-AUTH-010"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "The never-moved-in follow-up form and its confirmation say that the resolution VOIDs or credits the Initial Rent Invoice and releases the Unit while the Security Deposit stays held until a forfeiture draft is confirmed; a declined confirmation calls nothing (V1-056 slice 6, owner answer to Q-2026-10-04-14)."
     },
     {
       "test_id": "test_forfeiture_reversal_is_a_draft_until_an_approver_confirms",
@@ -44151,18 +43984,6 @@
       "test_path": "frontend/src/LeaseManagement.test.tsx",
       "status": "implemented",
       "notes": "The authorized termination form sends exactly the event id, the actual termination date, the governing event reference and the reason, no device time (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
-    },
-    {
-      "test_id": "TEST-FE-679",
-      "upstream_ids": [
-        "BR-AUDIT-003",
-        "API-038",
-        "UI-076"
-      ],
-      "test_level": "UI component",
-      "test_path": "frontend/src/LeaseManagement.test.tsx",
-      "status": "implemented",
-      "notes": "The unpaid Initial termination form sends no device time, also on the retry after a failure (owner answer (a) to Q-2026-10-14-112 point 1; V1-056 sub-slice 10i-1)."
     },
     {
       "test_id": "test_a_deposit_change_saved_while_a_termination_waits_refuses_it",
@@ -53092,6 +52913,7 @@
     {
       "test_id": "TEST-FE-873",
       "upstream_ids": [
+        "DL-240",
         "DL-074",
         "DL-073",
         "BR-LEASE-005",
@@ -53101,7 +52923,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/leases/LeasesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-058 R3 Terminate and termination notice: Try again after an unknown result sends the same body, key and id; a changed value gets a new key and id; the notice text follows the end date; the Initial-unpaid ground waits until Start Date + 5 days; the terminate address is dropped once done."
+      "notes": "V1-058 R3 Terminate and termination notice: Try again after an unknown result sends the same body, key and id; a changed value gets a new key and id; the notice text follows the end date; the Initial-unpaid ground waits until Start Date + 5 days; the terminate address is dropped once done. C1 (DL-240): the Terminate dialog has no Initial-unpaid ground."
     },
     {
       "test_id": "test_the_staff_letter_rights_are_the_two_rent_case_rights",

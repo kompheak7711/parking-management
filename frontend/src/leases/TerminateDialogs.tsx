@@ -41,8 +41,10 @@ import {
 } from "./LeaseDialogs";
 import { lt } from "./text";
 
-export type Ground = "EARLY" | "VIOLATION" | "RENT" | "UNPAID";
-const GROUNDS: Ground[] = ["EARLY", "VIOLATION", "RENT", "UNPAID"];
+// C1 (DL-240): a Lease is no longer ended for unpaid Initial Rent or Security Deposit; Sign
+// Lease receives that money first.
+export type Ground = "EARLY" | "VIOLATION" | "RENT";
+const GROUNDS: Ground[] = ["EARLY", "VIOLATION", "RENT"];
 
 // The evidence stored with the termination, in English like every stored record. A Rent
 // termination reuses the notice's own provision and grounds, which the database matches exactly.
@@ -50,21 +52,16 @@ const PROVISION: Record<Exclude<Ground, "RENT">, string> = {
   EARLY: "Signed Lease: early leaving at the Customer's request (BR-LEASE-021)",
   VIOLATION:
     "Signed Lease: Lease rules, termination after three written warnings (BR-LEASE-024)",
-  UNPAID:
-    "Signed Lease: Initial Rent and Security Deposit due within 5 days of the Start Date (BR-LEASE-005)",
 };
 const APPROVED: Record<Exclude<Ground, "RENT">, string> = {
   EARLY: "The Customer leaves before the End Date at the Customer's request",
   VIOLATION: "Lease rule violation after three written warnings",
-  UNPAID: "Initial Rent or Security Deposit not paid within 5 days",
 };
 const PET_APPROVED = "Pet-rule violation after three written warnings";
 const NO_NOTICE: Record<Exclude<Ground, "RENT">, string> = {
   EARLY: "No landlord notice: the Customer asked to leave early",
   VIOLATION:
     "No landlord notice: three written warnings were given (BR-LEASE-024)",
-  UNPAID:
-    "No landlord notice: the Initial obligation was not paid within 5 days (BR-LEASE-005)",
 };
 
 // DL-237: for unpaid Rent the termination notice is the termination letter of day 30. Its
@@ -73,7 +70,6 @@ const NO_NOTICE: Record<Exclude<Ground, "RENT">, string> = {
 function governing(ground: Ground, pet: boolean): string {
   if (ground === "EARLY") return "BR-LEASE-021";
   if (ground === "RENT") return "BR-LEASE-028";
-  if (ground === "UNPAID") return "BR-LEASE-005";
   // Both Deposits are kept for a pet-rule termination (BR-DEP-022).
   return pet ? "BR-DEP-022" : "BR-LEASE-025";
 }
@@ -204,8 +200,6 @@ export function TerminateDialog({
     ground === "EARLY" && lease.end_date !== null && lease.end_date <= today
       ? addDays(lease.end_date, -1)
       : today;
-  // An unpaid Initial obligation counts from Start Date + 5 days (BR-LEASE-005, DL-064).
-  const unpaidFrom = addDays(lease.start_date ?? today, 6);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -246,12 +240,7 @@ export function TerminateDialog({
       };
     } else {
       context = {
-        basis:
-          ground === "EARLY"
-            ? "VOLUNTARY_EARLY"
-            : ground === "VIOLATION"
-              ? "CUSTOMER_VIOLATION"
-              : "UNPAID_INITIAL_OBLIGATION",
+        basis: ground === "EARLY" ? "VOLUNTARY_EARLY" : "CUSTOMER_VIOLATION",
         signed_lease_provision: PROVISION[ground],
         approved_grounds:
           ground === "VIOLATION" && pet ? PET_APPROVED : APPROVED[ground],
@@ -287,22 +276,12 @@ export function TerminateDialog({
   // Which Deposit is kept, said before saving (DESIGN.md; BR-DEP-022, BR-DEP-023, BR-LEASE-028).
   const consequences: string[] = [];
   if (ground !== null) {
-    consequences.push(
-      lt(
-        language,
-        ground === "RENT"
-          ? "tg_c1_rent"
-          : ground === "UNPAID"
-            ? "tg_c1_unpaid"
-            : "tg_c1",
-      ),
-    );
+    consequences.push(lt(language, ground === "RENT" ? "tg_c1_rent" : "tg_c1"));
     if (lease.pet_deposit_required)
       consequences.push(
         lt(language, ground === "VIOLATION" && pet ? "tg_pet_kept" : "tg_c3"),
       );
-    if (ground !== "UNPAID" || movedIn)
-      consequences.push(lt(language, "tg_c2"));
+    consequences.push(lt(language, "tg_c2"));
     consequences.push(lt(language, movedIn ? "tg_c4" : "tg_c5"));
   }
 
@@ -342,7 +321,6 @@ export function TerminateDialog({
           <label className="ui-chk" key={item}>
             <input
               checked={ground === item}
-              disabled={item === "UNPAID" && today < unpaidFrom}
               name="terminate-ground"
               onChange={() => {
                 setGround(item);
@@ -351,14 +329,7 @@ export function TerminateDialog({
             />
             <span>
               {lt(language, `tg_${item}`)}
-              {/* Parking Step 5: no pet rules on Parking (PET_DEPOSIT). */}
-              {(item !== "VIOLATION" || PET_DEPOSIT) && (
-                <small className="ui-sub2">
-                  {item === "UNPAID" && today < unpaidFrom
-                    ? lt(language, "tg_UNPAID_wait", dayText(unpaidFrom))
-                    : lt(language, `tg_${item}_s`)}
-                </small>
-              )}
+              <small className="ui-sub2">{lt(language, `tg_${item}_s`)}</small>
             </span>
           </label>
         ))}

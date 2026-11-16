@@ -817,10 +817,6 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/leases/{lease_id}/final-utility-invoice": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/utility-catch-up-invoice": {"post"},
         "/api/v1/properties/{property_id}/unbilled-utility-periods": {"get"},
-        "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"
-        "/unpaid-initial-never-moved-in": {"post"},
-        "/api/v1/properties/{property_id}/lease-terminations/{termination_event_id}"
-        "/unpaid-initial-moved-in-credit": {"post"},
         "/api/v1/properties/{property_id}/leases/{lease_id}/termination-notices": {"get", "post"},
         "/api/v1/financial-workspaces": {"get"},
         "/api/v1/properties/{property_id}/financial-capabilities": {"get"},

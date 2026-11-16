@@ -293,7 +293,7 @@ Only a Drafted Lease can be cancelled. A Signed Lease is never cancelled; when i
 
 Replaces: BR-LEASE-002, BR-LEASE-003, BR-LEASE-004, BR-LEASE-005.
 
-Old Leases only: a Lease signed before 27 October 2026 could have an unpaid Initial Rent Invoice, and could be ended for it. Then: if the tenant never moved in, the Security Deposit paid is kept, an unpaid Initial Rent Invoice is made Void with a reason, a partly paid one keeps the paid amount and the rest is removed by a credit Adjustment, no Utilities are charged, and the Unit is let go (BR-UNIT-008). If the tenant moved in, the Initial Rent Invoice stays, Rent is owed to the termination date and the other days are removed by a credit Adjustment (BR-RENT-006), Utilities to the real Move-out Date and Damage are charged, and the move-out and the Final Settlement follow their own rules. The day counts for a changed Security Deposit are in the decision log (Q-2026-10-19-138, Q-2026-10-20-148). Since DL-100 no new Lease can reach this case (Appendix B).
+Old Leases only: a Lease signed before 27 October 2026 could have an unpaid Initial Rent Invoice and could be ended for it under Article 2.5. The app no longer has this step (DL-240): Sign Lease receives the Initial Rent and the Security Deposit first (DL-100), so no Lease can reach this case. A Lease that was ended this way before keeps its records as they are, and its Final Settlement follows its own rules.
 
 ## BR-LEASE-006 — One Primary Tenant, Who Signs
 
@@ -1109,7 +1109,7 @@ A violation, and the right to end the Lease for it, must come from the signed Le
 - Property Management sends at least three written warning letters before ending a Lease for a violation. Each letter names the violation, the date, the Lease article and how it was sent. A hidden pet follows this rule too.
 - A serious breach, meaning a crime or a danger to people or the building, may end the Lease at once, with no warning letters.
 - For unpaid Rent the letters are the three notices of day 10, day 20 and day 25, then the termination letter of day 30 (BR-LEASE-026). No other letters are needed.
-- Article 2.5 of the standard Lease (Security Deposit or Initial Rent not fully paid within five days after the Lease Start Date) needs no warning letters. Since Sign Lease receives this money first, it can apply only to an old Lease (BR-LEASE-001).
+- Article 2.5 of the standard Lease (Security Deposit or Initial Rent not fully paid within five days after the Lease Start Date): the app has no step for it, because Sign Lease receives this money first (BR-LEASE-001, DL-240).
 
 Replaces: BR-LEASE-025.
 Decisions: DL-064, DL-070, DL-073, DL-237.
@@ -1218,7 +1218,7 @@ The Security Deposit is kept when:
 - the Customer chooses to leave before the End Date (BR-LEASE-020);
 - the Lease is ended for a violation, a pet rule or another rule, or for a serious breach;
 - the Lease is ended after the day-30 unpaid-Rent default;
-- an old Lease is ended under Article 2.5 (BR-LEASE-001), whether or not the Customer moved in.
+- an old Lease was ended under Article 2.5 before the app took out that step (BR-LEASE-001, DL-240), whether or not the Customer moved in.
 
 It is not kept, and pays the open debt with the rest refunded (BR-SETTLE-004), at a normal Lease end, when the Property ends the Lease with notice (Article 15.4), and when both sides agree to end it early.
 
@@ -1841,10 +1841,9 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235). D6, a Draft Invoice is changed with no reason and a Draft made by a person may be deleted (BR-INV-015, DL-239).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235). D6, a Draft Invoice is changed with no reason and a Draft made by a person may be deleted (BR-INV-015, DL-239). C1, the ending of an old Lease for unpaid Initial Rent or Security Deposit is taken out of the app (BR-LEASE-001, BR-LEASE-024, BR-DEP-023, DL-240).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

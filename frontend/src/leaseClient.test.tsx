@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   LeaseConflictError,
-  LeaseRequestError,
   LeaseUnitBookedError,
   leaseApi,
 } from "./leaseClient";
@@ -186,114 +185,12 @@ describe("Lease API client", () => {
   });
 
   const termination = "11111111-1111-4111-8111-111111111111";
-  const resolutionId = "22222222-2222-4222-8222-222222222222";
-  const snapshot = {
-    resolution_id: resolutionId,
-    termination_event_id: termination,
-    lease_id: "lease-1",
-    path: "NEVER_MOVED_IN",
-    cause: "CUSTOMER_UNPAID_INITIAL_OBLIGATION",
-    resulting_unit_status: "VACANT",
-    deposit_disposition_id: "disposition-1",
-    invoice_void_event_id: null,
-    adjustment_ids: ["adjustment-1"],
-    credit_usd_cents: 4200,
-  };
-
-  it("TEST-FE-657 posts the unpaid Initial resolution to the Property route with CSRF and an idempotency key but no If-Match", async () => {
+  it("TEST-FE-659 sends the termination context with the Lease termination (C1: never for an unpaid Initial obligation)", async () => {
     const fetcher = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(response({ data: snapshot }, 201));
-    const result = await leaseApi.resolveNeverMovedIn(
-      "property/1",
-      termination,
-      {
-        resolution_id: resolutionId,
-        unit_status: "VACANT",
-        reason: "Never moved in",
-      },
-      "command-1",
-    );
-    const call = fetcher.mock.calls[0];
-    expect(call?.[0]).toBe(
-      `/api/v1/properties/property%2F1/lease-terminations/${termination}/unpaid-initial-never-moved-in`,
-    );
-    expect(call?.[1]?.method).toBe("POST");
-    const headers = new Headers(call?.[1]?.headers);
-    expect(headers.get("Idempotency-Key")).toBe("command-1");
-    expect(headers.get("X-CSRF-Token")).toBe("csrf-value");
-    expect(headers.has("If-Match")).toBe(false);
-    expect(bodyOf(call?.[1])).toEqual({
-      resolution_id: resolutionId,
-      unit_status: "VACANT",
-      reason: "Never moved in",
-    });
-    expect(result).toMatchObject({
-      path: "NEVER_MOVED_IN",
-      credit_usd_cents: 4200,
-      resulting_unit_status: "VACANT",
-      invoice_void_event_id: null,
-    });
-  });
-
-  it("TEST-FE-658 rejects an unpaid Initial resolution reply that does not match the request", async () => {
-    const changes = [
-      { termination_event_id: "33333333-3333-4333-8333-333333333333" },
-      { resolution_id: "44444444-4444-4444-8444-444444444444" },
-      { path: "MOVED_IN" },
-      { credit_usd_cents: -1 },
-      { credit_usd_cents: 1.5 },
-      { adjustment_ids: [1] },
-      { resulting_unit_status: "OCCUPIED" },
-    ];
-    for (const change of changes) {
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        response({ data: { ...snapshot, ...change } }, 201),
-      );
-      await expect(
-        leaseApi.resolveNeverMovedIn(
-          "property-1",
-          termination,
-          {
-            resolution_id: resolutionId,
-            unit_status: "VACANT",
-            reason: "Never moved in",
-          },
-          "command-1",
-        ),
-      ).rejects.toBeInstanceOf(LeaseRequestError);
-    }
-  });
-
-  it("TEST-FE-659 posts the moved-in credit and sends the termination context with the Lease termination", async () => {
-    const fetcher = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        response(
-          {
-            data: {
-              ...snapshot,
-              path: "MOVED_IN",
-              resulting_unit_status: null,
-              deposit_disposition_id: null,
-            },
-          },
-          201,
-        ),
-      )
       .mockResolvedValueOnce(
         response({ data: { lease_id: "lease-1", version: 5 } }),
       );
-    const credit = await leaseApi.creditMovedInInitialRent(
-      "property-1",
-      termination,
-      { resolution_id: resolutionId, reason: "Rent after termination" },
-      "command-2",
-    );
-    expect(fetcher.mock.calls[0]?.[0]).toBe(
-      `/api/v1/properties/property-1/lease-terminations/${termination}/unpaid-initial-moved-in-credit`,
-    );
-    expect(credit.path).toBe("MOVED_IN");
     await leaseApi.terminate(
       { lease_id: "lease-1", version: 4 } as Parameters<
         typeof leaseApi.terminate
@@ -301,12 +198,12 @@ describe("Lease API client", () => {
       {
         event_id: termination,
         actual_termination_date: "2026-09-10",
-        governing_event_reference: "BR-LEASE-005",
-        reason: "Customer did not pay",
+        governing_event_reference: "BR-LEASE-025",
+        reason: "Lease rule violation",
         context: {
-          basis: "UNPAID_INITIAL_OBLIGATION",
-          signed_lease_provision: "Clause 7.3",
-          approved_grounds: "Initial Rent unpaid",
+          basis: "CUSTOMER_VIOLATION",
+          signed_lease_provision: "Clause 9",
+          approved_grounds: "Lease rule violation after three written warnings",
           management_authorization_reference: "AUTH-1",
           evidence_reference: "LEDGER-1",
           notice_required: false,
@@ -315,11 +212,11 @@ describe("Lease API client", () => {
       },
       "command-3",
     );
-    const call = fetcher.mock.calls[1];
+    const call = fetcher.mock.calls[0];
     expect(call?.[0]).toBe("/api/v1/leases/lease-1/terminate");
     expect(new Headers(call?.[1]?.headers).get("If-Match")).toBe('"4"');
     expect(bodyOf(call?.[1]).context).toMatchObject({
-      basis: "UNPAID_INITIAL_OBLIGATION",
+      basis: "CUSTOMER_VIOLATION",
     });
   });
 

@@ -785,22 +785,6 @@ const TEXT = {
     "Needs the termination notice, the third letter, and its period to have ended",
     "ត្រូវមានការជូនដំណឹងបញ្ចប់ ជាលិខិតទីបី ហើយរយៈពេលរបស់វាបានផុត",
   ],
-  tg_UNPAID: ["Initial Rent not paid", "ថ្លៃឈ្នួលដំបូងមិនបានបង់"],
-  // new
-  tg_UNPAID_s: [
-    "The Initial Rent or the Security Deposit was not paid within 5 days",
-    "ថ្លៃឈ្នួលដំបូង ឬប្រាក់កក់សុវត្ថិភាព មិនបានបង់ក្នុង 5 ថ្ងៃ",
-  ],
-  // new
-  tg_UNPAID_wait: [
-    "Possible from {0}, after the 5 days to pay",
-    "អាចធ្វើបានពី {0} បន្ទាប់ពី 5 ថ្ងៃសម្រាប់បង់",
-  ],
-  // new
-  tg_c1_unpaid: [
-    "Whatever was received of the Security Deposit is kept and is not used for what the Customer owes.",
-    "ប្រាក់កក់សុវត្ថិភាពដែលបានទទួល ត្រូវរក្សាទុក មិនប្រើសម្រាប់អ្វីដែលអតិថិជនជំពាក់។",
-  ],
   // new
   tg_memo_e: ["Write the reason.", "សូមសរសេរមូលហេតុ។"],
   // new

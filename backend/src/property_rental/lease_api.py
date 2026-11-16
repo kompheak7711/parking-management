@@ -11,7 +11,7 @@ from uuid import UUID
 
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from property_rental.access_control import RENT_BELOW_DEFAULT_CAPABILITY
 from property_rental.api_refusals import (
@@ -1242,6 +1242,14 @@ class TerminationContextSource(BaseModel):
     notice_period_ends_on: date | None = None
     notice_exception_reason: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
     warning_ids: Annotated[list[UUID], Field(max_length=100)] = Field(default_factory=list)
+
+    @field_validator("basis")
+    @classmethod
+    def _not_unpaid_initial(cls, value: TerminationBasis) -> TerminationBasis:
+        # C1 (DL-240): Sign Lease receives the first money, so no Lease can be ended for it.
+        if value is TerminationBasis.UNPAID_INITIAL_OBLIGATION:
+            raise ValueError("A Lease is no longer ended for unpaid Initial Rent or Deposit")
+        return value
 
     def to_context(self) -> TerminationContext:
         return TerminationContext(

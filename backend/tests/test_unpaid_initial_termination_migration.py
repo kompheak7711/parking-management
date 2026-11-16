@@ -480,162 +480,46 @@ def terminate_body(url: str, source: dict[str, Any], **changes: object) -> dict[
     return body
 
 
-def test_terminate_route_accepts_the_unpaid_initial_basis_and_rejects_a_mismatched_reference(
-    migrated_database_url: str,
-) -> None:
+def test_terminate_route_refuses_the_unpaid_initial_basis(migrated_database_url: str) -> None:
+    """C1 (DL-240): no new Lease can owe its Initial Rent after signing, so the app no longer
+    ends a Lease for it; the database step stays only for Leases ended this way before."""
     source = signed_with_initial(migrated_database_url, 10)
     who = actor(source["actor"], source["property"], *ALL)
     path = f"/api/v1/leases/{source['lease']}/terminate"
     version = int(
         row(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0]
     )
-    mismatch = api(who).post(
+    reply = api(who).post(
         path,
-        json=terminate_body(
-            migrated_database_url, source, governing_event_reference="BR-LEASE-021"
-        ),
+        json=terminate_body(migrated_database_url, source),
         headers=mutation_headers(version=version),
     )
-    assert mismatch.status_code == 422, mismatch.text
+    assert reply.status_code == 422, reply.text
     assert row(
         migrated_database_url, "SELECT status FROM app.leases WHERE id=%s", source["lease"]
     ) == ("SIGNED",)
-    unknown = api(who).post(
-        path,
-        json=terminate_body(
-            migrated_database_url, source, context={**CONTEXT_BODY, "invented": "field"}
-        ),
-        headers=mutation_headers(version=version),
-    )
-    assert unknown.status_code == 422
-    key = uuid4()
-    body = terminate_body(migrated_database_url, source)
-    reply = api(who).post(path, json=body, headers=mutation_headers(key=key, version=version))
-    assert reply.status_code == 200, reply.text
-    assert reply.json()["data"]["status"] == "TERMINATED"
-    context = row(
-        migrated_database_url,
-        "SELECT context_data->>'basis' FROM app.lease_termination_contexts "
-        "WHERE command_event_id=%s",
-        UUID(str(body["event_id"])),
-    )
-    assert context == ("UNPAID_INITIAL_OBLIGATION",)
-    replay = api(who).post(path, json=body, headers=mutation_headers(key=key, version=version))
-    assert replay.status_code == 200 and replay.json()["data"] == reply.json()["data"]
 
 
-def resolution_path(source: dict[str, Any], event: UUID, kind: str) -> str:
-    return (
-        f"/api/v1/properties/{source['property']}/lease-terminations/{event}/unpaid-initial-{kind}"
-    )
-
-
-def test_never_moved_in_route_resolves_replays_and_needs_every_capability(
-    migrated_database_url: str,
-) -> None:
+def test_follow_up_routes_are_taken_out(migrated_database_url: str) -> None:
+    """C1 (DL-240): the two follow-up steps after such an ending have no route any more."""
     source = signed_with_initial(migrated_database_url, 10)
     event = terminate(migrated_database_url, source)
-    path = resolution_path(source, event, "never-moved-in")
-    body = {
-        "resolution_id": str(uuid4()),
-        "unit_status": "CLEANING",
-        "unit_status_reason": "Parking needs cleaning",
-        "reason": "Customer never moved in and did not pay",
-    }
-    weak = actor(source["actor"], source["property"], *ALL[:-1])
-    assert api(weak).post(path, json=body, headers=mutation_headers()).status_code == 403
-    missing_reason = {key: value for key, value in body.items() if key != "unit_status_reason"}
     full = actor(source["actor"], source["property"], *ALL)
-    assert api(full).post(path, json=missing_reason, headers=mutation_headers()).status_code == 422
-    assert row(
-        migrated_database_url, "SELECT status FROM app.units WHERE id=%s", source["unit"]
-    ) != ("CLEANING",)
-    key = uuid4()
-    reply = api(full).post(path, json=body, headers=mutation_headers(key=key))
-    assert reply.status_code == 201, reply.text
-    assert reply.headers["cache-control"] == "private, no-store"
-    data = reply.json()["data"]
-    assert (
-        data["path"] == "NEVER_MOVED_IN" and data["cause"] == "CUSTOMER_UNPAID_INITIAL_OBLIGATION"
-    )
-    replay = api(full).post(path, json=body, headers=mutation_headers(key=key))
-    assert replay.status_code == 201 and replay.json()["data"] == data
-    assert row(
-        migrated_database_url, "SELECT status FROM app.units WHERE id=%s", source["unit"]
-    ) == ("CLEANING",)
-    other = api(full).post(
-        path, json={**body, "resolution_id": str(uuid4())}, headers=mutation_headers()
-    )
-    # A second resolution of the same termination is refused as invalid state, not replayed.
-    assert other.status_code == 422
-    unknown = api(full).post(
-        resolution_path(source, uuid4(), "never-moved-in"),
-        json={**body, "resolution_id": str(uuid4())},
-        headers=mutation_headers(),
-    )
-    assert unknown.status_code == 404
-    no_csrf = mutation_headers()
-    no_csrf.pop("X-CSRF-Token")
-    assert api(full).post(path, json=body, headers=no_csrf).status_code == 403
-
-
-def test_moved_in_credit_route_credits_once_and_refuses_the_wrong_path(
-    migrated_database_url: str,
-) -> None:
-    source = signed_with_initial(migrated_database_url, 10)
-    version = int(
-        row(migrated_database_url, "SELECT version FROM app.leases WHERE id=%s", source["lease"])[0]
-    )
-    PostgresMoveInService(
-        runtime_database_url(), source["property"], source["actor"]
-    ).record_lease_move_in(
-        RecordLeaseMoveInCommand(
-            idempotency_key=uuid4(),
-            event_id=uuid4(),
-            lease_id=source["lease"],
-            expected_lease_version=version,
-            actual_move_in_date=source["today"],
-            occupants=(MoveInOccupant(uuid4(), source["customer"]),),
-            reason="Customer moved in",
-            authorization_reference=MOVE_IN_CAPABILITY,
+    base = f"/api/v1/properties/{source['property']}/lease-terminations/{event}"
+    for path, body in (
+        (
+            base + "/unpaid-initial-never-moved-in",
+            {"resolution_id": str(uuid4()), "unit_status": "VACANT", "reason": "Never moved in"},
         ),
-        actor=actor(source["actor"], source["property"], MOVE_IN_CAPABILITY),
-    )
-    event = terminate(migrated_database_url, source)
-    full = actor(source["actor"], source["property"], *ALL)
-    wrong = api(full).post(
-        resolution_path(source, event, "never-moved-in"),
-        json={
-            "resolution_id": str(uuid4()),
-            "unit_status": "VACANT",
-            "reason": "Wrong path",
-        },
-        headers=mutation_headers(),
-    )
-    assert wrong.status_code == 422
-    path = resolution_path(source, event, "moved-in-credit")
-    body = {"resolution_id": str(uuid4()), "reason": "Rent after termination"}
-    assert (
-        api(actor(source["actor"], source["property"], "leases.terminate"))
-        .post(path, json=body, headers=mutation_headers())
-        .status_code
-        == 403
-    )
-    key = uuid4()
-    reply = api(full).post(path, json=body, headers=mutation_headers(key=key))
-    assert reply.status_code == 201, reply.text
-    data = reply.json()["data"]
-    monthly = int(
-        row(
-            migrated_database_url,
-            "SELECT monthly_rent_usd_cents FROM app.leases WHERE id=%s",
-            source["lease"],
-        )[0]
-    )
-    assert data["path"] == "MOVED_IN"
-    assert data["credit_usd_cents"] == expected_credit(monthly, source["start"], source["today"])
-    replay = api(full).post(path, json=body, headers=mutation_headers(key=key))
-    assert replay.status_code == 201 and replay.json()["data"] == data
+        (
+            base + "/unpaid-initial-moved-in-credit",
+            {"resolution_id": str(uuid4()), "reason": "Rent after termination"},
+        ),
+    ):
+        assert api(full).post(path, json=body, headers=mutation_headers()).status_code in {
+            404,
+            405,
+        }
 
 
 def test_lease_timeline_lists_the_termination_and_the_explicit_follow_up_in_order(
@@ -645,16 +529,16 @@ def test_lease_timeline_lists_the_termination_and_the_explicit_follow_up_in_orde
     event = terminate(migrated_database_url, source)
     full = actor(source["actor"], source["property"], *ALL, "leases.read")
     resolution = uuid4()
-    reply = api(full).post(
-        resolution_path(source, event, "never-moved-in"),
-        json={
-            "resolution_id": str(resolution),
-            "unit_status": "VACANT",
-            "reason": "Customer never moved in and did not pay",
-        },
-        headers=mutation_headers(),
+    service(source).resolve_never_moved_in(
+        ResolveNeverMovedInCommand(
+            idempotency_key=uuid4(),
+            resolution_id=resolution,
+            termination_event_id=event,
+            unit_status="VACANT",
+            reason="Customer never moved in and did not pay",
+        ),
+        actor=full,
     )
-    assert reply.status_code == 201, reply.text
     timeline = api(full).get(f"/api/v1/leases/{source['lease']}/timeline")
     assert timeline.status_code == 200, timeline.text
     items = timeline.json()["data"]
@@ -693,12 +577,15 @@ def test_lease_timeline_labels_the_moved_in_credit_separately(
     )
     event = terminate(migrated_database_url, source)
     full = actor(source["actor"], source["property"], *ALL, "leases.read")
-    credit = api(full).post(
-        resolution_path(source, event, "moved-in-credit"),
-        json={"resolution_id": str(uuid4()), "reason": "Rent after termination"},
-        headers=mutation_headers(),
+    service(source).credit_moved_in_initial_rent(
+        CreditMovedInInitialRentCommand(
+            idempotency_key=uuid4(),
+            resolution_id=uuid4(),
+            termination_event_id=event,
+            reason="Rent after termination",
+        ),
+        actor=full,
     )
-    assert credit.status_code == 201, credit.text
     timeline = api(full).get(f"/api/v1/leases/{source['lease']}/timeline")
     kinds = [item["event_kind"] for item in timeline.json()["data"]]
     assert "lease.unpaid_initial_moved_in_credit" in kinds
