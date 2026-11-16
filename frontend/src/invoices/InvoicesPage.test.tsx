@@ -203,6 +203,7 @@ type PageApi = Pick<
   | "replaceItems"
   | "adjust"
   | "void"
+  | "deleteDraft"
 >;
 
 function invoiceApi(list = invoices()): PageApi {
@@ -213,6 +214,7 @@ function invoiceApi(list = invoices()): PageApi {
     createWithItems: vi.fn(),
     createWithServices: vi.fn(),
     replaceItems: vi.fn(),
+    deleteDraft: vi.fn(),
     list: vi.fn().mockResolvedValue({
       items: list,
       next_cursor: null,
@@ -732,7 +734,7 @@ describe("Invoices page (V1-058 R5)", () => {
     });
   });
 
-  it("TEST-FE-1065 Edit items starts from the Draft's items, needs the reason for the change, keeps the charge of an item that stays the same, reads the Draft again after a change meanwhile, and makes every item new when the reason changes", async () => {
+  it("TEST-FE-1065 Edit items starts from the Draft's items, asks no reason for the change (D6), keeps the charge of an item that stays the same, reads the Draft again after a change meanwhile, and makes every item new when the reason changes", async () => {
     const api = invoiceApi([...invoices(), typedDraft()]);
     api.get = vi
       .fn()
@@ -790,16 +792,8 @@ describe("Invoices page (V1-058 R5)", () => {
       });
     };
     change();
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    expect(
-      await screen.findByText("Fix 1 thing(s) before saving."),
-    ).toBeTruthy();
-    expect(
-      screen.getAllByText("Write the reason for the change."),
-    ).toHaveLength(2);
-    fireEvent.change(screen.getByLabelText(/^Reason for the change/), {
-      target: { value: "One more lock and four bulbs" },
-    });
+    // D6 (DL-239): a Draft is changed with no reason asked.
+    expect(screen.queryByLabelText(/^Reason for the change/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     let dialog = await screen.findByRole("dialog", {
       name: "Save these changes?",
@@ -826,7 +820,7 @@ describe("Invoices page (V1-058 R5)", () => {
     const [kept] = replace.mock.calls as [
       string,
       {
-        change_reason: string;
+        change_reason?: string;
         items: { charge_id: string; quantity: number }[];
       },
       number,
@@ -834,7 +828,7 @@ describe("Invoices page (V1-058 R5)", () => {
     ][];
     expect(kept?.[0]).toBe("inv-d2");
     expect(kept?.[2]).toBe(3);
-    expect(kept?.[1].change_reason).toBe("One more lock and four bulbs");
+    expect(kept?.[1].change_reason).toBeUndefined();
     // The key copy stays as it was, so it keeps its charge; the changed lock and the new bulbs
     // are new charges.
     expect(kept?.[1].items.map((item) => item.charge_id)).toEqual([
@@ -848,9 +842,6 @@ describe("Invoices page (V1-058 R5)", () => {
     change();
     fireEvent.change(screen.getByLabelText(/^ReasonRequired/), {
       target: { value: "Lost key, broken lock and bulbs" },
-    });
-    fireEvent.change(screen.getByLabelText(/^Reason for the change/), {
-      target: { value: "One more lock and four bulbs" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     dialog = await screen.findByRole("dialog", { name: "Save these changes?" });
@@ -943,6 +934,73 @@ describe("Invoices page (V1-058 R5)", () => {
       })),
     };
     expect(editableItems(services)).toBeNull();
+  });
+
+  it("TEST-FE-2279 D6: Delete Draft shows on a Draft for a person who may make Invoices, asks no reason, deletes with the version and goes back to the list; a Draft another record uses offers Void instead", async () => {
+    const list = invoices();
+    const draft = list.find((item) => item.id === "inv-d1");
+    if (draft === undefined) throw new Error("No Draft");
+    const api = invoiceApi(list);
+    const remove = vi
+      .fn()
+      .mockRejectedValueOnce(new InvoiceClientError(422, "INVALID", false))
+      .mockResolvedValue(undefined);
+    api.deleteDraft = remove;
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({
+      invoices: api,
+      capabilities: new Set(["invoices.create", "invoices.void"]),
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Delete Draft" }),
+    );
+    let dialog = await screen.findByRole("dialog", {
+      name: "Delete this Draft?",
+    });
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Delete Draft" }),
+    );
+    expect(
+      await within(dialog).findByText(
+        "This Draft is used by another record, or the app made it by itself, so it cannot be deleted. Make it Void instead.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Void instead" }),
+    );
+    expect(await screen.findByRole("dialog", { name: /^Void / })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete Draft" }));
+    dialog = await screen.findByRole("dialog", { name: "Delete this Draft?" });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Delete Draft" }),
+    );
+    await waitFor(() => {
+      expect(window.location.hash).toBe("#/invoices");
+    });
+    const [, second] = remove.mock.calls as [
+      [string, number, string],
+      [string, number, string],
+    ];
+    expect(second[0]).toBe("inv-d1");
+    expect(second[1]).toBe(draft.version);
+    expect(second[2]).not.toBe("");
+    cleanup();
+
+    // Not on an issued Invoice, and not for a person who may not make Invoices.
+    window.location.hash = "#/invoices/inv:inv-r1";
+    show({ capabilities: new Set(["invoices.create", "invoices.void"]) });
+    expect(await screen.findByRole("button", { name: "Void" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete Draft" })).toBeNull();
+    cleanup();
+    window.location.hash = "#/invoices/inv:inv-d1";
+    show({ capabilities: new Set(["invoices.issue"]) });
+    expect(
+      await screen.findByRole("button", { name: "Issue Invoice" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete Draft" })).toBeNull();
   });
 
   it("TEST-FE-905 Issue Invoice gives a Draft its number with the Settings Due Date, or another date with a reason; a change meanwhile reads the Invoice again; it needs invoices.issue", async () => {

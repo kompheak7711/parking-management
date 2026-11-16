@@ -6189,3 +6189,14 @@ Added by DL-235 (owner, 12 Nov 2026, D5; migration `20270801_398` on `20270731_3
 - Not changed: `app.confirm_usd_payment`, `app.confirm_khr_payment` and `app.post_payment_allocations` used alone; money already waiting on a Payment; another person's money for a named Invoice or Lease (Receive payment refuses it, as before).
 
 Tests: `backend/tests/test_v12_extra_money_credit_migration.py`, `backend/tests/test_receive_payment_migration.py`, `backend/tests/test_payments_summary_migration.py`.
+
+## DB-BS-014 — A Draft Invoice is changed freely and a Draft made by a person may be deleted (DL-239)
+
+Added by DL-239 (owner, 12 Nov 2026, D6; migration `20270802_399` on `20270801_398`, forward-only). No table is added, and no row is changed or deleted by the migration.
+
+- New `app.delete_invoice_draft(property_id, invoice_id, actor_id, expected_version, audit_id)`, `SECURITY DEFINER`, `EXECUTE` to `prm_financial` only (the API needs `invoices.create`). It deletes a `DRAFT` with no `originating_billing_run_attempt_id`, at the expected version, with its lines, their calculation parts and source claims, its Draft revision history and its command records, and writes one audit event `invoice.draft_deleted` with the Draft as it was (`previous_state`). The charges its lines named stay as records. Errors: `P4501` not found, `P4504` other version, `P4502` not a Draft made by a person, or named by another record, `P4507` version cap.
+- A Draft that any other record names (any foreign key to `app.invoices` or `app.invoice_lines`, read from `pg_constraint` at the time of the call, so a later table is covered too) is refused and is made Void as before.
+- The history guards of the Invoice header (`app.protect_invoice_header_history`), the Draft revision history (`app.protect_invoice_draft_revision_event`) and the Invoice command records (`app.reject_invoice_append_only_mutation` on `invoice_commands`) accept a `DELETE` only of the one Draft named by the transaction setting `app.draft_delete_invoice_id`, which only the function sets and clears. Every other delete is still refused (`55000`). No issued Invoice can be deleted.
+- Edit items of a Draft: the change reason may be left out; the API then stores the fixed text "Changed before issue" (no database change).
+
+Tests: `backend/tests/test_v12_draft_delete_migration.py`.

@@ -65,6 +65,7 @@ from property_rental.invoice import (
     CreateInvoiceDraftCommand,
     CreateItemsInvoiceDraftCommand,
     CreateServicesInvoiceDraftCommand,
+    DeleteInvoiceDraftCommand,
     InvoiceAuthorizationError,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
@@ -182,6 +183,15 @@ class InvoiceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> dict[str, object]: ...
 
+    def delete_draft(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: DeleteInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]: ...
+
     def record_one_time_charge(
         self,
         property_id: UUID,
@@ -275,7 +285,10 @@ class ServicesInvoiceDraftInput(BaseModel):
 
 
 class InvoiceItemsChangeInput(ItemsInvoiceDraftInput):
-    change_reason: str = Field(min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$")
+    # D6 (DL-239): a Draft is changed freely; the reason may be left out.
+    change_reason: str | None = Field(
+        default=None, min_length=1, max_length=500, pattern=r"^\S(?:.*\S)?$"
+    )
 
 
 def _invoice_items(items: list[InvoiceItemInput]) -> tuple[InvoiceItem, ...]:
@@ -890,6 +903,25 @@ def create_invoice_router(
         )
         _etag(response, resource)
         return _envelope(resource, request)
+
+    @router.delete("/invoices/{invoice_id}")
+    def delete_invoice_draft(
+        invoice_id: UUID,
+        request: Request,
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """D6 (DL-239): delete a Draft made by a person; an issued Invoice is never deleted."""
+        actor, property_id = command_context(invoice_id, request, INVOICE_CREATE_CAPABILITY)
+        expected_version = _version(if_match)
+        result = _invoke(
+            lambda: flow.delete_draft(
+                property_id,
+                invoice_id,
+                DeleteInvoiceDraftCommand(expected_version),
+                actor=actor,
+            )
+        )
+        return _envelope(result, request)
 
     return router
 

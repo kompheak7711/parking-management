@@ -6,7 +6,8 @@
 // price, with one reason and one approval for all of them. Saving records every item's charge and
 // the Draft in one request that keeps its ids and key while the form is unchanged, so "Save" again
 // after an unknown result is saved once. Edit items ("#/invoices/edit:<id>") changes the items of
-// such a Draft with the reason for the change; an item that stays the same keeps its charge.
+// such a Draft; an item that stays the same keeps its charge. D6 (DL-239): a Draft is changed
+// with no reason asked, because it is not owed until it is issued.
 
 import {
   type FormEvent,
@@ -62,7 +63,7 @@ interface Start {
   source: string;
 }
 
-type Field = "cust" | "reason" | "src" | "change";
+type Field = "cust" | "reason" | "src";
 type ItemPart = "d" | "q" | "p";
 type Problem = Field | `${ItemPart}:${string}`;
 
@@ -70,14 +71,12 @@ const IDS: Record<Field, string> = {
   cust: "ni-cust",
   reason: "ni-reason",
   src: "ni-src",
-  change: "ni-change",
 };
 
 const ERRORS: Record<Field, InvoicesTextKey> = {
   cust: "ni_err_cust",
   reason: "ni_err_reason",
   src: "ni_err_src",
-  change: "ni_err_change",
 };
 
 const ITEM_ERRORS: Record<ItemPart, InvoicesTextKey> = {
@@ -329,7 +328,6 @@ function ItemsForm({
   const [rows, setRows] = useState<Row[]>(start.rows);
   const [reason, setReason] = useState(start.reason);
   const [source, setSource] = useState(start.source);
-  const [change, setChange] = useState("");
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -397,7 +395,6 @@ function ItemsForm({
     }
     if (reason.trim() === "") found.push("reason");
     if (source.trim() === "") found.push("src");
-    if (editing && change.trim() === "") found.push("change");
     setProblems(found);
     if (found.length > 0) {
       // The summary takes the focus, so a screen reader reads what to fix.
@@ -422,7 +419,6 @@ function ItemsForm({
       leaseId,
       reason: reason.trim(),
       source: source.trim(),
-      change: change.trim(),
       items: items.map((item) => [
         item.row.key,
         item.description,
@@ -475,12 +471,7 @@ function ItemsForm({
     setBusy(true);
     setOutcome(null);
     const request = editing
-      ? api.replaceItems(
-          invoice.id,
-          { ...input, change_reason: change.trim() },
-          invoice.version,
-          key,
-        )
+      ? api.replaceItems(invoice.id, input, invoice.version, key)
       : api.createWithItems(propertyId, input, key);
     void request
       .then((draft) => {
@@ -875,23 +866,6 @@ function ItemsForm({
                 />,
                 "ni_src_help",
               )}
-              {editing &&
-                field(
-                  "change",
-                  "ni_change",
-                  <input
-                    aria-describedby={describedBy("change", true)}
-                    aria-invalid={shown.has("change")}
-                    autoComplete="off"
-                    id={IDS.change}
-                    maxLength={500}
-                    onChange={(event) => {
-                      setChange(event.currentTarget.value);
-                    }}
-                    value={change}
-                  />,
-                  "ni_change_help",
-                )}
               <div className="ui-actions">
                 <button className="ui-btn primary" type="submit">
                   <Icon name="check" />
@@ -990,12 +964,6 @@ function ItemsForm({
             <dd>{reason.trim()}</dd>
             <dt>{ivt(language, "ni_src")}</dt>
             <dd>{source.trim()}</dd>
-            {editing && (
-              <>
-                <dt>{ivt(language, "ni_change")}</dt>
-                <dd>{change.trim()}</dd>
-              </>
-            )}
           </dl>
           <p>{ivt(language, editing ? "ni_edit_dlg_c" : "ni_dlg_c")}</p>
           {outcome !== null && (

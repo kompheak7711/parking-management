@@ -57510,15 +57510,16 @@
       "notes": "V1-060 B6: POST /properties/{id}/invoices/drafts needs invoices.create (else 403); no items, 21 items, a repeated item, a quantity or unit price that is not a whole number in range, a number sent as text, an amount field, an untrimmed name and an empty reason give 422; it sends the exact items, answers 201 with Location and ETag, replays the same key, and answers 409 IDEMPOTENCY_KEY_REUSED for the key with other values."
     },
     {
-      "test_id": "test_edit_items_route_needs_the_version_and_the_reason_for_the_change",
+      "test_id": "test_edit_items_route_needs_the_version_and_takes_a_reason_only_if_given",
       "upstream_ids": [
         "DL-103",
-        "API-052"
+        "API-052",
+        "DL-239"
       ],
       "test_level": "API",
       "test_path": "backend/tests/test_invoice_api.py",
       "status": "implemented",
-      "notes": "V1-060 B6: PUT /invoices/{id}/items hides the Invoice without invoices.create (404), needs If-Match (412) and the reason for the change (422), answers an old version with 412 and the current version, and sends the version and reason, answering the new ETag."
+      "notes": "V1-060 B6: PUT /invoices/{id}/items hides the Invoice without invoices.create (404), needs If-Match (412), answers an old version with 412 and the current version, and sends the version and reason, answering the new ETag. D6 (DL-239): a change with no reason is accepted."
     },
     {
       "test_id": "TEST-FE-1065",
@@ -57529,7 +57530,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
-      "notes": "V1-060 B6: Edit items starts from the Draft's items, reason and approval, needs the reason for the change, sends the saved charge of an item that stays the same, reads the Draft again with a note after a change meanwhile, and makes every item new when the reason changes."
+      "notes": "V1-060 B6: Edit items starts from the Draft's items, reason and approval, asks no reason for the change (D6, DL-239), sends the saved charge of an item that stays the same, reads the Draft again with a note after a change meanwhile, and makes every item new when the reason changes."
     },
     {
       "test_id": "TEST-FE-1066",
@@ -68701,6 +68702,95 @@
       "test_path": "frontend/src/payments/PaymentsList.test.tsx",
       "status": "implemented",
       "notes": "The client reads credit_usd_cents from Receive payment, and an older answer without it as 0."
+    },
+    {
+      "test_id": "test_a_draft_is_changed_with_no_reason_asked",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_draft_delete_migration.py",
+      "status": "implemented",
+      "notes": "A Draft's items are changed with no change reason; the Draft stays a Draft with the new total."
+    },
+    {
+      "test_id": "test_a_draft_is_deleted_with_its_lines_and_draft_history",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_draft_delete_migration.py",
+      "status": "implemented",
+      "notes": "Deleting a Draft made by a person takes away the Draft, its lines, source claims, Draft revision history and command records, writes one invoice.draft_deleted audit event, and a second delete finds nothing."
+    },
+    {
+      "test_id": "test_an_issued_invoice_or_an_old_version_is_never_deleted",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_draft_delete_migration.py",
+      "status": "implemented",
+      "notes": "An old version and an issued Invoice are refused; a direct DELETE of an Invoice is still refused (55000)."
+    },
+    {
+      "test_id": "test_a_draft_that_another_record_names_is_not_deleted",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_draft_delete_migration.py",
+      "status": "implemented",
+      "notes": "A Draft named by any other table's foreign key, even one added later, is refused and stays."
+    },
+    {
+      "test_id": "test_only_the_financial_role_may_delete_a_draft_and_the_migration_is_the_head",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_draft_delete_migration.py",
+      "status": "implemented",
+      "notes": "Only prm_financial may run app.delete_invoice_draft; migration 20270802_399 is the head."
+    },
+    {
+      "test_id": "test_delete_draft_route_needs_the_create_right_and_the_version",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015",
+        "API-052"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "DELETE /invoices/{id} hides the Invoice without invoices.create (404), needs If-Match (412), answers an old version with 412 and the current version, deletes at the right version (200, deleted true), and answers a refused Draft with 422."
+    },
+    {
+      "test_id": "TEST-FE-2278",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoiceClient.test.ts",
+      "status": "implemented",
+      "notes": "Edit items is sent without change_reason when none is given; Delete Draft is sent as DELETE with If-Match, the key and CSRF; an answer that does not say deleted is not taken as deleted."
+    },
+    {
+      "test_id": "TEST-FE-2279",
+      "upstream_ids": [
+        "DL-239",
+        "BR-INV-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
+      "status": "implemented",
+      "notes": "Delete Draft shows on a Draft for invoices.create only, asks no reason, sends the version, goes back to the list; a refused Draft shows the text and Void instead."
     }
   ]
 }

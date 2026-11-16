@@ -3,7 +3,8 @@
 // with the bar from the issue date to the Due Date, the Customer, and the History; Issue for a
 // Draft, Adjust and Void for an issued one, and Receive payment while something is owed (R5c);
 // under the status card the late-payment card when the app added a charge (R5d). Edit items opens
-// a Draft made with Create Invoice again (DL-103).
+// a Draft made with Create Invoice again (DL-103). D6 (DL-239): Delete Draft takes a Draft made by
+// a person out of the list; one that another record uses is made Void instead.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,7 +20,7 @@ import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
 import { openPageInAddress } from "../shell/useHashPage";
 import type { Language } from "../signInText";
-import { AdjustDialog, VoidDialog } from "./ChangeDialogs";
+import { AdjustDialog, DeleteDraftDialog, VoidDialog } from "./ChangeDialogs";
 import { editableItems } from "./CreateInvoice";
 import { InvoiceDocument, SheetFrame } from "./InvoiceDocument";
 import { InvoiceChip } from "./InvoicesList";
@@ -236,7 +237,7 @@ export function InvoiceDetail({
   language: Language;
   api: Pick<
     InvoiceApi,
-    "get" | "issue" | "adjust" | "void" | "createWithItems"
+    "get" | "issue" | "adjust" | "void" | "createWithItems" | "deleteDraft"
   >;
   /** The late-payment card read and the Reduce or waive command; none hides the card. */
   lateApi?: Pick<PaymentsApi, "lateCharge" | "reduceLateCharge">;
@@ -252,9 +253,9 @@ export function InvoiceDetail({
 }) {
   const [invoice, setInvoice] = useState<InvoiceResource | null>(null);
   const [problem, setProblem] = useState<"missing" | "failed" | null>(null);
-  const [dialog, setDialog] = useState<"issue" | "adjust" | "void" | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    "issue" | "adjust" | "void" | "delete" | null
+  >(null);
   const [notice, setNotice] = useState<
     | { kind: "issued"; number: string; due: string }
     | { kind: "changed" | "adjusted" | "voided" | "late" }
@@ -462,6 +463,18 @@ export function InvoiceDetail({
                 {ivt(language, "act_edit_items")}
               </a>
             )}
+          {state === "draft" && may("invoices.create") && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setDialog("delete");
+              }}
+              type="button"
+            >
+              {ivt(language, "act_delete_draft")}
+            </button>
+          )}
           {state !== "draft" &&
             state !== "void" &&
             cents(invoice.outstanding_balance) > 0 &&
@@ -559,6 +572,34 @@ export function InvoiceDetail({
             onChanged();
           }}
           today={today}
+        />
+      )}
+      {dialog === "delete" && (
+        <DeleteDraftDialog
+          api={api}
+          invoice={invoice}
+          language={language}
+          onChanged={() => {
+            setDialog(null);
+            setNotice({ kind: "changed" });
+            load();
+            onChanged();
+          }}
+          onClose={() => {
+            setDialog(null);
+          }}
+          onDeleted={() => {
+            setDialog(null);
+            onChanged();
+            openPageInAddress("invoices");
+          }}
+          onVoidInstead={
+            may("invoices.void")
+              ? () => {
+                  setDialog("void");
+                }
+              : undefined
+          }
         />
       )}
       {(dialog === "adjust" || dialog === "void") &&

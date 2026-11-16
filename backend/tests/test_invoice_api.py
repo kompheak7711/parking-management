@@ -8,6 +8,7 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     CreateItemsInvoiceDraftCommand,
     CreateServicesInvoiceDraftCommand,
+    DeleteInvoiceDraftCommand,
     InvoiceItem,
     InvoiceLineFullyPaid,
     IssueInvoiceCommand,
@@ -483,8 +484,8 @@ def test_items_invoice_route_takes_the_line_where_an_amount_was_missed() -> None
     assert "missed_on_invoice_line_id" not in command.payload()
 
 
-def test_edit_items_route_needs_the_version_and_the_reason_for_the_change() -> None:
-    """DL-103: Edit items replaces the items of a DRAFT with one reason for the change."""
+def test_edit_items_route_needs_the_version_and_takes_a_reason_only_if_given() -> None:
+    """DL-103: Edit items replaces the items of a DRAFT; D6 (DL-239): no reason is needed."""
     property_id = uuid4()
     flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id, version=4))
     path = f"/api/v1/invoices/{flow.value['id']}/items"
@@ -495,8 +496,6 @@ def test_edit_items_route_needs_the_version_and_the_reason_for_the_change() -> N
     assert hidden.status_code == 404 and flow.commands == []
     client = api(flow, actor(property_id, "invoices.create"))
     assert client.put(path, headers=mutation_headers(), json=body).status_code == 412
-    no_reason = {key: value for key, value in body.items() if key != "change_reason"}
-    assert client.put(path, headers=mutation_headers(version=4), json=no_reason).status_code == 422
     stale = client.put(path, headers=mutation_headers(version=3), json=body)
     assert stale.status_code == 412
     assert stale.json()["error"]["current_version"] == 4
@@ -506,3 +505,29 @@ def test_edit_items_route_needs_the_version_and_the_reason_for_the_change() -> N
     command = cast(ReplaceInvoiceDraftItemsCommand, flow.commands[-1])
     assert command.change_reason == "Customer asked for one more key"
     assert command.expected_version == 4 and len(command.items) == 2
+    # A Draft is changed freely (D6, DL-239): the reason may be left out.
+    no_reason = {key: value for key, value in body.items() if key != "change_reason"}
+    free = client.put(path, headers=mutation_headers(version=5), json=no_reason)
+    assert free.status_code == 200
+    assert cast(ReplaceInvoiceDraftItemsCommand, flow.commands[-1]).change_reason is None
+
+
+def test_delete_draft_route_needs_the_create_right_and_the_version() -> None:
+    """D6 (DL-239): a Draft made by a person is deleted at the version the screen showed."""
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id, version=3))
+    path = f"/api/v1/invoices/{flow.value['id']}"
+    hidden = api(flow, actor(property_id, "invoices.read")).delete(
+        path, headers=mutation_headers(version=3)
+    )
+    assert hidden.status_code == 404 and flow.commands == []
+    client = api(flow, actor(property_id, "invoices.create"))
+    assert client.delete(path, headers=mutation_headers()).status_code == 412
+    stale = client.delete(path, headers=mutation_headers(version=2))
+    assert stale.status_code == 412 and stale.json()["error"]["current_version"] == 3
+    deleted = client.delete(path, headers=mutation_headers(version=3))
+    assert deleted.status_code == 200
+    assert deleted.json()["data"] == {"invoice_id": str(flow.value["id"]), "deleted": True}
+    assert cast(DeleteInvoiceDraftCommand, flow.commands[-1]).expected_version == 3
+    flow.value = {**flow.value, "status": "UNPAID"}
+    assert client.delete(path, headers=mutation_headers(version=3)).status_code == 422

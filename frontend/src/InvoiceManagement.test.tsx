@@ -120,6 +120,7 @@ function setup(
       .mockResolvedValue({ ...invoice, version: 3, status: "UNPAID" }),
     adjust: vi.fn().mockResolvedValue({ ...invoice, version: 3 }),
     void: vi.fn().mockResolvedValue({ ...invoice, version: 3, status: "VOID" }),
+    deleteDraft: vi.fn().mockResolvedValue(undefined),
     lateReview: vi.fn().mockResolvedValue({
       invoice_id: invoice.id,
       property_id: propertyId,

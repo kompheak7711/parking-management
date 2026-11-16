@@ -37,6 +37,7 @@ export interface InvoicesPageProps {
     | "replaceItems"
     | "adjust"
     | "void"
+    | "deleteDraft"
   >;
   leaseApi: Pick<LeaseApi, "list">;
   customerApi: Pick<CustomerApi, "list">;

@@ -180,4 +180,4 @@ def test_when_nothing_owed_cannot_be_checked_now_the_money_waits_as_before(
 def test_the_migration_is_the_head(migrated_database_url: str) -> None:
     with psycopg.connect(migrated_database_url) as connection:
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-    assert head == ("20270801_398",)
+    assert head == ("20270802_399",)

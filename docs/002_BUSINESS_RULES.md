@@ -694,7 +694,7 @@ PAID            -> PARTIALLY_PAID, UNPAID
 VOID            -> (the end)
 ```
 
-- Draft: not yet owed. It is not counted in any balance and cannot be late. It may be corrected before issue, with history. A Draft that is not wanted becomes Void with a reason; it is not deleted.
+- Draft: not yet owed. It is not counted in any balance and cannot be late. It may be changed before issue with no reason asked. A Draft made by a person that is not wanted may be deleted, with no reason, because nobody ever owed it; one record in the audit log says who deleted it and when. A Draft that another record uses, or that the app made by itself, is not deleted: it becomes Void with a reason. The history of an Invoice starts when it is issued (DL-239). Example: a Draft for a key copy, 2 × $15.00, is changed to 3 × $15.00 and saved; or it is deleted and leaves the list.
 - Unpaid: issued. From then on it is an official document. Scheduled billing (Rent with its Services, Utilities) may make and issue an Invoice in one step. A charge made by a person may stay a Draft for review.
 - Partly paid and Paid are worked out, never typed: from the active payment allocations, Customer Credit uses and Final Settlement Deposit uses, line by line. An Invoice is Paid only when every line is at zero. Example: $300 on the Rent line of a $500 Rent plus $10 Service Invoice leaves $210, Partly paid. A late-payment charge never changes the status of its Invoice.
 - A status goes back (Paid to Partly paid or Unpaid, Partly paid to Unpaid) only as the result of an authorized reversal or correction. Never by hand, and never to show a Refund.
@@ -1402,6 +1402,7 @@ Decisions: DL-074.
 | Type the ABA rate by hand | Authorized user, only when the rate cannot be read automatically |
 | Estimate use for a broken Meter, and correct it | Authorized user. A reading that is only missing can never be made into an estimate |
 | Issue a charge by hand, adjust an issued Invoice, set a Due Date by hand, make an Invoice Void | Authorized user, with a reason |
+| Change or delete a Draft Invoice made by a person | A user who may make Invoices, with no reason. An issued Invoice is never deleted (BR-INV-015) |
 | Lower or cancel a Late-payment Invoice, or a late-payment charge made before 14 November 2026 | Owner or Manager by default (BR-LATE-004) |
 | Receive a Payment, confirm its allocations, reverse an allocation or a Payment | Authorized user. A proposal by the app is never the confirmation |
 | Make Credit from extra money that waits on a Receipt, use Credit | Authorized user; the payer's choice is kept. Extra money at Receive payment becomes Credit at once (BR-PAY-030) |
@@ -1840,11 +1841,10 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235). D6, a Draft Invoice is changed with no reason and a Draft made by a person may be deleted (BR-INV-015, DL-239).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

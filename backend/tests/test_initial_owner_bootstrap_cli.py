@@ -947,7 +947,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/refund-drafts/{draft_id}/confirm": {"post"},
         "/api/v1/refunds/{refund_id}/verified-returns": {"post"},
         "/api/v1/refunds/{refund_id}/verified-returns/{correction_id}/reverse": {"post"},
-        "/api/v1/invoices/{invoice_id}": {"get", "patch"},
+        "/api/v1/invoices/{invoice_id}": {"delete", "get", "patch"},
         "/api/v1/invoices/{invoice_id}/issue": {"post"},
         "/api/v1/invoices/{invoice_id}/items": {"put"},
         "/api/v1/invoices/{invoice_id}/adjustments": {"post"},

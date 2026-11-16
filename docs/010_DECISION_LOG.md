@@ -3306,7 +3306,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Source.** The owner on 12 Nov 2026 (DL-226, D5, "all yes"): extra money becomes Customer Credit at once; the Customer may ask for a Refund any day.
 - **Before** (BR-PAY-030, BR-CREDIT-002). Money above everything the payer owed waited on the Receipt until Property Management asked the payer and recorded the choice: keep it as Customer Credit, or get it back.
 - **Now.** Receive payment pays what is ticked and, in the same step, makes the money still free the payer's Customer Credit, with no question to the payer.
-- **How the build read the rest (asked to the owner with the pull request).**
+- **How the build read the rest.** These points were asked with the pull request, and the owner said yes to all five on 16 Nov 2026 (card "Yes to all five, merge when green"); pull request #43 was merged that day.
   1. Money above everything owed becomes Customer Credit in the same step. Example: the Customer owes $300.00 and pays $350.00; $300.00 pays the Invoices and $50.00 becomes Credit.
   2. The Customer may ask for the Credit back any day, as a Credit Refund, with the approval a Refund needs today (BR-CREDIT-011, BR-AUTH-010).
   3. Credit pays a later Invoice only when staff use it ("One tap" on issue day), as today (BR-CREDIT-005).
@@ -3316,6 +3316,24 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270801_398` (DB-BS-013), forward-only; no data is changed or deleted. **API:** `customer_credit` and `credit_usd_cents` in the Receive payment answer (the amendment of DL-235 in docs/005). **Screen:** Receive payment says the money left over becomes the Customer's Credit, before saving and after (TEST-FE-2275, TEST-FE-2276, TEST-FE-2277).
 - **Open:** the native Khmer check of the new screen text.
 - **Links:** DL-226, DL-077, DL-064; BR-PAY-030, BR-CREDIT-002, BR-CREDIT-011.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
+
+## DL-239 — A Draft Invoice is changed with no reason, and a Draft made by a person may be deleted (D6 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, D6, "all yes"): a Draft is changed freely and may be deleted; the history of an Invoice starts at issue.
+- **Before** (BR-INV-015). A Draft was changed with a reason kept in its History, and a Draft that was not wanted became Void with a reason; nothing was deleted.
+- **Now.** A Draft is changed with no reason asked. A Draft made by a person may be deleted with no reason; one audit record says who deleted it, when, and what it held. An issued Invoice never changes and is never deleted.
+- **How the build read the rest (asked to the owner with the pull request).**
+  1. Edit items of a Draft asks no reason. Example: a Draft for a key copy, 2 × $15.00, is changed to 3 × $15.00 and saved; nothing more is typed.
+  2. Delete Draft takes the Draft and its items out of the list, with no reason, because nobody ever owed it. The charges it named stay as records.
+  3. A Draft that another record uses, or that the app made by itself (the monthly billing), is not deleted; the screen says so and offers Void, as before.
+  4. Who may delete: the people who may make Invoices (the right "Create Invoices"), the same people who may change a Draft.
+  5. An issued Invoice is never deleted; it is changed only with Adjust or Void, as today.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The delete is one database step that checks the version, refuses any Draft that another record names (read from the database's own links at the time, so a table added later is covered too), and writes the audit record in the same transaction. The history guards accept a delete only of that one Draft and only inside that step; every other delete is still refused. A Draft already deleted is shown as deleted. When no reason is given, the API keeps the fixed text "Changed before issue".
+- **Database:** migration `20270802_399` (DB-BS-014), forward-only; no data is changed or deleted by the migration. **API:** `DELETE /invoices/{invoice_id}` and the optional `change_reason` (the amendment of DL-239 in docs/005). **Screen:** Delete Draft on a Draft's page, and Edit items without the reason box (TEST-FE-2278, TEST-FE-2279; TEST-FE-1065 changed).
+- **Open:** the native Khmer check of the new screen text.
+- **Links:** DL-226, DL-103; BR-INV-015, BR-AUTH-010.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager

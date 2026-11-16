@@ -320,20 +320,11 @@ const TEXT = {
     "Change, add or remove items while the Invoice is a Draft. An item you do not change stays as it is.",
     "កែ បន្ថែម ឬដកមុខចេញ ពេលវិក្កយបត្រនៅជាសេចក្តីព្រាង។ មុខដែលអ្នកមិនកែ នៅដដែល។",
   ],
-  ni_change: ["Reason for the change", "មូលហេតុនៃការកែ"],
-  ni_change_help: [
-    "Saved in the History of this Draft.",
-    "រក្សាទុកក្នុងប្រវត្តិនៃសេចក្តីព្រាងនេះ។",
-  ],
-  ni_err_change: [
-    "Write the reason for the change.",
-    "សូមសរសេរមូលហេតុនៃការកែ។",
-  ],
   ni_edit_submit: ["Save changes", "រក្សាទុកការកែ"],
   ni_edit_dlg_t: ["Save these changes?", "រក្សាទុកការកែទាំងនេះ?"],
   ni_edit_dlg_c: [
-    "The Draft is changed and the reason is saved in its History. The Customer does not owe it until a Manager issues it.",
-    "សេចក្តីព្រាងត្រូវបានកែ ហើយមូលហេតុរក្សាទុកក្នុងប្រវត្តិ។ អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។",
+    "The Draft is changed. The Customer does not owe it until a Manager issues it.",
+    "សេចក្តីព្រាងត្រូវបានកែ។ អតិថិជនមិនទាន់ជំពាក់ រហូតដល់អ្នកគ្រប់គ្រងចេញវា។",
   ],
   ni_edit_done_t: ["Draft Invoice changed", "បានកែសេចក្តីព្រាងវិក្កយបត្រ"],
   ni_edit_done_b: [
@@ -480,6 +471,19 @@ const TEXT = {
   adj_done: ["Adjustment saved.", "បានរក្សាទុកការកែតម្រូវ។"],
   // new
   void_done: ["The Invoice is void.", "វិក្កយបត្រទុកជាមោឃៈហើយ។"],
+  // D6 (DL-239): a Draft made by a person may be deleted; it was never owed.
+  act_delete_draft: ["Delete Draft", "លុបសេចក្តីព្រាង"],
+  del_t: ["Delete this Draft?", "លុបសេចក្តីព្រាងនេះ?"],
+  del_b: [
+    "The Draft and its items are taken out of the list. Nobody ever owed it, so no reason is needed. This cannot be undone.",
+    "សេចក្តីព្រាង និងមុខទំនិញរបស់វា ត្រូវដកចេញពីបញ្ជី។ គ្មាននរណាធ្លាប់ជំពាក់វាទេ ដូច្នេះមិនចាំបាច់មានមូលហេតុ។ មិនអាចត្រឡប់វិញបានទេ។",
+  ],
+  del_save: ["Delete Draft", "លុបសេចក្តីព្រាង"],
+  del_err_kept: [
+    "This Draft is used by another record, or the app made it by itself, so it cannot be deleted. Make it Void instead.",
+    "សេចក្តីព្រាងនេះត្រូវបានប្រើដោយកំណត់ត្រាផ្សេង ឬកម្មវិធីបានបង្កើតវាដោយខ្លួនឯង ដូច្នេះមិនអាចលុបបានទេ។ សូមទុកវាជាមោឃៈជំនួសវិញ។",
+  ],
+  del_void: ["Void instead", "ទុកជាមោឃៈជំនួសវិញ"],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
   // new
   all_for: ["All Invoices for {0}", "វិក្កយបត្រទាំងអស់សម្រាប់ {0}"],

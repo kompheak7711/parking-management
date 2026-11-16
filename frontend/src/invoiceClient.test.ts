@@ -368,6 +368,44 @@ describe("V1-047 invoice client", () => {
       change_reason: "One more key",
     });
   });
+  it("TEST-FE-2278 D6: sends Edit items without a reason when none is given, and deletes a Draft with DELETE, If-Match and the key", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(invoice()))
+      .mockResolvedValueOnce(
+        response({ invoice_id: "invoice/one", deleted: true }),
+      )
+      .mockResolvedValueOnce(response({ invoice_id: "invoice/one" }));
+    vi.stubGlobal("fetch", fetcher);
+    await invoiceApi.replaceItems(
+      "invoice/one",
+      {
+        customer_id: "customer",
+        lease_id: null,
+        reason: "Keys",
+        evidence_reference: "Form 12",
+        items: [],
+      },
+      4,
+      "k1",
+    );
+    await invoiceApi.deleteDraft("invoice/one", 5, "k2");
+    const [[, edit], [deletePath, deleted]] = fetcher.mock.calls as [
+      [string, RequestInit],
+      [string, RequestInit],
+    ];
+    expect(bodyOf(edit)).not.toHaveProperty("change_reason");
+    expect(deletePath).toBe("/api/v1/invoices/invoice%2Fone");
+    expect(deleted.method).toBe("DELETE");
+    const headers = new Headers(deleted.headers);
+    expect(headers.get("If-Match")).toBe('"5"');
+    expect(headers.get("Idempotency-Key")).toBe("k2");
+    expect(headers.get("X-CSRF-Token")).toBe("csrf token");
+    // An answer that does not say the Draft was deleted is not taken as deleted.
+    await expect(
+      invoiceApi.deleteDraft("invoice/one", 5, "k3"),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
   it("fails before fetch without CSRF or with an invalid version", async () => {
     const fetcher = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetcher);

@@ -25,6 +25,7 @@ from property_rental.invoice import (
     CreateInvoiceDraftCommand,
     CreateItemsInvoiceDraftCommand,
     CreateServicesInvoiceDraftCommand,
+    DeleteInvoiceDraftCommand,
     InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
     InvoiceInvalidError,
@@ -383,6 +384,22 @@ class InMemoryInvoiceFlow:
                 "version": command.expected_version + 1,
             }
         return self.value
+
+    def delete_draft(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: DeleteInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        del property_id, actor
+        self.commands.append(command)
+        if command.expected_version != int(str(self.value["version"])):
+            raise InvoiceVersionConflict(int(str(self.value["version"])))
+        if self.value["status"] != "DRAFT":
+            raise InvoiceInvalidError("Only a Draft made by a person can be deleted")
+        return {"invoice_id": str(invoice_id), "deleted": True}
 
 
 def api(flow: InMemoryInvoiceFlow, authenticated: AuthenticatedActor | None) -> TestClient:

@@ -96,6 +96,10 @@ def _identity(value: UUID, field: str) -> None:
         raise ValueError(f"{field} must not be the nil UUID")
 
 
+# D6 (DL-239): the Draft history text when a Draft is changed with no reason given.
+DRAFT_CHANGE_REASON = "Changed before issue"
+
+
 def _normalized(value: str, field: str, *, maximum: int = 500) -> None:
     if not value.strip() or value != value.strip() or len(value) > maximum:
         raise ValueError(f"{field} must be normalized, nonblank, and bounded")
@@ -273,16 +277,18 @@ class CreateServicesInvoiceDraftCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReplaceInvoiceDraftItemsCommand:
-    """The new items of a DRAFT made from typed items, with the reason for the change (DL-103).
+    """The new items of a DRAFT made from typed items (DL-103).
 
-    An item that stays the same sends its charge again; a new or changed item has a new charge."""
+    An item that stays the same sends its charge again; a new or changed item has a new charge.
+    A Draft is changed freely (D6, DL-239): with no change reason the Draft history keeps
+    DRAFT_CHANGE_REASON."""
 
     idempotency_key: UUID
     customer_id: UUID
     lease_id: UUID | None
     reason: str
     evidence_reference: str
-    change_reason: str
+    change_reason: str | None
     items: tuple[InvoiceItem, ...]
     expected_version: int
 
@@ -293,7 +299,8 @@ class ReplaceInvoiceDraftItemsCommand:
             _identity(self.lease_id, "lease_id")
         _normalized(self.reason, "reason")
         _normalized(self.evidence_reference, "evidence_reference")
-        _normalized(self.change_reason, "change_reason")
+        if self.change_reason is not None:
+            _normalized(self.change_reason, "change_reason")
         _items(self.items)
         _expected_version(self.expected_version)
 
@@ -485,6 +492,16 @@ class VoidInvoiceCommand:
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
         _normalized(self.reason, "reason")
+        _expected_version(self.expected_version)
+
+
+@dataclass(frozen=True, slots=True)
+class DeleteInvoiceDraftCommand:
+    """Delete a Draft made by a person at the version the screen showed (D6, DL-239)."""
+
+    expected_version: int
+
+    def __post_init__(self) -> None:
         _expected_version(self.expected_version)
 
 
@@ -899,10 +916,25 @@ class PostgresInvoiceService:
                 command.lease_id,
                 command.reason,
                 command.evidence_reference,
-                command.change_reason,
+                command.change_reason or DRAFT_CHANGE_REASON,
                 json.dumps(payload["items"]),
                 uuid4(),
             ),
+        )
+
+    def delete_draft(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: DeleteInvoiceDraftCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        """Delete a Draft made by a person, with its lines and Draft history (D6, DL-239)."""
+        self._authorize(actor, property_id, INVOICE_CREATE_CAPABILITY)
+        return self._execute(
+            "SELECT app.delete_invoice_draft(%s,%s,%s,%s,%s)",
+            (property_id, invoice_id, self._actor_id(actor), command.expected_version, uuid4()),
         )
 
     def issue(

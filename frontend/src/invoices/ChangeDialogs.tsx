@@ -421,3 +421,89 @@ export function VoidDialog({
     </Dialog>
   );
 }
+
+/**
+ * D6 (DL-239): delete a Draft made by a person. Nobody ever owed it, so no reason is asked. A
+ * Draft that another record uses (or that the app made by itself) is refused, and may be made
+ * Void instead. A Draft already gone is taken as deleted.
+ */
+export function DeleteDraftDialog({
+  language,
+  api,
+  invoice,
+  onClose,
+  onDeleted,
+  onChanged,
+  onVoidInstead,
+}: {
+  language: Language;
+  invoice: InvoiceResource;
+  api: Pick<InvoiceApi, "deleteDraft">;
+  onClose: () => void;
+  onDeleted: () => void;
+  onChanged: () => void;
+  /** Opens Void for this Draft; none when the person may not void. */
+  onVoidInstead?: () => void;
+}) {
+  const keyFor = useKeys();
+  const [busy, setBusy] = useState(false);
+  const [outcome, setOutcome] = useState<
+    "unknown" | "refused" | "del_err_kept" | null
+  >(null);
+
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setOutcome(null);
+    const key = keyFor(String(invoice.version));
+    void api
+      .deleteDraft(invoice.id, invoice.version, key)
+      .then(onDeleted)
+      .catch((error: unknown) => {
+        if (!(error instanceof InvoiceClientError) || error.outcomeUnknown) {
+          setOutcome("unknown");
+          return;
+        }
+        if (error.status === 404) {
+          onDeleted();
+          return;
+        }
+        if (error.status === 409 || error.status === 412) {
+          onChanged();
+          return;
+        }
+        setOutcome(error.status === 422 ? "del_err_kept" : "refused");
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  };
+
+  const kept = outcome === "del_err_kept";
+  return (
+    <Dialog
+      actions={
+        kept && onVoidInstead !== undefined ? (
+          <button className="ui-btn" onClick={onVoidInstead} type="button">
+            {ivt(language, "del_void")}
+          </button>
+        ) : undefined
+      }
+      busy={busy}
+      closeLabel={ivt(language, kept ? "close" : "cancel")}
+      onClose={onClose}
+      onSubmit={kept ? undefined : save}
+      submitLabel={ivt(language, "del_save")}
+      title={ivt(language, "del_t")}
+    >
+      <p>{ivt(language, "del_b")}</p>
+      {outcome !== null && (
+        <div className="ui-notice warn" role="alert">
+          <Icon name="alert" />
+          <p>{ivt(language, outcome)}</p>
+        </div>
+      )}
+    </Dialog>
+  );
+}

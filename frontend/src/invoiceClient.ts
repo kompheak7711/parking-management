@@ -279,10 +279,10 @@ export interface InvoiceApi {
     input: ServicesInvoiceInput,
     key: string,
   ) => Promise<InvoiceResource>;
-  /** DL-103: Edit items of a Draft made from typed items, with the reason for the change. */
+  /** DL-103, D6 (DL-239): Edit items of a Draft; a Draft is changed with no reason asked. */
   replaceItems: (
     id: string,
-    input: ItemsInvoiceInput & { change_reason: string },
+    input: ItemsInvoiceInput & { change_reason?: string },
     version: number,
     key: string,
   ) => Promise<InvoiceResource>;
@@ -311,6 +311,8 @@ export interface InvoiceApi {
     version: number,
     key: string,
   ) => Promise<InvoiceResource>;
+  /** D6 (DL-239): delete a Draft made by a person; an issued Invoice is never deleted. */
+  deleteDraft: (id: string, version: number, key: string) => Promise<void>;
   lateReview: (id: string) => Promise<LatePaymentReview>;
   lateDecision: (id: string) => Promise<LatePaymentDecision>;
   decide: (
@@ -820,7 +822,7 @@ async function transport<T>(
   path: string,
   decode: (body: Record<string, unknown>) => T,
   command?: {
-    method?: "POST" | "PATCH" | "PUT";
+    method?: "POST" | "PATCH" | "PUT" | "DELETE";
     body: object;
     key: string;
     version?: number;
@@ -961,7 +963,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
     path: string,
     decode: (body: Record<string, unknown>) => T,
     command?: {
-      method?: "POST" | "PATCH" | "PUT";
+      method?: "POST" | "PATCH" | "PUT" | "DELETE";
       body: object;
       key: string;
       version?: number;
@@ -1035,7 +1037,12 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         method: "PUT",
         key,
         version,
-        body: { ...itemsBody(input), change_reason: input.change_reason },
+        body: {
+          ...itemsBody(input),
+          ...(input.change_reason
+            ? { change_reason: input.change_reason }
+            : {}),
+        },
       }),
     correctDraft: (id, obligation, reason, version, key) =>
       request("/api/v1/invoices/" + encoded(id), resource(invoice), {
@@ -1077,6 +1084,15 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         version,
         body: { reason },
       }),
+    deleteDraft: (id, version, key) =>
+      request(
+        "/api/v1/invoices/" + encoded(id),
+        (body) => {
+          if (object(body.data).deleted !== true)
+            throw new Error("not deleted");
+        },
+        { method: "DELETE", key, version, body: {} },
+      ),
     lateReview: (id) =>
       request(
         "/api/v1/invoices/" + encoded(id) + "/late-payment-review",
