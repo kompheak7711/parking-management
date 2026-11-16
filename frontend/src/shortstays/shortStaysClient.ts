@@ -148,6 +148,10 @@ export interface BookingHistoryEntry {
   note: string | null;
   /** What the step kept beside its note: the two Units of a move, the amount of a discount. */
   details?: Record<string, unknown> | null;
+  /** Owner's review 16/11/2026 (migration 430): who did the step, or the cleaner in the Staff bot. */
+  by_name: string | null;
+  /** The app did the step by itself (no person). */
+  by_app: boolean;
 }
 
 /** Step 3: how the stay is paid. */
@@ -183,6 +187,9 @@ export interface RoomCheck {
   status: "TO_DO" | "DONE" | "SKIPPED";
   note: string | null;
   done_at: string | null;
+  /** Migration 430: who did the Unit check, and the cleaner who found a problem. */
+  done_by_name: string | null;
+  problem_found_by_name: string | null;
 }
 
 export interface StayDamage {
@@ -899,6 +906,8 @@ function roomCheckOf(value: unknown): RoomCheck | null {
     status: oneOf(["TO_DO", "DONE", "SKIPPED"] as const, row.status),
     note: maybeText(row.note),
     done_at: maybeText(row.done_at),
+    done_by_name: maybeText(row.done_by_name ?? null),
+    problem_found_by_name: maybeText(row.problem_found_by_name ?? null),
   };
 }
 
@@ -990,6 +999,8 @@ export function bookingOf(value: unknown): Booking {
         kind: text(event.kind),
         occurred_at: text(event.occurred_at),
         note: maybeText(event.note),
+        by_name: maybeText(event.by_name ?? null),
+        by_app: event.by_app === true,
         ...(isObject(event.details) ? { details: event.details } : {}),
       };
     }),

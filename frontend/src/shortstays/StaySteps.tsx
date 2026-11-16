@@ -95,16 +95,17 @@ export function PaymentCard({
       {booking.invoice !== null && booking.payment !== "NOT_BILLED" && (
         <p>
           <a
-            className="ui-num"
+            className="ui-btn link ui-num"
             href={hashForPage("invoices", `inv:${booking.invoice.invoice_id}`)}
           >
             {st(language, "open_inv", booking.invoice.invoice_number)}
           </a>{" "}
           ·{" "}
           <span className="ui-num">
+            {/* Owner's review 16/11/2026: a paid stay says Paid, not To pay. */}
             {st(
               language,
-              "pay_due",
+              booking.payment === "PAID" ? "pay_paid_amt" : "pay_due",
               usdFromCents(booking.invoice.due_usd_cents),
             )}
           </span>
@@ -114,7 +115,10 @@ export function PaymentCard({
         <ul className="ui-plain ss-ready">
           {booking.extra_invoices.map((extra) => (
             <li key={extra.invoice_id}>
-              <a href={hashForPage("invoices", `inv:${extra.invoice_id}`)}>
+              <a
+                className="ui-btn link"
+                href={hashForPage("invoices", `inv:${extra.invoice_id}`)}
+              >
                 {st(
                   language,
                   "pay_extra",
@@ -525,7 +529,14 @@ export function RoomCheckCard({
       <section aria-labelledby="ss-room" className="ui-card">
         <h2 id="ss-room">{st(language, "room_t")}</h2>
         <p>
-          {st(language, "room_done", momentText(task.done_at))}
+          {task.done_by_name !== null
+            ? st(
+                language,
+                "room_done_by",
+                task.done_by_name,
+                momentText(task.done_at),
+              )
+            : st(language, "room_done", momentText(task.done_at))}
           {task.note !== null && <span className="ui-sub2">{task.note}</span>}
         </p>
       </section>
@@ -561,6 +572,12 @@ export function RoomCheckCard({
       <p className="ui-small ui-muted">
         {st(language, "room_due", dayText(task.task_on))}
       </p>
+      {task.problem_found_by_name !== null && (
+        <div className="ui-notice warn" role="note">
+          <Icon name="alert" />
+          <p>{st(language, "room_problem_by", task.problem_found_by_name)}</p>
+        </div>
+      )}
       {may("short_stays.housekeeping") && (
         <form className="ui-form ss-form" noValidate onSubmit={submit}>
           <fieldset className="ss-problems">
@@ -874,7 +891,7 @@ export function DamagesCard({
               <li key={problem.report_id}>
                 <div>
                   <a
-                    className="ui-num"
+                    className="ui-btn link ui-num"
                     href={hashForPage("problems", `pr:${problem.report_id}`)}
                   >
                     {problem.report_number}
@@ -929,6 +946,7 @@ export function DamagesCard({
                       {damage.invoice_id !== null &&
                         damage.invoice_number !== null && (
                           <a
+                            className="ui-btn link"
                             href={hashForPage(
                               "invoices",
                               `inv:${damage.invoice_id}`,

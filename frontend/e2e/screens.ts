@@ -191,6 +191,22 @@ export const SCREENS: readonly Screen[] = [
     ready: "Finished (2)",
     clock: "2026-11-13T03:00:00Z",
   },
+  // Owner 16/11/2026: New booking picks check-in and check-out on two months side by side (the
+  // calendar is open at first), and the booking page names the person on each step.
+  {
+    name: "shortstays-new",
+    hash: "#/shortstays/new:u0000000-0000-4000-8000-000000000103:2026-11-17",
+    fixture: "shortstays",
+    ready: "(1 night)",
+    clock: "2026-11-13T03:00:00Z",
+  },
+  {
+    name: "shortstays-booking",
+    hash: "#/shortstays/st:b0000000-0000-4000-8000-000000000006",
+    fixture: "shortstays",
+    ready: "ST260006",
+    clock: "2026-11-13T03:00:00Z",
+  },
   // Owner 14/11/2026 01:43: "check Viewing request". Made-up people (e2e/fixtures/viewing.har.json).
   {
     name: "viewing-requests",

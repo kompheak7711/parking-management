@@ -400,6 +400,12 @@ export function BookingDetail({
                       )}
                       <small className="ui-num">
                         {momentText(event.occurred_at)}
+                        {/* Owner's rule: History names the person for every step. */}
+                        {event.by_name !== null
+                          ? ` · ${st(language, "h_by", event.by_name)}`
+                          : event.by_app
+                            ? ` · ${st(language, "h_app")}`
+                            : ""}
                       </small>
                     </div>
                   </li>

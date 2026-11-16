@@ -456,6 +456,111 @@
      "wait": 1,
      "receive": 0
     }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/price",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"check_in_on\": \"2026-11-17\", \"check_out_on\": \"2026-11-18\", \"nights\": 1, \"night_usd_cents\": 2900, \"week_usd_cents\": 25000, \"total_usd_cents\": 2900, \"charged_as_whole_weeks\": false, \"lines\": [{\"position\": 1, \"kind\": \"NIGHTS\", \"quantity\": 1, \"unit_price_usd_cents\": 2900, \"discount_basis_points\": 0, \"amount_usd_cents\": 2900, \"reason\": null}], \"month_only_usd_cents\": 40500, \"suggest_month\": false, \"blockers\": [], \"site_holds\": []}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/bookings/b0000000-0000-4000-8000-000000000006",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"booking_id\": \"b0000000-0000-4000-8000-000000000006\", \"booking_number\": \"ST260006\", \"unit_id\": \"u0000000-0000-4000-8000-000000000103\", \"unit_number\": \"U103\", \"unit_type\": \"STUDIO\", \"customer_id\": \"c0000000-0000-4000-8000-000000000006\", \"guest_name\": \"Kong Heng\", \"guest_phone\": null, \"guest_count\": 1, \"check_in_on\": \"2026-11-10\", \"check_out_on\": \"2026-11-12\", \"nights\": 2, \"source\": \"WALK_IN\", \"site_name\": null, \"site_reference\": null, \"note\": null, \"status\": \"CHECKED_OUT\", \"total_usd_cents\": 4640, \"version\": 2, \"created_at\": \"2026-11-10T02:00:00Z\", \"lines\": [{\"position\": 1, \"kind\": \"NIGHTS\", \"quantity\": 2, \"unit_price_usd_cents\": 2900, \"discount_basis_points\": 2000, \"amount_usd_cents\": 4640, \"reason\": null}], \"history\": [{\"kind\": \"BOOKED\", \"occurred_at\": \"2026-11-08T03:00:00Z\", \"note\": null, \"by_name\": \"Kompheak\", \"by_app\": false}, {\"kind\": \"BILLED\", \"occurred_at\": \"2026-11-08T03:02:00Z\", \"note\": null, \"by_name\": \"Kompheak\", \"by_app\": false}, {\"kind\": \"CHECKED_IN\", \"occurred_at\": \"2026-11-10T07:10:00Z\", \"note\": null, \"by_name\": \"Chan Sophea\", \"by_app\": false}, {\"kind\": \"CHECKED_OUT\", \"occurred_at\": \"2026-11-12T04:30:00Z\", \"note\": null, \"by_name\": \"Chan Sophea\", \"by_app\": false}, {\"kind\": \"UNIT_PROBLEM_FOUND\", \"occurred_at\": \"2026-11-12T04:40:00Z\", \"note\": null, \"by_name\": \"Sok Mony\", \"by_app\": false}, {\"kind\": \"ROOM_CHECKED\", \"occurred_at\": \"2026-11-12T04:54:00Z\", \"note\": null, \"by_name\": \"Chan Sophea\", \"by_app\": false}, {\"kind\": \"REVIEW_ASKED\", \"occurred_at\": \"2026-11-12T09:00:00Z\", \"note\": null, \"by_name\": null, \"by_app\": true}], \"unit_status\": \"VACANT\", \"guest_has_id\": true, \"payment\": \"PAID\", \"invoice\": {\"invoice_id\": \"i0000000-0000-4000-8000-000000000019\", \"invoice_number\": \"INV260019\", \"status\": \"PAID\", \"total_usd_cents\": 4640, \"due_usd_cents\": 4640}, \"deposit\": {\"deposit_id\": \"d0000000-0000-4000-8000-000000000006\", \"kind\": \"CASH\", \"amount_usd_cents\": 5000, \"hold_reference\": null, \"card_last4\": null, \"status\": \"KEPT\", \"kept_usd_cents\": 5000, \"taken_at\": \"2026-11-10T07:10:00Z\", \"ended_at\": \"2026-11-12T05:00:00Z\", \"end_note\": null}, \"room_check\": {\"task_id\": \"t0000000-0000-4000-8000-000000000006\", \"task_on\": \"2026-11-12\", \"status\": \"DONE\", \"note\": null, \"done_at\": \"2026-11-12T04:54:00Z\", \"done_by_name\": \"Chan Sophea\", \"problem_found_by_name\": \"Sok Mony\"}, \"damages\": [{\"damage_id\": \"x0000000-0000-4000-8000-000000000006\", \"description\": \"Lock broken\", \"amount_usd_cents\": 10000, \"status\": \"APPROVED\", \"asked_at\": \"2026-11-12T05:00:00Z\", \"decided_at\": \"2026-11-12T05:00:00Z\", \"decision_note\": null, \"from_deposit_usd_cents\": 5000, \"invoice_id\": \"i0000000-0000-4000-8000-000000000021\", \"invoice_number\": \"INV260021\"}], \"problems\": [{\"report_id\": \"r0000000-0000-4000-8000-000000000006\", \"report_number\": \"UP260006\", \"description\": \"Lock broken\", \"type_name_en\": \"Door/Lock\", \"type_name_kh\": \"ទ្វារ/សោ\", \"urgent\": false, \"status\": \"OPEN\"}], \"damage_decision\": {\"outcome\": \"CHARGE\", \"damage_id\": \"x0000000-0000-4000-8000-000000000006\", \"note\": null, \"decided_at\": \"2026-11-12T05:00:00Z\"}, \"damage_due\": false, \"extra_invoices\": [], \"early_check_in\": false, \"late_check_out\": false, \"fee_usd_cents\": 0, \"check_in_time\": 840, \"check_out_time\": 720, \"late_check_out_until\": 1080, \"cleans\": [], \"free_cancel_until\": \"2026-11-08\", \"cancel_reason\": null, \"paid_usd_cents\": 4640, \"cancellation\": null, \"credit\": null, \"refund\": null, \"lease_off_usd_cents\": 0, \"lease_offer\": null, \"lease_drafts\": [], \"returning_guest\": false, \"problem_guest\": false, \"review_asked_at\": \"2026-11-12T09:00:00Z\", \"checked_in_at\": \"2026-11-10T07:10:00Z\", \"checked_out_at\": \"2026-11-12T04:30:00Z\", \"id_copy_made\": true, \"house_rules_signed\": true}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
+   },
+   {
+    "request": {
+     "method": "GET",
+     "url": "https://127.0.0.1:5173/api/v1/properties/005abbee-4a7d-4683-b4ee-06f2b26d393e/short-stays/guests/c0000000-0000-4000-8000-000000000006",
+     "headers": [],
+     "queryString": [],
+     "cookies": [],
+     "headersSize": -1,
+     "bodySize": 0,
+     "httpVersion": "HTTP/1.1"
+    },
+    "response": {
+     "status": 200,
+     "statusText": "OK",
+     "httpVersion": "HTTP/1.1",
+     "headers": [],
+     "cookies": [],
+     "content": {
+      "size": 0,
+      "mimeType": "application/json",
+      "text": "{\"data\": {\"customer_id\": \"c0000000-0000-4000-8000-000000000006\", \"legal_name\": \"Kong Heng\", \"phone_number\": null, \"stays\": [], \"stays_done\": 1, \"nights_done\": 2, \"spent_usd_cents\": 4640, \"returning\": false, \"problem_guest\": false, \"notes\": [], \"thank_you_usd_cents\": 300}, \"meta\": {\"request_id\": \"00000000-0000-4000-8000-000000000000\"}}"
+     },
+     "redirectURL": "",
+     "headersSize": -1,
+     "bodySize": -1
+    },
+    "startedDateTime": "2026-11-13T03:00:00.000Z",
+    "time": 1,
+    "cache": {},
+    "timings": {
+     "send": 0,
+     "wait": 1,
+     "receive": 0
+    }
    }
   ]
  }

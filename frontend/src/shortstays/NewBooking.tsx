@@ -14,7 +14,6 @@ import {
   type CustomerSource,
   CustomerUnavailableError,
 } from "../customerClient";
-import { DateInput } from "../shell/DateInput";
 import { dayText, usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { openPageInAddress } from "../shell/useHashPage";
@@ -22,12 +21,14 @@ import type { Language } from "../signInText";
 import { freeForStay } from "./nights";
 import { quoteMessage } from "./Quotes";
 import { nightsText, unitTypeText } from "./ShortStaysPage";
+import { StayDates } from "./StayDates";
 import { copyText } from "./StaySteps";
 import {
   addDays,
   type Booking,
   type BookingSource,
   type CalendarUnit,
+  daysBetween,
   type GuestHistory,
   type NewBooking,
   type PriceLine,
@@ -126,12 +127,6 @@ type GuestProblem =
   | { kind: "no_right" }
   | { kind: "failed" };
 
-function wholeNights(text: string): number | null {
-  if (!/^\d{1,2}$/.test(text.trim())) return null;
-  const nights = Number(text.trim());
-  return nights >= 1 ? nights : null;
-}
-
 export function NewBookingForm({
   language,
   propertyId,
@@ -155,8 +150,12 @@ export function NewBookingForm({
   today: string;
   onSaved: (made: Booking) => void;
 }) {
+  // Owner 16/11/2026: the stay is picked on a two-month calendar, check-in then check-out; one
+  // night from a calendar square to start with.
   const [checkIn, setCheckIn] = useState(startDay);
-  const [nightsTyped, setNightsTyped] = useState("1");
+  const [checkOut, setCheckOut] = useState(
+    /^\d{4}-\d{2}-\d{2}$/.test(startDay) ? addDays(startDay, 1) : "",
+  );
   const [unitId, setUnitId] = useState(startUnit);
   const [units, setUnits] = useState<CalendarUnit[] | null>(null);
   const [unitsFailed, setUnitsFailed] = useState(false);
@@ -195,9 +194,9 @@ export function NewBookingForm({
     null,
   );
 
-  const nights = wholeNights(nightsTyped);
   const dayOk = /^\d{4}-\d{2}-\d{2}$/.test(checkIn);
-  const checkOut = dayOk && nights !== null ? addDays(checkIn, nights) : "";
+  const nights =
+    dayOk && checkOut > checkIn ? daysBetween(checkIn, checkOut) : null;
 
   // Which Units are free on all the nights: the calendar for exactly these nights.
   useEffect(() => {
@@ -306,7 +305,7 @@ export function NewBookingForm({
   );
   const problems: Record<string, string | null> = {
     in: dayOk ? null : st(language, "e_in"),
-    nights: nights === null ? st(language, "e_nights") : null,
+    nights: dayOk && nights === null ? st(language, "e_pick_out") : null,
     unit: unitId === "" ? st(language, "e_unit") : null,
     guest: guest === null && !adding ? st(language, "e_guest") : null,
     name: adding && name.trim() === "" ? st(language, "e_name") : null,
@@ -326,7 +325,7 @@ export function NewBookingForm({
   };
   const FIELDS: Record<string, string> = {
     in: "sb-in",
-    nights: "sb-nights",
+    nights: "sb-in",
     unit: "sb-unit",
     guest: "sb-name",
     name: "sb-name",
@@ -479,6 +478,19 @@ export function NewBookingForm({
     setGuestProblem(null);
   };
 
+  // Owner's review 16/11/2026: the thank-you of a returning guest shows in the price, so the
+  // total is what the booking will cost. The server takes it off when the booking is made, with
+  // the same rule: a direct booking only, and never the whole price.
+  const thankYou =
+    price !== null &&
+    history !== null &&
+    history.returning &&
+    source !== "BOOKING_SITE" &&
+    history.thank_you_usd_cents > 0 &&
+    price.total_usd_cents > history.thank_you_usd_cents
+      ? history.thank_you_usd_cents
+      : 0;
+
   const priceBox = (
     <section aria-labelledby="sb-price" aria-live="polite" className="ui-card">
       <h2 id="sb-price">{st(language, "p_title")}</h2>
@@ -514,9 +526,21 @@ export function NewBookingForm({
             </span>
           </p>
           <PriceLines language={language} lines={price.lines} />
+          {thankYou > 0 && (
+            <ul className="ui-plain ss-lines">
+              <li>
+                <span>{st(language, "l_RETURNING_GUEST")}</span>
+                <span className="ui-num">−{usdFromCents(thankYou)}</span>
+              </li>
+            </ul>
+          )}
           <p className="ss-total">
-            <span>{st(language, "total")}</span>
-            <b className="ui-num">{usdFromCents(price.total_usd_cents)}</b>
+            <span>
+              {st(language, thankYou > 0 ? "nb_after_thanks" : "total")}
+            </span>
+            <b className="ui-num">
+              {usdFromCents(price.total_usd_cents - thankYou)}
+            </b>
           </p>
           {price.charged_as_whole_weeks && (
             <p className="ui-small ui-muted">{st(language, "as_weeks")}</p>
@@ -654,58 +678,38 @@ export function NewBookingForm({
           </div>
         </div>
       )}
+      {/* Owner 16/11/2026: the stay first, on two months side by side, as wide as the page so
+          every day is big enough to tap. */}
+      <section className="ui-card ui-form ss-datescard">
+        <div className="ui-field">
+          <label htmlFor="sb-in">
+            {st(language, "f_dates")}
+            <span className="req">{st(language, "required")}</span>
+          </label>
+          <StayDates
+            checkIn={dayOk ? checkIn : ""}
+            checkOut={checkOut}
+            describedBy={
+              shown("in") === null && shown("nights") === null
+                ? undefined
+                : "sb-in-err"
+            }
+            disabled={busy}
+            id="sb-in"
+            invalid={shown("in") !== null || shown("nights") !== null}
+            language={language}
+            onChange={(nextIn, nextOut) => {
+              setCheckIn(nextIn);
+              setCheckOut(nextOut);
+            }}
+            startOpen
+            today={today}
+          />
+          <Missing id="sb-in-err" text={shown("in") ?? shown("nights")} />
+        </div>
+      </section>
       <div className="ui-split">
         <form className="ui-card ui-form ss-form" noValidate onSubmit={submit}>
-          <div className="ui-row2">
-            <div className="ui-field">
-              <label htmlFor="sb-in">
-                {st(language, "f_in")}
-                <span className="req">{st(language, "required")}</span>
-              </label>
-              <DateInput
-                calendarLabel={st(language, "tab_cal")}
-                describedBy={shown("in") === null ? undefined : "sb-in-err"}
-                disabled={busy}
-                id="sb-in"
-                invalid={shown("in") !== null}
-                language={language}
-                min={today}
-                onChange={(value) => {
-                  setCheckIn(value);
-                }}
-                value={checkIn}
-              />
-              <Missing id="sb-in-err" text={shown("in")} />
-            </div>
-            <div className="ui-field">
-              <label htmlFor="sb-nights">
-                {st(language, "f_nights")}
-                <span className="req">{st(language, "required")}</span>
-              </label>
-              <input
-                aria-describedby={
-                  shown("nights") === null ? undefined : "sb-nights-err"
-                }
-                aria-invalid={shown("nights") !== null}
-                autoComplete="off"
-                disabled={busy}
-                id="sb-nights"
-                inputMode="numeric"
-                maxLength={2}
-                onChange={(event) => {
-                  setNightsTyped(event.currentTarget.value);
-                }}
-                value={nightsTyped}
-              />
-              {checkOut !== "" && (
-                <p className="ui-small ui-muted">
-                  {st(language, "f_out")}:{" "}
-                  <span className="ui-num">{dayText(checkOut)}</span>
-                </p>
-              )}
-              <Missing id="sb-nights-err" text={shown("nights")} />
-            </div>
-          </div>
           <div className="ui-field">
             <label htmlFor="sb-unit">
               {st(language, "f_unit")}

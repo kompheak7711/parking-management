@@ -1018,6 +1018,41 @@ const TEXT = {
   cp_none_unit: ["Not one Unit", "មិនមែនបន្ទប់ណាមួយ"],
   cp_save: ["Save complaint", "រក្សាទុកបណ្ដឹង"],
   cp_empty: ["Write what happened first.", "សូមសរសេរអ្វីដែលបានកើតឡើងជាមុន។"],
+  // Owner's review of 16/11/2026: History and the Unit check name the person; the paid amount.
+  // new
+  h_by: ["By {0}", "ដោយ {0}"],
+  // new
+  h_app: ["By the app, by itself", "ដោយកម្មវិធីដោយស្វ័យប្រវត្តិ"],
+  // new
+  room_done_by: ["Unit checked by {0}, {1}.", "បានពិនិត្យបន្ទប់ដោយ {0} {1}។"],
+  // new
+  room_problem_by: [
+    "Problem found by {0} in the Staff bot.",
+    "{0} បានរកឃើញបញ្ហាក្នុងបុត Staff។",
+  ],
+  // new
+  pay_paid_amt: ["Paid {0}", "បានបង់ {0}"],
+  // Owner 16/11/2026: New booking picks the check-in and check-out days on a two-month calendar.
+  // new
+  f_dates: ["Check-in and check-out", "ថ្ងៃចូល និងថ្ងៃចេញ"],
+  // new
+  rg_in: ["Tap the check-in day.", "ចុចថ្ងៃចូល។"],
+  // new
+  rg_out: ["Now tap the check-out day.", "ឥឡូវចុចថ្ងៃចេញ។"],
+  // new
+  rg_prev: ["Previous month", "ខែមុន"],
+  // new
+  rg_next: ["Next month", "ខែបន្ទាប់"],
+  // new
+  rg_open: ["Change the dates", "ប្ដូរថ្ងៃ"],
+  // new
+  rg_close: ["Done", "រួចរាល់"],
+  // new
+  rg_none: ["Pick the dates", "ជ្រើសថ្ងៃ"],
+  // new
+  e_pick_out: ["Tap the check-out day.", "ចុចថ្ងៃចេញ។"],
+  // new
+  nb_after_thanks: ["Total after the thank-you", "សរុបក្រោយការអរគុណ"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type StaysTextKey = keyof typeof TEXT;

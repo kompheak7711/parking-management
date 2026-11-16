@@ -65766,7 +65766,7 @@
       "test_level": "UI component",
       "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
       "status": "implemented",
-      "notes": "Short stays: books a free night for a guest who is a Customer, at the server's price."
+      "notes": "Short stays: books a free night for a guest who is a Customer, at the server's price; the stay is picked on the two-month calendar (owner 16/11/2026)."
     },
     {
       "test_id": "TEST-FE-1603",
@@ -69837,6 +69837,58 @@
       "notes": "Housekeeping: a Unit check where the cleaner found a problem says who found it and links to the booking to write it."
     },
     {
+      "test_id": "TEST-FE-2300",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "New booking (owner 16/11/2026): two months side by side, check-in then check-out, the nights shown; no past day or month; a day before the check-in starts again; arrow keys move between days; Book without a check-out says so."
+    },
+    {
+      "test_id": "TEST-FE-2301",
+      "upstream_ids": [
+        "BR-AUDIT-006",
+        "DB-SS-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "The booking page names the person on each History step (or says the app did it by itself) and who did the Unit check."
+    },
+    {
+      "test_id": "TEST-FE-2302",
+      "upstream_ids": [
+        "DL-242",
+        "DB-SS-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "A Unit check still to do where the cleaner found a problem in the Staff bot says who found it."
+    },
+    {
+      "test_id": "TEST-FE-2303",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "A paid stay says Paid with its amount on the Payment card, not To pay."
+    },
+    {
+      "test_id": "TEST-FE-2304",
+      "upstream_ids": [
+        "PR-SS-STEP2"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "New booking shows a returning direct guest's thank-you as a line and the total after it; a booking-site guest gets none."
+    },
+    {
       "test_id": "test_new_rate_records_have_no_markup_and_old_records_keep_theirs",
       "upstream_ids": [
         "DL-228",
@@ -69949,6 +70001,27 @@
       "test_path": "backend/tests/test_housekeeping_auto_assign_migration.py",
       "status": "implemented",
       "notes": "Problem found keeps the Unit check to do, names the cleaner, keeps the Unit Cleaning, and a later Unit OK changes nothing."
+    },
+    {
+      "test_id": "test_migration_430_follows_415",
+      "upstream_ids": [
+        "DB-SS-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_short_stay_history_names_migration.py",
+      "status": "implemented",
+      "notes": "Migration 430 follows 415 and is forward-only."
+    },
+    {
+      "test_id": "test_history_and_the_unit_check_name_the_person",
+      "upstream_ids": [
+        "BR-AUDIT-006",
+        "DB-SS-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_short_stay_history_names_migration.py",
+      "status": "implemented",
+      "notes": "The booking read names the person of a step done in the app, the cleaner of a step reported in the Staff bot, says by_app for a service step, and names who found a problem at the Unit check."
     },
     {
       "test_id": "test_migration_414_follows_the_ui_v81_join_403",

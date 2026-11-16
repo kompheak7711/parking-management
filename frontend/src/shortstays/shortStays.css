@@ -669,7 +669,15 @@ fieldset.ss-problems > legend {
 /* Step 5b: a message to copy for the guest (quote, review request) and the guest's notes. */
 .ss-message {
   width: 100%;
+  /* Owner's review 16/11/2026: the message box has the look of the other boxes, with room
+     around the words (it had none in the dark theme). */
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
   font: inherit;
+  line-height: 1.5;
   white-space: pre-wrap;
   resize: vertical;
 }
@@ -869,5 +877,206 @@ form.ss-form .ui-date input {
 
   table.ui-table.ss-booklist td:nth-child(4) {
     font-size: 0.875rem;
+  }
+}
+
+/* Owner 16/11/2026: New booking picks check-in and check-out on two months side by side. */
+.ss-datescard {
+  margin-bottom: 16px;
+}
+
+.ss-range {
+  display: grid;
+  gap: 8px;
+  max-width: 780px;
+}
+
+.ss-range-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--input);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ss-range-field[aria-invalid="true"] {
+  border-color: var(--err);
+}
+
+.ss-range-nights {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--selected);
+  font-size: 0.875rem;
+}
+
+.ss-range-panel {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+}
+
+.ss-range-months {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ss-range-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  line-height: 44px;
+  text-align: center;
+}
+
+.ss-range-nav {
+  position: absolute;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--btn-edge);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+}
+
+.ss-range-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ss-range-nav.prev {
+  left: 12px;
+}
+
+.ss-range-nav.prev svg {
+  transform: scaleX(-1);
+}
+
+.ss-range-nav.next {
+  right: 12px;
+}
+
+.ss-range-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 4px;
+}
+
+.ss-range-wd {
+  padding: 4px 0;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ss-range-wd.we {
+  color: var(--primary);
+}
+
+.ss-range-day {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ss-range-day:hover:not(:disabled, .in, .out) {
+  border-radius: 8px;
+  background: var(--hover);
+}
+
+.ss-range-day.today {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.ss-range-day.mid {
+  background: var(--selected);
+}
+
+.ss-range-day.in,
+.ss-range-day.out {
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.ss-range-day.preview {
+  opacity: 0.8;
+}
+
+.ss-range-day:disabled {
+  color: var(--text-2);
+  font-weight: 400;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ss-range-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.ss-range-foot p {
+  margin: 0;
+}
+
+@media (max-width: 639px) {
+  .ss-range-months {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ss-range-month.second {
+    display: none;
+  }
+
+  /* A phone: the calendar uses the card's whole width so each day stays 44 px wide. */
+  .ss-range-panel {
+    padding: 8px 0 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .ss-range-nav {
+    top: 8px;
+  }
+
+  .ss-range-nav.prev {
+    left: 0;
+  }
+
+  .ss-range-nav.next {
+    right: 0;
   }
 }

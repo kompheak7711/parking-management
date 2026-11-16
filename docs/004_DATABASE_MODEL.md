@@ -6257,3 +6257,13 @@ Migration `20270804_415_housekeeping_auto_assign` (Leasing range, after `2027080
 - `app.short_stay_housekeeping` gives each task `problem_found_at` and `problem_found_by_name`.
 
 Tests: `backend/tests/test_housekeeping_auto_assign_migration.py`.
+
+## DB-SS-004 — The short-stay booking names the person on each History step (owner's review, 16 Nov 2026)
+
+Migration `20270806_430_short_stay_history_names` (after `20270804_415`). Forward-only. One read function changes; no table, column, grant or data change. It follows the owner's rule that History names the person for every step on every page (BR-AUDIT-006).
+
+- `app.short_stay_booking_json` is renamed `app.short_stay_booking_unnamed_json` and a new `app.short_stay_booking_json` calls it first, as migration `20270716_391` did.
+- Each `history` step gains `by_name` (the person's display name for a step done in the app; for a step the cleaner reported in the Staff bot, the employee named by `details.employee_id`) and `by_app` (true when a service with no person named did the step, such as the Telegram jobs).
+- `room_check` gains `done_by_name` (the cleaner who tapped Unit OK, else the person who did the check in the app) and `problem_found_by_name` (DL-242).
+
+Tests: `backend/tests/test_short_stay_history_names_migration.py`.

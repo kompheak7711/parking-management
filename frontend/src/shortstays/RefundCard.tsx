@@ -135,7 +135,9 @@ export function RefundCard({
         <p className="ui-small">
           {st(language, "rf_wait", usdFromCents(refund.waiting_usd_cents))}{" "}
           {may("financial.approve") && (
-            <a href={hashForPage("approvals")}>{st(language, "rf_open")}</a>
+            <a className="ui-btn link" href={hashForPage("approvals")}>
+              {st(language, "rf_open")}
+            </a>
           )}
         </p>
       )}

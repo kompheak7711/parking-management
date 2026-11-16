@@ -148,7 +148,7 @@ export function GuestPanel({
                 {others.map((stay) => (
                   <li key={stay.booking_id}>
                     <a
-                      className="ui-num"
+                      className="ui-btn link ui-num"
                       href={hashForPage("shortstays", `st:${stay.booking_id}`)}
                     >
                       {stay.booking_number}

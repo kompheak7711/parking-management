@@ -213,7 +213,11 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
       reason: "A Lease takes the Unit the guest booked",
     });
     // The History keeps the old and the new Unit of a move.
-    expect(moved.history[1]).toEqual(MOVED);
+    expect(moved.history[1]).toEqual({
+      ...MOVED,
+      by_name: null,
+      by_app: false,
+    });
     expect(moved.history[0]?.details ?? null).toBeNull();
     await shortStaysApi.step("p-1", "b-1", "move-discount", {
       version: 5,
