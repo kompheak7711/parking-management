@@ -579,6 +579,9 @@ export interface CleaningTask {
   assigned_name: string | null;
   /** The person who ticked it done or not cleaned (in the app or the Staff bot). */
   done_by_name: string | null;
+  /** DL-242: a Unit check where the cleaner tapped Problem found; the front desk finishes it. */
+  problem_found_at: string | null;
+  problem_found_by_name: string | null;
 }
 
 /** DL-236: a cleaner from the staff list (HR) a Housekeeping task may be given to. */
@@ -1316,6 +1319,8 @@ export function cleaningOf(value: unknown): CleaningDay {
         assigned_to: maybeText(task.assigned_to),
         assigned_name: maybeText(task.assigned_name),
         done_by_name: maybeText(task.done_by_name),
+        problem_found_at: maybeText(task.problem_found_at ?? null),
+        problem_found_by_name: maybeText(task.problem_found_by_name ?? null),
       };
     }),
     cleaners: list(row.cleaners ?? []).map((entry) => {

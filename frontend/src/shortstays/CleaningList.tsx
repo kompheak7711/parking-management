@@ -1,13 +1,14 @@
 // Daily and weekly rent, phase 6 step 4a: Tenants › Short stays › Cleaning. One day's daily cleans
-// and room checks, and today also the ones not done before. A housekeeper marks a clean done, or
-// skipped with a reason; the room check opens the booking page, where any damage is reported.
+// and Unit checks, and today also the ones not done before. DL-242 (owner 16/11/2026): each task
+// goes to a cleaner by itself (staff may change it), the cleaner reports it in the Staff bot, and
+// this list only shows what happened; a Unit check with a problem is finished on the booking.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
 import { hashForPage } from "../shell/navigation";
-import { Chip, type Tone } from "../shell/ui";
+import { Chip } from "../shell/ui";
 import type { Language } from "../signInText";
 import {
   addDays,
@@ -18,12 +19,6 @@ import {
   ShortStaysError,
 } from "./shortStaysClient";
 import { st, type StaysTextKey } from "./text";
-
-const TONES: Record<CleaningTask["status"], Tone> = {
-  TO_DO: "warn",
-  DONE: "ok",
-  SKIPPED: "neutral",
-};
 
 /** A cleaner's name in the screen's language (HR keeps both). */
 function cleanerName(language: Language, person: Cleaner): string {
@@ -36,6 +31,71 @@ function problemOf(error: unknown): StaysTextKey {
   if (error.status === 409) return "f_not_now";
   if (error.status === 422) return "e_skip";
   return "f_failed";
+}
+
+/**
+ * Owner 16/11/2026 (DL-242): what happened to a task, as text. The cleaner reports in the Staff
+ * bot; only a Unit check where the cleaner found a problem asks the front desk to write it on the
+ * booking.
+ */
+function TaskState({
+  language,
+  task,
+  mayCheck,
+  cleaners,
+}: {
+  language: Language;
+  task: CleaningTask;
+  mayCheck: boolean;
+  cleaners: readonly Cleaner[];
+}) {
+  const name = task.done_by_name ?? "—";
+  if (task.status === "DONE")
+    return (
+      <p className="ss-state ok">
+        <Icon name="check" small />
+        {st(
+          language,
+          task.kind === "ROOM_CHECK" ? "cl_checked_by" : "cl_cleaned_by",
+          name,
+        )}
+      </p>
+    );
+  if (task.status === "SKIPPED")
+    return (
+      <p className="ss-state">
+        {st(language, "cl_not_cleaned", task.note ?? name)}
+      </p>
+    );
+  if (task.problem_found_at !== null)
+    return (
+      <div className="ss-state err">
+        <span>
+          <Icon name="alert" small />
+          {st(language, "cl_problem_by", task.problem_found_by_name ?? "—")}
+        </span>
+        {mayCheck && task.booking_id !== null && (
+          <a
+            className="ui-btn link"
+            href={hashForPage("shortstays", `st:${task.booking_id}`)}
+          >
+            {st(language, "cl_problem_do")}
+          </a>
+        )}
+      </div>
+    );
+  return (
+    <p className="ss-state muted">
+      {task.assigned_name === null
+        ? st(language, "cl_wait_nobody")
+        : cleaners.some(
+              (person) =>
+                person.employee_id === task.assigned_to && !person.telegram,
+            )
+          ? st(language, "cl_wait_no_tg", task.assigned_name)
+          : st(language, "cl_wait", task.assigned_name)}
+    </p>
+  );
 }
 
 export function CleaningList({
@@ -56,8 +116,6 @@ export function CleaningList({
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<StaysTextKey | null>(null);
-  const [skipping, setSkipping] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
   // DL-236: all tasks, or only those given to the person reading ("My tasks").
   const sequence = useRef(0);
 
@@ -77,35 +135,6 @@ export function CleaningList({
   useEffect(() => {
     load();
   }, [load]);
-
-  const finish = (task: CleaningTask, skip: boolean) => {
-    if (skip && reason.trim() === "") {
-      setProblem("e_skip");
-      return;
-    }
-    const operation = ++sequence.current;
-    setBusy(true);
-    setProblem(null);
-    void api
-      .finishTask(propertyId, task.task_id, {
-        skip,
-        ...(skip ? { note: reason.trim() } : {}),
-      })
-      .then(() => {
-        if (operation !== sequence.current) return;
-        setSkipping(null);
-        setReason("");
-        load();
-      })
-      .catch((error: unknown) => {
-        if (operation !== sequence.current) return;
-        setProblem(problemOf(error));
-        load();
-      })
-      .finally(() => {
-        setBusy(false);
-      });
-  };
 
   // DL-236: the front desk gives a task to one person, or to nobody.
   const assign = (task: CleaningTask, employeeId: string | null) => {
@@ -127,7 +156,7 @@ export function CleaningList({
       });
   };
 
-  const mayClean = may("short_stays.housekeeping");
+  const mayCheck = may("short_stays.housekeeping");
   const mayAssign = may("short_stays.desk");
   const cleaners = found?.cleaners ?? [];
   // Owner card 14/11/2026: the cleaners see their tasks in the Staff bot, so there is no
@@ -142,146 +171,68 @@ export function CleaningList({
     .sort((a, b) => Number(b.late) - Number(a.late));
   const finished = tasks.filter((task) => task.status !== "TO_DO");
 
-  const row = (task: CleaningTask) => {
-    const due = found !== null && task.task_on <= found.today;
-    const doable = task.status === "TO_DO" && due && mayClean;
-    return (
-      <li className={task.late ? "ss-task late" : "ss-task"} key={task.task_id}>
-        <div className="ss-taskwhat">
-          <div className="ui-hrow">
-            <b className="ui-num">{task.unit_number}</b>
-            <span>{st(language, `cl_${task.kind}`)}</span>
-            {task.late ? (
-              <Chip tone="err">{st(language, "cl_late_chip")}</Chip>
-            ) : (
-              <Chip tone={TONES[task.status]}>
-                {st(language, `cl_${task.status}`)}
-              </Chip>
-            )}
-            {task.late && (
-              <span className="ui-small ss-latedate ui-num">
-                {st(language, "cl_late", dayText(task.task_on))}
-              </span>
-            )}
-          </div>
-          {/* Owner 14/11/2026 01:39: no booking number or guest name on a task. */}
-          {task.note !== null && (
-            <p className="ui-small ui-muted">{task.note}</p>
-          )}
-          {task.status !== "TO_DO" && task.done_by_name !== null && (
-            <p className="ui-small ui-muted">
-              {st(
-                language,
-                task.status === "DONE" ? "cl_done_by" : "cl_not_by",
-                task.done_by_name,
-              )}
-            </p>
-          )}
-          {task.status === "TO_DO" &&
-            (mayAssign && cleaners.length > 0 ? (
-              <label className="ss-assign">
-                <span className="ui-small">{st(language, "cl_assign")}</span>
-                <select
-                  disabled={busy}
-                  onChange={(event) => {
-                    const chosen = event.currentTarget.value;
-                    assign(task, chosen === "" ? null : chosen);
-                  }}
-                  value={task.assigned_to ?? ""}
-                >
-                  <option value="">{st(language, "cl_nobody")}</option>
-                  {/* A person who lost the right keeps the task until it is moved. */}
-                  {task.assigned_to !== null &&
-                    !cleaners.some(
-                      (person) => person.employee_id === task.assigned_to,
-                    ) && (
-                      <option value={task.assigned_to}>
-                        {task.assigned_name ?? task.assigned_to}
-                      </option>
-                    )}
-                  {cleaners.map((person) => (
-                    <option key={person.employee_id} value={person.employee_id}>
-                      {person.telegram
-                        ? cleanerName(language, person)
-                        : st(
-                            language,
-                            "cl_no_tg",
-                            cleanerName(language, person),
-                          )}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <p className="ui-small ss-given">
-                {task.assigned_name === null
-                  ? st(language, "cl_nobody_yet")
-                  : st(language, "cl_given", task.assigned_name)}
-              </p>
-            ))}
-          {doable && skipping === task.task_id && (
-            <div className="ui-field">
-              <label htmlFor={`ss-skip-${task.task_id}`}>
-                {st(language, "cl_reason")}
-                <span className="req">{st(language, "required")}</span>
-              </label>
-              <input
-                autoComplete="off"
-                disabled={busy}
-                id={`ss-skip-${task.task_id}`}
-                maxLength={500}
-                onChange={(event) => {
-                  setReason(event.currentTarget.value);
-                }}
-                value={reason}
-              />
-            </div>
-          )}
-        </div>
-        {doable && task.kind === "ROOM_CHECK" && task.booking_id !== null && (
-          <div className="ss-taskdo">
-            <a
-              className="ui-btn primary"
-              href={hashForPage("shortstays", `st:${task.booking_id}`)}
-            >
-              {st(language, "cl_room")}
-            </a>
-          </div>
+  const row = (task: CleaningTask) => (
+    <li className={task.late ? "ss-task late" : "ss-task"} key={task.task_id}>
+      {/* Owner 16/11/2026: the "Assign to" box sits top right, on the title line. */}
+      <div className="ui-hrow ss-tasktitle">
+        <b className="ui-num">{task.unit_number}</b>
+        <span>{st(language, `cl_${task.kind}`)}</span>
+        {task.late && (
+          <>
+            <Chip tone="err">{st(language, "cl_late_chip")}</Chip>
+            <span className="ui-small ss-latedate ui-num">
+              {st(language, "cl_late", dayText(task.task_on))}
+            </span>
+          </>
         )}
-        {doable && task.kind !== "ROOM_CHECK" && (
-          <div className="ss-taskdo">
-            <button
-              className="ui-btn primary"
+      </div>
+      {/* Owner 14/11/2026 01:39: no booking number or guest name on a task. */}
+      {task.status === "TO_DO" &&
+        (mayAssign && cleaners.length > 0 ? (
+          <label className="ss-assign ss-taskside">
+            <span className="ui-small">{st(language, "cl_assign")}</span>
+            <select
               disabled={busy}
-              onClick={() => {
-                finish(task, false);
+              onChange={(event) => {
+                const chosen = event.currentTarget.value;
+                assign(task, chosen === "" ? null : chosen);
               }}
-              type="button"
+              value={task.assigned_to ?? ""}
             >
-              <Icon name="check" small />
-              {st(language, "cl_done_b")}
-            </button>
-            <button
-              className="ui-btn"
-              disabled={busy}
-              onClick={() => {
-                if (skipping === task.task_id) {
-                  finish(task, true);
-                } else {
-                  setSkipping(task.task_id);
-                  setReason("");
-                  setProblem(null);
-                }
-              }}
-              type="button"
-            >
-              {st(language, "cl_skip")}
-            </button>
-          </div>
-        )}
-      </li>
-    );
-  };
+              <option value="">{st(language, "cl_nobody")}</option>
+              {/* A person who lost the right keeps the task until it is moved. */}
+              {task.assigned_to !== null &&
+                !cleaners.some(
+                  (person) => person.employee_id === task.assigned_to,
+                ) && (
+                  <option value={task.assigned_to}>
+                    {task.assigned_name ?? task.assigned_to}
+                  </option>
+                )}
+              {cleaners.map((person) => (
+                <option key={person.employee_id} value={person.employee_id}>
+                  {person.telegram
+                    ? cleanerName(language, person)
+                    : st(language, "cl_no_tg", cleanerName(language, person))}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="ui-small ss-given ss-taskside">
+            {task.assigned_name === null
+              ? st(language, "cl_nobody_yet")
+              : st(language, "cl_given", task.assigned_name)}
+          </p>
+        ))}
+      <TaskState
+        cleaners={cleaners}
+        language={language}
+        mayCheck={mayCheck}
+        task={task}
+      />
+    </li>
+  );
 
   return (
     <>

@@ -65861,12 +65861,13 @@
     {
       "test_id": "TEST-FE-1613",
       "upstream_ids": [
-        "PR-SS-STEP4"
+        "PR-SS-STEP4",
+        "DL-242"
       ],
       "test_level": "UI component",
       "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
       "status": "implemented",
-      "notes": "Short stays: lists the day's cleans and skips one only with a reason."
+      "notes": "Short stays (DL-242): Housekeeping lists the day's tasks with what happened as text (waiting for a cleaner, waiting for the cleaner in Telegram, cleaned by, not cleaned and why) and no buttons."
     },
     {
       "test_id": "TEST-FE-1614",
@@ -69826,6 +69827,16 @@
       "notes": "A page that cannot be read says so and Retry reads it again; an answer with an unknown kind or a wrong field type is refused by the client."
     },
     {
+      "test_id": "TEST-FE-2264",
+      "upstream_ids": [
+        "DL-242"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/shortstays/ShortStaysPage.test.tsx",
+      "status": "implemented",
+      "notes": "Housekeeping: a Unit check where the cleaner found a problem says who found it and links to the booking to write it."
+    },
+    {
       "test_id": "test_new_rate_records_have_no_markup_and_old_records_keep_theirs",
       "upstream_ids": [
         "DL-228",
@@ -69883,15 +69894,61 @@
       "notes": "Only the cleaner given the task may tap; Cleaned finishes it and names the cleaner; Not cleaned asks why with three reasons and the reason finishes it as not cleaned; a finished task answers already finished; each tap is answered once; the History keeps it."
     },
     {
-      "test_id": "test_a_room_check_is_given_without_buttons_and_cannot_be_ticked",
+      "test_id": "test_a_room_check_is_given_with_its_own_buttons_and_cannot_be_ticked_as_cleaned",
       "upstream_ids": [
         "DL-236",
-        "DB-HK-001"
+        "DB-HK-001",
+        "DL-242",
+        "DB-HK-002"
       ],
       "test_level": "integration",
       "test_path": "backend/tests/test_housekeeping_task_assign_migration.py",
       "status": "implemented",
-      "notes": "A room check's Staff bot message has no buttons and a tap on it is refused; the room check stays on the booking page."
+      "notes": "A Unit check's Staff bot message has Unit OK and Problem found (DL-242); Cleaned on a Unit check is refused."
+    },
+    {
+      "test_id": "test_migration_415_follows_the_ui_v81_join_417",
+      "upstream_ids": [
+        "DL-242",
+        "DB-HK-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_housekeeping_auto_assign_migration.py",
+      "status": "implemented",
+      "notes": "Migration 415 follows the ui-v81 join 417 and is forward-only."
+    },
+    {
+      "test_id": "test_each_task_due_goes_by_itself_to_the_cleaner_with_the_fewest_tasks",
+      "upstream_ids": [
+        "DL-242",
+        "DB-HK-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_housekeeping_auto_assign_migration.py",
+      "status": "implemented",
+      "notes": "Tasks due today and never given go to the cleaner on Telegram with the fewest tasks, a tie by name; a later task and one staff gave to nobody are not given; the Unit check comes with Unit OK and Problem found; staff can still move a task."
+    },
+    {
+      "test_id": "test_the_cleaner_reports_unit_ok_and_the_unit_is_ready_again",
+      "upstream_ids": [
+        "DL-242",
+        "DB-HK-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_housekeeping_auto_assign_migration.py",
+      "status": "implemented",
+      "notes": "Unit OK by the cleaner the check is given to finishes it and the Unit is Vacant again; buttons of the other kind and other cleaners are refused."
+    },
+    {
+      "test_id": "test_problem_found_waits_for_the_front_desk",
+      "upstream_ids": [
+        "DL-242",
+        "DB-HK-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_housekeeping_auto_assign_migration.py",
+      "status": "implemented",
+      "notes": "Problem found keeps the Unit check to do, names the cleaner, keeps the Unit Cleaning, and a later Unit OK changes nothing."
     },
     {
       "test_id": "test_migration_414_follows_the_ui_v81_join_403",

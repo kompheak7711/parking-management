@@ -270,12 +270,17 @@ def test_the_cleaner_ticks_the_task_in_the_staff_bot(
     assert audit == [("DONE",), ("SKIPPED",)]
 
 
-def test_a_room_check_is_given_without_buttons_and_cannot_be_ticked(
+def test_a_room_check_is_given_with_its_own_buttons_and_cannot_be_ticked_as_cleaned(
     hk_database: HrDatabase, cleaners: dict[str, uuid.UUID]
 ) -> None:
     db = hk_database
     check, _ = task(db, "ROOM_CHECK")
     give(db, check, cleaners["mony"])
     code, details, buttons = outbox(db, MONY)[-1]
-    assert (code, details["task"], buttons) == ("staff.task_given", "ពិនិត្យបន្ទប់", None)
+    # DL-242 (migration 415): the Unit check comes with Unit OK and Problem found.
+    assert (code, details["task"]) == ("staff.task_given", "ពិនិត្យបន្ទប់")
+    assert [button["callback_data"] for button in buttons[0]] == [
+        f"hk:ok:{check}",
+        f"hk:bad:{check}",
+    ]
     assert tap(db, MONY, f"hk:done:{check}")["result"] == "NOT_YOURS"

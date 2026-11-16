@@ -889,7 +889,7 @@ describe("Daily and weekly rent: Short stays", () => {
     // The room check never asks for money.
     expect(screen.queryByLabelText(/Cost/)).toBeNull();
     expect(screen.queryByLabelText(/Amount/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
     expect(screen.getByText("Pick the type of problem.")).toBeInTheDocument();
     expect(screen.getByText("Say what is wrong.")).toBeInTheDocument();
     expect(step).not.toHaveBeenCalled();
@@ -910,7 +910,7 @@ describe("Daily and weekly rent: Short stays", () => {
     expect(urgent[1]).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Remove 2" }));
     expect(screen.queryByLabelText(/Type 2/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
       problems: [
         { problem_type_id: "pt-1", description: "Lamp broken", urgent: true },
@@ -982,7 +982,7 @@ describe("Daily and weekly rent: Short stays", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "The deposit ends after check-out and the room check, once the damage charge is decided.",
+        "The deposit ends after check-out and the Unit check, once the damage charge is decided.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -1057,7 +1057,7 @@ describe("Daily and weekly rent: Short stays", () => {
     fireEvent.change(screen.getByLabelText("Note"), {
       target: { value: "All fine" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /Room check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
       note: "All fine",
     });
@@ -1285,33 +1285,99 @@ describe("Daily and weekly rent: Short stays", () => {
     expect(await screen.findByText("6 nights")).toBeInTheDocument();
   });
 
-  it("TEST-FE-1613 lists the day's cleans and skips one only with a reason", async () => {
-    const day = {
+  it("TEST-FE-1613 (DL-242) lists the day's tasks with what happened as text and no buttons; the cleaner reports in Telegram", async () => {
+    const base = {
+      kind: "DAILY_CLEAN" as const,
+      task_on: "2026-11-04",
+      status: "TO_DO" as const,
+      note: null,
+      done_at: null,
+      booking_id: "b-1",
+      booking_number: "ST260001",
+      guest_name: "Lim Dara",
+      late: false,
+      assigned_to: null,
+      assigned_name: null,
+      done_by_name: null,
+      problem_found_at: null,
+      problem_found_by_name: null,
+    };
+    const day: CleaningDay = {
+      day: "2026-11-04",
+      today: "2026-11-04",
+      tasks: [
+        { ...base, task_id: "t-1", unit_id: "u-501", unit_number: "U501" },
+        {
+          ...base,
+          task_id: "t-2",
+          kind: "ROOM_CHECK",
+          task_on: "2026-11-03",
+          late: true,
+          unit_id: "u-503",
+          unit_number: "U503",
+          booking_id: "b-9",
+          assigned_to: "e-1",
+          assigned_name: "Chan Thida",
+        },
+        {
+          ...base,
+          task_id: "t-3",
+          status: "DONE",
+          unit_id: "u-505",
+          unit_number: "U505",
+          done_by_name: "Sok Mony",
+        },
+        {
+          ...base,
+          task_id: "t-4",
+          status: "SKIPPED",
+          note: "Guest did not open the door",
+          unit_id: "u-506",
+          unit_number: "U506",
+          done_by_name: "Sok Mony",
+        },
+      ],
+      cleaners: [],
+    };
+    const cleaning = vi.fn(() => Promise.resolve(day));
+    show({
+      api: fakeApi({ cleaning }),
+      capabilities: new Set([...DESK, "short_stays.housekeeping"]),
+    });
+    fireEvent.click(await screen.findByRole("link", { name: "Housekeeping" }));
+    expect(await screen.findByText("U501")).toBeInTheDocument();
+    expect(cleaning).toHaveBeenCalledWith("p-1", "2026-11-04");
+    expect(screen.getByText("2 to do")).toBeInTheDocument();
+    expect(screen.getByText("Due 03/11/2026")).toBeInTheDocument();
+    expect(screen.getByText("Unit check")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for a cleaner")).toBeInTheDocument();
+    expect(
+      screen.getByText("Waiting for Chan Thida in Telegram"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Cleaned by Sok Mony")).toBeInTheDocument();
+    expect(
+      screen.getByText("Not cleaned: Guest did not open the door"),
+    ).toBeInTheDocument();
+    // Owner 16/11/2026: no Cleaned, Not cleaned today or Do the Unit check buttons.
+    const open = screen.getByRole("list", { name: "Housekeeping" });
+    expect(within(open).queryByRole("button")).toBeNull();
+    expect(within(open).queryByRole("link")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Next day/ }));
+    await waitFor(() => {
+      expect(cleaning).toHaveBeenLastCalledWith("p-1", "2026-11-05");
+    });
+  });
+
+  it("TEST-FE-2264 (DL-242) a Unit check where the cleaner found a problem asks the front desk to write it on the booking, and a cleaner with no Telegram is told in person", async () => {
+    const day: CleaningDay = {
       day: "2026-11-04",
       today: "2026-11-04",
       tasks: [
         {
-          task_id: "t-1",
-          kind: "DAILY_CLEAN" as const,
-          task_on: "2026-11-04",
-          status: "TO_DO" as const,
-          note: null,
-          done_at: null,
-          unit_id: "u-501",
-          unit_number: "U501",
-          booking_id: "b-1",
-          booking_number: "ST260001",
-          guest_name: "Lim Dara",
-          late: false,
-          assigned_to: null,
-          assigned_name: null,
-          done_by_name: null,
-        },
-        {
           task_id: "t-2",
-          kind: "ROOM_CHECK" as const,
-          task_on: "2026-11-03",
-          status: "TO_DO" as const,
+          kind: "ROOM_CHECK",
+          task_on: "2026-11-04",
+          status: "TO_DO",
           note: null,
           done_at: null,
           unit_id: "u-503",
@@ -1319,48 +1385,57 @@ describe("Daily and weekly rent: Short stays", () => {
           booking_id: "b-9",
           booking_number: "ST260009",
           guest_name: "Meas Rina",
-          late: true,
-          assigned_to: null,
-          assigned_name: null,
+          late: false,
+          assigned_to: "e-1",
+          assigned_name: "Chan Thida",
           done_by_name: null,
+          problem_found_at: "2026-11-04T03:00:00Z",
+          problem_found_by_name: "Chan Thida",
+        },
+        {
+          task_id: "t-5",
+          kind: "DAILY_CLEAN",
+          task_on: "2026-11-04",
+          status: "TO_DO",
+          note: null,
+          done_at: null,
+          unit_id: "u-505",
+          unit_number: "U505",
+          booking_id: "b-5",
+          booking_number: "ST260005",
+          guest_name: "Lim Dara",
+          late: false,
+          assigned_to: "e-2",
+          assigned_name: "Sok Mony",
+          done_by_name: null,
+          problem_found_at: null,
+          problem_found_by_name: null,
         },
       ],
-      cleaners: [],
+      cleaners: [
+        {
+          employee_id: "e-2",
+          name: "Sok Mony",
+          name_km: "សុខ មុនី",
+          telegram: false,
+        },
+      ],
     };
-    const cleaning = vi.fn(() => Promise.resolve(day));
-    const finishTask = vi.fn(() => Promise.resolve(day));
     show({
-      api: fakeApi({ cleaning, finishTask }),
+      api: fakeApi({ cleaning: vi.fn(() => Promise.resolve(day)) }),
       capabilities: new Set([...DESK, "short_stays.housekeeping"]),
     });
     fireEvent.click(await screen.findByRole("link", { name: "Housekeeping" }));
-    expect(await screen.findByText("Daily clean")).toBeInTheDocument();
-    expect(cleaning).toHaveBeenCalledWith("p-1", "2026-11-04");
-    expect(screen.getByText("2 to do")).toBeInTheDocument();
-    expect(screen.getByText("Due 03/11/2026")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Do the room check" }),
-    ).toHaveAttribute("href", "#/shortstays/st%3Ab-9");
-    fireEvent.click(screen.getByRole("button", { name: "Not cleaned today" }));
-    fireEvent.click(screen.getByRole("button", { name: "Not cleaned today" }));
-    expect(
-      await screen.findByText("Say why the room is not cleaned today."),
+      await screen.findByText("Problem found by Chan Thida"),
     ).toBeInTheDocument();
-    expect(finishTask).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText(/Why it is not cleaned/), {
-      target: { value: "Do not disturb" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Not cleaned today" }));
-    await waitFor(() => {
-      expect(finishTask).toHaveBeenCalledWith("p-1", "t-1", {
-        skip: true,
-        note: "Do not disturb",
-      });
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Next day/ }));
-    await waitFor(() => {
-      expect(cleaning).toHaveBeenLastCalledWith("p-1", "2026-11-05");
-    });
+    expect(
+      screen.getByRole("link", { name: "Write the problem on the booking" }),
+    ).toHaveAttribute("href", "#/shortstays/st%3Ab-9");
+    // A cleaner the Staff bot cannot reach is told in person.
+    expect(
+      screen.getByText("Sok Mony has no Telegram: tell them in person"),
+    ).toBeInTheDocument();
   });
 
   it("TEST-FE-1614 cancels with a reason and says the money comes back as credit", async () => {
@@ -2742,6 +2817,8 @@ describe("Daily and weekly rent: Short stays", () => {
         assigned_to: null,
         assigned_name: null,
         done_by_name: null,
+        problem_found_at: null,
+        problem_found_by_name: null,
       });
       const day = {
         day: "2026-11-04",
@@ -2859,6 +2936,8 @@ describe("Daily and weekly rent: Short stays", () => {
         assigned_to: null,
         assigned_name: null,
         done_by_name: null,
+        problem_found_at: null,
+        problem_found_by_name: null,
         ...extra,
       });
       const cleaners = [
@@ -2926,7 +3005,7 @@ describe("Daily and weekly rent: Short stays", () => {
           screen.getAllByRole("combobox", { name: /Assign to/ })[0],
         ).toHaveValue("e-1");
       });
-      expect(screen.getByText("Done by Chan Thida")).toBeInTheDocument();
+      expect(screen.getByText("Cleaned by Chan Thida")).toBeInTheDocument();
       // Owner card 14/11/2026: cleaners use the Staff bot, so there is no "My tasks".
       expect(screen.queryByRole("button", { name: "My tasks" })).toBeNull();
     });
@@ -2960,6 +3039,8 @@ describe("Daily and weekly rent: Short stays", () => {
             assigned_to: "e-1",
             assigned_name: "Chan Thida",
             done_by_name: null,
+            problem_found_at: null,
+            problem_found_by_name: null,
           },
         ],
       };

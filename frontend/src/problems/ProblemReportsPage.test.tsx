@@ -1309,10 +1309,10 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     );
     expect(
       await screen.findByText(
-        /From the room check after short stay ST260001 \(Lim Dara, 04\/11\/2026 to 07\/11\/2026\)\./,
+        /From the Unit check after short stay ST260001 \(Lim Dara, 04\/11\/2026 to 07\/11\/2026\)\./,
       ),
     ).toBeTruthy();
-    expect(screen.getAllByText(/Short-stay room check/).length).toBeGreaterThan(
+    expect(screen.getAllByText(/Short-stay Unit check/).length).toBeGreaterThan(
       0,
     );
     expect(

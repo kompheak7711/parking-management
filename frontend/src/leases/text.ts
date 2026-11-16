@@ -24,16 +24,9 @@ const TEXT = {
     "សូមជ្រើសរើសអគារក្នុងការកំណត់ជាមុនសិន។",
   ],
   c_current: ["Current", "បច្ចុប្បន្ន"],
-  c_current_s: ["Signed and running", "បានចុះហត្ថលេខា និងកំពុងដំណើរការ"],
   c_ending: ["Ending soon", "ជិតបញ្ចប់"],
-  c_ending_s: ["End Date before {0}", "ថ្ងៃបញ្ចប់មុន {0}"],
   c_draft: ["Drafts", "សេចក្តីព្រាង"],
-  c_draft_s: ["Not signed yet", "មិនទាន់ចុះហត្ថលេខា"],
   c_ended: ["Ended", "បានបញ្ចប់"],
-  c_ended_s: [
-    "Past End Date, terminated or cancelled",
-    "ហួសថ្ងៃបញ្ចប់ បានបញ្ចប់ ឬបានលុបចោល",
-  ],
   // new
   showing: ["Showing: {0}", "កំពុងបង្ហាញ៖ {0}"],
   // new

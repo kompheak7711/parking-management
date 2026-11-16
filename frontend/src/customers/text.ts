@@ -41,26 +41,9 @@ const TEXT = {
     "Your account cannot read Leases or Reservations, so Parking and Relationship show “—”.",
     "គណនីរបស់អ្នកមិនអាចអានកិច្ចសន្យា ឬការកក់បានទេ ដូច្នេះចំណត និងទំនាក់ទំនង បង្ហាញ “—”។",
   ],
+  // Owner 16/11/2026: two cards; "Current tenants" holds everyone on a current Lease.
   c_tenant: ["Current tenants", "អ្នកជួលបច្ចុប្បន្ន"],
-  c_tenant_s: [
-    "Primary Tenant on a signed Lease",
-    "អ្នកជួលចម្បងលើកិច្ចសន្យាបានចុះហត្ថលេខា",
-  ],
-  c_other: ["Signers and occupants", "អ្នកចុះហត្ថលេខា និងអ្នករស់នៅ"],
-  c_other_s: [
-    "On a Lease, not the Primary Tenant",
-    "នៅលើកិច្ចសន្យា មិនមែនអ្នកជួលចម្បង",
-  ],
-  c_res: ["Reservations", "ការកក់"],
-  c_res_s: [
-    "Holding a Parking, Lease not signed yet",
-    "កំពុងកក់ចំណត មិនទាន់ចុះហត្ថលេខាកិច្ចសន្យា",
-  ],
-  c_former: ["Past customers", "ពីមុន"],
-  c_former_s: [
-    "No current Lease or Reservation",
-    "គ្មានកិច្ចសន្យា ឬការកក់បច្ចុប្បន្ន",
-  ],
+  c_former: ["Former tenants", "អ្នកជួលពីមុន"],
   showing: ["Showing: {0}.", "កំពុងបង្ហាញ៖ {0}។"],
   show_all: ["Show all", "បង្ហាញទាំងអស់"],
   name: ["Legal name", "ឈ្មោះតាមច្បាប់"],
@@ -95,7 +78,7 @@ const TEXT = {
   k_tenant: ["Tenant", "អ្នកជួល"],
   k_other: ["Signer or occupant", "អ្នកចុះហត្ថលេខា ឬអ្នករស់នៅ"],
   k_res: ["Reservation", "ការកក់"],
-  k_former: ["Past customers", "ពីមុន"],
+  k_former: ["Former tenant", "អ្នកជួលពីមុន"],
   // new
   deactivated: ["Deactivated", "បានបិទ"],
   back: ["Back", "ត្រឡប់ក្រោយ"],

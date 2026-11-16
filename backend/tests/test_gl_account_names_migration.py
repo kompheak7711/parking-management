@@ -27,7 +27,7 @@ def test_360_follows_321_and_is_the_head() -> None:
     assert module.revision == "20270626_360"
     assert module.down_revision == "20270716_391"
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_heads() == ["20270803_417"]
+    assert ScriptDirectory.from_config(config).get_heads() == ["20270804_415"]
 
 
 def test_360_changes_only_the_four_english_names(monkeypatch: pytest.MonkeyPatch) -> None:

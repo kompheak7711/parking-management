@@ -63,7 +63,7 @@ def test_migration_365_follows_the_payments_paid_for_and_is_forward_only() -> No
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == PREVIOUS
-    assert scripts.get_heads() == ["20270803_417"]
+    assert scripts.get_heads() == ["20270804_415"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 

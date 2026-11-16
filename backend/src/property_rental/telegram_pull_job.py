@@ -466,6 +466,9 @@ def queue_warnings(store: TelegramStore) -> None:
     # Short-stay guests: the check-out reminder, the late check-out notice, a charge still
     # unpaid, and what staff wrote that was not sent yet (DL-238).
     store.short_stay_notices_run()
+    # Housekeeping tasks due today and never given to anyone go to the cleaner with the fewest
+    # tasks, who gets them in the Staff bot (DL-242).
+    store.housekeeping_auto_assign()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

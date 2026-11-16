@@ -62,6 +62,8 @@ class TelegramStore(Protocol):
     def rent_notices_run(self) -> int: ...
     def short_stay_notices_run(self) -> int: ...
 
+    def housekeeping_auto_assign(self) -> int: ...
+
     def warnings_queue(self) -> int: ...
 
     def visit_requests_remove_old(self) -> int: ...
@@ -349,6 +351,12 @@ class PostgresTelegramStore:
         """Record the guest notices that are due and send them to the booking's links (DL-238)."""
         return int(
             self._one("SELECT app.short_stay_notices_run(%s, %s)", self._property, self._actor)
+        )
+
+    def housekeeping_auto_assign(self) -> int:
+        """Give each Housekeeping task due and never given to the least busy cleaner (DL-242)."""
+        return int(
+            self._one("SELECT app.housekeeping_auto_assign(%s, %s)", self._property, self._actor)
         )
 
     def warnings_queue(self) -> int:

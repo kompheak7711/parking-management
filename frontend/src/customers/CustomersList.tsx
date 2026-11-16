@@ -43,12 +43,19 @@ export function KindChip({
   );
 }
 
-const CARDS: [Exclude<CustomerKind, "none">, ShellIcon, Tone | "brand"][] = [
+// Owner 16/11/2026: two cards only. "Current tenants" holds everyone on a current Lease (the
+// Primary Tenant, the other Signers and the occupants); Reservations have their own page.
+type CustomerCard = "tenant" | "former";
+const CARDS: [CustomerCard, ShellIcon, Tone | "brand"][] = [
   ["tenant", "check", "ok"],
-  ["other", "customers", "brand"],
-  ["res", "calendar", "info"],
   ["former", "clock", "neutral"],
 ];
+
+function inCard(kind: CustomerKind, card: CustomerCard): boolean {
+  return card === "tenant"
+    ? kind === "tenant" || kind === "other"
+    : kind === card;
+}
 
 export interface ServerMatch {
   text: string;
@@ -78,9 +85,7 @@ export function CustomersList({
   above?: ReactNode;
 }) {
   const [text, setText] = useState("");
-  const [card, setCard] = useState<Exclude<CustomerKind, "none"> | "all">(
-    "all",
-  );
+  const [card, setCard] = useState<CustomerCard | "all">("all");
 
   const needle = text.trim().toLowerCase();
   // Only a text of digits, spaces and + ( ) - is a phone number; "N0123456" is not.
@@ -108,7 +113,7 @@ export function CustomersList({
     );
   });
   const shown = base.filter(
-    (customer) => card === "all" || standing(customer).kind === card,
+    (customer) => card === "all" || inCard(standing(customer).kind, card),
   );
   const unknown = data.leases === null || data.reservations === null;
   const dash = <span className="ui-muted">—</span>;
@@ -178,8 +183,9 @@ export function CustomersList({
               pressed={card === value}
               tone={tone}
               value={
-                base.filter((customer) => standing(customer).kind === value)
-                  .length
+                base.filter((customer) =>
+                  inCard(standing(customer).kind, value),
+                ).length
               }
             />
           ))}

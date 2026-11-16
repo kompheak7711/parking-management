@@ -3419,3 +3419,22 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Open.** A native Khmer check of the new messages and screen words.
 - **Links:** DL-214, DL-215, DL-216, DL-217, DL-237.
 - **Decision date:** 2026-11-14.
+
+## DL-242 — Housekeeping tasks are given out by themselves, and the cleaner reports the Unit check in the Staff bot too
+
+- **Type:** `OWNER DECISION`.
+- **Source.** The owner on 16 Nov 2026 in the thread "Build short-stay guest notices", own words: "Replace "Room check" by "Unit check". and replace button "Cleaned", "Not cleaned today", "Do the room check" by status text. because I want short stay Unit check is auto assign to cleaner, yet, staff may change assignment to other staff. And "Cleaned" or "Not cleaned today" is report by cleaner staff via telegram bot." Then the decision card "Choose how cleaners get and report Housekeeping tasks": "As I advise".
+- **Before** (DL-236). The front desk gave each task to a cleaner by hand. The Staff bot had Cleaned and Not cleaned for a clean; the room check had no buttons and was done in the app on the booking page. The Housekeeping list had the buttons Cleaned, Not cleaned today and Do the room check.
+- **Now.**
+  1. Each task due today (or late) that was never given to anyone goes by itself to the cleaner the Staff bot can reach who has the fewest tasks that day; a tie goes by name. The Telegram pull job does it, so a Unit check made at check-out is given within minutes. Staff may still give it to another cleaner or to nobody; a task given to nobody by staff is not given out again. With no cleaner on Telegram the task waits for the front desk.
+  2. The cleaner reports in the Staff bot: Cleaned or Not cleaned (with the reason) for a clean, Unit OK or Problem found for a Unit check.
+  3. Unit OK finishes the Unit check as the app's check with no problem: the Unit is ready again and the booking History says Unit checked.
+  4. Problem found keeps the Unit check to do and marks it. The Housekeeping list says "Problem found by" the cleaner, with a link to the booking, where the front desk writes the Problem report and the damage choice as before (DL-222). The Unit stays Cleaning until then.
+  5. The Housekeeping list has no buttons. It shows what happened as text: Waiting for a cleaner, Waiting for (name) in Telegram, Cleaned by, Not cleaned: (reason), Unit checked by, Problem found by.
+  6. "Room check" is called "Unit check" on every screen.
+  7. Each task row has the "Assign to" box at the top right, on the same line as the Unit and the task (owner 16 Nov 2026); staff can still change the cleaner there.
+- **Not changed.** No money, Invoice or Lease. The Unit check on the booking page stays for the front desk (a problem, or a cleaner with no Telegram). The task kinds in the database keep their codes (`ROOM_CHECK`).
+- **Database:** migration `20270804_415` (DB-HK-002), forward-only; nothing made before is changed. **API:** the Housekeeping list answer gains `problem_found_at` and `problem_found_by_name` (amendment in API-HK-001). **Telegram:** buttons `hk:ok` and `hk:bad`, texts `staff.unit_ok` and `staff.unit_problem` (Khmer); the pull job calls `app.housekeeping_auto_assign`. **Screens:** Housekeeping tab (TEST-FE-1613 changed, TEST-FE-2264).
+- **Open.** A native Khmer check of the new messages and screen words.
+- **Links:** DL-222, DL-236.
+- **Decision date:** 2026-11-16.

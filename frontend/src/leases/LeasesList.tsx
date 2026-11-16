@@ -16,7 +16,6 @@ import {
   LeaseKind,
   LeasesData,
   cardsOf,
-  endingLimit,
   kindOf,
   leaseNo,
   renewedIds,
@@ -128,7 +127,6 @@ export function LeasesList({
             icon={icon}
             key={value}
             label={lt(language, `c_${value}`)}
-            note={lt(language, `c_${value}_s`, dayText(endingLimit(today)))}
             onPress={() => {
               setCard(card === value ? "all" : value);
             }}

@@ -561,19 +561,19 @@ fieldset.ss-problems > legend {
   background: var(--err-bg);
 }
 
-.ss-taskwhat {
-  display: grid;
-  gap: 2px;
+.ss-tasktitle {
+  grid-column: 1;
+  grid-row: 1;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   min-width: 0;
 }
 
-.ss-taskwhat .ui-hrow {
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-
-.ss-taskwhat p {
-  margin: 0;
+/* Owner 16/11/2026: the "Assign to" box (or "Given to") top right, on the title line. */
+.ss-taskside {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .ss-latedate {
@@ -587,7 +587,6 @@ fieldset.ss-problems > legend {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  margin-top: 4px;
 }
 
 .ss-assign > span {
@@ -611,10 +610,35 @@ fieldset.ss-problems > legend {
   color: var(--text-2);
 }
 
-.ss-taskdo {
+/* DL-242: what happened to a task, as text (the cleaner reports in the Staff bot). */
+.ss-state {
+  grid-column: 1 / -1;
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.ss-state span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-state.ok {
+  color: var(--ok);
+}
+
+.ss-state.err {
+  color: var(--err);
+}
+
+.ss-state.muted {
+  color: var(--text-2);
+  font-weight: 500;
 }
 
 .ss-taskdone > summary {
@@ -635,8 +659,10 @@ fieldset.ss-problems > legend {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .ss-taskdo {
-    justify-content: flex-start;
+  .ss-taskside {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
   }
 }
 

@@ -321,16 +321,11 @@ describe("Customers list", () => {
     expect(rowOf("Sok Dara")).toHaveTextContent("012 345 678U101Tenant");
     expect(rowOf("Chan Vanna")).toHaveTextContent("U101Signer or occupant");
     expect(rowOf("Lim Srey")).toHaveTextContent("U102Reservation");
-    expect(rowOf("Keo Mony")).toHaveTextContent("U201Past customers");
+    expect(rowOf("Keo Mony")).toHaveTextContent("U201Former tenant");
     expect(rowOf("Pich Rina")).toHaveTextContent("Deactivated");
     expect(rowOf("Pich Rina")).toHaveTextContent("No Lease yet");
-    expect(rowOf("Mok Thida")).toHaveTextContent("U101Past customers");
-    for (const label of [
-      "Current tenants: 1.",
-      "Signers and occupants: 1.",
-      "Reservations: 1.",
-      "Past customers: 2.",
-    ])
+    expect(rowOf("Mok Thida")).toHaveTextContent("U101Former tenant");
+    for (const label of ["Current tenants: 2.", "Former tenants: 2."])
       expect(
         screen.getByRole("button", { name: new RegExp(`^${label}`) }),
       ).toBeInTheDocument();
@@ -343,9 +338,9 @@ describe("Customers list", () => {
     await screen.findByText("6 Customers");
 
     fireEvent.click(
-      screen.getByRole("button", { name: /^Past customers: 2\./ }),
+      screen.getByRole("button", { name: /^Former tenants: 2\./ }),
     );
-    expect(screen.getByText("Showing: Past customers.")).toBeInTheDocument();
+    expect(screen.getByText("Showing: Former tenants.")).toBeInTheDocument();
     expect(screen.getByText("2 Customers")).toBeInTheDocument();
     expect(rowOf("Keo Mony")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));

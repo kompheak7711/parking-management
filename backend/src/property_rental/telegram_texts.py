@@ -1171,6 +1171,16 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": "ការងារនេះមិនមែនសម្រាប់អ្នកទេ។ សូមសួរផ្នែកទទួលភ្ញៀវ។",
         "en": "ការងារនេះមិនមែនសម្រាប់អ្នកទេ។ សូមសួរផ្នែកទទួលភ្ញៀវ។",
     },
+    # DL-242 (owner 16 Nov 2026): the cleaner's tap on Unit OK or Problem found after a short
+    # stay. The Khmer waits for the native-speaker check.
+    "staff.unit_ok": {
+        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
+        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
+    },
+    "staff.unit_problem": {
+        "km": "⚠️ បានកត់ត្រា៖ បន្ទប់ {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
+        "en": "⚠️ បានកត់ត្រា៖ បន្ទប់ {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
+    },
     # Report states as the tenant sees them (the app's words, Building > Problem reports).
     "status.RECEIVED": {"km": "បានទទួល", "en": "Received"},
     "status.PLANNED": {"km": "បានរៀបចំការមកពិនិត្យ", "en": "Visit planned"},
