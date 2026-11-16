@@ -579,6 +579,57 @@ describe("V1-058 R5c-3 review round 1", () => {
     expect(paymentsApi.reprint).toHaveBeenCalledTimes(2);
   });
 
+  it("TEST-FE-2277 Receive payment reads the Credit made from the extra money, and an older answer without it as none", async () => {
+    const answer = (extra: Record<string, unknown>) =>
+      new Response(
+        JSON.stringify({
+          data: {
+            payment: {
+              id: "p-2",
+              received_currency: "USD",
+              received_amount_minor: 45_000,
+              usd_accounting_value_cents: 45_000,
+            },
+            receipt: { receipt_number: "RCP260046" },
+            allocations: [],
+            left_usd_cents: 0,
+            ...extra,
+          },
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(answer({ credit_usd_cents: 45_000 }))
+      .mockResolvedValueOnce(answer({}));
+    vi.stubGlobal("fetch", fetcher);
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=payments-token",
+      writable: true,
+    });
+    try {
+      const input = {} as Parameters<
+        ReturnType<typeof createPaymentsApi>["receive"]
+      >[1];
+      const first = await createPaymentsApi().receive(
+        "property-1",
+        input,
+        "k-1",
+      );
+      expect([first.left, first.credit]).toEqual([0, 45_000]);
+      const older = await createPaymentsApi().receive(
+        "property-1",
+        input,
+        "k-2",
+      );
+      expect(older.credit).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+      Reflect.deleteProperty(document, "cookie");
+    }
+  });
+
   it("TEST-FE-922 the Receipt does not print without the Customer names, and a reversed Receipt shows no money waiting", async () => {
     const retry = vi.fn();
     showReceipt(receiptApi(), true, null, true, retry);

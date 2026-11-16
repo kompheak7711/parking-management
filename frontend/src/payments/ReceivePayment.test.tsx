@@ -96,6 +96,7 @@ const RESULT: ReceiveResult = {
     { kind: "INVOICE", invoiceNumber: "INV260071", amount: 1_170 },
   ],
   left: 0,
+  credit: 0,
 };
 
 function api(overrides: Partial<PaymentsApi> = {}) {
@@ -289,6 +290,62 @@ describe("Receive payment", () => {
     );
   });
 
+  it("TEST-FE-2275 money above everything owed is said to become the Customer's Credit, before and after saving", async () => {
+    const payments = api({
+      receive: vi.fn(() =>
+        Promise.resolve({ ...RESULT, usdCents: 48_530, credit: 5_000 }),
+      ),
+    });
+    show(payments);
+    await choose();
+    type("rp-amt", "485.30");
+    expect(
+      screen.getByText("Left over: $50.00. It becomes the Customer's Credit."),
+    ).toBeTruthy();
+    type("rp-ref", "100245789");
+    fireEvent.click(screen.getByRole("button", { name: /Receive payment/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Left over")).toBeTruthy();
+    expect(
+      within(dialog).getByText(/It becomes the Customer's Credit\./),
+    ).toBeTruthy();
+    expect(within(dialog).queryByText(/Ask the Customer/)).toBeNull();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Receive payment" }),
+    );
+    await screen.findByText("Payment recorded");
+    expect(
+      screen.getByText(
+        "$50.00 is now the Customer's Credit. It pays a later Invoice when staff use it, or the Customer may ask for it back any day.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Ask the Customer/)).toBeNull();
+  });
+
+  it("TEST-FE-2276 money that could not become Credit at once waits, and the old question to the Customer is shown", async () => {
+    const payments = api({
+      receive: vi.fn(() =>
+        Promise.resolve({ ...RESULT, usdCents: 48_530, left: 5_000 }),
+      ),
+    });
+    show(payments);
+    await choose();
+    type("rp-amt", "485.30");
+    type("rp-ref", "100245789");
+    fireEvent.click(screen.getByRole("button", { name: /Receive payment/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Receive payment" }),
+    );
+    await screen.findByText("Payment recorded");
+    expect(
+      screen.getByText(
+        "Left over: $50.00. Ask the Customer: keep it as Credit, or refund it.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/is now the Customer's Credit/)).toBeNull();
+  });
+
   it("TEST-FE-910 a tick by hand sets the amount, sends named ticks, and money may not wait while something is owed", async () => {
     const payments = api();
     show(payments);
@@ -371,7 +428,7 @@ describe("Receive payment", () => {
       0,
     );
 
-    // Cash has no reference field; the Customer owes nothing, so the money waits.
+    // Cash has no reference field; the Customer owes nothing, so the money becomes Credit.
     fireEvent.change(screen.getByLabelText(/^Payment method/), {
       target: { value: "method-cash" },
     });
@@ -382,7 +439,9 @@ describe("Receive payment", () => {
     fireEvent.click(screen.getByRole("button", { name: /Receive payment/ }));
     const dialog = await screen.findByRole("dialog");
     expect(
-      within(dialog).getByText(/Nothing to pay yet\. \$194\.40 waits/),
+      within(dialog).getByText(
+        "Nothing to pay yet. $194.40 becomes the Customer's Credit.",
+      ),
     ).toBeTruthy();
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Receive payment" }),

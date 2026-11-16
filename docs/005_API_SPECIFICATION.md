@@ -1080,6 +1080,8 @@ only through a correction of the Settlement whose correction wrote it.
 
 Amended by DL-077 (owner, 2026-10-20): the proposal is ticked on the Receive payment screen and saved with the Payment in one step; this route stays for money that waits and for paying again after a reversal. Not built yet (screen rebuild).
 
+Amended by DL-235 (2026-11-15, migration `20270801_398`, DB-BS-013): `POST /properties/{property_id}/payments/receive` makes the money above everything the payer owes the payer's Customer Credit in the same step. The answer adds `customer_credit` (`id`, `customer_id`, `amount_usd_cents`, or null when no Credit was made) and `credit_usd_cents` (0 when none); `left_usd_cents` is what still waits on the Payment, which is 0 unless "nothing owed" could not be checked at that moment. A press saved before this change is answered again as it was, without the two fields. `POST /properties/{property_id}/payments` (record only) and this route are not changed.
+
 Amended by V1-056 slice 11d (2026-10-24): `POST /payment-allocations/{allocation_id}/reverse`
 answers 409 `ALLOCATION_MOVED` and 409 `FINAL_SETTLEMENT_CLOSED` with their codes; see the
 paragraph "V1-056 slice 11d" at the end of API-101.

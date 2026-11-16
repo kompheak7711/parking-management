@@ -3289,7 +3289,7 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Source.** The owner on 12 Nov 2026 (DL-226, D4, "all yes"): the Pet Deposit for a pet kept from the start is received at Sign Lease, with the Security Deposit and the Initial Rent.
 - **Before** (BR-DEP-010). It was due within five days after the Lease Start Date. The draft kept only a tick "A pet is approved" and which pet; staff made the Pet Deposit and received it by hand after the signing.
 - **Now.** The draft records the Pet Deposit amount beside the pet, as it records the Security Deposit (DL-101). Sign Lease takes the full total in one payment and makes the Pet Deposit with its receipt in the same step. A draft with an approved pet and no amount is not signed until the amount is recorded.
-- **How the build read the rest (asked to the owner with the pull request).**
+- **How the build read the rest.** These points were asked with the pull request, and the owner said yes to all four on 15 Nov 2026 (card "Yes to all four, merge when green"); pull request #42 was merged that day.
   1. The amount is typed on the draft for each Lease; Settings has no fixed Pet Deposit amount.
   2. Sign Lease takes the full total, no part payment. Example: Initial Rent $110 + Security Deposit $300 + Pet Deposit $100 = $510.
   3. A pet that comes later stays as before: paid before or when the pet starts to stay.
@@ -3298,6 +3298,24 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 - **Database:** migration `20270731_397` (DB-BS-012), forward-only; no data is changed or deleted. **API:** `PUT /leases/{lease_id}/planned-pet-deposit` and the new fields (the amendment of DL-234 in docs/005). **Screen:** New Lease and Edit draft have a box "Pet Deposit (USD)" for a draft with a pet; the Lease page, Print draft and Sign Lease show the Pet Deposit and the total (TEST-FE-2271, TEST-FE-2272, TEST-FE-2273, TEST-FE-2274).
 - **Open:** the native Khmer check of the new screen text.
 - **Links:** DL-226, DL-100, DL-101, DL-066; BR-DEP-010, BR-DEP-006.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
+
+## DL-235 — Extra money at Receive payment becomes Customer Credit at once (D5 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, D5, "all yes"): extra money becomes Customer Credit at once; the Customer may ask for a Refund any day.
+- **Before** (BR-PAY-030, BR-CREDIT-002). Money above everything the payer owed waited on the Receipt until Property Management asked the payer and recorded the choice: keep it as Customer Credit, or get it back.
+- **Now.** Receive payment pays what is ticked and, in the same step, makes the money still free the payer's Customer Credit, with no question to the payer.
+- **How the build read the rest (asked to the owner with the pull request).**
+  1. Money above everything owed becomes Customer Credit in the same step. Example: the Customer owes $300.00 and pays $350.00; $300.00 pays the Invoices and $50.00 becomes Credit.
+  2. The Customer may ask for the Credit back any day, as a Credit Refund, with the approval a Refund needs today (BR-CREDIT-011, BR-AUTH-010).
+  3. Credit pays a later Invoice only when staff use it ("One tap" on issue day), as today (BR-CREDIT-005).
+  4. A riel Payment gives Credit in US dollars, at the rate of that Payment (BR-CREDIT-001).
+  5. Money that already waits on older Receipts stays as it is; staff ask the payer as before.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The Credit is made by the same database step that a person used before (`app.recognize_customer_credit`), so its history, audit, Ledger and Refund stay the same; the person who receives the money needs no new right. If the app cannot check at that moment that nothing else is owed (another person is changing Invoices), the Payment is still saved and the money waits on the Receipt, as before, rather than refusing the Payment. Recording a Payment without paying (the two-step route) is not changed.
+- **Database:** migration `20270801_398` (DB-BS-013), forward-only; no data is changed or deleted. **API:** `customer_credit` and `credit_usd_cents` in the Receive payment answer (the amendment of DL-235 in docs/005). **Screen:** Receive payment says the money left over becomes the Customer's Credit, before saving and after (TEST-FE-2275, TEST-FE-2276, TEST-FE-2277).
+- **Open:** the native Khmer check of the new screen text.
+- **Links:** DL-226, DL-077, DL-064; BR-PAY-030, BR-CREDIT-002, BR-CREDIT-011.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager

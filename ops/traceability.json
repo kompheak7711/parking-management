@@ -53757,8 +53757,9 @@
       "notes": "V1-058 R5c-1 Receive payment in one step: ticks that differ from the database proposal, or no ticks while the Customer owes, save no Payment, Receipt or allocation, and the key is not used up."
     },
     {
-      "test_id": "test_money_from_a_customer_who_owes_nothing_waits_on_the_receipt",
+      "test_id": "test_money_from_a_customer_who_owes_nothing_becomes_customer_credit",
       "upstream_ids": [
+        "DL-235",
         "DL-077",
         "DL-076",
         "BR-PAY-019",
@@ -53769,7 +53770,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_receive_payment_migration.py",
       "status": "implemented",
-      "notes": "V1-058 R5c-1 Receive payment in one step: money from a Customer who owes nothing waits on the Receipt with no allocation."
+      "notes": "V1-058 R5c-1 Receive payment in one step: money from a Customer who owes nothing has no allocation and becomes Customer Credit at once (DL-235)."
     },
     {
       "test_id": "test_named_ticks_pay_what_the_payer_named",
@@ -68592,6 +68593,114 @@
       "test_path": "frontend/src/settlementClient.test.tsx",
       "status": "implemented",
       "notes": "The client reads pet_deposit_required and planned_pet_deposit_usd_cents and saves the amount with PUT planned-pet-deposit."
+    },
+    {
+      "test_id": "test_money_above_everything_owed_becomes_the_payers_credit_in_the_same_step",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "Money above everything owed at Receive payment becomes the payer's Customer Credit in the same step; the same press again makes no second Credit."
+    },
+    {
+      "test_id": "test_all_the_money_of_a_customer_who_owes_nothing_becomes_credit",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "A Customer who owes nothing: the whole Payment becomes Customer Credit."
+    },
+    {
+      "test_id": "test_riel_money_above_what_is_owed_becomes_usd_credit_at_the_payments_rate",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "Riel money above what is owed becomes USD Credit at the Payment's rate."
+    },
+    {
+      "test_id": "test_no_credit_is_made_when_the_money_is_all_used",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "No Credit when the money is all used."
+    },
+    {
+      "test_id": "test_when_nothing_owed_cannot_be_checked_now_the_money_waits_as_before",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "When the check that nothing is owed cannot get its lock, the Payment is saved and the money waits on the Receipt as before."
+    },
+    {
+      "test_id": "test_the_migration_is_the_head",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_extra_money_credit_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270801_398 is the head."
+    },
+    {
+      "test_id": "TEST-FE-2275",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "Receive payment says money left over becomes the Customer's Credit before saving, in the dialog and after saving."
+    },
+    {
+      "test_id": "TEST-FE-2276",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/ReceivePayment.test.tsx",
+      "status": "implemented",
+      "notes": "Money that could not become Credit at once shows the old question to the Customer."
+    },
+    {
+      "test_id": "TEST-FE-2277",
+      "upstream_ids": [
+        "DL-235",
+        "BR-PAY-030",
+        "BR-CREDIT-002"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/payments/PaymentsList.test.tsx",
+      "status": "implemented",
+      "notes": "The client reads credit_usd_cents from Receive payment, and an older answer without it as 0."
     }
   ]
 }

@@ -71,7 +71,8 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
     assert row["customer_id"] == str(case["customer"])
     assert row["status"] == "RECEIVED" and row["received_currency"] == "USD"
     assert row["usd_cents"] == 2 * RENT + CHARGE + 2_000
-    assert row["left_usd_cents"] == 2_000
+    # The money above everything owed is Customer Credit at once (DL-235).
+    assert row["left_usd_cents"] == 0 and row["kinds"]["CREDIT"] == 2_000
     assert row["kinds"]["LATE"] == CHARGE
     assert row["kinds"].get("RENT", 0) + row["kinds"].get("SVC", 0) == 2 * RENT
     assert sum(row["kinds"].values()) + row["left_usd_cents"] == row["usd_cents"]
@@ -80,13 +81,13 @@ def test_each_payment_is_split_by_what_it_paid_and_the_cards_add_up(
     totals = result["totals"]
     assert totals["payments"] - start["payments"] == 1
     assert totals["received_usd_cents"] - start["received_usd_cents"] == row["usd_cents"]
-    assert totals["left_usd_cents"] - start["left_usd_cents"] == 2_000
-    assert totals["left_payments"] - start["left_payments"] == 1
+    assert totals["left_usd_cents"] - start["left_usd_cents"] == 0
+    assert totals["left_payments"] - start["left_payments"] == 0
     added = {
         kind: totals["kinds"][kind]["usd_cents"] - start["kinds"][kind]["usd_cents"]
         for kind in KINDS
     }
-    assert sum(added.values()) + 2_000 == row["usd_cents"]
+    assert sum(added.values()) == row["usd_cents"] and added["CREDIT"] == 2_000
     assert added["LATE"] == CHARGE and added["DEPOSIT"] == 0
     assert totals["kinds"]["LATE"]["payments"] - start["kinds"]["LATE"]["payments"] == 1
     assert totals["riel_received_minor"] == start["riel_received_minor"]

@@ -132,9 +132,15 @@ const TEXT = {
     "នៅសល់ {0}។ សូមធីកវិក្កយបត្រមួយទៀត។",
   ],
   pf_nocust: ["Choose the Customer first.", "សូមជ្រើសរើសអតិថិជនជាមុនសិន។"],
+  // changed (DL-235): extra money is the Customer's Credit at once
   pf_none: [
-    "This Customer has nothing unpaid. The money waits on the Receipt. Ask the Customer: keep it as Credit for the next Invoice, or refund it.",
-    "អតិថិជននេះគ្មានអ្វីមិនទាន់បង់ទេ។ ប្រាក់រង់ចាំលើបង្កាន់ដៃ។ សូមសួរអតិថិជន៖ រក្សាទុកជាឥណទានសម្រាប់វិក្កយបត្របន្ទាប់ ឬសងប្រាក់វិញ។",
+    "This Customer has nothing unpaid. All the money becomes the Customer's Credit for the next Invoice. The Customer may ask for it back any day.",
+    "អតិថិជននេះគ្មានអ្វីមិនទាន់បង់ទេ។ ប្រាក់ទាំងអស់ក្លាយជាឥណទានរបស់អតិថិជន សម្រាប់វិក្កយបត្របន្ទាប់។ អតិថិជនអាចស្នើសុំប្រាក់វិញបានគ្រប់ថ្ងៃ។",
+  ],
+  // new (DL-235)
+  pf_left_credit: [
+    "Left over: {0}. It becomes the Customer's Credit.",
+    "នៅសល់៖ {0}។ វាក្លាយជាឥណទានរបស់អតិថិជន។",
   ],
   pf_err_pick: [
     "Tick at least one Invoice. Money pays Invoices when it is received.",
@@ -156,15 +162,14 @@ const TEXT = {
     "The payment and what it pays for are saved as two separate records in History.",
     "ការបង់ប្រាក់ និងអ្វីដែលវាបង់ ត្រូវរក្សាទុកជាកំណត់ត្រាពីរដាច់ដោយឡែកក្នុងប្រវត្តិ។",
   ],
+  // changed (DL-235)
   pf_kept: [
-    "Nothing to pay yet. {0} waits on the Receipt. Ask the Customer: keep it as Credit, or refund it.",
-    "មិនទាន់មានអ្វីត្រូវបង់។ {0} រង់ចាំលើបង្កាន់ដៃ។ សូមសួរអតិថិជន៖ រក្សាទុកជាឥណទាន ឬសងប្រាក់វិញ។",
+    "Nothing to pay yet. {0} becomes the Customer's Credit.",
+    "មិនទាន់មានអ្វីត្រូវបង់។ {0} ក្លាយជាឥណទានរបស់អតិថិជន។",
   ],
   pf_left_t: ["Left over", "នៅសល់"],
-  pf_ask: [
-    "Ask the Customer: keep it as Credit, or refund it.",
-    "សូមសួរអតិថិជន៖ រក្សាទុកជាឥណទាន ឬសងប្រាក់វិញ។",
-  ],
+  // changed (DL-235)
+  pf_ask: ["It becomes the Customer's Credit.", "វាក្លាយជាឥណទានរបស់អតិថិជន។"],
   rc_matched_to: ["Paid for", "បង់សម្រាប់"],
   fx_system: ["App rate (rounded up)", "អត្រាកម្មវិធី (បង្គត់ឡើង)"],
   fx_usd: ["Worth in US dollars", "តម្លៃជាដុល្លារ"],
@@ -178,6 +183,16 @@ const TEXT = {
   done_pay_kept: [
     "{0} from {1}. Receipt {2} is ready. Nothing to pay yet: ask the Customer to keep it as Credit, or refund it.",
     "{0} ពី {1}។ បង្កាន់ដៃ {2} រួចរាល់។ មិនទាន់មានអ្វីត្រូវបង់៖ សូមសួរអតិថិជនថា រក្សាទុកជាឥណទាន ឬសងប្រាក់វិញ។",
+  ],
+  // new (DL-235)
+  done_pay_credit_all: [
+    "{0} from {1}. Receipt {2} is ready. Nothing to pay yet: it is now the Customer's Credit.",
+    "{0} ពី {1}។ បង្កាន់ដៃ {2} រួចរាល់។ មិនទាន់មានអ្វីត្រូវបង់៖ ឥឡូវវាជាឥណទានរបស់អតិថិជន។",
+  ],
+  // new (DL-235)
+  done_credit: [
+    "{0} is now the Customer's Credit. It pays a later Invoice when staff use it, or the Customer may ask for it back any day.",
+    "{0} ឥឡូវជាឥណទានរបស់អតិថិជន។ វាបង់វិក្កយបត្រពេលក្រោយ នៅពេលបុគ្គលិកប្រើវា ឬអតិថិជនអាចស្នើសុំប្រាក់វិញបានគ្រប់ថ្ងៃ។",
   ],
   done_pay_paid: [
     "{0} from {1}. Receipt {2} is ready. It paid {3}.",

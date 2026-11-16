@@ -925,7 +925,7 @@ Replaces: BR-PAY-026.
 
 ## BR-PAY-027 — Limits of an Allocation
 
-An allocation is above zero. It is not more than the Payment still has free, and not more than the debt still owes. No line, Invoice or late-payment charge ever goes below zero. Money above what is owed stays on the Payment (BR-PAY-030).
+An allocation is above zero. It is not more than the Payment still has free, and not more than the debt still owes. No line, Invoice or late-payment charge ever goes below zero. Money above what is owed becomes Customer Credit or waits on the Payment (BR-PAY-030).
 
 Replaces: BR-PAY-028.
 
@@ -935,9 +935,11 @@ Every allocation keeps its Payment, its target, the amount, what the Customer na
 
 ## BR-PAY-030 — Money Above Everything Owed
 
-Extra money exists only when everything the Customer owes is paid and part of the Payment is still free, or when nothing is owed. It stays on the Receipt, as part of the Received Payment. It is not Customer Credit until the payer chooses.
+Extra money exists only when everything the Customer owes is paid and part of the Payment is still free, or when nothing is owed.
 
-Property Management asks the payer: keep it as Customer Credit, or get it back. The choice, the amount, the time and the user are kept.
+At Receive payment the extra money becomes the payer's Customer Credit at once, in the same step, with no question to the payer. Example: the Customer owes $300.00 and pays $350.00; $300.00 pays the Invoices and $50.00 becomes Customer Credit. The Credit names the Payment and the amount. The Customer may ask for a Refund of that Credit any day (BR-CREDIT-011). Credit pays a later Invoice only when staff use it (BR-CREDIT-005).
+
+If the app cannot check at that moment that nothing else is owed (for example, another person is changing Invoices), the Payment is still saved and the extra money waits on the Receipt. Money that waits on a Receipt, including Receipts made before 15 November 2026, stays as it was: Property Management asks the payer to keep it as Customer Credit or get it back. The choice, the amount, the time and the user are kept.
 
 - Credit: only the amount the payer agrees to keep becomes Customer Credit, linked to the Payment and owned by the payer.
 - Refund: the Refund is linked to the Payment and its extra money.
@@ -947,7 +949,7 @@ Either way that amount can no longer be allocated from the Payment, so it cannot
 Free Payment money or Customer Credit never causes a future Rent Invoice to be made before its issue day.
 
 Replaces: BR-PAY-031, BR-PAY-032, BR-PAY-033, BR-PAY-034, BR-PAY-035.
-Decisions: DL-077.
+Decisions: DL-077, DL-235.
 
 ## BR-PAY-039 — Unpaid Rent Means the Rent Line
 
@@ -977,11 +979,12 @@ Replaces: BR-CREDIT-004, BR-CREDIT-010, BR-CREDIT-013.
 
 ## BR-CREDIT-002 — How Credit Starts
 
-- From extra money: only after the payer agrees that the Property keeps the named amount (BR-PAY-030). Never automatic. The Credit names the Payment, the amount kept, the payer and the agreement.
+- From extra money at Receive payment: at once, with no question to the payer (BR-PAY-030). The Credit names the Payment, the amount kept and the payer.
+- From extra money that waits on a Receipt: only after the payer agrees that the Property keeps the named amount (BR-PAY-030). The Credit names the Payment, the amount kept, the payer and the agreement.
 - From a credit Adjustment: paid value that a credit Adjustment gives back becomes Credit at once, with no question to the payer. It belongs to the Customer named on the Lease and the Invoice, even when another person paid, and a Refund of it goes to that Customer. The Credit names the Adjustment and the allocation or Credit use that was given back. The same holds for value given back when a paid late-payment charge is corrected.
 
 Replaces: BR-CREDIT-003, BR-CREDIT-014.
-Decisions: DL-064, DL-068, DL-069.
+Decisions: DL-064, DL-068, DL-069, DL-235.
 
 ## BR-CREDIT-005 — Using Credit
 
@@ -1401,7 +1404,7 @@ Decisions: DL-074.
 | Issue a charge by hand, adjust an issued Invoice, set a Due Date by hand, make an Invoice Void | Authorized user, with a reason |
 | Lower or cancel a Late-payment Invoice, or a late-payment charge made before 14 November 2026 | Owner or Manager by default (BR-LATE-004) |
 | Receive a Payment, confirm its allocations, reverse an allocation or a Payment | Authorized user. A proposal by the app is never the confirmation |
-| Make Credit from extra money, use Credit | Authorized user; the payer's choice is kept |
+| Make Credit from extra money that waits on a Receipt, use Credit | Authorized user; the payer's choice is kept. Extra money at Receive payment becomes Credit at once (BR-PAY-030) |
 | Refunds, Deposit use, keeping a Deposit, a Payment move, the Final Settlement and its corrections | Draft by Staff, confirmed by `financial.approve` (BR-AUTH-010) |
 
 Every one of these is kept in the history with its reason.
@@ -1837,12 +1840,11 @@ The owner decided these on 12 November 2026 (DL-226). The app does not do them y
 
 | # | Rule today | Decided |
 | --- | --- | --- |
-| D5 | BR-PAY-030: extra money waits on the Receipt until the payer chooses Credit or a Refund | Extra money becomes Customer Credit at once; the Customer may ask for a Refund any day |
 | D6 | BR-INV-015: a Draft Invoice is changed with a reason, and an unwanted Draft becomes Void | A Draft is changed freely and may be deleted; history starts at issue |
 | C1 | BR-LEASE-001, BR-LEASE-024, BR-DEP-023: the ending of an old Lease for unpaid Initial Rent or Security Deposit | Taken out of the app after a check that nothing can still reach it |
 | C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

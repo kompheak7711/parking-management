@@ -6178,3 +6178,14 @@ Added by DL-234 (owner, 12 Nov 2026, D4; migration `20270731_397` on `20270730_3
 - Not changed: a renewal and a pet approved after the signing keep the step by hand.
 
 Tests: `backend/tests/test_v12_pet_deposit_at_signing_migration.py`, `backend/tests/test_lease_signing_api.py`.
+
+## DB-BS-013 — Extra money at Receive payment becomes Customer Credit at once (DL-235)
+
+Added by DL-235 (owner, 12 Nov 2026, D5; migration `20270801_398` on `20270731_397`, forward-only). No table is added, and no row is changed or deleted.
+
+- `app.receive_payment` (same parameters): after the money pays what was ticked, any value still free on the Payment (`app.payment_available_value`) becomes the payer's Customer Credit through `app.recognize_customer_credit`, with the key `md5('receive-payment:credit:' || property || actor || key)`, the agreement text "Kept as Customer Credit at once by the rule (BR-PAY-030, DL-235)" and the reason "Money above everything owed at Receive payment.". The Credit row, its audit event and its command record are written in the same transaction as the Payment, so a replay answers the same Credit and never makes a second one.
+- When the check that nothing is owed (`app.assert_payment_excess_eligible`, through the Credit trigger) cannot get its short table lock at once (`lock_not_available`) or finds something owed (`check_violation`), only that inner step is rolled back: the Payment and its allocations are saved and the money waits on the Payment as before.
+- The answer adds `customer_credit` (`id`, `customer_id`, `amount_usd_cents`, or null) and `credit_usd_cents` (0 when none).
+- Not changed: `app.confirm_usd_payment`, `app.confirm_khr_payment` and `app.post_payment_allocations` used alone; money already waiting on a Payment; another person's money for a named Invoice or Lease (Receive payment refuses it, as before).
+
+Tests: `backend/tests/test_v12_extra_money_credit_migration.py`, `backend/tests/test_receive_payment_migration.py`, `backend/tests/test_payments_summary_migration.py`.

@@ -42,7 +42,10 @@ export interface ReceiveResult {
   receivedMinor: number;
   usdCents: number;
   allocations: ReceivedAllocation[];
+  /** Money still waiting on the Payment (only when "nothing owed" could not be checked). */
   left: number;
+  /** Money above everything owed, kept as the payer's Customer Credit at once (DL-235). */
+  credit: number;
 }
 
 export interface ConfirmedPayment {
@@ -299,6 +302,9 @@ function received(value: unknown): ReceiveResult {
       };
     }),
     left: cents(data.left_usd_cents),
+    // A press saved before DL-235 is answered again without this field.
+    credit:
+      data.credit_usd_cents === undefined ? 0 : cents(data.credit_usd_cents),
   };
 }
 

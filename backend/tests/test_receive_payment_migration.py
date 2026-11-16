@@ -115,7 +115,8 @@ def test_oldest_first_saves_the_payment_its_receipt_and_what_it_pays_together(
     result = receive(case, command)
 
     assert result["pays_mode"] == "OLDEST_FIRST"
-    assert result["left_usd_cents"] == 2_000
+    # The money above everything owed is the payer's Customer Credit at once (DL-235).
+    assert (result["left_usd_cents"], result["credit_usd_cents"]) == (0, 2_000)
     assert result["receipt"]["receipt_number"]
     assert [
         (item["target_kind"], item["invoice_number"], item["amount_usd_cents"])
@@ -173,7 +174,7 @@ def test_ticks_that_differ_from_the_proposal_save_nothing(migrated_database_url:
     assert receive(case, right)["left_usd_cents"] == 0
 
 
-def test_money_from_a_customer_who_owes_nothing_waits_on_the_receipt(
+def test_money_from_a_customer_who_owes_nothing_becomes_customer_credit(
     migrated_database_url: str,
 ) -> None:
     case = two_months(migrated_database_url)
@@ -190,7 +191,8 @@ def test_money_from_a_customer_who_owes_nothing_waits_on_the_receipt(
         ReceivePaymentCommand(usd(case, 19_440, payer=payer), "OLDEST_FIRST", ()),
         who=actor(case["human"], case["prop"], "payments.record"),
     )
-    assert result["allocations"] == [] and result["left_usd_cents"] == 19_440
+    assert result["allocations"] == [] and result["left_usd_cents"] == 0
+    assert result["credit_usd_cents"] == 19_440  # Customer Credit at once (DL-235)
     assert result["payment"]["payer_customer_id"] == str(payer)
 
 
@@ -294,7 +296,7 @@ def test_named_ticks_need_allocate_and_only_the_financial_role_may_call_the_comm
             ("prm_runtime", False, False, True, False),
         ]
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-        assert head == ("20270731_397",)
+        assert head == ("20270801_398",)
 
 
 def test_receive_payment_commands_are_append_only(migrated_database_url: str) -> None:
