@@ -267,15 +267,13 @@ function change(label: string | RegExp, value: string) {
 }
 
 describe("Building › Products (V1.1 part 4, DL-121)", () => {
-  it("TEST-FE-1143 the Products tab shows the price rules, each product's stock, cost, mark-up and price with Low stock and Discontinued, and only the buttons the person's rights allow", async () => {
+  it("TEST-FE-1143 the Products tab shows each product's stock, cost, mark-up and price with Low stock and Discontinued, and only the buttons the person's rights allow", async () => {
     const api = apiOf();
     show("products", api, STAFF);
     const table = await screen.findByRole("region", { name: "Products" });
-    expect(
-      within(table).getByText(
-        "New products get a mark-up of 20% (minimum 15%, maximum none). Prices round up to the next $0.10.",
-      ),
-    ).toBeTruthy();
+    // Products review (owner 16/11/2026): no rule lines above or under the list.
+    expect(within(table).queryByText(/New products get a mark-up/)).toBeNull();
+    expect(within(table).queryByText(/never deleted/)).toBeNull();
     const fan = within(table).getByText("Fan").closest("tr");
     expect(fan).not.toBeNull();
     if (fan === null) return;
@@ -285,6 +283,15 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
     expect(within(fan).getByText("$12.00")).toBeTruthy();
     const kettle = within(table).getByText("Kettle").closest("tr");
     expect(kettle?.textContent).toContain("Low stock");
+    // The stock number says Set or Piece (no "Unit" column) and is orange when low; the
+    // category is a small line under the name.
+    expect(
+      within(table).queryByRole("columnheader", { name: "Unit" }),
+    ).toBeNull();
+    expect(kettle?.querySelector("td.ui-lowstock")?.textContent).toMatch(
+      / \d+ Piece$/,
+    );
+    expect(fan.querySelector(".ui-subline")?.textContent).not.toBe("");
     const old = within(table).getByText("Old lamp").closest("tr");
     expect(old?.textContent).toContain("Discontinued");
     expect(old?.textContent).not.toContain("Low stock");
@@ -460,7 +467,12 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
     expect(row?.textContent).toContain("Moved");
     expect(row?.textContent).toContain("W01 · Cabinet 1 → U101 · Bedroom 1");
     // A move neither adds nor takes away, so its quantity has no sign.
-    expect(row?.textContent).toContain("Vanna2 Piece");
+    expect(row?.querySelector("td.pc-end.ui-num")?.textContent).toBe("2 Piece");
+    // On an iPad the place is also a line under the product (shown there by the screen size).
+    expect(row?.querySelector(".ui-mplace")?.textContent).toBe(
+      "W01 · Cabinet 1 → U101 · Bedroom 1",
+    );
+    expect(within(card).queryByText(/never changed or removed/)).toBeNull();
     const purchase = within(card).getByText("SM260001").closest("tr");
     expect(purchase?.querySelector(".ui-subline")?.textContent).toContain(
       "$10.00 · Market · R-1",
@@ -601,8 +613,10 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
         (item) => item.textContent,
       ),
     ).toEqual(["P0001 Fan × 2", "P0003 Old lamp × 2"]);
+    // Products review (owner 16/11/2026): the empty places share one line at the end.
     const second = within(warehouse).getByText("Cabinet 2").closest("tr");
-    expect(second?.textContent).toContain("Empty");
+    expect(second?.cells[0]?.textContent).toBe("Empty");
+    expect(screen.queryByText(/A Location is a Unit/)).toBeNull();
     expect(screen.getByRole("region", { name: "U101" })).toBeTruthy();
     expect(screen.queryByRole("region", { name: "U102" })).toBeNull();
     fireEvent.click(

@@ -1883,7 +1883,12 @@ export function App({
         data-page="inspections"
         hidden={!shown("inspections")}
       >
-        <InspectionsPage active={shown("inspections")} language={language} />
+        <InspectionsPage
+          active={shown("inspections")}
+          api={problemsApi}
+          language={language}
+          propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
+        />
       </div>
       <div
         className="shell-page"

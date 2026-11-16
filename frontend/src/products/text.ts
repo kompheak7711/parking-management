@@ -17,11 +17,6 @@ const TEXT = {
   // Products tab
   pr_title: ["Products", "ផលិតផល"],
   pr_add: ["Add product", "បន្ថែមផលិតផល"],
-  pr_rules: [
-    "New products get a mark-up of {0} (minimum {1}, maximum {2}). Prices round up to the next {3}.",
-    "ផលិតផលថ្មីទទួលបានការបូកបន្ថែម {0} (អប្បបរមា {1} អតិបរមា {2})។ តម្លៃបង្គត់ឡើងទៅ {3} បន្ទាប់។",
-  ],
-  pr_no_max: ["none", "គ្មាន"],
   pr_none: ["No products yet.", "មិនទាន់មានផលិតផលទេ។"],
   pr_sku: ["SKU", "លេខកូដ"],
   pr_name: ["Name", "ឈ្មោះ"],
@@ -48,10 +43,6 @@ const TEXT = {
   pr_no_price: [
     "No price until the first Purchase",
     "គ្មានតម្លៃរហូតដល់ការទិញលើកដំបូង",
-  ],
-  pr_note: [
-    "An Item's cost is its last Purchase cost. After a Purchase the app sets the price again when the real mark-up is below the minimum or above the maximum. A product is never deleted; mark it Discontinued.",
-    "ថ្លៃដើមរបស់ទំនិញគឺថ្លៃទិញចុងក្រោយ។ ក្រោយការទិញ កម្មវិធីកំណត់តម្លៃម្តងទៀត នៅពេលការបូកបន្ថែមពិតទាបជាងអប្បបរមា ឬខ្ពស់ជាងអតិបរមា។ ផលិតផលមិនដែលត្រូវលុបទេ សូមសម្គាល់ថាឈប់លក់។",
   ],
   pr_added: ["{0} added.", "បានបន្ថែម {0}។"],
   pr_saved: ["{0} saved.", "បានរក្សាទុក {0}។"],
@@ -124,10 +115,6 @@ const TEXT = {
   sm_place: ["Place", "ទីតាំង"],
   sm_detail: ["Details", "ព័ត៌មានលម្អិត"],
   sm_by: ["By", "ដោយ"],
-  sm_note: [
-    "Stock movements are never changed or removed. A mistake is fixed with an Adjustment, which only a Manager or the Owner records. Stock never goes below 0.",
-    "ចលនាស្តុកមិនដែលត្រូវបានប្តូរ ឬលុបទេ។ កំហុសត្រូវកែដោយការកែតម្រូវ ដែលមានតែអ្នកគ្រប់គ្រង ឬម្ចាស់ទេដែលកត់ត្រា។ ស្តុកមិនដែលទាបជាង 0 ទេ។",
-  ],
   sm_PURCHASE: ["Purchase", "ការទិញ"],
   sm_ADJUSTMENT_IN: ["Adjustment in", "កែតម្រូវចូល"],
   sm_ADJUSTMENT_OUT: ["Adjustment out", "កែតម្រូវចេញ"],
@@ -182,10 +169,6 @@ const TEXT = {
   lo_none: [
     "No places yet. Add Unit features to a Unit first.",
     "មិនទាន់មានទីតាំងទេ។ សូមបន្ថែមលក្ខណៈបន្ទប់ទៅបន្ទប់មួយជាមុនសិន។",
-  ],
-  lo_note: [
-    "A Location is a Unit plus one of its places. The Units for rent show here only when they hold items. A new kind of place is first added in Settings › Unit setup › Unit features.",
-    "ទីតាំងគឺជាបន្ទប់មួយ បូកនឹងកន្លែងមួយរបស់វា។ បន្ទប់សម្រាប់ជួលបង្ហាញនៅទីនេះតែនៅពេលវាមានរបស់។ ប្រភេទទីតាំងថ្មីត្រូវបន្ថែមជាមុននៅក្នុង ការកំណត់ › ការរៀបចំបន្ទប់ › លក្ខណៈបន្ទប់។",
   ],
   ap_t: ["Add place to Unit {0}", "បន្ថែមទីតាំងទៅបន្ទប់ {0}"],
   ap_kind: ["Kind of place", "ប្រភេទទីតាំង"],

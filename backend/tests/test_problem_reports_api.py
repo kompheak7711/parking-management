@@ -118,6 +118,11 @@ class InMemoryProblems:
         self.calls.append(("finding", finding_id))
         return {"finding_id": str(finding_id), "unit_number": "U101", "report": None}
 
+    def inspections(self, property_id: UUID, *, actor_id: str) -> Json:
+        self._check(property_id)
+        self.calls.append(("inspections", property_id))
+        return {"as_of": "2026-11-16", "move_outs": [], "unit_checks": []}
+
 
 def client(flow: InMemoryProblems, *capabilities: str) -> TestClient:
     who = AuthenticatedActor(
@@ -333,3 +338,15 @@ def test_a_report_from_an_inspection_finding_needs_the_add_right() -> None:
     sent = flow.calls[-1][1]
     assert isinstance(sent, dict)
     assert sent["source"] == "INSPECTION" and sent["finding_id"] == str(finding)
+
+
+def test_the_inspections_page_list_needs_the_read_units_right() -> None:
+    """Owner 16/11/2026: the Inspections page lists the Property's move-out inspections and Unit
+    checks for anyone who may read Units (the right of its menu item)."""
+    flow = InMemoryProblems()
+    url = f"{base(flow)}/inspections"
+    assert client(flow, "problem_reports.read").get(url).status_code == 403
+    found = client(flow, "units.read").get(url)
+    assert found.status_code == 200 and found.json()["data"]["unit_checks"] == []
+    assert found.headers["Cache-Control"] == "private, no-store"
+    assert flow.calls.pop() == ("inspections", flow.property_id)

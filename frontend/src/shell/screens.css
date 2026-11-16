@@ -3599,22 +3599,6 @@ table.ui-numbering td.ui-num {
   }
 }
 
-/* UI v81 round 2: Property › Inspections, the two places of today's inspection work. */
-.ui-insp-list {
-  display: grid;
-  gap: 12px;
-}
-.ui-insp-list li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  align-items: center;
-  justify-content: space-between;
-}
-.ui-insp-list li > span {
-  flex: 1 1 18rem;
-}
-
 /* ---------- UI v81 shared layouts (owner 08/11/2026 06:55; shell/layouts.tsx) ---------- */
 
 /* PageHeader: the Back link on its own line, then the title with its status chip and one-line
@@ -4801,5 +4785,94 @@ table.ui-table.ui-mcount td {
   }
   .ui-mrow-cost {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Products review (owner 16/11/2026). A low stock number is orange like its chip; the product's
+   category is a small line under its name (not on a phone card). */
+table.ui-table.ui-prodlist td.ui-lowstock {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+@media (max-width: 639px) {
+  .ui-pcards .pc-hide-phone {
+    display: none;
+  }
+}
+
+/* Stock movements: the place is a line under the product on an iPad, where the Place column
+   would not fit. */
+.ui-movelist .ui-mplace {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .ui-movelist .ui-mplace {
+    display: block;
+  }
+  .ui-movelist .ui-mplace-col {
+    display: none;
+  }
+}
+
+/* Stock movements: below a laptop the three buttons take their own row under the tab row, at
+   its right end; on a phone New purchase fills the row and the other two share the next. */
+@media (max-width: 1023px) {
+  .shell-head.shell-head-tabbed:has(.ui-stockacts) {
+    flex-wrap: wrap;
+    row-gap: 12px;
+    border-bottom: 0;
+  }
+  .shell-head.shell-head-tabbed:has(.ui-stockacts) > .shell-tabs {
+    flex: 1 1 100%;
+    border-bottom: 1px solid var(--border);
+  }
+  .shell-head.shell-head-tabbed:has(.ui-stockacts) > .shell-head-actions {
+    display: flex;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-stockacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  .ui-stockacts > :first-child {
+    grid-column: 1 / -1;
+  }
+  .ui-stockacts > .ui-btn {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* Products review: the tab row keeps one height on every tab, with or without buttons. */
+@media (min-width: 641px) {
+  .shell-head.shell-head-tabbed:not(.shell-head-many):not(.shell-head-grouped)
+    > .shell-head-actions,
+  .shell-head.shell-head-tabbed:not(.shell-head-many):not(.shell-head-grouped)
+    > .shell-head-actions:empty {
+    display: flex;
+    min-height: 50px;
+  }
+}
+
+.ui-filters.ui-prodfilters {
+  margin-top: 16px;
+}
+
+/* On an iPad the product table's cells are a little narrower, so Price and Edit stay in sight. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  table.ui-table.ui-prodlist th,
+  table.ui-table.ui-prodlist td {
+    padding-right: 8px;
+    padding-left: 8px;
   }
 }

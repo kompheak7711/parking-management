@@ -268,6 +268,9 @@ function apiOf(overrides: Partial<ProblemsApi> = {}): ProblemsApi {
     ),
     month: vi.fn(() => Promise.reject(new ProblemsError(403))),
     finding: vi.fn(() => Promise.resolve(FINDING)),
+    inspections: vi.fn(() =>
+      Promise.resolve({ as_of: "2026-11-16", move_outs: [], unit_checks: [] }),
+    ),
     ...overrides,
   };
 }

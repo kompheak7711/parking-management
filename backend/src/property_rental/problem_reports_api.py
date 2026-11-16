@@ -17,6 +17,8 @@ follow the normal Expense approval.
 `GET .../problem-report-findings/{finding_id}` gives what a New Problem report copies from a
 move-out inspection finding, and `POST .../problem-reports` with the source INSPECTION and the
 `finding_id` makes the report from it (`problem_reports.add`, DL-132).
+`GET .../inspections` lists the Property's move-out inspections and the Staff bot's Unit checks
+for the Inspections page (`units.read`, owner 16/11/2026).
 
 The database functions check the rights again and keep what was reported unchanged.
 """
@@ -32,6 +34,7 @@ from fastapi import APIRouter, Query, Request, Response, status
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from property_rental.access_control import UNITS_READ_CAPABILITY
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import ActorResolver
 from property_rental.products_api import (
@@ -108,6 +111,8 @@ class ProblemReportFlow(Protocol):
 
     def finding(self, property_id: UUID, finding_id: UUID, *, actor_id: str) -> Json: ...
 
+    def inspections(self, property_id: UUID, *, actor_id: str) -> Json: ...
+
 
 class UnavailableProblemReportFlow:
     def reports(self, property_id: UUID, **_: object) -> list[Json]:
@@ -149,6 +154,9 @@ class UnavailableProblemReportFlow:
         raise ProductUnavailable
 
     def finding(self, property_id: UUID, finding_id: UUID, **_: object) -> Json:
+        raise ProductUnavailable
+
+    def inspections(self, property_id: UUID, **_: object) -> Json:
         raise ProductUnavailable
 
 
@@ -285,6 +293,15 @@ class PostgresProblemReportFlow:
             )
         )
 
+    def inspections(self, property_id: UUID, *, actor_id: str) -> Json:
+        return _json(
+            self._one(
+                self._database_url,
+                "SELECT app.property_inspections_read(%s, %s)",
+                (property_id, UUID(actor_id)),
+            )
+        )
+
 
 class _Body(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -409,6 +426,15 @@ def create_problem_reports_router(
         first_day = date(int(month[:4]), int(month[5:]), 1)
         try:
             return envelope(request, flow.month(property_id, first_day, actor_id=actor.actor_id))
+        except REFUSED as exc:
+            raise _http(exc) from exc
+
+    @router.get("/inspections")
+    def property_inspections(property_id: UUID, request: Request, response: Response) -> Json:
+        actor = _require(request, resolver, UNITS_READ_CAPABILITY, property_id)
+        response.headers["Cache-Control"] = "private, no-store"
+        try:
+            return envelope(request, flow.inspections(property_id, actor_id=actor.actor_id))
         except REFUSED as exc:
             raise _http(exc) from exc
 

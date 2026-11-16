@@ -405,6 +405,40 @@ export interface ProblemsApi {
   /** `month` is "yyyy-mm". */
   month: (propertyId: string, month: string) => Promise<ProblemMonth>;
   finding: (propertyId: string, findingId: string) => Promise<FindingSource>;
+  /** The Inspections page (owner 16/11/2026): the Property's move-out inspections and the Staff
+   * bot's Unit checks, newest first. Needs "Read Units". */
+  inspections: (propertyId: string) => Promise<PropertyInspections>;
+}
+
+export interface MoveOutInspectionRow {
+  inspection_id: string;
+  lease_id: string;
+  lease_number: string | null;
+  unit_id: string;
+  unit_number: string;
+  tenant_name: string | null;
+  /** "yyyy-mm-dd". */
+  inspection_date: string;
+  findings: number;
+}
+
+export interface UnitCheckRow {
+  check_id: string;
+  unit_id: string;
+  unit_number: string;
+  /** "yyyy-mm-dd". */
+  check_date: string;
+  kind: "REGULAR" | "AFTER_REPAIR";
+  findings: number;
+  checked_by_en: string;
+  checked_by_km: string | null;
+  reports: { report_id: string; report_number: string }[];
+}
+
+export interface PropertyInspections {
+  as_of: string;
+  move_outs: MoveOutInspectionRow[];
+  unit_checks: UnitCheckRow[];
 }
 
 export class ProblemsError extends Error {
@@ -945,6 +979,46 @@ export function choicesOf(value: unknown): ProblemChoices {
   };
 }
 
+function inspectionsOf(value: unknown): PropertyInspections {
+  const row = record(value);
+  return {
+    as_of: text(row.as_of),
+    move_outs: list(row.move_outs).map((item) => {
+      const one = record(item);
+      return {
+        inspection_id: text(one.inspection_id),
+        lease_id: text(one.lease_id),
+        lease_number: maybeText(one.lease_number),
+        unit_id: text(one.unit_id),
+        unit_number: text(one.unit_number),
+        tenant_name: maybeText(one.tenant_name),
+        inspection_date: text(one.inspection_date),
+        findings: whole(one.findings),
+      };
+    }),
+    unit_checks: list(row.unit_checks).map((item) => {
+      const one = record(item);
+      return {
+        check_id: text(one.check_id),
+        unit_id: text(one.unit_id),
+        unit_number: text(one.unit_number),
+        check_date: text(one.check_date),
+        kind: oneOf(["REGULAR", "AFTER_REPAIR"] as const, one.kind),
+        findings: whole(one.findings),
+        checked_by_en: text(one.checked_by_en),
+        checked_by_km: maybeText(one.checked_by_km),
+        reports: list(one.reports).map((report) => {
+          const found = record(report);
+          return {
+            report_id: text(found.report_id),
+            report_number: text(found.report_number),
+          };
+        }),
+      };
+    }),
+  };
+}
+
 function base(propertyId: string): string {
   return `/api/v1/properties/${encodeURIComponent(propertyId)}`;
 }
@@ -999,6 +1073,8 @@ export const problemsApi: ProblemsApi = {
         `${base(propertyId)}/problem-report-findings/${encodeURIComponent(findingId)}`,
       ),
     ),
+  inspections: async (propertyId) =>
+    inspectionsOf(await request(`${base(propertyId)}/inspections`)),
   checkCost: async (propertyId, report, check) =>
     reportOf(
       await request(

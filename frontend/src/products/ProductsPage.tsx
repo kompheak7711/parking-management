@@ -346,7 +346,6 @@ function ProductsTable({
   may: (capability: string) => boolean;
   onOpen: (open: Open) => void;
 }) {
-  const rules = catalogue.rules;
   // UI v81 round 11: Home's "Low stock" card opens "#/products?show=low": only the products
   // the server marks as low on stock and still sold (what the card counts).
   const [lowOnly, setLowOnlyState] = useState(false);
@@ -386,20 +385,10 @@ function ProductsTable({
           }
         />
       )}
-      <p className="ui-muted pad">
-        {pt(
-          language,
-          "pr_rules",
-          percent(rules.mark_up_basis_points),
-          percent(rules.min_mark_up_basis_points),
-          rules.max_mark_up_basis_points === null
-            ? pt(language, "pr_no_max")
-            : percent(rules.max_mark_up_basis_points),
-          dollars(rules.price_round_up_usd_cents),
-        )}
-      </p>
+      {/* Products review (owner 16/11/2026): no rule lines above or under the list; the
+          mark-up rules are in Settings. */}
       {catalogue.products.length > 0 && (
-        <div className="ui-filters pad">
+        <div className="ui-filters pad ui-prodfilters">
           <div
             aria-label={pt(language, "pr_stock")}
             className="ui-seg"
@@ -439,8 +428,6 @@ function ProductsTable({
               <tr>
                 <th scope="col">{pt(language, "pr_sku")}</th>
                 <th scope="col">{pt(language, "pr_name")}</th>
-                <th scope="col">{pt(language, "pr_category")}</th>
-                <th scope="col">{pt(language, "pr_unit")}</th>
                 <th scope="col">{pt(language, "pr_stock")}</th>
                 <th scope="col">{pt(language, "pr_cost")}</th>
                 <th scope="col">{pt(language, "pr_mark_up")}</th>
@@ -472,14 +459,17 @@ function ProductsTable({
                           <Chip tone="warn">{pt(language, "pr_low")}</Chip>
                         </>
                       )}
+                      <span className="ui-subline pc-hide-phone">
+                        {categoryName(
+                          catalogue,
+                          product.category_code,
+                          language,
+                        )}
+                      </span>
                     </td>
-                    <td className="pc-hide">
-                      {categoryName(catalogue, product.category_code, language)}
-                    </td>
-                    <td className="pc-hide">
-                      {unitName(product.measure_unit, language)}
-                    </td>
-                    <td className="ui-num pc-small">
+                    <td
+                      className={`ui-num pc-small${product.low_stock && !product.discontinued ? " ui-lowstock" : ""}`}
+                    >
                       {product.kind === "SERVICE" ? (
                         pt(language, "pr_service")
                       ) : (
@@ -487,11 +477,10 @@ function ProductsTable({
                           <span className="pc-label">
                             {pt(language, "pr_stock")}{" "}
                           </span>
-                          {product.stock}
-                          <span className="pc-label">
-                            {" "}
-                            {unitName(product.measure_unit, language)}
-                          </span>
+                          {/* Owner 16/11/2026: "Set" or "Piece" beside the number, not a
+                              "Unit" column (a Unit is a room in this app). */}
+                          {product.stock}{" "}
+                          {unitName(product.measure_unit, language)}
                         </>
                       )}
                     </td>
@@ -573,9 +562,6 @@ function ProductsTable({
           </table>
         </div>
       )}
-      <div className="ui-tfoot">
-        <span>{pt(language, "pr_note")}</span>
-      </div>
     </section>
   );
 }
@@ -647,24 +633,30 @@ function MovementsTable({
       <h2 className="ui-sr" id="stock-title">
         {pt(language, "sm_title")}
       </h2>
+      {/* Products review (owner 16/11/2026): on an iPad or a phone the three buttons take
+          their own row under the tabs, so every tab stays in sight. */}
       <PageHead
         active={active}
-        actions={buttons
-          .filter(([, allowed]) => allowed)
-          .map(([mode, , key]) => (
-            <button
-              className={mode === "PURCHASE" ? "ui-btn primary" : "ui-btn"}
-              key={mode}
-              onClick={() => {
-                onOpen(mode);
-              }}
-              type="button"
-            >
-              {mode === "PURCHASE" && <Icon name="plus" small />}
-              {mode === "TRANSFER" && <Icon name="swap" small />}
-              {pt(language, key)}
-            </button>
-          ))}
+        actions={
+          <span className="ui-actions ui-stockacts">
+            {buttons
+              .filter(([, allowed]) => allowed)
+              .map(([mode, , key]) => (
+                <button
+                  className={mode === "PURCHASE" ? "ui-btn primary" : "ui-btn"}
+                  key={mode}
+                  onClick={() => {
+                    onOpen(mode);
+                  }}
+                  type="button"
+                >
+                  {mode === "PURCHASE" && <Icon name="plus" small />}
+                  {mode === "TRANSFER" && <Icon name="swap" small />}
+                  {pt(language, key)}
+                </button>
+              ))}
+          </span>
+        }
       />
       {movements.length === 0 ? (
         <p className="ui-muted pad">{pt(language, "sm_none")}</p>
@@ -678,7 +670,9 @@ function MovementsTable({
                 <th scope="col">{pt(language, "sm_kind")}</th>
                 <th scope="col">{pt(language, "sm_product")}</th>
                 <th scope="col">{pt(language, "sm_qty")}</th>
-                <th scope="col">{pt(language, "sm_place")}</th>
+                <th className="ui-mplace-col" scope="col">
+                  {pt(language, "sm_place")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -724,13 +718,18 @@ function MovementsTable({
                       {detail !== "" && (
                         <span className="ui-subline">{detail}</span>
                       )}
+                      {/* On an iPad the place is a line under the product, so the table fits. */}
+                      <span className="ui-subline ui-mplace">
+                        {placeText(movement, language)}
+                        {to !== null && <> → {placeText(to, language)}</>}
+                      </span>
                     </td>
                     <td className="ui-num pc-end">
                       {to !== null ? "" : out ? "−" : "+"}
                       {movement.quantity}{" "}
                       {unitName(movement.measure_unit, language)}
                     </td>
-                    <td className="pc-full">
+                    <td className="pc-full ui-mplace-col">
                       {placeText(movement, language)}
                       {to !== null && <> → {placeText(to, language)}</>}
                     </td>
@@ -741,9 +740,6 @@ function MovementsTable({
           </table>
         </div>
       )}
-      <div className="ui-tfoot">
-        <span>{pt(language, "sm_note")}</span>
-      </div>
     </section>
   );
 }
@@ -814,18 +810,15 @@ function LocationsCards({
                   </tr>
                 </thead>
                 <tbody>
-                  {places.map((place) => (
-                    <tr key={`${place.item_id}-${String(place.number)}`}>
-                      <td>
-                        {placeName(place, language)} {place.number}
-                      </td>
-                      <td>
-                        {place.stock.length === 0 ? (
-                          <span className="ui-muted">
-                            {pt(language, "lo_empty")}
-                          </span>
-                        ) : (
-                          // Property fix 10 (owner 14/11/2026): one item per line.
+                  {places
+                    .filter((place) => place.stock.length > 0)
+                    .map((place) => (
+                      <tr key={`${place.item_id}-${String(place.number)}`}>
+                        <td>
+                          {placeName(place, language)} {place.number}
+                        </td>
+                        <td>
+                          {/* Property fix 10 (owner 14/11/2026): one item per line. */}
                           <ul className="ui-holds">
                             {place.stock.map((line) => (
                               <li key={line.product_id}>
@@ -836,17 +829,30 @@ function LocationsCards({
                               </li>
                             ))}
                           </ul>
-                        )}
+                        </td>
+                      </tr>
+                    ))}
+                  {/* Products review (owner 16/11/2026): the empty places share one line. */}
+                  {places.some((place) => place.stock.length === 0) && (
+                    <tr>
+                      <td className="ui-muted">{pt(language, "lo_empty")}</td>
+                      <td className="ui-muted">
+                        {places
+                          .filter((place) => place.stock.length === 0)
+                          .map(
+                            (place) =>
+                              `${placeName(place, language)} ${String(place.number)}`,
+                          )
+                          .join(", ")}
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
           </section>
         );
       })}
-      <p className="ui-muted">{pt(language, "lo_note")}</p>
     </>
   );
 }
