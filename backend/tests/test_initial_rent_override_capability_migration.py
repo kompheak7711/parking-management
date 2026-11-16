@@ -111,11 +111,13 @@ def test_upgrade_keeps_every_earlier_record(migrated_database_url: str) -> None:
         # V1-058 migration 227 adds the Unit setup columns (NULL, or the Floor item linked from
         # the Floor text) and audits the Unit setup items it creates; V1-061 migration 251 adds the
         # default Rent (NULL); V1.1 rework migration 258 adds For rent; General Ledger migration 262
-        # starts the ledger for the Property and audits that start; nothing earlier changes.
+        # starts the ledger for the Property and audits that start; C2 migration 421 (DL-241)
+        # stores only the condition, so the stored Reserved becomes Vacant with a new version while
+        # the Unit still shows Reserved; nothing earlier changes.
         units_row = (
             "to_jsonb(t)-ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
             "'view_item_id','kitchen_item_id','notes',"
-            "'default_monthly_rent_usd_cents','for_rent']"
+            "'default_monthly_rent_usd_cents','for_rent','status','version','updated_at']"
         )
         tables = {
             "audit_events": (
@@ -141,6 +143,12 @@ def test_upgrade_keeps_every_earlier_record(migrated_database_url: str) -> None:
         before = snapshot()
         alembic_command.upgrade(config, "head")
         assert snapshot() == before
+        with psycopg.connect(temporary) as connection:
+            assert connection.execute(
+                "SELECT status, app.unit_status_on(id, app.unit_today(id)) FROM app.units "
+                "WHERE id = %s",
+                (unit,),
+            ).fetchone() == ("VACANT", "RESERVED")
 
 
 def test_override_capability_migration_is_forward_only() -> None:

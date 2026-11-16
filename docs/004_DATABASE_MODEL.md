@@ -6200,3 +6200,21 @@ Added by DL-239 (owner, 12 Nov 2026, D6; migration `20270802_399` on `20270801_3
 - Edit items of a Draft: the change reason may be left out; the API then stores the fixed text "Changed before issue" (no database change).
 
 Tests: `backend/tests/test_v12_draft_delete_migration.py`.
+
+## DB-BS-015 — Who holds a Unit is worked out from dates; the stored status is only the condition (DL-241)
+
+Added by DL-241 (owner, 12 Nov 2026, C2; migration `20270803_421` on `20270802_399`, forward-only). No table is added.
+
+- `app.units.status` keeps only the condition staff set: `VACANT`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE` (CHECK `units_status_supported`). `RESERVED`, `OCCUPIED` and `SHORT_STAY` are refused (`23514`).
+- Data: every Unit stored as `RESERVED`, `OCCUPIED` or `SHORT_STAY` becomes `VACANT` with its version raised by one. Its Reservations, Leases, Occupancies and short stays are not changed, so it shows the same holder as before. No row is deleted.
+- New functions, `SECURITY DEFINER`, `STABLE`, `EXECUTE` to `prm_runtime` and `prm_financial` only:
+  - `app.unit_today(unit_id)`: the business date of the Unit's Property.
+  - `app.unit_held_by(unit_id, day)`: `OCCUPIED` for an open Occupancy that moved in on or before the day; `SHORT_STAY` for a checked-in guest or a booked night that covers the day; `OCCUPIED` for a Signed Lease whose Start Date is on or before the day; `RESERVED` for an Active Reservation; else null.
+  - `app.unit_status_on(unit_id, day)`: who holds the Unit that day, else its condition.
+  - `app.unit_lease_from(unit_id, day)`: the Start Date of a Signed Lease that starts after the day, else null.
+  - `app.unit_lease_held(unit_id, except_lease_id)`: true when a Signed Lease (other than the one named) or an open Occupancy holds the Unit.
+- The writers no longer write a holder word: `create_reservation`, `cancel_reservation`, `expire_reservation`, `complete_reservation_move_in`, `record_signed_lease_move_in`, `sign_lease_with_reservation`, `check_in_short_stay` and `check_out_short_stay` (which sets `CLEANING` on a `VACANT` Unit). Their checks read the records instead, with the same refusals as before. `set_unit_for_rent`, `resolve_unpaid_initial_never_moved_in`, the physical move-out steps and the move-in assertions read the records too.
+- Readers use `app.unit_status_on` for the day asked: `home_page`, `report_unit_occupancy`, `short_stay_calendar_main`, `short_stay_booking_main_json` and `short_stay_week_report`.
+- Dropped triggers: `units_validate_reservation_summary`, `reservations_validate_unit_summary` and `units_short_stay_status`, with their functions. They kept the stored word in step with the records, which is no longer needed.
+
+Tests: `backend/tests/test_v12_unit_holder_from_dates_migration.py`; the Unit, Reservation, move-in, Lease signing, short-stay and move-out tests read `app.unit_status_on`.

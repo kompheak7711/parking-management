@@ -41,13 +41,6 @@ from property_rental.deposit import (
     PostgresDepositService,
 )
 from property_rental.lease import LEASE_SIGN_CAPABILITY, LeaseSignCommand
-from property_rental.move_in import (
-    MOVE_IN_CAPABILITY,
-    CompleteMoveInCommand,
-    MoveInInvalidError,
-    MoveInOccupant,
-    PostgresMoveInService,
-)
 from property_rental.refund import RefundMethodChoice
 from property_rental.reservation import (
     CancellationResponsibility,
@@ -84,7 +77,6 @@ from test_lease_signing_reservation_migration import (
     signed,
 )
 from test_migrations import _temporary_migration_database
-from test_move_in_migration import actor as move_in_actor
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_payment_move_migration import rows, value
 from test_pet_payback_restoration_refusal_migration import wait_until_blocked_by
@@ -1031,8 +1023,9 @@ def test_a_walk_in_lease_with_a_security_deposit_takes_no_reservation_deposit_at
     """Review round 1 (security should-fix 1): the old Reservation move-in reads no signing
     outcome, so a walk-in Lease that already has its Security Deposit could take a Reservation's
     Deposit too (a Unit set back to VACANT, a Reservation for the same Customer and Unit, then the
-    move-in). The deferred source check refuses the link (23514, invalid in the move-in service):
-    one Security Deposit per Lease; nothing changes."""
+    move-in). The deferred source check refused the link at the move-in. Since C2 (DL-241) the
+    Signed Lease itself holds the Unit, whatever condition staff set, so that Reservation is
+    refused at once: one Security Deposit per Lease; nothing changes."""
     url = migrated_database_url
     case = walk_in_lease(url)
     human, prop, unit, customer, lease = (
@@ -1049,8 +1042,11 @@ def test_a_walk_in_lease_with_a_security_deposit_takes_no_reservation_deposit_at
             "SELECT status FROM app.update_unit(%s,%s,%s,%s,'VACANT',%s,%s)",
             (unit, number, floor, unit_type, version, human),
         ).fetchone() == ("VACANT",)
-    with psycopg.connect(url) as connection:
-        _, ids = create_reservation(
+    with (
+        psycopg.connect(url) as connection,
+        pytest.raises(psycopg.errors.RaiseException, match="Unit is not available for Reservation"),
+    ):
+        create_reservation(
             connection,
             actor_id=human,
             property_id=prop,
@@ -1058,36 +1054,8 @@ def test_a_walk_in_lease_with_a_security_deposit_takes_no_reservation_deposit_at
             customer_id=customer,
             expiration_days=10,
         )
-    reserved = ids["deposit_id"]
-    case["service"].record_receipt(
-        receipt_command(reserved, payment(url, human, reserved, 40_000), 40_000),
-        actor=allocator(human, prop),
-    )
-    command = CompleteMoveInCommand(
-        idempotency_key=uuid4(),
-        event_id=uuid4(),
-        reservation_id=ids["reservation_id"],
-        lease_id=lease,
-        expected_reservation_version=1,
-        expected_lease_version=int(value(url, "SELECT version FROM app.leases WHERE id=%s", lease)),
-        expected_unit_version=int(value(url, "SELECT version FROM app.units WHERE id=%s", unit)),
-        actual_move_in_date=business_date(url, prop),
-        occupants=(MoveInOccupant(uuid4(), customer),),
-        reason="All move-in prerequisites verified",
-        authorization_reference=MOVE_IN_CAPABILITY,
-    )
-    with pytest.raises(MoveInInvalidError) as refused:
-        PostgresMoveInService(runtime_database_url(), prop, human).complete(
-            command, actor=move_in_actor(human, prop)
-        )
-    cause = refused.value.__cause__
-    assert isinstance(cause, psycopg.Error)
-    assert (cause.sqlstate, cause.diag.message_primary) == (
-        "23514",
-        "Security Deposit sources do not match",
-    )
     assert security_deposits(url, lease) == 1
-    assert value(url, "SELECT lease_id FROM app.deposits WHERE id=%s", reserved) is None
+    assert value(url, "SELECT count(*) FROM app.reservations WHERE unit_id=%s", unit) == 0
 
 
 def test_a_reversed_extra_receipt_is_not_shown_as_received(migrated_database_url: str) -> None:

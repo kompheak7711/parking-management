@@ -66,6 +66,12 @@ const TEXT = {
   s_UNDER_MAINTENANCE: ["Under maintenance", "កំពុងជួសជុល"],
   s_OUT_OF_SERVICE: ["Out of service", "ឈប់ប្រើ"],
   s_SHORT_STAY: ["Short stay", "ស្នាក់នៅខ្លី"],
+  // C2 (DL-241): a Signed Lease that starts later; the Unit is Vacant until then.
+  lease_from: ["Lease from {0}", "កិច្ចសន្យាចាប់ពី {0}"],
+  a_lease_from: [
+    "A signed Lease starts on {0}. Until then the Unit is empty, but it cannot be reserved or leased to someone else.",
+    "កិច្ចសន្យាដែលបានចុះហត្ថលេខាចាប់ផ្តើមនៅថ្ងៃ {0}។ រហូតដល់ពេលនោះ បន្ទប់នៅទំនេរ ប៉ុន្តែមិនអាចកក់ ឬជួលឱ្យអ្នកផ្សេងបានទេ។",
+  ],
   back: ["Back", "ត្រឡប់ក្រោយ"],
   // new
   unit_missing: [

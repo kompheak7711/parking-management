@@ -223,7 +223,6 @@ def test_migration_accepts_supported_unit_types(
     "status",
     [
         "VACANT",
-        "OCCUPIED",
         "UNDER_MAINTENANCE",
         "CLEANING",
         "OUT_OF_SERVICE",
@@ -258,6 +257,10 @@ def test_migration_accepts_supported_unit_statuses(
         # V1-058 R2a (owner 2026-10-24): a Unit Type must be in the Property's Unit Types list.
         ({"unit_type": "COMMERCIAL"}, "22023"),
         ({"status": "AVAILABLE"}, "23514"),
+        # C2 (DL-241): who holds the Unit is worked out from its records, never stored.
+        ({"status": "RESERVED"}, "23514"),
+        ({"status": "OCCUPIED"}, "23514"),
+        ({"status": "SHORT_STAY"}, "23514"),
         # A Property that does not exist has no Unit Types list, so the list check refuses first.
         ({"property_id": uuid4()}, "22023"),
     ],

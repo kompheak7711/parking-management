@@ -157,7 +157,8 @@ def _counts(case: dict[str, Any]) -> tuple[int, ...]:
 def _status(case: dict[str, Any]) -> tuple[str, str]:
     row = _one(
         case["url"],
-        "SELECT lease.status, unit.status FROM app.leases lease "
+        "SELECT lease.status, app.unit_status_on(unit.id, app.unit_today(unit.id)) "
+        "FROM app.leases lease "
         "JOIN app.units unit ON unit.id=lease.unit_id WHERE lease.id=%s",
         case["lease"],
     )

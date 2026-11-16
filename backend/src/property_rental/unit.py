@@ -33,7 +33,9 @@ class UnitType(StrEnum):
 
 
 class UnitStatus(StrEnum):
-    """Supported stored operational Unit statuses."""
+    """The Unit status words. C2 (DL-241): only the condition (VACANT, CLEANING,
+    UNDER_MAINTENANCE, OUT_OF_SERVICE) is stored and set by staff; who holds the Unit (RESERVED,
+    OCCUPIED, SHORT_STAY) is worked out from its records by `app.unit_held_by`."""
 
     VACANT = "VACANT"
     RESERVED = "RESERVED"
@@ -41,8 +43,14 @@ class UnitStatus(StrEnum):
     UNDER_MAINTENANCE = "UNDER_MAINTENANCE"
     CLEANING = "CLEANING"
     OUT_OF_SERVICE = "OUT_OF_SERVICE"
-    # Daily and weekly rent: a guest is checked in (counted as occupied; only check-in sets it).
+    # Daily and weekly rent: a guest is checked in, or the night is booked.
     SHORT_STAY = "SHORT_STAY"
+
+
+# C2 (DL-241): the words worked out from the records; staff cannot set them.
+HELD_UNIT_STATUSES: Final = frozenset(
+    {UnitStatus.RESERVED, UnitStatus.OCCUPIED, UnitStatus.SHORT_STAY}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,6 +220,15 @@ class Unit:
     features: tuple[tuple[UUID, int], ...] = ()
     # V1.1 rework part 1 (owner 2026-11-02): No for a Unit that is never rented (the warehouse).
     for_rent: bool = True
+    # C2 (DL-241): who holds the Unit today, worked out from its records (None: nobody), and the
+    # start date of a Signed Lease that starts later.
+    held_by: UnitStatus | None = None
+    lease_starts_on: date | None = None
+
+    @property
+    def shown_status(self) -> UnitStatus:
+        """The word people see: who holds the Unit today, else its condition."""
+        return self.held_by or self.status
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -371,13 +388,16 @@ def _optional_int(value: object) -> int | None:
 def unit_from_row(row: tuple[object, ...]) -> Unit:
     """Map a Unit row: the seven base columns, then the details of `app.unit_with_details`, then
     the Rent terms of `app.unit_rent_terms` when the query joined them (V1-061), then the Unit
-    features of `app.unit_feature_counts` (V1.1), then For rent (V1.1 rework part 1)."""
+    features of `app.unit_feature_counts` (V1.1), then For rent (V1.1 rework part 1), then who
+    holds the Unit today and the start of a later Signed Lease (C2, DL-241)."""
     details = row[7:15] if len(row) >= 15 else (None,) * 7 + ((),)
     features = details[7]
     rent = row[15] if len(row) >= 17 else None
     required = row[16] if len(row) >= 17 else ()
     counts = row[17] if len(row) >= 18 else ()
     for_rent = row[18] if len(row) >= 19 else True
+    held_by = row[19] if len(row) >= 21 else None
+    lease_starts_on = row[20] if len(row) >= 21 else None
     return Unit(
         unit_id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -406,6 +426,8 @@ def unit_from_row(row: tuple[object, ...]) -> Unit:
             if isinstance(entry, dict)
         ),
         for_rent=for_rent is not False,
+        held_by=None if held_by is None else UnitStatus(str(held_by)),
+        lease_starts_on=lease_starts_on if isinstance(lease_starts_on, date) else None,
     )
 
 

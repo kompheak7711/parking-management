@@ -423,6 +423,7 @@ database_test_suites='
   tests/test_v12_pet_deposit_at_signing_migration.py
   tests/test_v12_extra_money_credit_migration.py
   tests/test_v12_draft_delete_migration.py
+  tests/test_v12_unit_holder_from_dates_migration.py
   tests/test_v12_invoice_type_stored_migration.py
 '
 # The General Ledger suites run first, in a pytest run of their own on the new database: the other

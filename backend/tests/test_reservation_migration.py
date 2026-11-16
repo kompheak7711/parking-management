@@ -219,7 +219,8 @@ def test_activation_persists_one_reservation_and_continuing_security_deposit(
         1,
     )
     assert connection.execute(
-        "SELECT status, version FROM app.units WHERE id = %s", (unit_id,)
+        "SELECT app.unit_status_on(id, app.unit_today(id)), version FROM app.units WHERE id = %s",
+        (unit_id,),
     ).fetchone() == ("RESERVED", 2)
     assert connection.execute(
         """
@@ -549,7 +550,10 @@ def test_expired_reservation_cannot_be_retroactively_extended(
     connection.execute(
         """
         UPDATE app.units
-        SET status = 'RESERVED', version = version + 1,
+        SET version = version + 1,
+            -- Before C2 (DL-241) the Unit stored RESERVED; now the Reservation shows it.
+            status = CASE WHEN to_regprocedure('app.unit_held_by(uuid,date)') IS NULL
+                THEN 'RESERVED' ELSE status END,
             updated_at = statement_timestamp(), updated_by = %s
         WHERE id = %s
         """,

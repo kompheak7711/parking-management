@@ -210,7 +210,8 @@ def test_physical_departure_changes_only_explicit_occupancies_and_condition(
     partial = replace(request, occupancies=request.occupancies[:1])
     original = record(prop, lease, human, partial)
     data = cast(dict[str, object], original["data"])
-    assert data["resulting_unit_status"] == "OCCUPIED"
+    # C2 (DL-241): someone still lives there, so the stored condition is kept as it was.
+    assert data["resulting_unit_status"] == data["previous_unit_status"] == "VACANT"
     assert data["resulting_unit_version"] == partial.expected_unit_version
     current = flow().read(prop, lease, actor=actor(human, prop))
     assert current["open_occupancy_count"] == 1

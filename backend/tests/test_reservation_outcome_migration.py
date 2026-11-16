@@ -207,7 +207,8 @@ def test_duplicate_refund_number_rolls_back_cancellation_and_availability(
             (reservation2,),
         ).fetchone() == ("ACTIVE", 1)
         assert verify.execute(
-            "SELECT status FROM app.units WHERE id = %s", (unit2,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id = %s",
+            (unit2,),
         ).fetchone() == ("RESERVED",)
         assert verify.execute(
             "SELECT count(*) FROM app.reservation_lifecycle_events WHERE id = %s",

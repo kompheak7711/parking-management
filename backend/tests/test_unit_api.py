@@ -1,7 +1,7 @@
 """Contract tests for the authenticated Unit API and timeline."""
 
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
@@ -180,7 +180,7 @@ class InMemoryUnitFlow:
             raise UnitVersionConflict(current.version)
         if current.for_rent == for_rent:
             return current
-        if not for_rent and current.status in (UnitStatus.RESERVED, UnitStatus.OCCUPIED):
+        if not for_rent and current.held_by in (UnitStatus.RESERVED, UnitStatus.OCCUPIED):
             raise UnitInUseForRenting
         updated = replace(current, version=current.version + 1, for_rent=for_rent)
         self.units[unit_id] = updated
@@ -413,6 +413,51 @@ def test_unit_create_detail_and_version_checked_patch() -> None:
     assert updated.json()["data"]["floor"] == "2"
     assert updated.json()["data"]["status"] == "CLEANING"
     assert flow.reasons == [None]
+
+
+def test_staff_set_only_the_condition_and_see_who_holds_the_unit() -> None:
+    """C2 (DL-241): who holds a Unit is worked out from its records; staff set its condition."""
+    property_id = uuid4()
+    flow = InMemoryUnitFlow()
+    unit = replace(
+        sample_unit(property_id),
+        status=UnitStatus.VACANT,
+        held_by=UnitStatus.RESERVED,
+        lease_starts_on=date(2026, 12, 1),
+    )
+    flow.units[unit.unit_id] = unit
+    client = TestClient(
+        create_app(actor_resolver=lambda _: manager(property_id), unit_resource_flow=flow)
+    )
+    read = client.get(f"/units/{unit.unit_id}").json()["data"]
+    assert (read["status"], read["condition"], read["lease_starts_on"]) == (
+        "RESERVED",
+        "VACANT",
+        "2026-12-01",
+    )
+    for held in ("RESERVED", "OCCUPIED", "SHORT_STAY"):
+        refused = client.patch(
+            f"/units/{unit.unit_id}",
+            headers={**BROWSER, "If-Match": '"1"'},
+            json={"status": held, "reason": "Guest in"},
+        )
+        made = client.post(
+            f"/properties/{property_id}/units",
+            headers=BROWSER,
+            json={
+                "unit_number": f"N-{held}",
+                "floor_item_id": str(FLOOR_ONE),
+                "unit_type": "STUDIO",
+                "status": held,
+            },
+        )
+        assert (refused.status_code, made.status_code) == (422, 422), held
+    cleaning = client.patch(
+        f"/units/{unit.unit_id}",
+        headers={**BROWSER, "If-Match": '"1"'},
+        json={"status": "CLEANING", "reason": "Paint"},
+    ).json()["data"]
+    assert (cleaning["status"], cleaning["condition"]) == ("RESERVED", "CLEANING")
 
 
 def test_change_status_sends_its_reason_and_a_blank_reason_is_refused() -> None:
@@ -843,7 +888,7 @@ def test_for_rent_is_set_by_a_manager_and_filters_the_list() -> None:
     property_id = uuid4()
     unit = sample_unit(property_id)
     occupied = replace(sample_unit(property_id), unit_id=uuid4(), unit_number="A-102")
-    occupied = replace(occupied, status=UnitStatus.OCCUPIED)
+    occupied = replace(occupied, held_by=UnitStatus.OCCUPIED)
     flow = InMemoryUnitFlow(units={unit.unit_id: unit, occupied.unit_id: occupied})
     path = f"/units/{unit.unit_id}/for-rent"
     staff = TestClient(

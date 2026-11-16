@@ -72,7 +72,14 @@ def read(db: BookingDatabase, made: Any) -> dict[str, Any]:
 
 
 def unit_status(db: BookingDatabase, unit: uuid.UUID) -> str:
-    return str(run(db.owner_url, "SELECT status FROM app.units WHERE id = %s", unit))
+    # C2 (DL-241): the word people see today, worked out from the Unit's records.
+    return str(
+        run(
+            db.owner_url,
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id = %s",
+            unit,
+        )
+    )
 
 
 def problem_type(db: BookingDatabase, code: str = "FURNITURE") -> str:

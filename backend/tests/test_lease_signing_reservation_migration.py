@@ -48,7 +48,9 @@ SNAPSHOT_TABLES = ("leases", "reservations", "deposits", "invoices", "units")
 UNIT_SETUP_COLUMNS = (
     "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
     "'view_item_id','kitchen_item_id','notes',"
-    "'default_monthly_rent_usd_cents','for_rent']"
+    "'default_monthly_rent_usd_cents','for_rent',"
+    # C2 (DL-241): a stored holder word becomes the condition VACANT, one version later.
+    "'status','version','updated_at']"
 )
 
 
@@ -132,15 +134,17 @@ def test_signing_with_reservation_completes_it_links_the_holding_deposit_and_occ
     assert state(
         migrated_database_url, "SELECT lease_id FROM app.deposits WHERE id=%s", deposit
     ) == (command.lease_id,)
-    assert state(migrated_database_url, "SELECT status FROM app.units WHERE id=%s", unit) == (
-        "OCCUPIED",
-    )
+    assert state(
+        migrated_database_url,
+        "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+        unit,
+    ) == ("OCCUPIED",)
     assert state(
         migrated_database_url,
         "SELECT reservation_id,deposit_id,previous_unit_status,count(*) OVER () "
         "FROM app.lease_signing_outcomes WHERE lease_id=%s",
         command.lease_id,
-    ) == (reservation, deposit, "RESERVED", 1)
+    ) == (reservation, deposit, "VACANT", 1)
     assert state(
         migrated_database_url,
         "SELECT count(*) FROM app.audit_events WHERE action='lease.signing_outcome.recorded' "
@@ -161,9 +165,11 @@ def test_walk_in_signing_occupies_a_vacant_unit_without_a_reservation(
     with psycopg.connect(migrated_database_url) as connection:
         actor_id, prop, unit, customer = setup_reservation_sources(connection)
     command, _ = signed(migrated_database_url, actor_id, prop, unit, customer, None)
-    assert state(migrated_database_url, "SELECT status FROM app.units WHERE id=%s", unit) == (
-        "OCCUPIED",
-    )
+    assert state(
+        migrated_database_url,
+        "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+        unit,
+    ) == ("OCCUPIED",)
     assert state(
         migrated_database_url,
         "SELECT reservation_id,deposit_id,previous_unit_status FROM app.lease_signing_outcomes "
@@ -183,9 +189,11 @@ def test_reserved_unit_cannot_be_signed_without_its_own_reservation(
     assert state(
         migrated_database_url, "SELECT status FROM app.reservations WHERE id=%s", reservation
     ) == ("ACTIVE",)
-    assert state(migrated_database_url, "SELECT status FROM app.units WHERE id=%s", unit) == (
-        "RESERVED",
-    )
+    assert state(
+        migrated_database_url,
+        "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+        unit,
+    ) == ("RESERVED",)
     assert other_unit != unit
 
 
@@ -225,9 +233,11 @@ def test_move_in_after_signing_starts_occupancy_without_a_payment_gate(
             move_in_command(command.lease_id, customer, today, int(str(first["lease_version"]))),
             actor=who,
         )
-    assert state(migrated_database_url, "SELECT status FROM app.units WHERE id=%s", unit) == (
-        "OCCUPIED",
-    )
+    assert state(
+        migrated_database_url,
+        "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+        unit,
+    ) == ("OCCUPIED",)
 
 
 def test_lease_signed_before_the_new_path_keeps_the_reservation_move_in(
@@ -304,6 +314,12 @@ def test_forward_upgrade_keeps_earlier_leases_reservations_deposits_and_invoices
         before = snapshot(temporary)
         alembic_command.upgrade(config, "head")
         assert snapshot(temporary) == before
+        with psycopg.connect(temporary) as connection:
+            assert connection.execute(
+                "SELECT status, app.unit_status_on(id, app.unit_today(id)) FROM app.units "
+                "WHERE id = %s",
+                (unit,),
+            ).fetchone() == ("VACANT", "OCCUPIED")
         # DL-231: an Invoice from before the upgrade got its type, and nothing else changed.
         with psycopg.connect(temporary) as connection:
             assert connection.execute(

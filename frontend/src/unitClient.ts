@@ -107,7 +107,7 @@ export type UnitStatus =
   | "UNDER_MAINTENANCE"
   | "CLEANING"
   | "OUT_OF_SERVICE"
-  // Daily and weekly rent: a guest is checked in (only check-in sets it).
+  // Daily and weekly rent: a guest is checked in, or the night is booked.
   | "SHORT_STAY";
 
 export interface UnitResource extends UnitDetails {
@@ -117,7 +117,12 @@ export interface UnitResource extends UnitDetails {
   floor: string;
   floor_item_id: string | null;
   unit_type: UnitType;
+  /** C2 (DL-241): who holds the Unit today (worked out from its records), else its condition. */
   status: UnitStatus;
+  /** C2 (DL-241): the condition staff set: Vacant, Cleaning, Under maintenance, Out of service. */
+  condition?: UnitStatus;
+  /** C2 (DL-241): the start date of a Signed Lease that starts later. */
+  lease_starts_on?: string | null;
   version: number;
   current_reservation: unknown;
   current_lease: unknown;
@@ -439,6 +444,11 @@ function unit(value: unknown): UnitResource {
     floor_item_id: value.floor_item_id ?? null,
     unit_type: value.unit_type,
     status: value.status as UnitStatus,
+    condition: statuses.includes(value.condition as UnitStatus)
+      ? (value.condition as UnitStatus)
+      : undefined,
+    lease_starts_on:
+      typeof value.lease_starts_on === "string" ? value.lease_starts_on : null,
     version: value.version,
     size_square_metres: value.size_square_metres ?? null,
     bedrooms: value.bedrooms ?? null,

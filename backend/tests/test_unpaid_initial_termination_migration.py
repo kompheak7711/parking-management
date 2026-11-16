@@ -71,7 +71,9 @@ SNAPSHOT_TABLES = ("leases", "reservations", "deposits", "invoices", "units")
 UNIT_SETUP_COLUMNS = (
     "ARRAY['floor_item_id','size_square_metres','bedrooms','bathrooms',"
     "'view_item_id','kitchen_item_id','notes',"
-    "'default_monthly_rent_usd_cents','for_rent']"
+    "'default_monthly_rent_usd_cents','for_rent',"
+    # C2 (DL-241): a stored holder word becomes the condition VACANT, one version later.
+    "'status','version','updated_at']"
 )
 
 
@@ -407,7 +409,9 @@ def test_moved_in_termination_credits_rent_after_the_termination_date(
         migrated_database_url, "SELECT status FROM app.invoices WHERE id=%s", source["invoice"]
     ) != ("VOID",)
     assert row(
-        migrated_database_url, "SELECT status FROM app.units WHERE id=%s", source["unit"]
+        migrated_database_url,
+        "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+        source["unit"],
     ) == ("OCCUPIED",)
 
 

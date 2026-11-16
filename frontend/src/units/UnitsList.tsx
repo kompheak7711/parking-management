@@ -252,6 +252,15 @@ export function UnitsList({
                         <td>{typeName(data.lists, unit.unit_type, khmer)}</td>
                         <td>
                           <UnitChip language={language} status={unit.status} />
+                          {unit.lease_starts_on != null && (
+                            <span className="ui-sub2">
+                              {ut(
+                                language,
+                                "lease_from",
+                                dayText(unit.lease_starts_on),
+                              )}
+                            </span>
+                          )}
                         </td>
                         <td className="ui-num">
                           {lease?.end_date != null ? (

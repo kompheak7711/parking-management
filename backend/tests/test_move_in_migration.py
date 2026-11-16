@@ -224,7 +224,10 @@ def setup_historical_move_in(
             ),
         )
         connection.execute(
-            "UPDATE app.units SET status='RESERVED',version=version+1,"
+            "UPDATE app.units SET version=version+1,"
+            # Before C2 (DL-241) the Unit stored RESERVED; now the Reservation shows it.
+            "status=CASE WHEN to_regprocedure('app.unit_held_by(uuid,date)') IS NULL "
+            "THEN 'RESERVED' ELSE status END,"
             "updated_at=statement_timestamp(),updated_by=%s WHERE id=%s",
             (actor_id, unit_id),
         )
@@ -304,7 +307,8 @@ def test_complete_move_in_is_atomic_replay_safe_and_preserves_source_history(
             (value.reservation_id,),
         ).fetchone() == ("COMPLETED", value.lease_id, 2)
         assert verify.execute(
-            "SELECT status FROM app.units WHERE id=%s", (result.unit_id,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+            (result.unit_id,),
         ).fetchone() == ("OCCUPIED",)
         assert verify.execute(
             "SELECT reservation_id,lease_id,version FROM app.deposits WHERE id=%s",
@@ -346,10 +350,11 @@ def test_unpaid_deposit_rolls_back_every_move_in_effect(migrated_database_url: s
             (value.reservation_id,),
         ).fetchone() == ("ACTIVE", None)
         assert verify.execute(
+            # C2 (DL-241): the stored condition and the version are as before the attempt.
             "SELECT status,version FROM app.units "
             "WHERE id=(SELECT unit_id FROM app.reservations WHERE id=%s)",
             (value.reservation_id,),
-        ).fetchone() == ("RESERVED", 2)
+        ).fetchone() == ("VACANT", 2)
         assert verify.execute(
             "SELECT status,version FROM app.leases WHERE id=%s", (value.lease_id,)
         ).fetchone() == ("SIGNED", 2)
@@ -385,10 +390,11 @@ def test_required_pet_deposit_prerequisite_fails_closed(migrated_database_url: s
             "SELECT status,version FROM app.reservations WHERE id=%s", (value.reservation_id,)
         ).fetchone() == ("ACTIVE", 1)
         assert verify.execute(
+            # C2 (DL-241): the stored condition and the version are as before the attempt.
             "SELECT status,version FROM app.units "
             "WHERE id=(SELECT unit_id FROM app.reservations WHERE id=%s)",
             (value.reservation_id,),
-        ).fetchone() == ("RESERVED", 2)
+        ).fetchone() == ("VACANT", 2)
         assert verify.execute(
             "SELECT status,version FROM app.leases WHERE id=%s", (value.lease_id,)
         ).fetchone() == ("SIGNED", 2)

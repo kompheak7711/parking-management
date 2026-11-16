@@ -3340,13 +3340,31 @@ The unpublished due-attribution implementation is removed by a forward commit: m
 
 - **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
 - **Source.** The owner on 12 Nov 2026 (DL-226, C1, "all yes"): taken out of the app after a check that nothing can still reach it.
-- **The check (15 Nov 2026).** No route signs a Lease without its first money: the plain sign route was removed in V1-061, and Sign Lease with payment (DL-100, DL-108) receives the Initial Rent and the Security Deposit in full before signing. So no new Lease can owe its Initial Rent or Security Deposit at signing. The one way the money can be owed again is a reversal of the Sign Lease Payment later (for example money returned by the bank); that case is asked to the owner with the pull request.
+- **The check (15 Nov 2026).** No route signs a Lease without its first money: the plain sign route was removed in V1-061, and Sign Lease with payment (DL-100, DL-108) receives the Initial Rent and the Security Deposit in full before signing. So no new Lease can owe its Initial Rent or Security Deposit at signing. The one way the money can be owed again is a reversal of the Sign Lease Payment later (for example money returned by the bank). The owner answered on 16 Nov 2026 (card "Yes to all three, merge when green"): the Initial Rent is then a normal unpaid debt, collected the usual way, with no special ending.
 - **Before** (BR-LEASE-001, BR-LEASE-024, BR-DEP-023). Staff could end an old Lease under Article 2.5 from the Terminate dialog ("Initial Rent not paid"), then record "never moved in" or "moved in" as a separate step.
 - **Now.** The Terminate dialog has three grounds: leaving early, a violation, and unpaid Rent. The server refuses the unpaid Initial ground, and the two follow-up steps have no route. The old English forms lost these parts too.
 - **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).** The database steps are not removed: a Lease ended this way before keeps its records, its timeline labels and its Final Settlement rules, and many database tests use those steps to build old cases. No data is changed or deleted, and there is no migration.
 - **Screens:** the Terminate dialog and the old Lease forms (TEST-FE-653, TEST-FE-659, TEST-FE-873 changed; TEST-FE-651, 652, 654 to 658, 671 and 679 removed with the parts they tested). **API:** the amendment of DL-240 in docs/005.
+- **How the build read the rest.** Three points were asked with the pull request, and the owner said yes to all three on 16 Nov 2026; pull request #45 was merged that day.
 - **Links:** DL-226, DL-100, DL-108, DL-064; BR-LEASE-001, BR-LEASE-024, BR-DEP-023.
 - **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-15.
+
+## DL-241 — Who holds a Unit is worked out from the dates of its records; staff set only its condition (C2 is built)
+
+- **Type:** `OWNER DECISION` for the rule; `TECHNICAL DECISION UNDER THE OWNER'S RULE` for how it is built.
+- **Source.** The owner on 12 Nov 2026 (DL-226, C2, "all yes"): Reserved, Occupied and Short stay come from the Reservations, Leases and short stays on the day asked; Cleaning, Under maintenance and Out of service stay set by staff.
+- **Before** (BR-UNIT-002, BR-UNIT-004). One stored word said both who held the Unit and its condition. A Unit was `OCCUPIED` from the signing day, even for a Lease that started months later. A Unit under maintenance while a Customer lived there lost the word `OCCUPIED`. Three triggers kept the word in step with the records.
+- **Now.** The stored word is only the condition. Who holds the Unit is worked out for the day asked: an open Occupancy or a Signed Lease whose Start Date has come gives Occupied; a booked night or a checked-in guest gives Short stay; an Active Reservation gives Reserved. The screen shows who holds the Unit, else its condition. A Signed Lease that starts later shows the Unit as Vacant with "Lease from" its Start Date; it still cannot be reserved or leased to someone else. Change status offers only the four conditions.
+- **Claude's choices (no money; the owner's 2026-10-23 22:30 rule).**
+  1. A Signed Lease holds its Unit from the signing day (no Reservation, no other new Lease), as before; only the word shown waits for the Start Date.
+  2. Occupied shows from the Lease Start Date even before the move-in, as BR-UNIT-004 said for the signing day.
+  3. The checks that refuse a Reservation, a Lease, a move-in or a check-in read the records, with the same refusals and messages as before.
+  4. Existing Units stored as Reserved, Occupied or Short stay become Vacant; their records still show the same holder. The data is fake (owner, 12 Nov 2026), but no row is deleted.
+- **Found and fixed.** A Lease ended before any move-in could leave the Unit stuck at Occupied when its stored word was not changed back. The word is now worked out, so the Unit shows its condition at once.
+- **Database:** migration `20270803_421` (DB-BS-015), forward-only. **API:** the amendment of DL-241 in docs/005 (`condition`, `lease_starts_on`, 422 for a holder word). **Screen:** the Units list shows "Lease from" a date; the Unit page shows a notice for a Lease that starts later and hides Make Reservation and New Lease then; Change status checks the condition (TEST-FE-2280).
+- **Open:** the native Khmer check of the new screen text.
+- **Links:** DL-226, DL-223, DL-225; BR-UNIT-002, BR-UNIT-004, BR-UNIT-008, BR-UNIT-009.
+- **Decision date:** 2026-11-12 (the owner's decision); built 2026-11-16.
 
 ## DL-237 — Unpaid Rent: notices on day 10, 20 and 25 sent by the app, termination letter on day 30 sent by a Manager
 

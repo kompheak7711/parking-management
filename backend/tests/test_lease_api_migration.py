@@ -319,7 +319,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             ("lease.sign",),
         ]
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20270802_399",
+            "20270803_421",
         )
         assert connection.execute(
             "SELECT has_function_privilege('prm_runtime',"
@@ -517,7 +517,10 @@ def test_http_draft_requires_security_deposit_from_the_same_reservation_unit(
                 ),
             )
             connection.execute(
-                "UPDATE app.units SET status='RESERVED',version=version+1,"
+                "UPDATE app.units SET version=version+1,"
+                # Before C2 (DL-241) the Unit stored RESERVED; now the Reservation shows it.
+                "status=CASE WHEN to_regprocedure('app.unit_held_by(uuid,date)') IS NULL "
+                "THEN 'RESERVED' ELSE status END,"
                 "updated_at=statement_timestamp(),updated_by=%s WHERE id=%s",
                 (actor_id, source_unit_id),
             )
@@ -708,7 +711,10 @@ def test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft(
             ),
         )
         connection.execute(
-            "UPDATE app.units SET status='RESERVED',version=version+1,"
+            "UPDATE app.units SET version=version+1,"
+            # Before C2 (DL-241) the Unit stored RESERVED; now the Reservation shows it.
+            "status=CASE WHEN to_regprocedure('app.unit_held_by(uuid,date)') IS NULL "
+            "THEN 'RESERVED' ELSE status END,"
             "updated_at=statement_timestamp(),updated_by=%s WHERE id=%s",
             (actor_id, unit_id),
         )
@@ -801,7 +807,8 @@ def test_sign_with_reservation_then_http_lease_move_in_and_cancel_draft(
             "SELECT lease_id::text FROM app.deposits WHERE id=%s", (deposit_id,)
         ).fetchone() == (lease_id,)
         assert connection.execute(
-            "SELECT status FROM app.units WHERE id=%s", (unit_id,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id=%s",
+            (unit_id,),
         ).fetchone() == ("OCCUPIED",)
 
     occupancy_id = uuid4()

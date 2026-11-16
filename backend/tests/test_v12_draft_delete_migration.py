@@ -7,11 +7,14 @@ may be deleted; its history starts when it is issued. An issued Invoice never ch
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
 import pytest
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 
 from property_rental.invoice import (
     CreateItemsInvoiceDraftCommand,
@@ -189,4 +192,10 @@ def test_only_the_financial_role_may_delete_a_draft_and_the_migration_is_the_hea
         ).fetchall()
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
     assert grants == [("prm_bootstrap", False), ("prm_financial", True), ("prm_runtime", False)]
-    assert head == ("20270802_399",)
+    # The applied head is this migration or one built on it (a later step or a join).
+    assert head is not None and _applies("20270802_399", str(head[0]))
+
+
+def _applies(revision: str, head: str) -> bool:
+    scripts = ScriptDirectory.from_config(Config(str(Path(__file__).parents[1] / "alembic.ini")))
+    return any(script.revision == revision for script in scripts.walk_revisions("base", head))

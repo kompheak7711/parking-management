@@ -100,37 +100,50 @@ Decisions: DL-001, DL-074, DL-075, DL-078.
 
 ## BR-UNIT-002 — Unit Status
 
-A Unit has one status at a time: `VACANT`, `RESERVED`, `OCCUPIED`, `SHORT_STAY`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`.
+A Unit shows one status on a day: `VACANT`, `RESERVED`, `OCCUPIED`, `SHORT_STAY`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`.
 
-The status is a summary for people. It is never the proof that a Unit is free. Before a Reservation, a Lease, a move-in or a short-stay booking is accepted, the app checks the real records: Active Reservations, Signed Leases, short-stay bookings, Occupancies and the blocking conditions. A status word alone never allows a conflicting record.
+The status has two parts:
+
+- **Who holds the Unit** is worked out from the dates of its records on the day asked (BR-UNIT-004). It is never stored and never set by hand. `OCCUPIED` comes from a Signed Lease whose Start Date has come or an open Occupancy. `SHORT_STAY` comes from a booked night or a checked-in guest. `RESERVED` comes from an Active Reservation.
+- **The condition** is stored and set by staff: `VACANT`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`.
+
+When someone holds the Unit, the app shows who holds it and keeps the condition with it. For example, a Unit under maintenance while a Customer lives there shows `OCCUPIED`, and its condition stays Under maintenance. When nobody holds it, the app shows the condition.
+
+A Unit with a Signed Lease that starts later shows its condition (normally `VACANT`) and the Lease Start Date until that day. The Lease still holds the Unit: it cannot be reserved or leased to someone else.
+
+Before a Reservation, a Lease, a move-in or a short-stay booking is accepted, the app checks the real records: Active Reservations, Signed Leases, short-stay bookings, Occupancies and the condition.
 
 Replaces: BR-UNIT-013.
-Decisions: DL-150 to DL-159 (the status `SHORT_STAY`).
+Decisions: DL-150 to DL-159 (the status `SHORT_STAY`), DL-226, DL-241.
 
 ## BR-UNIT-004 — Who Holds a Unit
 
-- An Active Reservation holds its Unit. A Unit has at most one Active Reservation. The Unit is `RESERVED` while the Reservation holds it. The Reservation lets go only when it becomes Cancelled or Completed.
-- A Unit has at most one Signed Lease for any day. A second Lease whose period overlaps a Signed Lease of the same Unit is refused. The Unit is `OCCUPIED` from the signing, even before the move-in.
+- An Active Reservation holds its Unit. A Unit has at most one Active Reservation. The Unit shows `RESERVED` while the Reservation holds it. The Reservation lets go only when it becomes Cancelled or Completed.
+- A Unit has at most one Signed Lease for any day. A second Lease whose period overlaps a Signed Lease of the same Unit is refused. A Signed Lease holds its Unit from the signing: no Reservation and no other new Lease. The Unit shows `OCCUPIED` from the Lease Start Date, even before the move-in.
 - A short-stay booking holds its nights, from the check-in day up to but not including the check-out day. A booking wins: a Reservation, a Lease draft or a signing that meets a booked night is refused and says why.
 
 Replaces: BR-UNIT-005, BR-UNIT-006, BR-UNIT-007.
-Decisions: DL-223, DL-225.
+Decisions: DL-223, DL-225, DL-241.
 
 ## BR-UNIT-008 — After a Move-out or a Cancelled Reservation
 
-After a move-out the Unit leaves `OCCUPIED` and takes the status of its real condition, normally `CLEANING`. It becomes `VACANT` only when it is ready to rent and no Reservation or Lease holds it.
+After a move-out the Unit no longer shows `OCCUPIED`. It shows its condition, normally `CLEANING`. It shows `VACANT` only when staff set it ready to rent and no Reservation or Lease holds it.
 
-When a Reservation becomes Cancelled (also by expiry), it lets go of the Unit. The Unit becomes `VACANT` if nothing else blocks it.
+When a Reservation becomes Cancelled (also by expiry), it lets go of the Unit. The Unit shows its condition again.
 
-When a Lease is ended before any move-in, the Unit is let go without an Occupancy or a move-out. It becomes `VACANT`, or `CLEANING` when a user with the Unit right gives a reason.
+When a Lease is ended before any move-in, the Unit is let go without an Occupancy or a move-out. It shows its condition, or `CLEANING` when a user with the Unit right gives a reason.
+
+After a short-stay check-out the condition becomes `CLEANING`.
 
 Replaces: BR-UNIT-010, BR-UNIT-011.
+Decisions: DL-241.
 
 ## BR-UNIT-009 — Under Maintenance and Out of Service
 
-A Unit that is `UNDER_MAINTENANCE` or `OUT_OF_SERVICE` is not offered for a new Reservation. It leaves that status only by an authorized action that confirms the problem is solved. The new status comes from the Unit's real condition and its Reservation and Lease records. The action is kept in the history and never overrides an Active Reservation or a Signed Lease.
+A Unit whose condition is `UNDER_MAINTENANCE` or `OUT_OF_SERVICE` is not offered for a new Reservation. Staff set only the condition: `VACANT`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`. `RESERVED`, `OCCUPIED` and `SHORT_STAY` cannot be set by hand. The change is kept in the history and never overrides an Active Reservation, a Signed Lease or a short stay.
 
 Replaces: BR-UNIT-012.
+Decisions: DL-241.
 
 ## BR-UNIT-014 — Unit Cleaning Rate
 
@@ -375,7 +388,7 @@ Parking Step 4 (owner, 2026-10-30). A Lease of a Parking holds one vehicle at a 
 
 ## BR-LEASE-015 — Signing and Move-in
 
-When a Lease is signed, in one step: its Reservation, if it has one, becomes Completed; the Unit becomes `OCCUPIED`; the Security Deposit stays with the Lease.
+When a Lease is signed, in one step: its Reservation, if it has one, becomes Completed; the Lease holds the Unit, which shows `OCCUPIED` from the Lease Start Date; the Security Deposit stays with the Lease.
 
 The move-in is recorded later, when it really happens. It needs: a Signed Lease; its Reservation, if any, Completed with this Lease; a Unit that is not `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`; and a valid move-in date. The Occupancy then starts on the real Move-in Date (BR-OCC-002). The move-in does not change the Reservation or the Unit status. An unpaid Pet Deposit of a pet that came later never stops a move-in (BR-DEP-010).
 
@@ -1151,7 +1164,7 @@ Decisions: DL-073, DL-217, DL-237.
 
 A move-out records the real day the people left. It is never taken from the Lease End Date or from a notice date alone. It is done together with the authorized Lease termination, and both dates must be the real ones. Every open Occupancy that ends gets its real Move-out Date.
 
-After the move-out the Unit leaves `OCCUPIED` and takes the status of its real condition, normally `CLEANING`. It is not free just because the Lease ended (BR-UNIT-008).
+After the move-out the Unit no longer shows `OCCUPIED`. It shows its condition, normally `CLEANING`. It is not free just because the Lease ended (BR-UNIT-008).
 
 Replaces: BR-MOVEOUT-002, BR-MOVEOUT-003, BR-MOVEOUT-004.
 
@@ -1839,11 +1852,9 @@ A number in bold is still a rule heading. Every other number now lives in the ru
 
 The owner decided these on 12 November 2026 (DL-226). The app does not do them yet, so the rules above still say what the app does today. Each one changes its rule in this document in the same change that builds it.
 
-| # | Rule today | Decided |
-| --- | --- | --- |
-| C2 | BR-UNIT-002, BR-UNIT-004: one stored status word says who holds the Unit | Who holds a Unit is worked out from the dates of Leases, Reservations and short stays. Cleaning, Under maintenance and Out of service stay set by staff |
+Nothing is left in this list.
 
-Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235). D6, a Draft Invoice is changed with no reason and a Draft made by a person may be deleted (BR-INV-015, DL-239). C1, the ending of an old Lease for unpaid Initial Rent or Security Deposit is taken out of the app (BR-LEASE-001, BR-LEASE-024, BR-DEP-023, DL-240).
+Built already: D2, the late-payment rate in Settings is at most 10% (BR-LATE-001). D1, a hand-back before the 5th pays only the days used (BR-RENT-012, DL-229). Q3, the Utilities rate is chosen by the first day of the period of use (BR-UTIL-014, DL-230). T1, the seven Invoice types are kept on the Invoice (BR-INV-016, DL-231). D3, an amount missed on a fully paid line keeps the type of what was missed (BR-INV-021, DL-232). L1, the late-payment charge is an Invoice of the type Late-payment (BR-LATE-001, BR-LATE-004, DL-233). D4, the Pet Deposit for a pet kept from the start is received at Sign Lease (BR-DEP-010, BR-DEP-006, DL-234). D5, extra money at Receive payment becomes Customer Credit at once (BR-PAY-030, BR-CREDIT-002, DL-235). D6, a Draft Invoice is changed with no reason and a Draft made by a person may be deleted (BR-INV-015, DL-239). C1, the ending of an old Lease for unpaid Initial Rent or Security Deposit is taken out of the app (BR-LEASE-001, BR-LEASE-024, BR-DEP-023, DL-240). C2, who holds a Unit is worked out from the dates of its records and staff set only its condition (BR-UNIT-002, BR-UNIT-004, BR-UNIT-008, BR-UNIT-009, DL-241).
 
 Kept as they are, by the owner's decision of the same day: two monthly Invoices (Rent with Services, and Utilities); nothing automatic after the Lease End Date (BR-LEASE-017); the broken Meter estimate (BR-UTIL-023); the corrections after a closed Final Settlement (BR-SETTLE-012), with no new kinds, to be looked at again after six months of real use.
 

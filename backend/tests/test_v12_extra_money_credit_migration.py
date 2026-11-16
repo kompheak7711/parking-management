@@ -8,10 +8,13 @@ Customer Credit in the same step; the Customer may ask for a Refund of that Cred
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 import psycopg
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 
 from property_rental.khr_payment_confirmation import ConfirmKhrPaymentCommand
 from property_rental.receive_payment import ReceivePaymentCommand
@@ -180,4 +183,10 @@ def test_when_nothing_owed_cannot_be_checked_now_the_money_waits_as_before(
 def test_the_migration_is_the_head(migrated_database_url: str) -> None:
     with psycopg.connect(migrated_database_url) as connection:
         head = connection.execute("SELECT version_num FROM alembic_version").fetchone()
-    assert head == ("20270802_399",)
+    # The applied head is this migration or one built on it (a later step or a join).
+    assert head is not None and _applies("20270801_398", str(head[0]))
+
+
+def _applies(revision: str, head: str) -> bool:
+    scripts = ScriptDirectory.from_config(Config(str(Path(__file__).parents[1] / "alembic.ini")))
+    return any(script.revision == revision for script in scripts.walk_revisions("base", head))

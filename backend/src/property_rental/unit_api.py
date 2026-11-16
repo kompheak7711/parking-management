@@ -25,6 +25,7 @@ from property_rental.identity import (
 )
 from property_rental.settings import Settings
 from property_rental.unit import (
+    HELD_UNIT_STATUSES,
     UNIT_MAX_FEATURE_COUNT,
     UNIT_MAX_FEATURES,
     UNIT_MAX_ROOMS,
@@ -494,7 +495,10 @@ UNIT_COLUMNS: Final = (
     "app.unit_feature_counts(detail.id) AS features, "
     # V1.1 rework part 1 (owner 2026-11-02): For rent.
     "(SELECT for_unit.for_rent FROM app.units AS for_unit WHERE for_unit.id = detail.id) "
-    "AS for_rent"
+    "AS for_rent, "
+    # C2 (DL-241): who holds the Unit today, and the start of a later Signed Lease.
+    "app.unit_held_by(detail.id, app.unit_today(detail.id)) AS held_by, "
+    "app.unit_lease_from(detail.id, app.unit_today(detail.id)) AS lease_starts_on"
 )
 UNIT_SELECT: Final = (
     f"SELECT {UNIT_COLUMNS} FROM app.unit_with_details(%s) AS detail "
@@ -527,7 +531,8 @@ class PostgresUnitResourceFlow:
         clauses = ["unit.property_id = %s"]
         parameters: list[object] = [property_id]
         if unit_status is not None:
-            clauses.append("unit.status = %s")
+            # C2 (DL-241): the word people see, worked out for today.
+            clauses.append("app.unit_status_on(unit.id, app.unit_today(unit.id)) = %s")
             parameters.append(unit_status.value)
         if for_rent is not None:
             clauses.append("unit.for_rent = %s")
@@ -1129,6 +1134,13 @@ def _unit_type_code(value: str | None) -> str | None:
     return value
 
 
+def _condition(value: UnitStatus | None) -> UnitStatus | None:
+    # C2 (DL-241): staff set only the condition; who holds the Unit comes from its records.
+    if value in HELD_UNIT_STATUSES:
+        raise ValueError("status must be VACANT, CLEANING, UNDER_MAINTENANCE or OUT_OF_SERVICE")
+    return value
+
+
 def _normalized_notes(value: object) -> object:
     if isinstance(value, str):
         value = value.strip()
@@ -1164,6 +1176,12 @@ class UnitCreate(BaseModel):
     def check_type(cls, value: str | None) -> str | None:
         del cls
         return _unit_type_code(value)
+
+    @field_validator("status")
+    @classmethod
+    def check_status(cls, value: UnitStatus | None) -> UnitStatus | None:
+        del cls
+        return _condition(value)
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -1228,6 +1246,12 @@ class UnitPatch(BaseModel):
     def check_type(cls, value: str | None) -> str | None:
         del cls
         return _unit_type_code(value)
+
+    @field_validator("status")
+    @classmethod
+    def check_status(cls, value: UnitStatus | None) -> UnitStatus | None:
+        del cls
+        return _condition(value)
 
     @field_validator("notes", mode="before")
     @classmethod
@@ -1411,7 +1435,13 @@ def _body(unit: Unit) -> dict[str, object]:
         "unit_number": unit.unit_number,
         "floor": unit.floor,
         "unit_type": unit.unit_type,
-        "status": unit.status.value,
+        # C2 (DL-241): who holds the Unit today, else its condition; the condition staff set; and
+        # the start of a Signed Lease that starts later.
+        "status": unit.shown_status.value,
+        "condition": unit.status.value,
+        "lease_starts_on": (
+            None if unit.lease_starts_on is None else unit.lease_starts_on.isoformat()
+        ),
         "version": unit.version,
         "floor_item_id": None if unit.floor_item_id is None else str(unit.floor_item_id),
         "size_square_metres": _size_json(unit.size_square_metres),

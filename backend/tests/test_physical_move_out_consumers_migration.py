@@ -211,7 +211,9 @@ def test_physical_evidence_successor_preserves_later_unit_reservation_and_lease(
         assert all(row in after[table] for row in before[table])
     body = cast(dict[str, object], response["body"])
     data = cast(dict[str, object], body["data"])
-    expected_status = "RESERVED" if activity == "SIGNED" else activity
+    # C2 (DL-241): the event keeps the stored condition; a later holder is read from records.
+    held = {"RESERVED", "SIGNED", "OCCUPIED"}
+    expected_status = "VACANT" if activity in held else activity
     assert data["previous_unit_status"] == data["resulting_unit_status"] == expected_status
     assert (
         data["expected_unit_version"]

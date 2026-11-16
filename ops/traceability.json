@@ -42543,7 +42543,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_lease_security_deposit_migration.py",
       "status": "implemented",
-      "notes": "Review round 1 (security should-fix 1): the old Reservation move-in cannot link a Reservation's Deposit to a walk-in Lease that already has its Security Deposit; the deferred source check refuses it (23514, invalid in the move-in service) and nothing changes (V1-056 sub-slice 10e-2b-4c)."
+      "notes": "Review round 1 (security should-fix 1): the old Reservation move-in cannot link a Reservation's Deposit to a walk-in Lease that already has its Security Deposit; the deferred source check refuses it (23514, invalid in the move-in service) and nothing changes (V1-056 sub-slice 10e-2b-4c). Since C2 (DL-241) the Signed Lease holds the Unit whatever its condition, so that Reservation is refused at once."
     },
     {
       "test_id": "test_a_reversed_extra_receipt_is_not_shown_as_received",
@@ -68613,6 +68613,80 @@
       "test_path": "frontend/src/invoices/InvoicesPage.test.tsx",
       "status": "implemented",
       "notes": "Delete Draft shows on a Draft for invoices.create only, asks no reason, sends the version, goes back to the list; a refused Draft shows the text and Void instead."
+    },
+    {
+      "test_id": "test_a_lease_that_starts_later_leaves_the_unit_vacant_until_its_start",
+      "upstream_ids": [
+        "DL-241",
+        "BR-UNIT-002",
+        "BR-UNIT-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_unit_holder_from_dates_migration.py",
+      "status": "implemented",
+      "notes": "A Lease signed today that starts later leaves the Unit Vacant with its start date until then and Occupied from the start; the Lease still holds the Unit (no Reservation, no Lease for the free days before)."
+    },
+    {
+      "test_id": "test_a_reservation_holds_the_unit_and_staff_keep_its_condition",
+      "upstream_ids": [
+        "DL-241",
+        "BR-UNIT-002",
+        "BR-UNIT-004",
+        "BR-UNIT-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_unit_holder_from_dates_migration.py",
+      "status": "implemented",
+      "notes": "An Active Reservation shows Reserved whatever condition staff set; a stored Reserved, Occupied or Short stay is refused (23514); a second Reservation is refused."
+    },
+    {
+      "test_id": "test_maintenance_on_an_occupied_unit_shows_occupied_and_keeps_the_condition",
+      "upstream_ids": [
+        "DL-241",
+        "BR-UNIT-002",
+        "BR-UNIT-004",
+        "BR-UNIT-009"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_unit_holder_from_dates_migration.py",
+      "status": "implemented",
+      "notes": "A Unit under maintenance with a running Lease shows Occupied and keeps Under maintenance as its condition."
+    },
+    {
+      "test_id": "test_the_migration_is_forward_only_and_its_functions_are_for_the_app_roles",
+      "upstream_ids": [
+        "DL-241"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_v12_unit_holder_from_dates_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270803_421 follows 20270802_399 and is forward-only; the five new functions run for prm_runtime and prm_financial only; the three old status triggers are gone."
+    },
+    {
+      "test_id": "test_staff_set_only_the_condition_and_see_who_holds_the_unit",
+      "upstream_ids": [
+        "DL-241",
+        "BR-UNIT-002",
+        "BR-UNIT-004",
+        "BR-UNIT-009",
+        "API-028"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "A Unit answer has status (who holds it, else the condition), condition and lease_starts_on; a create or change with a holder word answers 422."
+    },
+    {
+      "test_id": "TEST-FE-2280",
+      "upstream_ids": [
+        "DL-241",
+        "BR-UNIT-002",
+        "BR-UNIT-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/units/UnitsPage.test.tsx",
+      "status": "implemented",
+      "notes": "A Unit with a Lease that starts later shows Lease from its date in the list and a notice on its page, with no Make Reservation; Change status checks the condition of a Unit shown as Short stay."
     }
   ]
 }

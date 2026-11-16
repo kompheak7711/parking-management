@@ -455,8 +455,9 @@ const STATUS_CHOICES: UnitStatus[] = [
 ];
 
 /**
- * Change status with a reason, which goes into the Unit's History. Occupied and Reserved are
- * set by the app; a Unit with a signed Lease or an active Reservation cannot be changed here.
+ * Change status with a reason, which goes into the Unit's History. Occupied, Reserved and Short
+ * stay are worked out from the Unit's records (C2, DL-241); staff set only its condition, and a
+ * Unit with a signed Lease or an active Reservation cannot be changed here.
  */
 export function ChangeStatusDialog({
   api,
@@ -503,7 +504,10 @@ export function ChangeStatusDialog({
     const status = text(data, "status") as UnitStatus;
     const reason = text(data, "reason");
     setReasonMissing(reason === "");
-    if (status === unit.status || !STATUS_CHOICES.includes(status)) {
+    if (
+      status === (unit.condition ?? unit.status) ||
+      !STATUS_CHOICES.includes(status)
+    ) {
       setProblem(ut(language, "same_status"));
       return;
     }
@@ -538,7 +542,7 @@ export function ChangeStatusDialog({
         {STATUS_CHOICES.map((status) => (
           <label className="ui-chk" key={status}>
             <input
-              defaultChecked={unit.status === status}
+              defaultChecked={(unit.condition ?? unit.status) === status}
               name="status"
               type="radio"
               value={status}

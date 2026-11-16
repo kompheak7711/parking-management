@@ -374,7 +374,8 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
             (draft.lease_id,),
         ).fetchall()
         persisted = check.execute(
-            "SELECT lease.status,lease.version,unit.status,occupancy.move_out_date "
+            "SELECT lease.status,lease.version,"
+            "app.unit_status_on(unit.id,app.unit_today(unit.id)),occupancy.move_out_date "
             "FROM app.leases AS lease JOIN app.units AS unit ON unit.id=lease.unit_id "
             "JOIN app.occupancies AS occupancy ON occupancy.lease_id=lease.id "
             "WHERE lease.id=%s",

@@ -1042,7 +1042,57 @@ describe("Parking page", () => {
     });
   });
 
-  it("TEST-FE-1121 New Parking takes the default Rent and the required Services and saves them right after the Parking; a wrong amount is refused first (V1-061, DL-110)", async () => {
+  it("TEST-FE-2280 C2: a Unit with a Lease that starts later shows Vacant with the start date and offers no Reservation; Change status starts at the condition staff set (DL-241)", async () => {
+    const later = unit("U401", {
+      status: "VACANT",
+      condition: "VACANT",
+      lease_starts_on: "2026-12-01",
+    });
+    const guestIn = unit("U402", {
+      status: "SHORT_STAY",
+      condition: "VACANT",
+    });
+    const client = unitApi({
+      list: vi.fn().mockResolvedValue({
+        items: [later, guestIn],
+        next_cursor: null,
+        can_manage: true,
+      }),
+      get: vi.fn((unitId: string) =>
+        Promise.resolve(unitId === "unit-U401" ? later : guestIn),
+      ),
+    });
+    const { unmount } = show(client);
+    const row = (await screen.findByRole("link", { name: "U401" })).closest(
+      "tr",
+    );
+    if (row === null) throw new Error("no row");
+    expect(row).toHaveTextContent("Vacant");
+    expect(row).toHaveTextContent("Lease from 01/12/2026");
+    unmount();
+
+    window.location.hash = "#/units/unit-U401";
+    const page = show(client);
+    expect(
+      await screen.findByText(
+        "A signed Lease starts on 01/12/2026. Until then the Unit is empty, but it cannot be reserved or leased to someone else.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Make Reservation" }),
+    ).toBeNull();
+    page.unmount();
+
+    window.location.hash = "#/units/unit-U402";
+    show(client);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Change status" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("radio", { name: "Vacant" })).toBeChecked();
+  });
+
+  it("TEST-FE-1121 New Unit takes the default Rent and the required Services and saves them right after the Unit; a wrong amount is refused first (V1-061, DL-110)", async () => {
     const setRentTerms = vi
       .fn()
       .mockResolvedValue(unit("U107", { version: 2 }));

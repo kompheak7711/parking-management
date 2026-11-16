@@ -381,10 +381,19 @@ def test_a_booking_only_moves_forward_and_the_unit_status_follows_the_guest(
     unit = db.units[5]
     # Paid on the booking site, so the check-in needs (step 3, migration 312) are met.
     booking = book(db, unit, db.today, 2, site="Agoda")
-    # Only a check-in makes the Unit Short stay.
+
+    def shown() -> tuple[Any, ...] | None:
+        with psycopg.connect(db.owner_url) as connection:
+            return connection.execute(
+                "SELECT app.unit_status_on(id, %s), status FROM app.units WHERE id = %s",
+                (db.today, unit),
+            ).fetchone()
+
+    # C2 (DL-241): a booked night shows Short stay; only the condition is stored.
+    assert shown() == ("SHORT_STAY", "VACANT")
     refused(
         db.owner_url,
-        "55000",
+        "23514",
         (
             "UPDATE app.units SET status = 'SHORT_STAY', version = version + 1, "
             "updated_at = now() WHERE id = %s",
@@ -398,21 +407,8 @@ def test_a_booking_only_moves_forward_and_the_unit_status_follows_the_guest(
             "house_rules_signed = true, version = version + 1 WHERE id = %s",
             (db.staff, booking),
         )
-        connection.execute(
-            "UPDATE app.units SET status = 'SHORT_STAY', version = version + 1, "
-            "updated_at = now() WHERE id = %s",
-            (unit,),
-        )
-    # The guest is in: the Unit stays Short stay until the check-out.
-    refused(
-        db.owner_url,
-        "55000",
-        (
-            "UPDATE app.units SET status = 'VACANT', version = version + 1, "
-            "updated_at = now() WHERE id = %s",
-            (unit,),
-        ),
-    )
+    # The guest is in: the Unit shows Short stay until the check-out.
+    assert shown() == ("SHORT_STAY", "VACANT")
     refused(
         db.owner_url,
         "55000",
@@ -433,10 +429,7 @@ def test_a_booking_only_moves_forward_and_the_unit_status_follows_the_guest(
             "updated_at = now() WHERE id = %s",
             (unit,),
         )
-        status = connection.execute(
-            "SELECT status FROM app.units WHERE id = %s", (unit,)
-        ).fetchone()
-    assert status == ("CLEANING",)
+    assert shown() == ("CLEANING", "CLEANING")
     refused(
         db.owner_url,
         "55000",

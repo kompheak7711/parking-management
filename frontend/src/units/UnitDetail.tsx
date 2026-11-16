@@ -352,6 +352,8 @@ export function UnitDetail({
   const forRent = isForRent(unit);
   const canLease =
     forRent &&
+    // C2 (DL-241): a Signed Lease that starts later still holds the Unit.
+    unit.lease_starts_on == null &&
     (["VACANT", "CLEANING", "UNDER_MAINTENANCE"].includes(unit.status) ||
       (unit.status === "RESERVED" && reservation !== null && draft === null));
   const type = typeName(lists, unit.unit_type, khmer);
@@ -496,6 +498,9 @@ export function UnitDetail({
       <section aria-labelledby="unit-now" className="ui-card">
         <h2 id="unit-now">{ut(language, "availability")}</h2>
         <p>{ut(language, key)}</p>
+        {unit.lease_starts_on != null && (
+          <p>{ut(language, "a_lease_from", dayText(unit.lease_starts_on))}</p>
+        )}
       </section>
     );
   }
@@ -517,6 +522,7 @@ export function UnitDetail({
         <div className="ui-actions">
           {forRent &&
             unit.status === "VACANT" &&
+            unit.lease_starts_on == null &&
             may("reservations.create") && (
               <a
                 className="ui-btn primary"

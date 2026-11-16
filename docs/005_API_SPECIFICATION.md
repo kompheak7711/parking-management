@@ -284,6 +284,8 @@ history.
 
 Amended by DL-081 (login sub-slice L5, owner answers (a) to Q-2026-10-21-151 and Q-2026-10-21-160; technical points Q-2026-10-24-186, decided by Claude under the owner's 2026-10-23 22:30 rule): the Unit list, `GET /units/{unit_id}` and the Unit timeline need `units.read` for the Unit's Property (checked before the Unit is read, then again for its Property); a caller with `units.read` for no Property gets 403 at once. `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}` keep `property.manage` and now need the configured Origin and the CSRF pair.
 
+Amended by DL-241 (2026-11-16, migration `20270803_421`, DB-BS-015): every Unit answer has `status` (who holds the Unit today, `RESERVED`, `OCCUPIED` or `SHORT_STAY`, else its condition), `condition` (the stored `VACANT`, `CLEANING`, `UNDER_MAINTENANCE` or `OUT_OF_SERVICE`) and `lease_starts_on` (the Start Date of a Signed Lease that starts later, as `YYYY-MM-DD`, else null). The list filter `status` matches the word shown today. `POST /properties/{property_id}/units` and `PATCH /units/{unit_id}` accept only a condition in `status`; `RESERVED`, `OCCUPIED` or `SHORT_STAY` answers 422.
+
 # 10. Customer Endpoints
 
 ## API-030 — Customers

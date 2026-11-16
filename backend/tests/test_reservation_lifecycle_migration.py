@@ -182,7 +182,10 @@ def expired_reservation(
     connection.execute(
         """
         UPDATE app.units
-        SET status = 'RESERVED', version = version + 1,
+        SET version = version + 1,
+            -- Before C2 (DL-241) the Unit stored RESERVED; now the Reservation shows it.
+            status = CASE WHEN to_regprocedure('app.unit_held_by(uuid,date)') IS NULL
+                THEN 'RESERVED' ELSE status END,
             updated_at = statement_timestamp(), updated_by = %s
         WHERE id = %s
         """,
@@ -391,7 +394,8 @@ def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
     assert first[11] == "NON_REFUNDABLE_DISPOSITION"
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
-            "SELECT status FROM app.units WHERE id = %s", (unit_id,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id = %s",
+            (unit_id,),
         ).fetchone() == ("VACANT",)
         assert verify.execute(
             """
@@ -516,7 +520,8 @@ def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
     assert row[9] == deposit_id
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
-            "SELECT status FROM app.units WHERE id = %s", (unit_id,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id = %s",
+            (unit_id,),
         ).fetchone() == ("VACANT",)
         assert verify.execute(
             "SELECT source, action FROM app.audit_events WHERE id = %s", (event_id,)
@@ -641,7 +646,8 @@ def test_concurrent_extension_and_cancellation_have_one_version_winner(
             "SELECT status, version FROM app.reservations WHERE id = %s", (reservation_id,)
         ).fetchone()
         unit_status_row = verify.execute(
-            "SELECT status FROM app.units WHERE id = %s", (unit_id,)
+            "SELECT app.unit_status_on(id, app.unit_today(id)) FROM app.units WHERE id = %s",
+            (unit_id,),
         ).fetchone()
         assert unit_status_row is not None
         unit_status = unit_status_row[0]
@@ -656,43 +662,22 @@ def test_database_prevents_summary_drift_illegal_transition_and_history_loss(
         actor_id, _, unit_id, _, reservation_id = active_reservation(setup)
         setup.commit()
     with psycopg.connect(migrated_database_url) as owner:
-        with pytest.raises(Error) as summary_drift:
-            owner.execute(
-                """
-                UPDATE app.units SET status = 'VACANT', version = version + 1,
-                    updated_at = statement_timestamp(), updated_by = %s WHERE id = %s
-                """,
-                (actor_id, unit_id),
-            )
-        assert summary_drift.value.sqlstate == "23514"
+        # C2 (DL-241): only the condition is stored; the Reservation still holds the Unit.
+        owner.execute(
+            """
+            UPDATE app.units SET status = 'CLEANING', version = version + 1,
+                updated_at = statement_timestamp(), updated_by = %s WHERE id = %s
+            """,
+            (actor_id, unit_id),
+        )
+        shown = owner.execute(
+            "SELECT app.unit_status_on(id, app.unit_today(id)), status FROM app.units "
+            "WHERE id = %s",
+            (unit_id,),
+        ).fetchone()
+        assert shown == ("RESERVED", "CLEANING")
         owner.rollback()
-        occurred_at = datetime.now(UTC)
-        with pytest.raises(Error) as omitted_release:
-            owner.execute(
-                """
-                INSERT INTO app.reservation_lifecycle_events (
-                    id, reservation_id, event_kind, cancellation_reason_code,
-                    cancellation_responsibility, property_could_provide_unit,
-                    authorization_reference, occurred_at, business_date, actor_id,
-                    expected_version, resulting_version
-                ) VALUES (%s,%s,'CANCELLATION','CUSTOMER_REQUESTED','CUSTOMER',true,
-                    'reservations.cancel',%s,%s,%s,1,2)
-                """,
-                (uuid4(), reservation_id, occurred_at, occurred_at.date(), actor_id),
-            )
-            owner.execute(
-                """
-                UPDATE app.reservations
-                SET status = 'CANCELLED', cancellation_reason_code = 'CUSTOMER_REQUESTED',
-                    cancellation_responsibility = 'CUSTOMER', cancelled_at = %s,
-                    version = version + 1, updated_at = %s, updated_by = %s
-                WHERE id = %s
-                """,
-                (occurred_at, occurred_at, actor_id, reservation_id),
-            )
-            owner.execute("SET CONSTRAINTS ALL IMMEDIATE")
-        assert omitted_release.value.sqlstate == "23514"
-        owner.rollback()
+        # C2 (DL-241): a Reservation no longer releases a stored word; nothing to omit.
         with pytest.raises(Error) as move_in_bypass:
             owner.execute(
                 """
