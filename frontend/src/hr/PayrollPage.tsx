@@ -22,6 +22,7 @@ import {
   nameOf,
   NoProperty,
   ReasonField,
+  useCardLabels,
   useHrBusy,
   Waiting,
 } from "./common";
@@ -37,6 +38,7 @@ import {
   type PayrollState,
 } from "./hrClient";
 import { codeText, ht } from "./text";
+import { PageHeader } from "../shell/layouts";
 import { PageHead } from "../shell/pageHead";
 
 export interface PayrollPageProps {
@@ -86,6 +88,7 @@ export function PayrollPage({
   const read = useCallback(() => api.payrolls(propertyId), [api, propertyId]);
   const list = useRead<PayrollList>(ready, read);
   const [done, setDone] = useState<string | null>(null);
+  const cardLabels = useCardLabels();
   if (propertyId === "") return <NoProperty language={language} />;
   if (detail !== null) {
     return (
@@ -109,7 +112,7 @@ export function PayrollPage({
   return (
     <>
       <Done text={done} />
-      <section aria-labelledby="hr-p-title" className="ui-card">
+      <section aria-labelledby="hr-p-title" className="ui-card hr-rules">
         <PageHead>
           <div>
             <h2 id="hr-p-title">{ht(language, "p_title")}</h2>
@@ -152,7 +155,7 @@ export function PayrollPage({
           <p className="ui-empty">{ht(language, "p_none")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            <table className="ui-table ui-rowcards hr-cards" ref={cardLabels}>
               <thead>
                 <tr>
                   <th scope="col">{ht(language, "p_title")}</th>
@@ -275,6 +278,7 @@ function RunView({
   const [opened, setOpened] = useState<Opened>(null);
   const [done, setDone] = useState<string | null>(null);
   const sending = useHrBusy(language);
+  const cardLabels = useCardLabels();
   const back = (
     <button
       className="ui-crumb"
@@ -354,23 +358,11 @@ function RunView({
   ];
   return (
     <>
-      {back}
-      <Done text={done} />
-      <section aria-labelledby="hr-pr-title" className="ui-card">
-        <PageHead>
-          <div>
-            <h2 id="hr-pr-title">
-              {ht(language, "p_for", monthLabel(language, run.salary_month))}{" "}
-              <span className="ui-sub2 ui-num">{run.run_number}</span>
-            </h2>
-            <p>
-              {stateChip(language, run)}{" "}
-              {ht(language, "p_pay_on", dayText(run.pay_date))}
-              {run.run_kind === "CORRECTION" &&
-                ` · ${ht(language, "p_correction")}`}
-            </p>
-          </div>
-          <div className="ui-actions">
+      {/* Staff review fix 2: the shared record head, with the payroll number and month as
+          the page title. */}
+      <PageHeader
+        actions={
+          <>
             {open && canPrepare && (
               <>
                 <button
@@ -441,8 +433,26 @@ function RunView({
                 {ht(language, "p_make_correction")}
               </button>
             )}
-          </div>
-        </PageHead>
+          </>
+        }
+        back={back}
+        badge={stateChip(language, run)}
+        summary={
+          <>
+            {ht(language, "p_pay_on", dayText(run.pay_date))}
+            {run.run_kind === "CORRECTION" &&
+              ` · ${ht(language, "p_correction")}`}
+          </>
+        }
+        title={
+          <>
+            {ht(language, "p_for", monthLabel(language, run.salary_month))}{" "}
+            <span className="ui-num">· {run.run_number}</span>
+          </>
+        }
+      />
+      <Done text={done} />
+      <section aria-label={ht(language, "a_status")} className="ui-card">
         <Failure text={sending.failure} />
         <ol aria-label={ht(language, "a_status")} className="ui-msteps">
           {steps.map((step, index) => (
@@ -501,7 +511,7 @@ function RunView({
           {ht(language, "p_people")}
         </h2>
         <div className="ui-tablewrap">
-          <table className="ui-table">
+          <table className="ui-table ui-rowcards hr-cards" ref={cardLabels}>
             <thead>
               <tr>
                 <th scope="col">{ht(language, "e_name")}</th>
@@ -526,7 +536,7 @@ function RunView({
                         {person.employee_code}
                       </span>
                     </td>
-                    <td>
+                    <td className="ui-rc-wide">
                       <ul className="ui-plain">
                         {person.lines.map((line) => (
                           <li key={line.line_id}>
@@ -588,7 +598,7 @@ function RunView({
                           </span>
                         )}
                     </td>
-                    <td>
+                    <td className="ui-rc-wide">
                       <span className="ui-actions">
                         {person.payslip !== null && (
                           <button

@@ -71642,6 +71642,26 @@
       "test_path": "frontend/src/reports/RegisterView.test.tsx",
       "status": "implemented",
       "notes": "Reports review (owner 16/11/2026, all 7): on a phone each register row is a small card whose cells after the first carry their column heading, and a chart's screen-reader table sits in a hidden box so it never widens the page."
+    },
+    {
+      "test_id": "TEST-FE-2235",
+      "upstream_ids": [
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/history/HistoryPage.test.tsx",
+      "status": "implemented",
+      "notes": "Audit log and Staff review (owner 16/11/2026, all 12), fixes 10-12: plain step words without the area code, Staff, Ledger and Telegram tags, no decision-log code in a reason, the audit log's own searches hidden until Show searches is ticked (still saved and exported), and a dash for a record that opens no page."
+    },
+    {
+      "test_id": "TEST-FE-2236",
+      "upstream_ids": [
+        "UI-008"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/hr/HrPages.test.tsx",
+      "status": "implemented",
+      "notes": "Audit log and Staff review (owner 16/11/2026, all 12), fixes 1, 2 and 8: the employee page's head is the name (shared record head), each Employment history entry is one block beside its dot, and the ID details have their own card with a dash for an empty value."
     }
   ]
 }

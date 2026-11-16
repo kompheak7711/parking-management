@@ -32,7 +32,7 @@ import {
   type HistoryFilter,
   HistoryNotAllowedError,
 } from "./historyClient";
-import { actionText, hit, kindOf, kindText } from "./text";
+import { actionText, hit, kindOf, kindText, reasonText } from "./text";
 import { PageHead } from "../shell/pageHead";
 
 export interface HistoryExportApi {
@@ -127,6 +127,9 @@ export function HistoryPage({
   const [next, setNext] = useState<string | null>(null);
   const [failure, setFailure] = useState<"failed" | "not_allowed" | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Staff review fix 11 (owner 16/11/2026): every opening of this page is itself recorded, so
+  // those search lines are hidden unless asked for. They are still saved and still exported.
+  const [showSearches, setShowSearches] = useState(false);
   const [names, setNames] = useState<Map<string, string>>(new Map());
   const [unitList, setUnitList] = useState<{ id: string; number: string }[]>(
     [],
@@ -415,6 +418,16 @@ export function HistoryPage({
         <Icon name="search" small />
         {hit(language, "hi_search")}
       </button>
+      <label className="ui-chk">
+        <input
+          checked={showSearches}
+          onChange={(event) => {
+            setShowSearches(event.currentTarget.checked);
+          }}
+          type="checkbox"
+        />
+        {hit(language, "hi_searches")}
+      </label>
     </form>
   );
 
@@ -444,6 +457,13 @@ export function HistoryPage({
 
   const unitNumber = (id: string) =>
     unitList.find((unit) => unit.id === id)?.number;
+  const isSearch = (event: HistoryEvent) => event.action === "audit.searched";
+  const listed =
+    events === null || showSearches
+      ? events
+      : events.filter((event) => !isSearch(event));
+  const hiddenSearches =
+    events === null || listed === null ? 0 : events.length - listed.length;
 
   return (
     <>
@@ -458,11 +478,11 @@ export function HistoryPage({
         )}
       </div>
       <section aria-label={hit(language, "hi_title")} className="ui-card pad0">
-        {events === null ? (
+        {listed === null ? (
           <p className="ui-empty" role="status">
             {hit(language, "loading")}
           </p>
-        ) : events.length === 0 ? (
+        ) : listed.length === 0 ? (
           <p className="ui-empty">{hit(language, "hi_none")}</p>
         ) : (
           <div className="ui-tablewrap">
@@ -478,16 +498,23 @@ export function HistoryPage({
                 </tr>
               </thead>
               <tbody>
-                {events.map((event) => {
+                {listed.map((event) => {
                   const when = momentText(event.occurred_at);
                   const page = RECORD_PAGES[event.resource_type];
-                  const kind = kindText(language, kindOf(event.resource_type));
+                  const kind = kindText(
+                    language,
+                    kindOf(event.resource_type, event.action),
+                  );
                   // The kind is in its own column; the record shows the Unit number or a
-                  // short id, and its full name is read out.
-                  const record =
-                    (event.resource_type === "unit"
+                  // short id, and its full name is read out. Staff review fix 12: a short id
+                  // that opens no page means nothing to a person, so it shows a dash.
+                  const unit =
+                    event.resource_type === "unit"
                       ? unitNumber(event.resource_id)
-                      : undefined) ?? event.resource_id.slice(0, 8);
+                      : undefined;
+                  const record =
+                    unit ??
+                    (page === undefined ? "—" : event.resource_id.slice(0, 8));
                   return (
                     <tr key={event.event_id}>
                       <td className="ui-num">
@@ -506,16 +533,18 @@ export function HistoryPage({
                             <Chip tone="warn">{hit(language, "refused")}</Chip>
                           </>
                         )}
-                        {event.reason.trim() !== "" && (
+                        {reasonText(event.reason) !== "" && (
                           <span className="ui-sub2">
-                            {hit(language, "reason", event.reason)}
+                            {hit(language, "reason", reasonText(event.reason))}
                           </span>
                         )}
                       </td>
                       <td>
                         {page === undefined ? (
                           <span
-                            aria-label={`${kind} ${record}`}
+                            aria-label={
+                              record === "—" ? undefined : `${kind} ${record}`
+                            }
                             className="ui-num"
                           >
                             {record}
@@ -537,12 +566,14 @@ export function HistoryPage({
             </table>
           </div>
         )}
-        {events !== null && (
+        {listed !== null && (
           <div className="ui-tfoot ui-tfoot-row">
             <span>
-              {events.length === 1
+              {listed.length === 1
                 ? hit(language, "hi_n1")
-                : hit(language, "hi_n", events.length)}{" "}
+                : hit(language, "hi_n", listed.length)}
+              {hiddenSearches > 0 &&
+                ` · ${hit(language, "hi_searches_hidden", hiddenSearches)}`}{" "}
               · {hit(language, "hi_note")}
             </span>
             {next !== null && (

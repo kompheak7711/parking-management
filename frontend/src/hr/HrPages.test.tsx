@@ -557,6 +557,45 @@ describe("HRIS phase 6 screens", () => {
     );
   });
 
+  it("TEST-FE-2236 Staff review fixes 1, 2 and 8: the employee page's head is the name, each history entry is one block beside its dot, and the ID details have their own card with a dash for an empty value", async () => {
+    window.history.replaceState(null, "", "#/employees/emp-1");
+    const api = fakeApi({
+      employee: vi.fn(() =>
+        Promise.resolve({
+          ...DETAIL,
+          identity: { ...ID_DETAILS, nssf_number: null },
+        }),
+      ),
+    });
+    render(
+      <EmployeesPage
+        active
+        api={api}
+        capabilities={null}
+        language="en"
+        propertyId={PROPERTY}
+      />,
+    );
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Chan Dara" }),
+    ).toBeVisible();
+    const history = screen.getByRole("region", { name: "Employment history" });
+    const entry = within(history).getAllByRole("listitem")[0];
+    expect(entry?.children).toHaveLength(1);
+    expect(entry?.textContent).toContain("New employee");
+    const idCard = screen.getByRole("region", { name: "ID details" });
+    expect(within(idCard).getByText("NSSF number")).toBeVisible();
+    expect(
+      within(idCard).getByRole("button", { name: "Change ID details" }),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole("region", { name: "Pay details" })).queryByText(
+        "NSSF number",
+      ),
+    ).toBeNull();
+    expect(within(idCard).getAllByText("—").length).toBeGreaterThan(0);
+  });
+
   it("TEST-FE-1302 links a Telegram request to an employee with the ticked roles; only the Owner sees Authorizer", async () => {
     const api = fakeApi({
       staffRequests: vi.fn(() =>
@@ -1013,7 +1052,8 @@ describe("HRIS phase 6 screens", () => {
     ).toHaveLength(1);
     const caretakerRow = screen.getByRole("row", { name: /Sample Caretaker/ });
     expect(within(caretakerRow).queryByText("Fewer than 1 day off")).toBeNull();
-    expect(within(caretakerRow).getByText(/3 of 2 days off/)).toBeVisible();
+    // Staff review fix 7: one month in the week, so only "3 of 2" under "Days off".
+    expect(within(caretakerRow).getByText("3 of 2")).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Plan · Lim Sokha · 08/11/2026" }),
     );

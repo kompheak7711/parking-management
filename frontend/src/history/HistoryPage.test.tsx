@@ -133,6 +133,56 @@ const rows = () =>
     );
 
 describe("History", () => {
+  it("TEST-FE-2235 Staff review fixes 10-12: plain step words, Staff, Ledger and Telegram tags, no decision code in a reason, the page's own searches hidden until asked for, a dash for a record that opens no page", async () => {
+    const page: Page = {
+      events: [
+        event({
+          event_id: "s1",
+          actor_id: ME,
+          action: "audit.searched",
+          resource_type: "audit_search",
+          reason: "Audit search (DL-072 answer 14)",
+        }),
+        event({
+          event_id: "s2",
+          action: "hr.attendance.entered",
+          resource_type: "employee",
+          reason: "Sample entry",
+        }),
+        event({
+          event_id: "s3",
+          action: "gl.expense.recorded",
+          resource_type: "gl_expense",
+        }),
+        event({
+          event_id: "s4",
+          action: "telegram.link.made",
+          resource_type: "telegram_link",
+        }),
+      ],
+      nextCursor: null,
+    };
+    setup(vi.fn(() => Promise.resolve(page)));
+    await screen.findByRole("table");
+    await waitFor(() => {
+      expect(rows()).toHaveLength(3);
+    });
+    expect(rows().map((row) => row.slice(2))).toEqual([
+      ["Staff", "Attendance enteredReason: Sample entry", "—"],
+      ["Ledger", "Expense recorded", "—"],
+      ["Telegram", "Telegram link made", "—"],
+    ]);
+    expect(screen.getByText(/^3 events · 1 search hidden/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Show searches" }));
+    expect(rows()).toHaveLength(4);
+    expect(rows()[0]?.slice(2)).toEqual([
+      "Export or search",
+      "Audit searchedReason: Audit search",
+      "—",
+    ]);
+    expect(screen.getByText(/^4 events · Each search/)).toBeTruthy();
+  });
+
   it("TEST-FE-958 opens on the last 7 days with one search; shows when, who, the kind, what happened with the reason, and links the record; Show more reads the next page", async () => {
     const { api } = setup();
     await screen.findByRole("table");
@@ -163,7 +213,8 @@ describe("History", () => {
         "A user (33333333)",
         "Final Settlement",
         "Final settlement correction confirmed Rejected",
-        "55555555",
+        // Staff review fix 12: a record that opens no page shows a dash.
+        "—",
       ],
     ]);
     expect(

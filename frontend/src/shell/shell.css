@@ -1331,6 +1331,14 @@ a.shell-me-text[aria-current="page"] b {
   border-bottom: 1px solid var(--border);
 }
 
+/* Staff review fix 3 (owner 16/11/2026): the head is as tall as a button row on every tab, so
+   the tab row stays in the same place whether the open tab has buttons or not. */
+@media (min-width: 641px) {
+  .shell-head.shell-head-tabbed:not(.shell-head-many) {
+    min-height: 50px;
+  }
+}
+
 .shell-head-tabbed > .shell-tabs {
   flex: 1 1 auto;
   margin-top: 0;

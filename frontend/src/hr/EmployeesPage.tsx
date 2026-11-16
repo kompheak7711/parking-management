@@ -23,6 +23,7 @@ import {
   NoProperty,
   ReasonField,
   shiftText,
+  useCardLabels,
   useHrBusy,
   Waiting,
 } from "./common";
@@ -41,6 +42,7 @@ import {
   type StaffRequest,
 } from "./hrClient";
 import { codeText, ht } from "./text";
+import { PageHeader } from "../shell/layouts";
 import { PageHead } from "../shell/pageHead";
 
 export interface EmployeesPageProps {
@@ -193,6 +195,7 @@ function EmployeeList({
   onChoicesChanged: () => void;
 }) {
   const [view, setView] = useState<"active" | "left">("active");
+  const cardLabels = useCardLabels();
   const [adding, setAdding] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const canManage = choices?.can_manage === true;
@@ -280,7 +283,7 @@ function EmployeeList({
           <p className="ui-empty">{ht(language, "e_none")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            <table className="ui-table ui-rowcards hr-cards" ref={cardLabels}>
               <thead>
                 <tr>
                   <th scope="col">{ht(language, "e_name")}</th>
@@ -672,6 +675,7 @@ function AddEmployeeDialog({
           onChange={(event) => {
             setPhoto(event.target.files?.[0] ?? null);
           }}
+          className="hr-file"
           type="file"
         />
       </Field>
@@ -1267,27 +1271,16 @@ function EmployeeView({
     answer.reload();
   };
   const step = (body: Body) => api.employeeStep(propertyId, person, body);
+  const job =
+    person.job_title === null ? "" : nameOf(language, person.job_title);
   return (
     <>
-      {back}
-      <Done text={done} />
-      {newCode !== null && (
-        <div className="ui-notice warn" role="status">
-          <Icon name="alert" />
-          <p>{ht(language, "c_new_code", newCode)}</p>
-        </div>
-      )}
-      <section aria-labelledby="hr-ed-title" className="ui-card">
-        <PageHead>
-          <div>
-            <h2 id="hr-ed-title">
-              {name}{" "}
-              <span className="ui-sub2 ui-num">{person.employee_code}</span>
-            </h2>
-            <p>{stateChip(language, person)}</p>
-          </div>
-          {canManage && working && (
-            <div className="ui-actions">
+      {/* Staff review fix 2: the shared record head, with the name as the page title. */}
+      <PageHeader
+        actions={
+          canManage &&
+          working && (
+            <>
               <button
                 className="ui-btn"
                 onClick={() => {
@@ -1308,10 +1301,26 @@ function EmployeeView({
                   {ht(language, "e_set_end")}
                 </button>
               )}
-            </div>
-          )}
-        </PageHead>
-      </section>
+            </>
+          )
+        }
+        back={back}
+        badge={stateChip(language, person)}
+        summary={
+          <>
+            <span className="ui-num">{person.employee_code}</span>
+            {job !== "" && ` · ${job}`}
+          </>
+        }
+        title={name}
+      />
+      <Done text={done} />
+      {newCode !== null && (
+        <div className="ui-notice warn" role="status">
+          <Icon name="alert" />
+          <p>{ht(language, "c_new_code", newCode)}</p>
+        </div>
+      )}
       <div className="ui-split">
         <div className="ui-stack">
           <section aria-labelledby="hr-ed-det" className="ui-card">
@@ -1335,7 +1344,7 @@ function EmployeeView({
               <dt>{ht(language, "e_name_km")}</dt>
               <dd lang="km">{person.name_km}</dd>
               <dt>{ht(language, "e_phone")}</dt>
-              <dd>{person.phone ?? ""}</dd>
+              <dd>{orDash(person.phone)}</dd>
               <dt>{ht(language, "e_job")}</dt>
               <dd>
                 {person.job_title === null
@@ -1559,6 +1568,13 @@ function EmployeeView({
   );
 }
 
+/** An empty value shows a dash (Staff review fix 8). */
+function orDash(value: string | null | undefined): string {
+  return value === null || value === undefined || value.trim() === ""
+    ? "—"
+    : value;
+}
+
 function PayCard({
   language,
   person,
@@ -1583,11 +1599,11 @@ function PayCard({
   const pay = person.pay ?? null;
   const identity = person.identity ?? null;
   return (
-    <section aria-labelledby="hr-ed-pay" className="ui-card">
-      <div className="ui-chead">
-        <h2 id="hr-ed-pay">{ht(language, "e_pay")}</h2>
-        {canChange && (
-          <span className="ui-actions">
+    <>
+      <section aria-labelledby="hr-ed-pay" className="ui-card">
+        <div className="ui-chead">
+          <h2 id="hr-ed-pay">{ht(language, "e_pay")}</h2>
+          {canChange && (
             <button
               className="ui-btn link"
               onClick={() => {
@@ -1597,61 +1613,72 @@ function PayCard({
             >
               {ht(language, "e_change_pay")}
             </button>
-            <button
-              className="ui-btn link"
-              onClick={() => {
-                onOpen("identity");
-              }}
-              type="button"
-            >
-              {ht(language, "e_change_id")}
-            </button>
-          </span>
-        )}
-      </div>
-      {pay === null ? (
-        <p className="ui-muted">{ht(language, "e_pay_none")}</p>
-      ) : (
-        <dl className="ui-kv">
-          <dt>{ht(language, "e_salary")}</dt>
-          <dd className="ui-num">
-            {ht(language, "per_month", money(pay.monthly_salary_usd_cents))}
-          </dd>
-          <dd className="note">
-            {ht(language, "e_from")} {dayText(pay.effective_date)}
-          </dd>
-          <dt>{ht(language, "e_method")}</dt>
-          <dd>{codeText(language, "pm_", pay.payment_method)}</dd>
-          {pay.payment_method === "ABA" && (
-            <>
-              <dt>{ht(language, "e_aba_name")}</dt>
-              <dd>{pay.aba_account_name ?? ""}</dd>
-              <dt>{ht(language, "e_aba_number")}</dt>
-              <dd className="ui-num">{pay.aba_account_number ?? ""}</dd>
-            </>
           )}
-        </dl>
-      )}
+        </div>
+        {pay === null ? (
+          <p className="ui-muted">{ht(language, "e_pay_none")}</p>
+        ) : (
+          <dl className="ui-kv">
+            <dt>{ht(language, "e_salary")}</dt>
+            <dd className="ui-num">
+              {ht(language, "per_month", money(pay.monthly_salary_usd_cents))}
+            </dd>
+            <dd className="note">
+              {ht(language, "e_from")} {dayText(pay.effective_date)}
+            </dd>
+            <dt>{ht(language, "e_method")}</dt>
+            <dd>{codeText(language, "pm_", pay.payment_method)}</dd>
+            {pay.payment_method === "ABA" && (
+              <>
+                <dt>{ht(language, "e_aba_name")}</dt>
+                <dd>{orDash(pay.aba_account_name)}</dd>
+                <dt>{ht(language, "e_aba_number")}</dt>
+                <dd className="ui-num">{orDash(pay.aba_account_number)}</dd>
+              </>
+            )}
+          </dl>
+        )}
+      </section>
+      {/* Staff review fix 8: the ID details in their own card, so the labels line up. */}
       {identity !== null && (
-        <dl className="ui-kv">
-          <dt>{ht(language, "e_id_type")}</dt>
-          <dd>{codeText(language, "id_", identity.id_type)}</dd>
-          <dt>{ht(language, "e_id")}</dt>
-          <dd className="ui-num">{identity.id_number ?? ""}</dd>
-          <dt>{ht(language, "e_birth")}</dt>
-          <dd className="ui-num">{dayText(identity.date_of_birth)}</dd>
-          <dt>{ht(language, "e_birth_place")}</dt>
-          <dd>{identity.place_of_birth ?? ""}</dd>
-          <dt>{ht(language, "e_nssf")}</dt>
-          <dd className="ui-num">{identity.nssf_number ?? ""}</dd>
-          <dt>{ht(language, "e_address")}</dt>
-          <dd>{identity.home_address ?? ""}</dd>
-        </dl>
+        <section aria-labelledby="hr-ed-id" className="ui-card">
+          <div className="ui-chead">
+            <h2 id="hr-ed-id">{ht(language, "e_id_head")}</h2>
+            {canChange && (
+              <button
+                className="ui-btn link"
+                onClick={() => {
+                  onOpen("identity");
+                }}
+                type="button"
+              >
+                {ht(language, "e_change_id")}
+              </button>
+            )}
+          </div>
+          <dl className="ui-kv">
+            <dt>{ht(language, "e_id_type")}</dt>
+            <dd>{codeText(language, "id_", identity.id_type)}</dd>
+            <dt>{ht(language, "e_id")}</dt>
+            <dd className="ui-num">{orDash(identity.id_number)}</dd>
+            <dt>{ht(language, "e_birth")}</dt>
+            <dd className="ui-num">
+              {identity.date_of_birth === null
+                ? "—"
+                : dayText(identity.date_of_birth)}
+            </dd>
+            <dt>{ht(language, "e_birth_place")}</dt>
+            <dd>{orDash(identity.place_of_birth)}</dd>
+            <dt>{ht(language, "e_nssf")}</dt>
+            <dd className="ui-num">{orDash(identity.nssf_number)}</dd>
+            <dt>{ht(language, "e_address")}</dt>
+            <dd>{orDash(identity.home_address)}</dd>
+          </dl>
+        </section>
       )}
-    </section>
+    </>
   );
 }
-
 function TelegramCard({
   language,
   person,
@@ -1749,14 +1776,19 @@ function HistoryCard({
       <ul className="ui-timeline">
         {lines.map((line) => (
           <li key={line.key}>
-            <strong>
-              <span className="ui-num">{dayText(line.day)}</span> · {line.what}
-            </strong>
-            {line.detail !== "" && (
-              <span className="ui-sub2">{line.detail}</span>
-            )}
-            {line.why !== "" && <span className="ui-sub2">{line.why}</span>}
-            <span className="ui-sub2 ui-muted">{line.by}</span>
+            {/* Staff review fix 1: one block beside the dot, so the lines never squeeze
+                into the dot's narrow column. */}
+            <div>
+              <strong>
+                <span className="ui-num">{dayText(line.day)}</span> ·{" "}
+                {line.what}
+              </strong>
+              {line.detail !== "" && (
+                <span className="ui-sub2">{line.detail}</span>
+              )}
+              {line.why !== "" && <span className="ui-sub2">{line.why}</span>}
+              <span className="ui-sub2 ui-muted">{line.by}</span>
+            </div>
           </li>
         ))}
       </ul>
@@ -2537,6 +2569,7 @@ function FileDialog({
           onChange={(event) => {
             setFile(event.target.files?.[0] ?? null);
           }}
+          className="hr-file"
           type="file"
         />
       </Field>

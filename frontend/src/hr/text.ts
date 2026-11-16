@@ -849,6 +849,9 @@ const TEXT = {
   cr_OTHER: ["Other", "ផ្សេងទៀត"],
   a_week_before: ["Previous week", "សប្ដាហ៍មុន"],
   a_next_week: ["Next week", "សប្ដាហ៍ក្រោយ"],
+  // new (Staff review fix 6): the month views move with words, like the day and the week.
+  a_month_before: ["Previous month", "ខែមុន"],
+  a_next_month: ["Next month", "ខែក្រោយ"],
   a_off: ["Day off", "ឈប់"],
   a_days_off: ["Days off", "ថ្ងៃឈប់"],
   a_fewer_off: ["Too few days off (minimum {0})", "តិចជាង {0} ថ្ងៃឈប់"],
@@ -857,6 +860,8 @@ const TEXT = {
     // new
     "{0}៖ ឈប់ {1} ក្នុងចំណោម {2} ថ្ងៃ",
   ],
+  // new (Staff review fix 7): the days off of this month on the Weekly plan.
+  a_off_of: ["{0} of {1}", "{0} ក្នុងចំណោម {1}"],
   a_past_note: [
     "Past days cannot be changed. An employee with fewer days off than the weekly minimum ({0}) gets a warning, but the plan can still be saved.",
     "ថ្ងៃកន្លងហើយមិនអាចប្ដូរ។ អ្នកមានថ្ងៃឈប់តិចជាង {0} ក្នុងសប្ដាហ៍ ទទួលការព្រមាន វាមិនបញ្ឈប់ផែនការទេ។",

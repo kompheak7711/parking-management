@@ -21,6 +21,7 @@ import {
   nameOf,
   NoProperty,
   ReasonField,
+  useCardLabels,
   useHrBusy,
   Waiting,
 } from "./common";
@@ -71,6 +72,7 @@ export function LoansPage({
 }: LoansPageProps) {
   const ready = active && propertyId !== "";
   const read = useCallback(() => api.loans(propertyId), [api, propertyId]);
+  const cardLabels = useCardLabels();
   const answer = useRead<LoanList>(ready, read);
   const readPeople = useCallback(
     () => api.employees(propertyId),
@@ -98,7 +100,7 @@ export function LoansPage({
   return (
     <>
       <Done text={done} />
-      <section aria-labelledby="hr-l-title" className="ui-card">
+      <section aria-labelledby="hr-l-title" className="ui-card hr-rules">
         <PageHead>
           <div>
             <h2 id="hr-l-title">{ht(language, "l_title")}</h2>
@@ -139,7 +141,7 @@ export function LoansPage({
           <p className="ui-empty">{ht(language, "l_none")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            <table className="ui-table ui-rowcards hr-cards" ref={cardLabels}>
               <thead>
                 <tr>
                   <th scope="col">{ht(language, "l_number")}</th>
@@ -180,7 +182,7 @@ export function LoansPage({
                     <td className="r ui-num">
                       {loan.state === "PAID_OUT"
                         ? money(loan.owed_usd_cents)
-                        : ""}
+                        : "—"}
                     </td>
                     <td>
                       <Chip tone={TONE[loan.state]}>
@@ -204,8 +206,9 @@ export function LoansPage({
                         </span>
                       )}
                     </td>
-                    <td>
-                      <span className="ui-actions">
+                    <td className="ui-rc-wide">
+                      {/* Staff review fix 5: Approve and Refuse side by side. */}
+                      <span className="ui-actions hr-nowrap">
                         {loan.state === "WAITING" && data.can_approve && (
                           <>
                             <button

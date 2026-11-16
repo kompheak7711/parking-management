@@ -29,6 +29,7 @@ import {
   ReasonField,
   shiftChoices,
   shiftText,
+  useCardLabels,
   useHrBusy,
   Waiting,
   weekdayOf,
@@ -99,32 +100,32 @@ export function AttendancePage({
   const ready = active && propertyId !== "";
   return (
     <>
-      <section aria-labelledby="hr-a-title" className="ui-card">
-        <PageHead>
-          <div>
-            <h2 id="hr-a-title">{ht(language, "a_title")}</h2>
-            <p>{ht(language, "a_sub")}</p>
-          </div>
-        </PageHead>
-        <div
-          aria-label={ht(language, "a_title")}
-          className="ui-seg"
-          role="group"
-        >
-          {VIEWS.map((which) => (
-            <button
-              aria-pressed={view === which}
-              key={which}
-              onClick={() => {
-                setView(which);
-              }}
-              type="button"
-            >
-              {ht(language, `a_${which}` as const)}
-            </button>
-          ))}
+      {/* Staff review fix 6: the view switch fits its five choices and has no card of its
+          own; two choices a row on a phone. */}
+      <PageHead>
+        <div>
+          <h2 id="hr-a-title">{ht(language, "a_title")}</h2>
+          <p>{ht(language, "a_sub")}</p>
         </div>
-      </section>
+      </PageHead>
+      <div
+        aria-label={ht(language, "a_title")}
+        className="ui-seg hr-views"
+        role="group"
+      >
+        {VIEWS.map((which) => (
+          <button
+            aria-pressed={view === which}
+            key={which}
+            onClick={() => {
+              setView(which);
+            }}
+            type="button"
+          >
+            {ht(language, `a_${which}` as const)}
+          </button>
+        ))}
+      </div>
       {view === "day" && (
         <DaySheet
           active={ready}
@@ -220,6 +221,7 @@ function DaySheet({ language, propertyId, api, active }: PartProps) {
     [api, propertyId, day],
   );
   const answer = useRead<AttendanceDay>(active, read);
+  const cardLabels = useCardLabels();
   const sheet = answer.data;
   if (sheet === null)
     return (
@@ -307,7 +309,7 @@ function DaySheet({ language, propertyId, api, active }: PartProps) {
           <p className="ui-empty">{ht(language, "a_nobody")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            <table className="ui-table ui-rowcards hr-cards" ref={cardLabels}>
               <thead>
                 <tr>
                   <th scope="col">{ht(language, "e_name")}</th>
@@ -741,7 +743,8 @@ function WeekPlan({ language, propertyId, api, active }: PartProps) {
           <p className="ui-empty">{ht(language, "a_nobody")}</p>
         ) : (
           <div className="ui-tablewrap">
-            <table className="ui-table">
+            {/* Staff review fix 7: names on one line, the same row line under every cell. */}
+            <table className="ui-table hr-week">
               <thead>
                 <tr>
                   <th scope="col">{ht(language, "e_name")}</th>
@@ -839,13 +842,22 @@ function WeekPlan({ language, propertyId, api, active }: PartProps) {
                                     : "neutral"
                                 }
                               >
-                                {ht(
-                                  language,
-                                  "a_month_off",
-                                  monthLabel(language, month.month),
-                                  month.planned,
-                                  person.days_off_per_month ?? 0,
-                                )}
+                                {/* Staff review fix 7: the month is named only when
+                                    the week has days in two months. */}
+                                {(person.month_days_off ?? []).length > 1
+                                  ? ht(
+                                      language,
+                                      "a_month_off",
+                                      monthLabel(language, month.month),
+                                      month.planned,
+                                      person.days_off_per_month ?? 0,
+                                    )
+                                  : ht(
+                                      language,
+                                      "a_off_of",
+                                      month.planned,
+                                      person.days_off_per_month ?? 0,
+                                    )}
                               </Chip>
                             </span>
                           ))
@@ -1017,10 +1029,7 @@ function Overtime({ language, propertyId, api, active }: PartProps) {
               }}
               type="button"
             >
-              <Icon name="back" small />
-              <span className="ui-sr">
-                {monthLabel(language, previousMonth(list.month))}
-              </span>
+              {ht(language, "a_month_before")}
             </button>
             <button
               className="ui-btn"
@@ -1030,10 +1039,7 @@ function Overtime({ language, propertyId, api, active }: PartProps) {
               }}
               type="button"
             >
-              <Icon name="forward" small />
-              <span className="ui-sr">
-                {monthLabel(language, nextMonth(list.month))}
-              </span>
+              {ht(language, "a_next_month")}
             </button>
             {list.can_request && (
               <button
@@ -1402,10 +1408,7 @@ function MonthSummary({ language, propertyId, api, active }: PartProps) {
             }}
             type="button"
           >
-            <Icon name="back" small />
-            <span className="ui-sr">
-              {monthLabel(language, previousMonth(shown))}
-            </span>
+            {ht(language, "a_month_before")}
           </button>
           <button
             className="ui-btn"
@@ -1414,10 +1417,7 @@ function MonthSummary({ language, propertyId, api, active }: PartProps) {
             }}
             type="button"
           >
-            <Icon name="forward" small />
-            <span className="ui-sr">
-              {monthLabel(language, nextMonth(shown))}
-            </span>
+            {ht(language, "a_next_month")}
           </button>
         </span>
         {data.locked && (
@@ -1549,8 +1549,8 @@ function Places({ language, propertyId, api, active }: PartProps) {
                 {data.places.map((place) => (
                   <tr key={place.place_id}>
                     <td>
+                      {/* Staff review fix 9: no computer code under the name. */}
                       {nameOf(language, place)}
-                      <span className="ui-sub2 ui-num">{place.code}</span>
                     </td>
                     <td>
                       {place.latitude === null || place.longitude === null ? (

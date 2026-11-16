@@ -100,6 +100,13 @@ const TEXT = {
   k_setting: ["Settings", "ការកំណត់"],
   k_user: ["User", "អ្នកប្រើ"],
   k_export: ["Export or search", "នាំចេញ ឬស្វែងរក"],
+  // new (Staff review fix 10): the Staff, Ledger and Telegram steps get their own tag.
+  k_staff: ["Staff", "បុគ្គលិក"],
+  k_ledger: ["Ledger", "សៀវភៅបញ្ជី"],
+  k_telegram: ["Telegram", "តេឡេក្រាម"],
+  // new (Staff review fix 11): the audit log's own searches are hidden unless asked for.
+  hi_searches: ["Show searches", "បង្ហាញការស្វែងរក"],
+  hi_searches_hidden: ["{0} searches hidden", "លាក់ការស្វែងរក {0}"],
   k_other: ["Other", "ផ្សេងទៀត"],
 } as const satisfies Record<string, readonly [string, string]>;
 
@@ -137,6 +144,9 @@ export type HistoryKind =
   | "setting"
   | "user"
   | "export"
+  | "staff"
+  | "ledger"
+  | "telegram"
   | "other";
 
 // The server's entity types, grouped as the mock-up's kinds. A type not listed is "Other".
@@ -162,7 +172,26 @@ const KINDS: readonly [RegExp, HistoryKind][] = [
   [/^(audit|export|report)/, "export"],
 ];
 
-export function kindOf(resourceType: string): HistoryKind {
+// Staff review fix 10 (owner 16/11/2026): the Staff (HR), Ledger and Telegram records, found by
+// the record's type or by the step's own first word.
+const AREAS: readonly [RegExp, RegExp, HistoryKind][] = [
+  [
+    /^(employee|payroll|payslip|salary_|attendance|overtime|staff_request|hr_)/,
+    /^hr\./,
+    "staff",
+  ],
+  [
+    /^(gl_|ledger|journal|expense|fixed_asset|bank_|petty_cash|budget|month_end)/,
+    /^(gl|ledger)\./,
+    "ledger",
+  ],
+  [/^(telegram|tg_)/, /^(telegram|tg)\./, "telegram"],
+];
+
+export function kindOf(resourceType: string, action = ""): HistoryKind {
+  for (const [type, step, kind] of AREAS) {
+    if (type.test(resourceType) || step.test(action)) return kind;
+  }
   for (const [pattern, kind] of KINDS) {
     if (pattern.test(resourceType)) return kind;
   }
@@ -175,7 +204,9 @@ export function kindText(language: Language, kind: HistoryKind): string {
 
 /** "invoice.adjustment_reversed" → "Invoice adjustment reversed" (the server's own words). */
 export function actionText(action: string): string {
+  // Staff review fix 10: the area's short code ("hr.", "gl.", "identity.") is not read out.
   const words = action
+    .replace(/^(hr|gl|identity)\./, "")
     .replace(/[._]+/g, " ")
     .trim()
     .replace(/\s+/g, " ")
@@ -183,4 +214,12 @@ export function actionText(action: string): string {
     // The server's code name "unit" is the word "Parking" on the screen.
     .replace(/\bunits?\b/g, "parking");
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * Staff review fix 10: a reason without the decision-log code the server adds to some of its
+ * own reasons ("Audit search (DL-072 answer 14)" → "Audit search").
+ */
+export function reasonText(reason: string): string {
+  return reason.replace(/\s*\(DL-\d+[^)]*\)/g, "").trim();
 }
