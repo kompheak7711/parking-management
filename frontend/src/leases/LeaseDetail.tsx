@@ -7,6 +7,11 @@
 // Deposits (design v81).
 
 import { PET_DEPOSIT } from "./parking";
+import { LeaseJointCard } from "../joint/LeaseJointCard";
+import {
+  type JointApi,
+  jointApi as defaultJointApi,
+} from "../joint/jointClient";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
   LatestNote,
@@ -190,6 +195,8 @@ export interface LeaseDetailProps {
   ledgerApi?: Pick<CustomerLedgerApi, "read">;
   actorId?: string;
   reports?: Pick<typeof reportsApi, "customerPaidOnTime">;
+  /** DL-243: the Lease's move-in and move-out Joint Inspections. */
+  jointApi?: JointApi;
 }
 
 export function LeaseDetail({
@@ -211,6 +218,7 @@ export function LeaseDetail({
   ledgerApi,
   actorId,
   reports,
+  jointApi = defaultJointApi,
 }: LeaseDetailProps) {
   const view = useHashView();
   const [lease, setLease] = useState<LeaseResource | null>(null);
@@ -1045,6 +1053,21 @@ export function LeaseDetail({
                 {lease.status === "DRAFTED" && lt(language, "signers_draft")}
               </p>
             </section>
+            {(lease.status === "SIGNED" || lease.status === "TERMINATED") &&
+              may("units.read") && (
+                <LeaseJointCard
+                  api={jointApi}
+                  kinds={
+                    lease.status === "SIGNED"
+                      ? ["MOVE_IN", "MOVE_OUT"]
+                      : ["MOVE_OUT"]
+                  }
+                  language={language}
+                  leaseId={lease.lease_id}
+                  may={may}
+                  propertyId={propertyId}
+                />
+              )}
             <section aria-labelledby="lease-occupants" className="ui-card">
               <div className="ui-chead">
                 <h2 id="lease-occupants">{lt(language, "occupants")}</h2>

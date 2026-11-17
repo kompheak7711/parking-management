@@ -138,6 +138,7 @@ import { type Language, storeLanguage, storedLanguage } from "./signInText";
 import { AppShell } from "./shell/AppShell";
 import { NoAccess, PropertyNeeded } from "./shell/pages";
 import { InspectionsPage } from "./inspections/InspectionsPage";
+import { jointApi as defaultJointApi } from "./joint/jointClient";
 import { openPageInAddress, useHashPage } from "./shell/useHashPage";
 import type { CustomerCommandGate } from "./customers/commands";
 import { CustomersPage } from "./customers/CustomersPage";
@@ -1886,6 +1887,7 @@ export function App({
         <InspectionsPage
           active={shown("inspections")}
           api={problemsApi}
+          capabilities={capabilities}
           language={language}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
         />
@@ -2421,6 +2423,7 @@ export function App({
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           today={todayInPhnomPenh()}
           unitApi={unitApi ?? defaultUnitApi}
+          jointApi={defaultJointApi}
         />
         {/* V1-058 R3 Move-out: the earlier English Deposit forms stay, folded, until the
             Final Settlement steps replace them. */}

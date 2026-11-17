@@ -142,6 +142,8 @@ def test_the_catalog_table_holds_exactly_the_application_catalog(
             if capability in TELEGRAM_STEP_RIGHTS
             else "short-stays"
             if capability in SHORT_STAY_RIGHTS
+            else "v1-2-joint-inspections"
+            if capability.startswith("joint_inspections.")
             else "login-slice-capability-catalog"
         )
         assert provenance == expected and finite is True

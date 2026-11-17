@@ -163,6 +163,12 @@ from property_rental.invoice_api import (
     invoice_idempotency_key_reused_response,
     invoice_line_fully_paid_response,
 )
+from property_rental.joint_inspections_api import (
+    JointInspectionFlow,
+    PostgresJointInspectionFlow,
+    UnavailableJointInspectionFlow,
+    create_joint_inspections_router,
+)
 from property_rental.late_payment import (
     LatePaymentApplicationReversalRequired,
     LatePaymentIdempotencyKeyReused,
@@ -640,6 +646,7 @@ def create_app(
     product_flow: ProductFlow | None = None,
     quotation_flow: QuotationFlow | None = None,
     problem_report_flow: ProblemReportFlow | None = None,
+    joint_inspection_flow: JointInspectionFlow | None = None,
     staff_meter_reading_flow: StaffMeterReadingFlow | None = None,
     hr_flow: HrFlow | None = None,
     telegram_page_flow: TelegramPageFlow | None = None,
@@ -1339,6 +1346,18 @@ def create_app(
                 )
                 if resolved_settings.database_url is not None
                 else UnavailableProblemReportFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    include_signed_in(
+        create_joint_inspections_router(
+            actor_resolver,
+            joint_inspection_flow
+            or (
+                PostgresJointInspectionFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableJointInspectionFlow()
             ),
             resolved_settings,
         )

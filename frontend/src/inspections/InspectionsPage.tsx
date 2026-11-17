@@ -1,14 +1,22 @@
 // UI v81 round 2 (owner 07/11/2026): Property › Inspections, the menu item of design v81.
 // Owner 16/11/2026 ("Both, list first"): the page lists the Property's move-out inspections and
 // the Unit checks sent from the Staff bot, newest first, each with links to its Lease, Unit and
-// Problem reports. The Joint Inspection at move-in and move-out (DL-201) is built later and adds
-// to this page. Needs "Read Units" (the menu item's right); the server checks it again.
+// Problem reports. Needs "Read Units" (the menu item's right); the server checks it again.
+// DL-243: the Joint Inspections at move-in and move-out are listed first, and
+// "#/inspections/ji:<id>" opens one (the tablet form while it is a Draft).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { dayText } from "../shell/format";
 import { Icon } from "../shell/icons";
+import { JointInspectionForm } from "../joint/JointInspectionForm";
+import { JointInspectionsList } from "../joint/JointInspectionsList";
+import {
+  type JointApi,
+  jointApi as defaultJointApi,
+} from "../joint/jointClient";
 import { hashForPage } from "../shell/navigation";
+import { useHashDetail } from "../shell/useHashPage";
 import type { Language } from "../signInText";
 import {
   type ProblemsApi,
@@ -62,13 +70,20 @@ export function InspectionsPage({
   active = true,
   api = defaultProblemsApi,
   propertyId = "",
+  capabilities = null,
+  jointApi = defaultJointApi,
 }: {
   language: Language;
   /** Whether the page is on screen; the list is read when it first is. */
   active?: boolean;
   api?: ProblemsApi;
   propertyId?: string;
+  capabilities?: ReadonlySet<string> | null;
+  jointApi?: JointApi;
 }) {
+  const detail = useHashDetail("inspections");
+  const may = (capability: string) =>
+    capabilities === null || capabilities.has(capability);
   const [data, setData] = useState<PropertyInspections | null>(null);
   const [problem, setProblem] = useState<"failed" | "right" | null>(null);
   const sequence = useRef(0);
@@ -96,8 +111,30 @@ export function InspectionsPage({
     if (active) load();
   }, [active, load]);
 
+  if (propertyId !== "" && detail?.startsWith("ji:") === true) {
+    const inspectionId = detail.slice(3);
+    return (
+      <JointInspectionForm
+        api={jointApi}
+        inspectionId={inspectionId}
+        key={`${inspectionId}:${propertyId}`}
+        language={language}
+        may={may}
+        propertyId={propertyId}
+      />
+    );
+  }
+
   return (
     <>
+      {propertyId !== "" && (
+        <JointInspectionsList
+          active={active}
+          api={jointApi}
+          language={language}
+          propertyId={propertyId}
+        />
+      )}
       {problem !== null && (
         <div className="ui-notice warn" role="status">
           <Icon name="alert" />

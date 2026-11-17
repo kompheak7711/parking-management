@@ -181,16 +181,17 @@ def test_the_capability_catalog_names_every_capability_the_code_checks() -> None
     # and `telegram.contact` and `telegram.faq` of Contact office and FAQ (step 2d, DL-170),
     # and `visit_requests.read` of the Visit requests list (step 3a, DL-171), and
     # `visit_requests.work` and `visit_requests.manage` of the request steps (step 3b, DL-172),
-    # and the 12 HR rights the HR routes check (HRIS phase 6).
-    assert len(found - NON_CAPABILITY_LABELS) == 127
+    # and the 12 HR rights the HR routes check (HRIS phase 6), and the 2 Joint Inspection
+    # rights (DL-243).
+    assert len(found - NON_CAPABILITY_LABELS) == 129
     # Review round 1: a capability constant added to the catalog module itself is a catalog name.
     assert dotted_constants(SOURCE / "access_control.py") - set(CAPABILITY_CATALOG) == set()
 
 
 def test_the_catalog_holds_the_approved_new_names() -> None:
     # HRIS phase 1 (migration 20270430_300): 12 HR rights; daily and weekly rent: 5 rights;
-    # Telegram bots: 7 rights.
-    assert len(CAPABILITY_CATALOG) == 138
+    # Telegram bots: 7 rights; Joint Inspection (DL-243): 2 rights.
+    assert len(CAPABILITY_CATALOG) == 140
     assert list(CAPABILITY_CATALOG) == sorted(CAPABILITY_CATALOG)
     assert all(DOTTED.fullmatch(name) and len(name) <= 128 for name in CAPABILITY_CATALOG)
     assert all(description.strip() for description in CAPABILITY_CATALOG.values())
@@ -226,7 +227,7 @@ def test_each_capability_has_one_grant_path() -> None:
     assert paths["rent_nonpayment.evaluate"] == "service_principal"
     assert paths["billing.generate"] == "bundle"
     assert BUNDLE_CAPABILITIES == {c for c, path in paths.items() if path == "bundle"}
-    assert len(BUNDLE_CAPABILITIES) == 135
+    assert len(BUNDLE_CAPABILITIES) == 137
     with pytest.raises(KeyError):
         capability_grant_path("reports.export")
 
@@ -343,6 +344,8 @@ STAFF_APPROVED = frozenset(
         "short_stays.read",
         "short_stays.desk",
         "short_stays.housekeeping",
+        # Joint Inspection (migration 20270805_423, DL-243): Staff do move-in and move-out ones.
+        "joint_inspections.record",
     }
 )
 # What Staff never get (DL-081, Q-150 (a) with the owner's note, DL-080 item 2, Q-161 (a)); the
@@ -364,6 +367,8 @@ STAFF_NEVER = frozenset(
         "telegram.faq",
         # Step 3b (DL-172): only the Owner and the Manager give Visit requests and mark Spam.
         "visit_requests.manage",
+        # DL-243: only the Owner and the Manager replace a finished Joint Inspection.
+        "joint_inspections.replace",
         "leases.warn",
         "utility_readings.correct",
         "utility_meters.manage",
@@ -469,7 +474,7 @@ RATE_CAPABILITIES = frozenset({"service_rates.manage", "utility_rates.manage"})
 
 def test_the_default_staff_bundle_holds_exactly_the_approved_daily_work() -> None:
     assert STAFF_DEFAULT_BUNDLE_CAPABILITIES == STAFF_APPROVED
-    assert len(STAFF_APPROVED) == 46
+    assert len(STAFF_APPROVED) == 47
     assert STAFF_APPROVED <= BUNDLE_CAPABILITIES
     groups = (STAFF_APPROVED, STAFF_NEVER, STAFF_NOT_NAMED, STAFF_NOT_LEDGER, RATE_CAPABILITIES)
     # Every bundle capability is in exactly one group, so a new bundle capability must be

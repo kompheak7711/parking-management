@@ -51,6 +51,8 @@ DOCUMENTS = {
     "SALARY_LOAN": "SLyy000n",
     "PAYROLL": "PAYyy000n",
     "OVERTIME": "OTyy000n",
+    # Joint Inspection at move-in and move-out (DL-243), migration 20270805_423.
+    "JOINT_INSPECTION": "JIyy000n",
 }
 SET_RULE = "SELECT app.set_business_rule(%s, %s, %s, %s::date, %s, %s, gen_random_uuid())"
 

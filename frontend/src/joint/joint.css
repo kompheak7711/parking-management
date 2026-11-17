@@ -1,0 +1,241 @@
+/* DL-243: the Joint Inspection tablet form. Big targets for a finger (at least 44 px), the app's
+   colour tokens only. */
+
+.ji-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+.ji-steps button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ji-steps button[aria-current="step"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.ji-stepno {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.ji-steps button[aria-current="step"] .ji-stepno {
+  background: var(--on-primary);
+  color: var(--primary);
+}
+
+.ji-saved {
+  margin-left: auto;
+}
+
+.ji-group h2 {
+  margin: 0;
+}
+
+.ji-lines {
+  display: grid;
+  gap: 0;
+  margin: 8px 0 0;
+}
+
+.ji-line {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.ji-line:first-child {
+  border-top: 0;
+}
+
+.ji-line.problem {
+  background: linear-gradient(90deg, var(--warn-bg), transparent 70%);
+}
+
+.ji-linehead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ji-linename {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.shell-view .ji-results button {
+  min-width: 88px;
+  min-height: 48px;
+}
+
+.shell-view .ji-results button.ji-good[aria-pressed="true"] {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: var(--on-primary);
+}
+
+.shell-view .ji-results button.ji-broken[aria-pressed="true"] {
+  border-color: var(--warn);
+  background: var(--warn);
+  color: var(--on-primary);
+}
+
+.shell-view .ji-results button.ji-missing[aria-pressed="true"] {
+  border-color: var(--err);
+  background: var(--err);
+  color: var(--on-primary);
+}
+
+.ji-linemore {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ji-note {
+  max-width: 560px;
+}
+
+.ji-ticks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+.ji-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ji-photos figure {
+  position: relative;
+  margin: 0;
+}
+
+.ji-photos img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.ji-photos figure button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.ji-addphoto {
+  position: relative;
+  cursor: pointer;
+}
+
+.ji-addphoto.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ji-keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.ji-meter h3 {
+  margin: 0 0 8px;
+}
+
+.ji-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ji-problems li {
+  padding: 6px 0;
+}
+
+.ji-signs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ji-pad {
+  display: block;
+  width: 100%;
+  height: 200px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  touch-action: none;
+}
+
+.ji-signed {
+  margin: 0;
+}
+
+.ji-signed img {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.ji-done-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.ji-nav {
+  margin-top: 16px;
+}
+
+.ji-lease ul {
+  margin: 0;
+}
+
+@media print {
+  .ji-noprint,
+  .ji-steps,
+  .ji-nav {
+    display: none;
+  }
+}

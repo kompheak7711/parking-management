@@ -63,6 +63,8 @@ import {
 import { FinalReadingsDialog, countMetersOn } from "./FinalReadingsDialog";
 import { HandBackDialog, rentRuleText } from "./HandBackDialog";
 import { HandBackRentStep } from "./HandBackRentStep";
+import { LeaseJointCard, currentOf } from "../joint/LeaseJointCard";
+import type { JointApi, JointRow } from "../joint/jointClient";
 import { InspectionDialog } from "./InspectionDialog";
 import {
   MoveOutUnavailableError,
@@ -156,6 +158,10 @@ export interface MoveoutPageProps {
   problemsApi?: Pick<ProblemsApi, "list">;
   /** DL-229: the Rent for the days used after a hand-back; tests pass their own. */
   handBackApi?: Pick<SettlementApi, "handBackAssessment" | "resolveHandBack">;
+  /** DL-243: the move-out Joint Inspection. With it, a new move-out records its inspection
+   * there (the Joint Inspection makes the findings) and the short form is only for an older
+   * inspection that is still corrected here. */
+  jointApi?: JointApi;
 }
 
 export function MoveoutPage(props: MoveoutPageProps) {
@@ -562,7 +568,10 @@ function MoveoutDetail({
   leaseId,
   problemsApi = defaultProblemsApi,
   handBackApi = defaultSettlementApi,
+  jointApi,
 }: MoveoutPageProps & { leaseId: string }) {
+  // DL-243: the Lease's Joint Inspections, once read (null: not read, or no Joint Inspection).
+  const [jointRows, setJointRows] = useState<JointRow[] | null>(null);
   const [lease, setLease] = useState<LeaseResource | null>(null);
   const [timeline, setTimeline] = useState<LeaseTimelineEvent[]>([]);
   const [page, setPage] = useState<MoveOutPage | null>(null);
@@ -987,6 +996,10 @@ function MoveoutDetail({
         ? "done"
         : "now";
   const mayInspect = may("leases.inspect");
+  // DL-243: a move-out Joint Inspection that is done made the inspection in force; it is
+  // corrected by replacing the Joint Inspection, not with the short form.
+  const jointMoveOutDone =
+    jointRows !== null && currentOf(jointRows, "MOVE_OUT").done !== null;
   const mayCharge = may("damage_charges.bill") && may("invoices.create");
   // DL-132: a finding shows its Problem report, or offers to make one.
   const findingReport = (findingId: string) => {
@@ -1037,7 +1050,7 @@ function MoveoutDetail({
   const inspectionActions =
     handedBack && shownCharges !== null && !neverIn ? (
       <>
-        {inspection === null && mayInspect && (
+        {inspection === null && mayInspect && jointApi === undefined && (
           <button
             className="ui-btn primary"
             onClick={() => {
@@ -1051,19 +1064,23 @@ function MoveoutDetail({
             {mt(language, "st4_btn")}
           </button>
         )}
-        {inspection !== null && known !== null && !chargedNow && mayInspect && (
-          <button
-            className="ui-btn"
-            onClick={() => {
-              setNotice(null);
-              setWarning(null);
-              setDialog("inspect");
-            }}
-            type="button"
-          >
-            {mt(language, "st4_fix_btn")}
-          </button>
-        )}
+        {inspection !== null &&
+          known !== null &&
+          !chargedNow &&
+          mayInspect &&
+          !jointMoveOutDone && (
+            <button
+              className="ui-btn"
+              onClick={() => {
+                setNotice(null);
+                setWarning(null);
+                setDialog("inspect");
+              }}
+              type="button"
+            >
+              {mt(language, "st4_fix_btn")}
+            </button>
+          )}
         {known !== null &&
           cleaning === null &&
           rate !== null &&
@@ -1381,6 +1398,17 @@ function MoveoutDetail({
                 number={4}
                 title={mt(language, "st4_t")}
               >
+                {jointApi !== undefined && !neverIn && (
+                  <LeaseJointCard
+                    api={jointApi}
+                    kinds={["MOVE_OUT"]}
+                    language={language}
+                    leaseId={leaseId}
+                    may={may}
+                    onRows={setJointRows}
+                    propertyId={propertyId}
+                  />
+                )}
                 {neverIn || !handedBack ? (
                   <p>{mt(language, neverIn ? "st2_skip" : "st4_todo")}</p>
                 ) : charges.state === "failed" ? (

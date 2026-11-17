@@ -89,6 +89,8 @@ const TEXT = {
   src_TENANT_BOT: ["Tenant bot", "បូតអ្នកជួល"],
   src_STAFF_BOT: ["Staff bot", "បូតបុគ្គលិក"],
   src_ROOM_CHECK: ["Short-stay Unit check", "ការពិនិត្យបន្ទប់ស្នាក់នៅខ្លី"],
+  // DL-243: a Broken or Missing line of a signed Joint Inspection.
+  src_JOINT_INSPECTION: ["Joint Inspection", "ការត្រួតពិនិត្យរួម"],
   st_RECEIVED: ["Received", "បានទទួល"],
   st_PLANNED: ["Visit planned", "បានរៀបចំការមកពិនិត្យ"],
   st_CHECKED: ["Checked", "បានពិនិត្យ"],

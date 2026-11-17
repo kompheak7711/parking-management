@@ -25,7 +25,7 @@ def test_migrations_411_and_412_follow_401_and_are_forward_only() -> None:
     assert revision is not None and revision.down_revision == PREVIOUS
     safety = scripts.get_revision(SAFETY_BACK)
     assert safety is not None and safety.down_revision == REVISION
-    assert scripts.get_heads() == ["20270804_422"]  # Property 422 follows 430
+    assert scripts.get_heads() == ["20270805_423"]  # the Joint Inspection 423 follows 422
     for step in (revision, safety):
         with pytest.raises(NotImplementedError, match="forward-only"):
             step.module.downgrade()

@@ -68,6 +68,8 @@ CAPABILITY_CATALOG: Final[dict[str, str]] = {
     "invoices.issue": "Issue Invoices",
     "invoices.read": "Read Invoices",
     "invoices.void": "Void an Invoice",
+    "joint_inspections.record": "Do move-in and move-out Joint Inspections",
+    "joint_inspections.replace": "Replace a finished Joint Inspection with a new one",
     "late_payment.charge_correction": "Correct a late-payment charge",
     "late_payment.final_decision": "Record a final late-payment decision",
     "late_payment.review": "Review late payments",
@@ -281,6 +283,9 @@ STAFF_VISIT_REQUEST_CAPABILITIES: Final = frozenset({"visit_requests.read", "vis
 STAFF_SHORT_STAY_CAPABILITIES: Final = frozenset(
     {"short_stays.read", "short_stays.desk", "short_stays.housekeeping"}
 )
+# Joint Inspection (migration `20270805_423`, DL-243): Staff do move-in and move-out Joint
+# Inspections; only the Owner and the Manager replace a finished one.
+STAFF_JOINT_INSPECTION_CAPABILITIES: Final = frozenset({"joint_inspections.record"})
 STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     STAFF_L1C_BUNDLE_CAPABILITIES
     | STAFF_RENT_LETTER_CAPABILITIES
@@ -291,6 +296,7 @@ STAFF_DEFAULT_BUNDLE_CAPABILITIES: Final = (
     | STAFF_TELEGRAM_CAPABILITIES
     | STAFF_VISIT_REQUEST_CAPABILITIES
     | STAFF_SHORT_STAY_CAPABILITIES
+    | STAFF_JOINT_INSPECTION_CAPABILITIES
 )
 # HRIS phase 1 (migration `20270430_300`, plan VhZTNVv9QHrEF7JXVXVg6W): the Manager sees and
 # manages employees and attendance; salaries, loans and payroll stay with the Owner, who gives

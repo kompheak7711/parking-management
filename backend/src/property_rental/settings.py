@@ -57,6 +57,12 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_HR_FILES_DIRECTORY",
     )
+    # DL-243: the folder for Joint Inspection photos and finger signatures; a path only.
+    # Without it a photo upload or download answers 503.
+    inspection_files_directory: str | None = Field(
+        default=None,
+        validation_alias="APP_INSPECTION_FILES_DIRECTORY",
+    )
     # DL-181: ABA's riel rate from ABA PayWay (owner card 12/11/2026). Paths only: the merchant
     # id and the API key stay in secret files. Without them the rate is "not available" and staff
     # type ABA's rate by hand.

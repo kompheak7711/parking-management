@@ -13,6 +13,7 @@ from alembic.script import ScriptDirectory
 
 from property_rental.access_control import (
     STAFF_DEFAULT_BUNDLE_CAPABILITIES,
+    STAFF_JOINT_INSPECTION_CAPABILITIES,
     STAFF_L1C_BUNDLE_CAPABILITIES,
     STAFF_LEDGER_CAPABILITIES,
     STAFF_PROBLEM_REPORT_CAPABILITIES,
@@ -62,6 +63,7 @@ def test_the_staff_letter_rights_are_the_two_rent_case_rights() -> None:
         | STAFF_TELEGRAM_CAPABILITIES
         | STAFF_VISIT_REQUEST_CAPABILITIES
         | STAFF_SHORT_STAY_CAPABILITIES
+        | STAFF_JOINT_INSPECTION_CAPABILITIES
     )
     # The Termination notice and Terminate stay with the Owner and Managers.
     assert "leases.terminate" not in STAFF_DEFAULT_BUNDLE_CAPABILITIES

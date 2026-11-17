@@ -21,7 +21,8 @@ export type ProblemSource =
   | "INSPECTION"
   | "TENANT_BOT"
   | "STAFF_BOT"
-  | "ROOM_CHECK";
+  | "ROOM_CHECK"
+  | "JOINT_INSPECTION";
 export type BestTime = "AM" | "PM" | "ANY";
 
 export interface ProblemType {
@@ -562,6 +563,7 @@ const SOURCES: readonly ProblemSource[] = [
   "TENANT_BOT",
   "STAFF_BOT",
   "ROOM_CHECK",
+  "JOINT_INSPECTION",
 ];
 
 const CURRENCIES = ["USD", "KHR"] as const;

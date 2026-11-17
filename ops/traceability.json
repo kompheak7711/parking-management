@@ -71712,6 +71712,204 @@
       "test_path": "frontend/src/hr/HrPages.test.tsx",
       "status": "implemented",
       "notes": "Audit log and Staff review (owner 16/11/2026, all 12), fixes 1, 2 and 8: the employee page's head is the name (shared record head), each Employment history entry is one block beside its dot, and the ID details have their own card with a dash for an empty value."
+    },
+    {
+      "test_id": "test_migration_423_follows_the_head_and_is_forward_only",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_joint_inspections_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270805_423 is the head and refuses a downgrade."
+    },
+    {
+      "test_id": "test_a_move_in_then_a_move_out_joint_inspection",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_joint_inspections_migration.py",
+      "status": "implemented",
+      "notes": "A move-in Joint Inspection is started by Staff, marked, signed by the tenant first and the staff member, and finished into a Problem report; a change after signing clears both signatures; Done is locked; the move-out shows the move-in result and makes no report for the same problem; a Manager's replacement copies marks, keys and meters (not signatures), marks the old one Replaced and supersedes the V1 move-out inspection."
+    },
+    {
+      "test_id": "test_tenant_caused_lines_become_damage_findings",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_joint_inspections_migration.py",
+      "status": "implemented",
+      "notes": "At move-out a line ticked Tenant caused and Caused by a pet becomes a V1 damage finding with the pet mark, linked from the line."
+    },
+    {
+      "test_id": "test_reading_joint_inspections_needs_units_read",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_joint_inspections_api.py",
+      "status": "implemented",
+      "notes": "The list, one Lease's list and one inspection need units.read, are never cached and answer 404 for another inspection."
+    },
+    {
+      "test_id": "test_starting_needs_the_record_right_and_a_replacement_the_replace_right",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_joint_inspections_api.py",
+      "status": "implemented",
+      "notes": "Starting needs joint_inspections.record and the browser checks; a replacement needs joint_inspections.replace and sends its trimmed reason."
+    },
+    {
+      "test_id": "test_saving_sends_only_what_changed_at_the_version_in_if_match",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_joint_inspections_api.py",
+      "status": "implemented",
+      "notes": "Saving needs If-Match, refuses a bad meter number or key count with 422 and sends only the fields given (an empty note clears it)."
+    },
+    {
+      "test_id": "test_a_photo_is_kept_by_its_hash_and_sent_back",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_joint_inspections_api.py",
+      "status": "implemented",
+      "notes": "A JPG, PNG or WEBP body is kept in the inspection files folder by its SHA-256 under inspections/<id>/, sent back with nosniff, and removed from disk when the database refuses it; without the folder the upload answers 503."
+    },
+    {
+      "test_id": "test_finishing_answers_the_reports_it_made",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_joint_inspections_api.py",
+      "status": "implemented",
+      "notes": "Finishing needs joint_inspections.record and If-Match, answers the inspection with the Problem report numbers made, and a Done one answers 409."
+    },
+    {
+      "test_id": "TEST-FE-2290",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "Property \u203a Inspections lists the Joint Inspections (number, kind, Unit, Lease and tenant, date, problems, status), filters them by kind and status and links each to its form; the older inspections stay linked."
+    },
+    {
+      "test_id": "TEST-FE-2291",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "One tap marks a line; All good marks the room's unmarked lines Good; a place offers Good and Broken only, an item also Missing."
+    },
+    {
+      "test_id": "TEST-FE-2292",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "A Broken line asks for a note, saves it when the box is left, and takes a photo for that line."
+    },
+    {
+      "test_id": "TEST-FE-2293",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "At move-out each line shows its move-in result; a worse line shows New since move-in and alone offers Tenant caused, then Caused by a pet."
+    },
+    {
+      "test_id": "TEST-FE-2294",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "The keys and meter numbers save when the box is left; a bad meter number is explained; fewer keys than at move-in and a Utilities reading that differs are warned."
+    },
+    {
+      "test_id": "TEST-FE-2295",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "An empty pad is not a signature; the tenant signs first, then the staff member; Finish is enabled only then and says which Problem reports it made."
+    },
+    {
+      "test_id": "TEST-FE-2296",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "A form not ready to sign says what is missing and shows no pad; a change made elsewhere (412) says so and reads the form again."
+    },
+    {
+      "test_id": "TEST-FE-2297",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "A Done inspection is read only with its Problem report links and signatures; only a Manager replaces it, with a reason, and the new one opens."
+    },
+    {
+      "test_id": "TEST-FE-2298",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "The Lease card warns Move-in inspection not done, goes on with a Draft and starts an inspection; a role without the right sees no Start button."
+    },
+    {
+      "test_id": "TEST-FE-2299",
+      "upstream_ids": [
+        "DL-243",
+        "DL-201"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "The client reads a Problem report from a Joint Inspection and refuses a Joint Inspection of a kind it does not know."
     }
   ]
 }
