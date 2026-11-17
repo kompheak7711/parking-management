@@ -71910,6 +71910,116 @@
       "test_path": "frontend/src/joint/JointInspections.test.tsx",
       "status": "implemented",
       "notes": "The client reads a Problem report from a Joint Inspection and refuses a Joint Inspection of a kind it does not know."
+    },
+    {
+      "test_id": "test_the_copy_shows_rooms_results_keys_meters_and_both_signatures",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: the copy shows rooms results keys meters and both signatures."
+    },
+    {
+      "test_id": "test_a_missing_signature_and_a_replacement_are_said_plainly",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: a missing signature and a replacement are said plainly."
+    },
+    {
+      "test_id": "test_the_caption_names_the_inspection_in_the_persons_language",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: the caption names the inspection in the persons language."
+    },
+    {
+      "test_id": "test_a_copy_goes_as_the_pdf_and_waits_when_it_cannot_be_made",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: a copy goes as the pdf and waits when it cannot be made."
+    },
+    {
+      "test_id": "test_the_copy_reads_both_signatures_and_waits_without_the_folder",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: the copy reads both signatures and waits without the folder."
+    },
+    {
+      "test_id": "test_staff_print_the_same_copy_once_the_inspection_is_done",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_joint_inspection_copy.py",
+      "status": "implemented",
+      "notes": "The Joint Inspection PDF copy: staff print the same copy once the inspection is done."
+    },
+    {
+      "test_id": "test_migration_424_is_the_head_and_is_forward_only",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_joint_inspection_copy_migration.py",
+      "status": "implemented",
+      "notes": "Migration 20270807_424 is the head and refuses a downgrade."
+    },
+    {
+      "test_id": "test_a_done_inspection_goes_once_to_each_person_linked_to_its_lease",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_joint_inspection_copy_migration.py",
+      "status": "implemented",
+      "notes": "A Done Joint Inspection is queued once for each person linked to its Lease in their language, never as a Draft nor to a late link; Staff cannot run the queue; the send job reads the inspection and its two signature files; a queued copy cannot be deleted."
+    },
+    {
+      "test_id": "TEST-FE-2305",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "A Done inspection opens its PDF copy in a new tab to print or save; a Draft has no link."
+    },
+    {
+      "test_id": "TEST-FE-2306",
+      "upstream_ids": [
+        "DL-244",
+        "DL-243"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/joint/JointInspections.test.tsx",
+      "status": "implemented",
+      "notes": "The Unit page card lists the Unit's Joint Inspections newest first and leaves out other Units."
     }
   ]
 }

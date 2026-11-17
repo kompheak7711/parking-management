@@ -37,8 +37,9 @@ __all__ = ["migrated_database_url", "problem_database"]
 def test_migration_423_follows_the_head_and_is_forward_only() -> None:
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
     migration = scripts.get_revision(REVISION)
-    assert migration is not None
-    assert scripts.get_heads() == [REVISION]
+    assert migration is not None and migration.down_revision == "20270804_422"
+    # The copy by the Tenant bot (DL-244) follows it.
+    assert scripts.get_heads() == ["20270807_424"]
     with pytest.raises(RuntimeError, match="forward-only"):
         migration.module.downgrade()
 

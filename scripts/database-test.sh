@@ -370,6 +370,7 @@ database_test_suites='
   tests/test_problem_type_short_names_migration.py
   tests/test_property_inspections_read_migration.py
   tests/test_joint_inspections_migration.py
+  tests/test_joint_inspection_copy_migration.py
   tests/test_hr_employees_migration.py
   tests/test_hr_payroll_migration.py
   tests/test_hr_attendance_migration.py

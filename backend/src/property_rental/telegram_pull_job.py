@@ -532,6 +532,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         store.invoice_reminders()
         # Each new Receipt to the people linked to its Lease or stay (DL-215).
         store.receipts_queue()
+        # The copy of each Done Joint Inspection to the people linked to its Lease (DL-244).
+        store.joint_inspections_queue()
         queue_warnings(store)
         store.visit_requests_remove_old()
         # The 18:00 summary of the staff checklists for the Authorizers, once a day.

@@ -1873,6 +1873,7 @@ export function App({
           leaseApi={leaseApi}
           propertyId={propertyId || (propertyConfiguration?.property_id ?? "")}
           invoiceApi={invoiceApi}
+          jointApi={defaultJointApi}
           productsApi={productsApi}
           reservationApi={reservationApi}
           unitApi={unitApi ?? defaultUnitApi}

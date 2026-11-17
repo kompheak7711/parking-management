@@ -164,6 +164,8 @@ export interface JointApi {
   removeFile: (propertyId: string, fileId: string) => Promise<void>;
   /** Where the browser reads one photo or signature. */
   fileUrl: (propertyId: string, fileId: string) => string;
+  /** DL-244: the PDF copy of a Done inspection, the same file the Tenant bot sends. */
+  pdfUrl: (propertyId: string, inspectionId: string) => string;
   finish: (
     propertyId: string,
     inspection: JointInspection,
@@ -504,6 +506,7 @@ export const jointApi: JointApi = {
   },
   fileUrl: (propertyId, fileId) =>
     `${base(propertyId)}/joint-inspection-files/${encodeURIComponent(fileId)}`,
+  pdfUrl: (propertyId, inspectionId) => `${one(propertyId, inspectionId)}/pdf`,
   finish: async (propertyId, inspection) => {
     const data = record(
       await request(

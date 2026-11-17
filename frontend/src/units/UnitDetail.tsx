@@ -20,6 +20,8 @@ import type { InvoiceApi, InvoiceResource } from "../invoiceClient";
 import { cents } from "../invoices/invoicesData";
 import type { LeaseApi, LeaseResource } from "../leaseClient";
 import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
+import type { JointApi } from "../joint/jointClient";
+import { UnitJointCard } from "../joint/UnitJointCard";
 import type { ProductsApi } from "../products/productsClient";
 import { UnitInventoryCard } from "../products/UnitInventory";
 import type { ReservationResource } from "../reservationClient";
@@ -258,6 +260,8 @@ export interface UnitDetailProps {
   productsApi: ProductsApi;
   /** Property fix 5 (owner 14/11/2026): the current Lease's unpaid Invoices. */
   invoiceApi?: Pick<InvoiceApi, "list">;
+  /** DL-244: the Unit's Joint Inspections. */
+  jointApi?: Pick<JointApi, "list">;
 }
 
 export function UnitDetail({
@@ -276,6 +280,7 @@ export function UnitDetail({
   servicesApi,
   productsApi,
   invoiceApi,
+  jointApi,
 }: UnitDetailProps) {
   const khmer = language === "km";
   const view = useHashView();
@@ -784,6 +789,14 @@ export function UnitDetail({
             today={today}
             unit={unit}
           />
+          {jointApi !== undefined && (
+            <UnitJointCard
+              api={jointApi}
+              language={language}
+              propertyId={propertyId}
+              unitId={unitId}
+            />
+          )}
           {invoiceApi !== undefined && may("invoices.read") && (
             <UnitInvoicesCard
               api={invoiceApi}

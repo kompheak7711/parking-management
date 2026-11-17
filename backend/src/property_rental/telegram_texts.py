@@ -194,6 +194,18 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
             "Thank you for your payment."
         ),
     },
+    # DL-244: the copy of a Done Joint Inspection goes as its PDF with this caption. Khmer is
+    # new and needs the native check.
+    "tenant.joint_inspection": {
+        "km": (
+            "📋 ការត្រួតពិនិត្យរួម {number}\n{unit} · {kind} · {date}\n\n"
+            "នេះជាច្បាប់ចម្លងដែលលោកអ្នក និងបុគ្គលិកបានចុះហត្ថលេខា។ សូមរក្សាទុក។"
+        ),
+        "en": (
+            "📋 Joint Inspection {number}\n{unit} · {kind} · {date}\n\n"
+            "This is the copy you and our staff member signed. Please keep it."
+        ),
+    },
     # DL-216: a notice from the office (water cut, building work). Khmer is new: native check.
     "tenant.notice": {
         "km": "📢 សេចក្តីជូនដំណឹងពីការិយាល័យ\n\n{notice}",

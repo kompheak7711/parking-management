@@ -1,4 +1,5 @@
 // DL-243: the Joint Inspection screens. TEST-FE-2290 to TEST-FE-2299.
+// DL-244: the printed copy and the Unit page card. TEST-FE-2305 and TEST-FE-2306.
 import {
   cleanup,
   fireEvent,
@@ -22,6 +23,7 @@ import {
   inspectionOf,
 } from "./jointClient";
 import { LeaseJointCard } from "./LeaseJointCard";
+import { UnitJointCard } from "./UnitJointCard";
 
 const PROPERTY = "p-1";
 const ALL = new Set([
@@ -244,6 +246,7 @@ function fakeApi(start: JointInspection, rows: JointRow[] = []) {
     ),
     removeFile: vi.fn(() => Promise.resolve()),
     fileUrl: (_property, fileId) => `/files/${fileId}`,
+    pdfUrl: (_property, inspectionId) => `/copies/${inspectionId}.pdf`,
     finish: vi.fn(() => {
       current = { ...current, status: "DONE", version: current.version + 1 };
       return Promise.resolve({
@@ -717,5 +720,57 @@ describe("Joint Inspection (DL-243)", () => {
       version: 1,
     });
     expect(report.source).toBe("JOINT_INSPECTION");
+  });
+  it("TEST-FE-2305 a done inspection opens its PDF copy to print or save, a Draft has none", async () => {
+    const { api } = fakeApi(
+      inspection({
+        status: "DONE",
+        done_at: "2026-11-16T04:00:00Z",
+        done_by: "Chan Staff",
+      }),
+    );
+    openForm(api);
+    const link = await screen.findByRole("link", { name: "Print or save PDF" });
+    expect(link).toHaveAttribute("href", "/copies/ji-1.pdf");
+    expect(link).toHaveAttribute("target", "_blank");
+    cleanup();
+    openForm(fakeApi(inspection()).api);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("link", { name: "Print or save PDF" }),
+      ).toBeNull();
+    });
+  });
+
+  it("TEST-FE-2306 the Unit page lists the Unit's inspections newest first and leaves out other Units", async () => {
+    const list = vi.fn(() =>
+      Promise.resolve([
+        row(),
+        row({
+          inspection_id: "ji-2",
+          inspection_number: "JI260002",
+          unit_id: "u-999",
+        }),
+        row({
+          inspection_id: "ji-3",
+          inspection_number: "JI260003",
+          inspection_date: "2026-11-20",
+          kind: "MOVE_OUT",
+        }),
+      ]),
+    );
+    render(
+      <UnitJointCard
+        api={{ list }}
+        language="en"
+        propertyId={PROPERTY}
+        unitId="u-101"
+      />,
+    );
+    const newest = await screen.findByRole("link", { name: "JI260003" });
+    expect(newest).toHaveAttribute("href", "#/inspections/ji%3Aji-3");
+    const numbers = screen.getAllByRole("link").map((one) => one.textContent);
+    expect(numbers).toEqual(["JI260003", "JI260001"]);
+    expect(list).toHaveBeenCalledWith(PROPERTY);
   });
 });

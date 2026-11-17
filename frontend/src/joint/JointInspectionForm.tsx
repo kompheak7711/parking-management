@@ -246,16 +246,15 @@ export function JointInspectionForm({
       title={inspection.inspection_number}
       actions={
         inspection.status !== "DRAFT" && (
-          <button
+          <a
             className="ui-btn"
-            onClick={() => {
-              window.print();
-            }}
-            type="button"
+            href={api.pdfUrl(propertyId, inspection.inspection_id)}
+            rel="noopener"
+            target="_blank"
           >
             <Icon name="print" />
             {jt(language, "print")}
-          </button>
+          </a>
         )
       }
     />

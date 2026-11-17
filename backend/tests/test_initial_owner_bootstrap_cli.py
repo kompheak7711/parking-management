@@ -1048,6 +1048,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/joint-inspections/{inspection_id}/save": {"post"},
         "/api/v1/properties/{property_id}/joint-inspections/{inspection_id}/files": {"post"},
         "/api/v1/properties/{property_id}/joint-inspections/{inspection_id}/finish": {"post"},
+        "/api/v1/properties/{property_id}/joint-inspections/{inspection_id}/pdf": {"get"},
         "/api/v1/properties/{property_id}/joint-inspection-files/{file_id}": {"get"},
         "/api/v1/properties/{property_id}/joint-inspection-files/{file_id}/remove": {"post"},
         "/api/v1/properties/{property_id}/problem-reports": {"get", "post"},

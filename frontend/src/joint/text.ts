@@ -158,7 +158,10 @@ const TEXT = {
   reason_need: ["Say why it is replaced.", "សូមប្រាប់ហេតុផលនៃការជំនួស។"],
   start_replace: ["Start the replacement", "ចាប់ផ្តើមការជំនួស"],
   cancel: ["Cancel", "បោះបង់"],
-  print: ["Print", "បោះពុម្ព"],
+  // DL-244: the Unit page card. Khmer is new and needs the native check.
+  unit_all: ["See all {0} on Inspections", "មើលទាំង {0} នៅការត្រួតពិនិត្យ"],
+  // DL-244: opens the PDF copy, the same file the Tenant bot sends.
+  print: ["Print or save PDF", "បោះពុម្ព ឬរក្សាទុក PDF"],
   // Lease card and Move-out page
   lease_t: ["Joint Inspection", "ការត្រួតពិនិត្យរួម"],
   start_in: ["Start move-in inspection", "ចាប់ផ្តើមការត្រួតពិនិត្យពេលចូល"],

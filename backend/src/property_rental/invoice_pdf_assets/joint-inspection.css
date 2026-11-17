@@ -1,0 +1,56 @@
+/* The Joint Inspection copy (DL-244): the Invoice's fonts, colours and labels on an A4 page
+   that may run to more pages. FONT_DIR is this folder. */
+@font-face{font-family:"Montserrat";src:url("FONT_DIR/Montserrat-Variable.ttf") format("truetype");font-weight:100 900}
+@font-face{font-family:"Kantumruy Pro";src:url("FONT_DIR/KantumruyPro-Variable.ttf") format("truetype");font-weight:100 700}
+@font-face{font-family:"Spectral SC";src:url("FONT_DIR/SpectralSC-Medium.ttf") format("truetype");font-weight:500}
+@page{size:A4;margin:14mm 16mm 16mm;
+  @bottom-left{content:string(number) " · Page " counter(page) " of " counter(pages);font-family:"Montserrat",Arial,sans-serif;font-size:7.5pt;color:#5C625E}
+  @bottom-right{content:"Live with intention.";font-family:"Spectral SC",Georgia,serif;font-size:8pt;color:#836547}}
+html,body{margin:0;background:#fff}
+.doc{color:#252A28;font-family:"Montserrat",Arial,sans-serif;font-size:9pt;line-height:1.45;font-feature-settings:"tnum" 1,"lnum" 1}
+.doc *{box-sizing:border-box}
+.doc .kh,.doc :lang(km){font-family:"Kantumruy Pro","Noto Sans Khmer",sans-serif;letter-spacing:0;text-transform:none}
+.doc .number{string-set:number content()}
+.doc .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}
+.doc .logo{height:15mm;width:auto;display:block}
+.doc .biz{margin-top:3mm;color:#5C625E;font-size:8pt}
+.doc .biz b{color:#252A28;font-weight:600}
+.doc .title{text-align:right}
+.doc .title>.kh{display:block;font-size:15pt;font-weight:600;color:#4D6153;line-height:1.5}
+.doc .title>.en{display:block;font-family:"Spectral SC",Georgia,serif;font-weight:500;font-size:18pt;letter-spacing:.06em;color:#4D6153;line-height:1}
+.doc .meta{margin:4mm 0 0 auto;border-collapse:separate;border-spacing:5mm 1.2mm;margin-right:-5mm;text-align:left;width:auto}
+.doc .meta td{padding:0;border:0;vertical-align:middle}
+.doc .meta td.dd{font-weight:600;text-align:right;white-space:nowrap}
+.doc .lbl{display:flex;flex-direction:column;line-height:1.25}
+.doc .lbl .kh{font-size:7.5pt;color:#5C625E;font-weight:500}
+.doc .lbl .en{font-size:6.8pt;letter-spacing:.08em;text-transform:uppercase;color:#836547;font-weight:600}
+.doc hr{border:0;border-top:.5mm solid #4D6153;margin:5mm 0 4mm}
+.doc .parties{display:flex;gap:8mm}
+.doc .parties>div{flex:1 1 0}
+.doc .parties .v{margin-top:1mm;font-size:10pt;font-weight:600}
+.doc .parties .v small{display:block;font-weight:400;font-size:8.3pt;color:#5C625E}
+.doc .notice{margin-top:4mm;padding:2.5mm 3mm;background:#F4F1EA;border-left:.8mm solid #836547;font-size:8.3pt}
+.doc h2{margin:7mm 0 0;font-size:10.5pt;font-weight:600;color:#4D6153;break-after:avoid}
+.doc h2 .kh{font-weight:500;color:#5C625E;margin-right:2mm}
+.doc table{width:100%;border-collapse:collapse;margin-top:2mm}
+.doc th{text-align:left;padding:0 2mm 1.6mm 0;border-bottom:.3mm solid #252A28;vertical-align:bottom}
+.doc td{padding:2mm 2mm 2mm 0;border-bottom:.2mm solid #CEC7BA;vertical-align:top}
+.doc tr{break-inside:avoid}
+.doc th.r,.doc td.r{text-align:right;padding-right:0}
+.doc td.room{padding-top:3.5mm;font-weight:600;color:#4D6153;border-bottom:.3mm solid #4D6153}
+.doc td.room .kh{display:inline;font-size:inherit;font-weight:500;color:#5C625E;margin-right:1.5mm}
+.doc .name{font-weight:600}
+.doc td .kh{display:block;font-size:7.8pt;color:#5C625E;font-weight:500}
+.doc .parties small .kh{display:inline;margin-right:1.5mm}
+.doc .sub{display:block;color:#5C625E;font-size:8pt}
+.doc .res{font-weight:600;white-space:nowrap}
+.doc .res .kh{display:block;font-weight:500;font-size:7.8pt;color:#5C625E}
+.doc .res.bad{color:#9E3A2F}
+.doc .tag{display:inline-block;margin:.8mm 1.5mm 0 0;padding:0 1.6mm;border:.2mm solid #836547;border-radius:1mm;font-size:7.5pt;color:#836547}
+.doc .signs{display:flex;gap:8mm;margin-top:3mm;break-inside:avoid}
+.doc .sign{flex:1 1 0;border:.2mm solid #CEC7BA;padding:3mm}
+.doc .sign img{display:block;height:24mm;max-width:100%;margin:1mm 0 2mm}
+.doc .sign .none{height:24mm;margin:1mm 0 2mm;color:#9E3A2F}
+.doc .sign small{display:block;color:#5C625E;font-size:8pt}
+.doc .end{margin-top:6mm;color:#5C625E;font-size:8pt}
+.doc table.lines th:first-child{width:36%}.doc table.lines th:nth-child(2){width:15%}

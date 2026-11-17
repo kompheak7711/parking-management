@@ -49,7 +49,7 @@ def test_migration_364_follows_the_lease_numbers_and_is_forward_only() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == "20270712_363"
-    assert scripts.get_heads() == ["20270805_423"]
+    assert scripts.get_heads() == ["20270807_424"]
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 

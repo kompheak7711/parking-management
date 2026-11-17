@@ -59,6 +59,10 @@ class TelegramStore(Protocol):
 
     def receipts_queue(self) -> int: ...
 
+    def joint_inspections_queue(self) -> int: ...
+
+    def joint_inspection_for_outbox(self, outbox_id: str) -> dict[str, Any] | None: ...
+
     def rent_notices_run(self) -> int: ...
     def short_stay_notices_run(self) -> int: ...
 
@@ -342,6 +346,24 @@ class PostgresTelegramStore:
         return int(
             self._one("SELECT app.telegram_receipts_queue(%s, %s)", self._property, self._actor)
         )
+
+    def joint_inspections_queue(self) -> int:
+        """Queue the copy of each Joint Inspection Done in the last days (DL-244)."""
+        return int(
+            self._one(
+                "SELECT app.telegram_joint_inspections_queue(%s, %s)", self._property, self._actor
+            )
+        )
+
+    def joint_inspection_for_outbox(self, outbox_id: str) -> dict[str, Any] | None:
+        """The inspection of a Joint Inspection copy message, or None for another message."""
+        found = self._one(
+            "SELECT app.telegram_joint_inspection_for_outbox(%s, %s, %s)",
+            self._property,
+            UUID(outbox_id),
+            self._actor,
+        )
+        return found if isinstance(found, dict) else None
 
     def rent_notices_run(self) -> int:
         """Record today's unpaid-Rent notice of each linked Lease, from 09:00 (DL-237)."""

@@ -140,6 +140,8 @@ class FakeStore:
         self.reminder_runs = 0
         self.invoice_reminder_runs = 0
         self.receipt_runs = 0
+        self.joint_inspection_runs = 0
+        self.joint_inspections: dict[str, dict[str, Any]] = {}
         self.warning_runs = 0
         self.rent_steps: list[str] = []
         self.blocked = False
@@ -245,6 +247,13 @@ class FakeStore:
     def receipts_queue(self) -> int:
         self.receipt_runs += 1
         return 0
+
+    def joint_inspections_queue(self) -> int:
+        self.joint_inspection_runs += 1
+        return 0
+
+    def joint_inspection_for_outbox(self, outbox_id: str) -> dict[str, Any] | None:
+        return self.joint_inspections.get(outbox_id)
 
     def rent_notices_run(self) -> int:
         self.rent_steps.append("notices")

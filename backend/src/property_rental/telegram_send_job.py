@@ -20,11 +20,14 @@ import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Protocol
 from uuid import UUID
 
 from property_rental import aba_qr, payway
 from property_rental.invoice_pdf import InvoicePdfError
+from property_rental.joint_inspection_pdf import file_name as joint_inspection_file_name
+from property_rental.joint_inspection_pdf import joint_inspection_pdf
+from property_rental.joint_inspections_api import InspectionFiles
 from property_rental.operations_config import OperationsConfigError, load_operations_config
 from property_rental.operations_status import format_time, utc_now, write_status
 from property_rental.telegram_alerts import TELEGRAM_TOKEN_PATTERN
@@ -38,6 +41,9 @@ PostJson = Callable[[str, dict[str, Any]], tuple[int, bytes]]
 PostDocument = Callable[[str, dict[str, str], tuple[str, bytes]], tuple[int, bytes]]
 # The Invoice PDF for an outbox message (DL-180), or None for a message without one.
 InvoiceDocuments = Callable[[str], "aba_qr.InvoiceDocument | None"]
+# The Joint Inspection copy for an outbox message (DL-244), or None for a message without one.
+InspectionDocuments = Callable[[str], "InspectionDocument | None"]
+INSPECTION_MESSAGES: Final = frozenset({"tenant.joint_inspection"})
 CAPTION_LIMIT: Final = 1024  # Telegram's longest caption
 
 
@@ -121,6 +127,55 @@ def _error_code(status: int) -> str:
     }.get(status, f"telegram_http_{status}" if 100 <= status <= 599 else "telegram_failed")
 
 
+@dataclass(frozen=True)
+class InspectionDocument:
+    pdf: bytes
+    file_name: str
+
+
+class InspectionFilesMissing(RuntimeError):
+    """The folder of the inspection photos and signatures is not set up for the send job."""
+
+
+class SignatureFiles(Protocol):
+    def read(self, key: str, sha256: str) -> bytes: ...
+
+
+def inspection_document(
+    outbox_id: str, *, store: TelegramStore, files: SignatureFiles | None
+) -> InspectionDocument | None:
+    """The PDF of a Joint Inspection copy message, with both signatures, or None when the
+    message is not one. Without the files folder the copy waits: it is never sent unsigned."""
+    found = store.joint_inspection_for_outbox(outbox_id)
+    if found is None:
+        return None
+    inspection = found.get("inspection")
+    if not isinstance(inspection, dict):
+        return None
+    stored = found.get("files") if isinstance(found.get("files"), dict) else {}
+    signatures = (
+        inspection.get("signatures") if isinstance(inspection.get("signatures"), dict) else {}
+    )
+
+    def picture(role: str) -> bytes | None:
+        signed = signatures.get(role) if isinstance(signatures, dict) else None
+        if not isinstance(signed, dict):
+            return None
+        where = stored.get(str(signed.get("file_id"))) if isinstance(stored, dict) else None
+        if not isinstance(where, dict):
+            return None
+        if files is None:
+            raise InspectionFilesMissing("inspection_files_not_set")
+        return files.read(str(where["storage_key"]), str(where["sha256"]))
+
+    return InspectionDocument(
+        pdf=joint_inspection_pdf(
+            inspection, tenant_signature=picture("tenant"), staff_signature=picture("staff")
+        ),
+        file_name=joint_inspection_file_name(inspection),
+    )
+
+
 @dataclass
 class SendResult:
     sent: int = 0
@@ -137,6 +192,7 @@ def run_send(
     post_json: PostJson = _post_json,
     app_host: str | None = None,
     invoice_documents: InvoiceDocuments | None = None,
+    inspection_documents: InspectionDocuments | None = None,
     post_document: PostDocument = _post_document,
     limit: int = 50,
     log: Callable[[str], None] = lambda line: print(line, flush=True),
@@ -167,7 +223,23 @@ def run_send(
             body["reply_markup"] = markup
         # An Invoice to pay goes as the PDF with its ABA QR (DL-180). Without PayWay set up it
         # goes as text, as before; a PayWay problem waits and is tried again.
-        invoice_file: aba_qr.InvoiceDocument | None = None
+        invoice_file: aba_qr.InvoiceDocument | InspectionDocument | None = None
+        # A Done Joint Inspection goes as its PDF (DL-244). A copy that cannot be made yet (no
+        # files folder, the database) waits and is tried again; it never goes as text only.
+        if inspection_documents is not None and message.get("text_code") in INSPECTION_MESSAGES:
+            try:
+                invoice_file = inspection_documents(str(message["id"]))
+            except Exception as error:
+                code = (
+                    "inspection_files_not_set"
+                    if isinstance(error, InspectionFilesMissing)
+                    else "inspection_pdf_failed"
+                )
+                outcome = store.record_attempt(message["id"], "FAILED", code, None)
+                result.gave_up += outcome == "GAVE_UP"
+                result.failed += outcome == "FAILED"
+                log(f"telegram_send:failed:{code}:{type(error).__name__}")
+                continue
         if invoice_documents is not None and message.get("text_code") in aba_qr.INVOICE_MESSAGES:
             try:
                 invoice_file = invoice_documents(str(message["id"]))
@@ -334,12 +406,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         def documents(outbox_id: str) -> aba_qr.InvoiceDocument | None:
             return aba_qr.invoice_document(outbox_id, store=job.store, config=job.config)
 
+    # The Joint Inspection copy (DL-244) reads the signatures from the app's files folder.
+    folder = os.environ.get("APP_INSPECTION_FILES_DIRECTORY")
+    signature_files = InspectionFiles(folder) if folder else None
+
+    def inspections(outbox_id: str) -> InspectionDocument | None:
+        return inspection_document(outbox_id, store=store, files=signature_files)
+
     result = run_send(
         store=store,
         api_host=bots.api_host,
         tokens=tokens,
         app_host=bots.relay_host,
         invoice_documents=documents,
+        inspection_documents=inspections,
     )
     print(
         f"telegram_send:sent={result.sent},failed={result.failed},gave_up={result.gave_up},"

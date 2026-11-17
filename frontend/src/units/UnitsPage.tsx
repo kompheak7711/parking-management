@@ -2,6 +2,7 @@
 // shows the Unit page.
 
 import type { InvoiceApi } from "../invoiceClient";
+import type { JointApi } from "../joint/jointClient";
 import {
   type ProductsApi,
   productsApi as defaultProductsApi,
@@ -43,6 +44,8 @@ export interface UnitsPageProps {
   productsApi?: ProductsApi;
   /** Property fix 5: the Unit page lists the current Lease's unpaid Invoices. */
   invoiceApi?: Pick<InvoiceApi, "list">;
+  /** DL-244: the Unit page lists the Unit's Joint Inspections. */
+  jointApi?: Pick<JointApi, "list">;
 }
 
 export function UnitsPage({
@@ -57,6 +60,7 @@ export function UnitsPage({
   servicesApi = serviceSettingsApi,
   productsApi = defaultProductsApi,
   invoiceApi,
+  jointApi,
 }: UnitsPageProps) {
   const detail = useHashDetail("units");
   const [data, setData] = useState<UnitsData | null>(null);
@@ -140,6 +144,7 @@ export function UnitsPage({
         servicesApi={servicesApi}
         productsApi={productsApi}
         invoiceApi={invoiceApi}
+        jointApi={jointApi}
         unitId={detail}
         utilityApi={utilityApi}
       />

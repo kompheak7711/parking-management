@@ -16,7 +16,10 @@ IFS= read -r APP_DATABASE_URL < "$PRM_SECRETS/runtime_database_url"
 # ABA QR payments (DL-180) are recorded with the money login, as Receive payment does.
 IFS= read -r APP_FINANCIAL_DATABASE_URL < "$PRM_SECRETS/financial_database_url"
 APP_HR_FILES_DIRECTORY="$PRM_LOCAL/hr-files"
-export APP_DATABASE_URL APP_FINANCIAL_DATABASE_URL APP_HR_FILES_DIRECTORY
+# The Joint Inspection copy (DL-244) reads the two signatures from the app's folder.
+APP_INSPECTION_FILES_DIRECTORY="$PRM_LOCAL/inspection-files"
+export APP_DATABASE_URL APP_FINANCIAL_DATABASE_URL APP_HR_FILES_DIRECTORY \
+  APP_INSPECTION_FILES_DIRECTORY
 . "$TG/jobs.env"
 cd "$PRM_ROOT/backend"
 while :; do

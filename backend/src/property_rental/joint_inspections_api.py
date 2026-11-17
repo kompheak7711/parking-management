@@ -34,10 +34,13 @@ from property_rental.access_control import UNITS_READ_CAPABILITY
 from property_rental.browser_security import require_browser_mutation
 from property_rental.hr_api import HrFiles
 from property_rental.identity import ActorResolver
+from property_rental.joint_inspection_pdf import file_name as pdf_file_name
+from property_rental.joint_inspection_pdf import joint_inspection_pdf
 from property_rental.products_api import (
     REFUSED,
     Id,
     Json,
+    ProductConflict,
     ProductNotFound,
     ProductUnavailable,
     _expected_version,
@@ -442,6 +445,41 @@ def create_joint_inspections_router(
             headers={
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",
+            },
+        )
+
+    @router.get("/joint-inspections/{inspection_id}/pdf")
+    def joint_inspection_pdf_copy(
+        property_id: UUID, inspection_id: UUID, request: Request
+    ) -> Response:
+        """The PDF copy to print (DL-244): the same file the Tenant bot sends."""
+        actor = _require(request, resolver, JOINT_INSPECTIONS_READ, property_id)
+        try:
+            inspection = flow.inspection(property_id, inspection_id, actor_id=actor.actor_id)
+            signatures = inspection.get("signatures")
+
+            def picture(role: str) -> bytes | None:
+                signed = signatures.get(role) if isinstance(signatures, dict) else None
+                if not isinstance(signed, dict) or not signed.get("file_id"):
+                    return None
+                found = flow.file(
+                    property_id, UUID(str(signed["file_id"])), actor_id=actor.actor_id
+                )
+                return files.read(str(found["storage_key"]), str(found["sha256"]))
+
+            tenant, staff = picture("tenant"), picture("staff")
+        except REFUSED as exc:
+            raise _http(exc) from exc
+        if inspection.get("status") == "DRAFT":
+            raise _http(ProductConflict("A Draft has no copy yet: finish it first."))
+        content = joint_inspection_pdf(inspection, tenant_signature=tenant, staff_signature=staff)
+        return Response(
+            content=content,
+            media_type="application/pdf",
+            headers={
+                "Cache-Control": "private, no-store",
+                "X-Content-Type-Options": "nosniff",
+                "Content-Disposition": f'inline; filename="{pdf_file_name(inspection)}"',
             },
         )
 
