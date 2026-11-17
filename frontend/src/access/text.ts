@@ -69,10 +69,6 @@ const TEXT = {
   ],
   ur_roles_one: ["{0}: not changed.", "{0}៖ មិនបានប្តូរទេ។"],
   ur_roles_none: ["No role", "គ្មានតួនាទី"],
-  se_signin_roles: [
-    "Two-step sign-in is needed for the Owner and for every role that can change business rules.",
-    "ការចូលពីរជំហានត្រូវការសម្រាប់ម្ចាស់ និងសម្រាប់តួនាទីទាំងអស់ដែលអាចប្តូរច្បាប់អាជីវកម្ម។",
-  ],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type AccessTextKey = keyof typeof TEXT;

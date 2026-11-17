@@ -7,6 +7,7 @@
 // saves. The server checks every right again. No bot key is ever shown.
 
 import "../shell/screens.css";
+import "./telegram.css";
 import "./visits.css";
 
 import {
@@ -54,6 +55,7 @@ import {
 import { openPageInAddress, useShowFromAddress } from "../shell/useHashPage";
 import { hasText, type TelegramTextKey, tt } from "./text";
 import { PageHead } from "../shell/pageHead";
+import { useCardLabels } from "../shell/cardLabels";
 
 export interface TelegramPageProps {
   language: Language;
@@ -277,7 +279,11 @@ export function NoticesPageView({
 
   return (
     <>
-      <p className="ui-muted">{tt(language, "nt_sub")}</p>
+      {/* Telegram review fix 8 (owner 17/11/2026): what a notice is for is a small line in the
+          New notice card; a person who cannot send one still sees it here. */}
+      {!(operate && data !== null) && (
+        <p className="ui-muted">{tt(language, "nt_sub")}</p>
+      )}
       <Done text={done} />
       {operate && data !== null && (
         <form
@@ -287,6 +293,7 @@ export function NoticesPageView({
           onSubmit={ask}
         >
           <h2 id="tg-nt-new">{tt(language, "nt_new")}</h2>
+          <p className="ui-small ui-muted tg-tight">{tt(language, "nt_sub")}</p>
           <p className="ui-small ui-muted" id="tg-nt-hint">
             {tt(language, "nt_hint", max)}
           </p>
@@ -502,6 +509,10 @@ export function LinkedTenantsPage({
   const [done, setDone] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const operate = mayOperate(capabilities);
+  // Telegram review fix 3 (owner 17/11/2026): on a phone each table is a list of cards.
+  const linkedTable = useCardLabels();
+  const triesTable = useCardLabels();
+  const endedTable = useCardLabels();
 
   if (propertyId === "") return <NoProperty language={language} />;
 
@@ -536,213 +547,211 @@ export function LinkedTenantsPage({
           <p>{tt(language, "tries_t", tries.length)}</p>
         </div>
       )}
-      <section aria-labelledby="tg-linked" className="ui-card pad0">
+      {/* Telegram review fix 2 (owner 17/11/2026): Linked now, Failed link attempts and Ended
+          links are three parts of one card; an empty part is one grey line. */}
+      <section aria-labelledby="tg-links" className="ui-card pad0">
         <div className="ui-listbar">
-          <h2 id="tg-linked">{tt(language, "linked_now")}</h2>
+          <h2 id="tg-links">{tt(language, "links_h")}</h2>
         </div>
-        {linked.length === 0 ? (
-          <p className="ui-empty">{tt(language, "none_linked")}</p>
-        ) : (
-          <div className="ui-tablewrap">
-            <table className="ui-table">
-              <thead>
-                <tr>
-                  <th scope="col">{tt(language, "c_acc")}</th>
-                  <th scope="col">{tt(language, "c_cust")}</th>
-                  <th scope="col">{tt(language, "c_unit")}</th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "c_lease_end")}
-                  </th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "c_on")}
-                  </th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "c_how")}
-                  </th>
-                  {operate && (
-                    <th scope="col">
-                      <span className="ui-sr">{tt(language, "remove")}</span>
+        <section aria-labelledby="tg-linked">
+          <h3 className="tg-part-h" id="tg-linked">
+            {tt(language, "linked_now")}
+          </h3>
+          {linked.length === 0 ? (
+            <p className="tg-part-empty">{tt(language, "none_linked")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table
+                className="ui-table ui-rowcards ui-rc-one"
+                ref={linkedTable}
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_acc")}</th>
+                    <th scope="col">{tt(language, "c_cust")}</th>
+                    <th scope="col">{tt(language, "c_unit")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_lease_end")}
                     </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {linked.map((link) => (
-                  <tr key={link.id}>
-                    <td className="ui-num">
-                      {link.phone ?? ""}
-                      <span className="ui-sub2">
-                        {String(link.telegram_user_id)}
-                      </span>
-                    </td>
-                    <td>{person(link.name, "")}</td>
-                    <td>{link.unit_number ?? ""}</td>
-                    <td className="ui-wide ui-num">
-                      {dayText(link.lease_end_date ?? link.stay_end_date)}
-                      {link.booking_number !== null && (
-                        <span className="ui-sub2">
-                          {tt(language, "stay_n", link.booking_number)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="ui-wide ui-num">
-                      {momentText(link.linked_at)}
-                    </td>
-                    <td className="ui-wide">{tt(language, "how")}</td>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_on")}
+                    </th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_how")}
+                    </th>
                     {operate && (
-                      <td>
-                        <button
-                          className="ui-btn"
-                          onClick={() => {
-                            setDone(null);
-                            setStale(false);
-                            setRemoving(link);
-                          }}
-                          type="button"
-                        >
-                          {tt(language, "remove")}
-                        </button>
-                      </td>
+                      <th scope="col">
+                        <span className="ui-sr">{tt(language, "remove")}</span>
+                      </th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="ui-tfoot">{tt(language, "links_n")}</p>
-      </section>
-      <section aria-labelledby="tg-tries" className="ui-card pad0">
-        <div className="ui-listbar">
-          <h2 id="tg-tries">{tt(language, "tries_h")}</h2>
-        </div>
-        {tries.length === 0 ? (
-          <p className="ui-empty">{tt(language, "none_tries")}</p>
-        ) : (
-          <div className="ui-tablewrap">
-            <table className="ui-table">
-              <thead>
-                <tr>
-                  <th scope="col">{tt(language, "c_phone")}</th>
-                  <th scope="col">{tt(language, "c_name")}</th>
-                  <th scope="col">{tt(language, "c_unit_t")}</th>
-                  <th scope="col">{tt(language, "c_tries")}</th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "c_last")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tries.map((row) => (
-                  <tr key={row.telegram_user_id}>
-                    <td className="ui-num">
-                      {row.phone ?? ""}
-                      <span className="ui-sub2">
-                        {String(row.telegram_user_id)}
-                      </span>
-                    </td>
-                    <td>{row.typed_name ?? ""}</td>
-                    <td>{row.typed_unit ?? ""}</td>
-                    <td>
-                      <span className="ui-num">{row.tries}</span>{" "}
-                      {row.blocked_until === null ? (
-                        <Chip tone="warn">
-                          {tt(language, "left", row.tries_left)}
-                        </Chip>
-                      ) : (
-                        <Chip tone="err">
-                          {tt(
-                            language,
-                            "blocked",
-                            momentText(row.blocked_until),
-                          )}
-                        </Chip>
+                </thead>
+                <tbody>
+                  {linked.map((link) => (
+                    <tr key={link.id}>
+                      <td className="ui-num">
+                        {link.phone ?? ""}
+                        <span className="ui-sub2">
+                          {String(link.telegram_user_id)}
+                        </span>
+                      </td>
+                      <td>{person(link.name, "")}</td>
+                      <td>{link.unit_number ?? ""}</td>
+                      <td className="ui-wide ui-num">
+                        {dayText(link.lease_end_date ?? link.stay_end_date)}
+                        {link.booking_number !== null && (
+                          <span className="ui-sub2">
+                            {tt(language, "stay_n", link.booking_number)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="ui-wide ui-num">
+                        {momentText(link.linked_at)}
+                      </td>
+                      <td className="ui-wide">{tt(language, "how")}</td>
+                      {operate && (
+                        <td>
+                          <button
+                            className="ui-btn"
+                            onClick={() => {
+                              setDone(null);
+                              setStale(false);
+                              setRemoving(link);
+                            }}
+                            type="button"
+                          >
+                            {tt(language, "remove")}
+                          </button>
+                        </td>
                       )}
-                    </td>
-                    <td className="ui-wide ui-num">
-                      {momentText(row.last_at)}
-                    </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        <section aria-labelledby="tg-tries">
+          <h3 className="tg-part-h" id="tg-tries">
+            {tt(language, "tries_h")}
+          </h3>
+          {tries.length === 0 ? (
+            <p className="tg-part-empty">{tt(language, "none_tries")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table
+                className="ui-table ui-rowcards ui-rc-one"
+                ref={triesTable}
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_phone")}</th>
+                    <th scope="col">{tt(language, "c_name")}</th>
+                    <th scope="col">{tt(language, "c_unit_t")}</th>
+                    <th scope="col">{tt(language, "c_tries")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_last")}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="ui-tfoot">
-          {tt(language, "tries_n", rules.tries, block)}
-        </p>
-      </section>
-      <section aria-labelledby="tg-ended" className="ui-card pad0">
-        <div className="ui-listbar">
-          <h2 id="tg-ended">{tt(language, "ended")}</h2>
-          <span className="ui-muted">
-            {tt(language, "ended_sub", rules.keep_days)}
-          </span>
-        </div>
-        {ended.length === 0 ? (
-          <p className="ui-empty">{tt(language, "none_ended")}</p>
-        ) : (
-          <div className="ui-tablewrap">
-            <table className="ui-table">
-              <thead>
-                <tr>
-                  <th scope="col">{tt(language, "c_cust")}</th>
-                  <th scope="col">{tt(language, "c_unit")}</th>
-                  <th className="ui-wide" scope="col">
-                    {tt(language, "c_on")}
-                  </th>
-                  <th scope="col">{tt(language, "c_end")}</th>
-                  <th scope="col">{tt(language, "c_why")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ended.map((row) => {
-                  const reason = `end_${row.reason}`;
-                  return (
-                    <tr key={`${row.id}:${row.ended_at}`}>
-                      <td>
-                        {person(row.name, "")}
-                        <span className="ui-sub2 ui-num">
+                </thead>
+                <tbody>
+                  {tries.map((row) => (
+                    <tr key={row.telegram_user_id}>
+                      <td className="ui-num">
+                        {row.phone ?? ""}
+                        <span className="ui-sub2">
                           {String(row.telegram_user_id)}
                         </span>
                       </td>
-                      <td>{row.unit_number ?? ""}</td>
-                      <td className="ui-wide ui-num">
-                        {momentText(row.linked_at)}
-                      </td>
-                      <td className="ui-num">{momentText(row.ended_at)}</td>
+                      <td>{row.typed_name ?? ""}</td>
+                      <td>{row.typed_unit ?? ""}</td>
                       <td>
-                        {hasText(reason) ? tt(language, reason) : row.reason}
-                        {row.note !== null && (
-                          <span className="ui-sub2">{row.note}</span>
+                        <span className="ui-num">{row.tries}</span>{" "}
+                        {row.blocked_until === null ? (
+                          <Chip tone="warn">
+                            {tt(language, "left", row.tries_left)}
+                          </Chip>
+                        ) : (
+                          <Chip tone="err">
+                            {tt(
+                              language,
+                              "blocked",
+                              momentText(row.blocked_until),
+                            )}
+                          </Chip>
                         )}
                       </td>
+                      <td className="ui-wide ui-num">
+                        {momentText(row.last_at)}
+                      </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        <section aria-labelledby="tg-ended">
+          <h3 className="tg-part-h">
+            <span id="tg-ended">{tt(language, "ended")}</span>{" "}
+            <span className="ui-muted">
+              {tt(language, "ended_sub", rules.keep_days)}
+            </span>
+          </h3>
+          {ended.length === 0 ? (
+            <p className="tg-part-empty">{tt(language, "none_ended")}</p>
+          ) : (
+            <div className="ui-tablewrap">
+              <table
+                className="ui-table ui-rowcards ui-rc-one"
+                ref={endedTable}
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">{tt(language, "c_cust")}</th>
+                    <th scope="col">{tt(language, "c_unit")}</th>
+                    <th className="ui-wide" scope="col">
+                      {tt(language, "c_on")}
+                    </th>
+                    <th scope="col">{tt(language, "c_end")}</th>
+                    <th scope="col">{tt(language, "c_why")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ended.map((row) => {
+                    const reason = `end_${row.reason}`;
+                    return (
+                      <tr key={`${row.id}:${row.ended_at}`}>
+                        <td>
+                          {person(row.name, "")}
+                          <span className="ui-sub2 ui-num">
+                            {String(row.telegram_user_id)}
+                          </span>
+                        </td>
+                        <td>{row.unit_number ?? ""}</td>
+                        <td className="ui-wide ui-num">
+                          {momentText(row.linked_at)}
+                        </td>
+                        <td className="ui-num">{momentText(row.ended_at)}</td>
+                        <td>
+                          {hasText(reason) ? tt(language, reason) : row.reason}
+                          {row.note !== null && (
+                            <span className="ui-sub2">{row.note}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        <div className="ui-tfoot">
+          <p>{tt(language, "links_n")}</p>
+          <p>{tt(language, "tries_n", rules.tries, block)}</p>
+        </div>
       </section>
-      <InvoicesOnTelegram
-        active={active}
-        api={api}
-        language={language}
-        propertyId={propertyId}
-      />
-      <ReceiptsOnTelegram
-        active={active}
-        api={api}
-        language={language}
-        propertyId={propertyId}
-      />
-      <WarningsOnTelegram
-        active={active}
-        api={api}
-        language={language}
-        propertyId={propertyId}
-      />
       {removing !== null && (
         <RemoveLinkDialog
           api={api}
@@ -773,6 +782,51 @@ export function LinkedTenantsPage({
     </>
   );
 }
+
+// Owner 17/11/2026: Linked tenants was too long to scroll, so what was sent on Telegram
+// (Invoices, Receipts, Warnings) is its own tab.
+export function SentOnTelegramPage({
+  language,
+  propertyId,
+  active,
+  api = defaultTelegramApi,
+}: TelegramPageProps) {
+  // Owner 17/11/2026 11:04: each list grows long, so one shows at a time.
+  const [which, setWhich] = useState<SentList>("invoices");
+  if (propertyId === "") return <NoProperty language={language} />;
+  const shared = { active, api, language, propertyId };
+  return (
+    <>
+      <PageHead>
+        <p>{tt(language, "sent_sub")}</p>
+      </PageHead>
+      <div
+        aria-label={tt(language, "sent_show")}
+        className="ui-seg tg-sent-switch"
+        role="group"
+      >
+        {SENT_LISTS.map((list) => (
+          <button
+            aria-pressed={which === list}
+            key={list}
+            onClick={() => {
+              setWhich(list);
+            }}
+            type="button"
+          >
+            {tt(language, `sent_${list}` as const)}
+          </button>
+        ))}
+      </div>
+      {which === "invoices" && <InvoicesOnTelegram {...shared} />}
+      {which === "receipts" && <ReceiptsOnTelegram {...shared} />}
+      {which === "warnings" && <WarningsOnTelegram {...shared} />}
+    </>
+  );
+}
+
+const SENT_LISTS = ["invoices", "receipts", "warnings"] as const;
+type SentList = (typeof SENT_LISTS)[number];
 
 // Invoices on Telegram (DL-211): who got each issued Invoice, and who needs a paper copy.
 
@@ -835,12 +889,16 @@ function InvoicesOnTelegram({
 }) {
   const page = usePage<InvoicesPage>(propertyId, active, api.invoices);
   const data = page.data;
+  const table = useCardLabels();
   // Administration review fix 7 (owner 13/11/2026): the 5 newest, then "Show all".
   const [all, setAll] = useState(false);
+  // Telegram review fix 1 (owner 17/11/2026): a fully paid Invoice needs no paper copy, so it
+  // shows "Paid" and is not counted in the warning.
   const paper =
     data === null
       ? 0
       : data.invoices.filter((invoice) => {
+          if (invoice.to_pay_usd_cents === 0) return false;
           const reached = invoiceReached(invoice);
           return reached === "none" || reached === "failed";
         }).length;
@@ -863,7 +921,7 @@ function InvoicesOnTelegram({
             <p className="ui-empty">{tt(language, "inv_none")}</p>
           ) : (
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              <table className="ui-table ui-rowcards ui-rc-one" ref={table}>
                 <thead>
                   <tr>
                     <th scope="col">{tt(language, "c_invoice")}</th>
@@ -885,6 +943,7 @@ function InvoicesOnTelegram({
                   {(all ? data.invoices : data.invoices.slice(0, FIRST)).map(
                     (invoice) => {
                       const reached = invoiceReached(invoice);
+                      const paid = invoice.to_pay_usd_cents === 0;
                       const sentCount = invoice.sent.filter(
                         (person) => person.state === "SENT",
                       ).length;
@@ -910,21 +969,29 @@ function InvoicesOnTelegram({
                                 {tt(language, "inv_waiting")}
                               </Chip>
                             )}
-                            {reached === "failed" && (
+                            {reached === "failed" && !paid && (
                               <Chip tone="err">
                                 {tt(language, "inv_failed")}
                               </Chip>
                             )}
-                            {reached === "none" && (
+                            {reached === "none" && !paid && (
                               <Chip tone="err">
                                 {tt(language, "inv_paper")}
                               </Chip>
                             )}
+                            {(reached === "none" || reached === "failed") &&
+                              paid && (
+                                <Chip tone="ok">
+                                  {tt(language, "inv_paid")}
+                                </Chip>
+                              )}
                           </td>
                           <td className="ui-wide ui-num">
-                            {invoice.reminded_at === null
-                              ? tt(language, "inv_no_reminder")
-                              : momentText(invoice.reminded_at)}
+                            {invoice.reminded_at !== null
+                              ? momentText(invoice.reminded_at)
+                              : paid
+                                ? tt(language, "inv_no_need")
+                                : tt(language, "inv_no_reminder")}
                           </td>
                         </tr>
                       );
@@ -964,6 +1031,7 @@ function ReceiptsOnTelegram({
 }) {
   const page = usePage<ReceiptsPage>(propertyId, active, api.receipts);
   const data = page.data;
+  const table = useCardLabels();
   const [all, setAll] = useState(false);
   const reachedOf = (receipt: TelegramReceipt) => invoiceReached(receipt);
   const paper =
@@ -993,7 +1061,7 @@ function ReceiptsOnTelegram({
             <p className="ui-empty">{tt(language, "rec_none")}</p>
           ) : (
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              <table className="ui-table ui-rowcards ui-rc-one" ref={table}>
                 <thead>
                   <tr>
                     <th scope="col">{tt(language, "c_receipt")}</th>
@@ -1097,6 +1165,7 @@ function WarningsOnTelegram({
 }) {
   const page = usePage<WarningsPage>(propertyId, active, api.warnings);
   const data = page.data;
+  const table = useCardLabels();
   const paper =
     data === null
       ? 0
@@ -1123,7 +1192,7 @@ function WarningsOnTelegram({
             <p className="ui-empty">{tt(language, "warn_none")}</p>
           ) : (
             <div className="ui-tablewrap">
-              <table className="ui-table">
+              <table className="ui-table ui-rowcards ui-rc-one" ref={table}>
                 <thead>
                   <tr>
                     <th scope="col">{tt(language, "c_warning")}</th>
@@ -1302,10 +1371,14 @@ export function TelegramHealthPage({
   const head = (
     <PageHead>
       <p>{tt(language, "h_sub")}</p>
-      <span className="ui-muted">
-        <Icon name="lock" small /> {tt(language, "h_lock")}
-      </span>
     </PageHead>
+  );
+  // Telegram review fix 6 (owner 17/11/2026): who sees this page is a small line at its foot,
+  // not beside the tabs.
+  const lock = (
+    <p className="ui-muted tg-foot-note">
+      <Icon name="lock" small /> {tt(language, "h_lock")}
+    </p>
   );
   if (page.data === null)
     return (
@@ -1345,7 +1418,7 @@ export function TelegramHealthPage({
     [
       tt(language, "k_pull"),
       health.last_pull_at === null
-        ? tt(language, "k_pull_none")
+        ? tt(language, "k_pull_not_yet")
         : momentText(health.last_pull_at),
       lastPull === undefined
         ? ""
@@ -1389,7 +1462,11 @@ export function TelegramHealthPage({
             role="listitem"
           >
             <span className="ui-kpi-label">{label}</span>
-            <span className="ui-kpi-value ui-num ui-kpi-words">{value}</span>
+            <span
+              className={`ui-kpi-value ui-num ui-kpi-words${/\d/.test(value) ? "" : " tg-kpi-small"}`}
+            >
+              {value}
+            </span>
             <span className="ui-kpi-note">{note}</span>
           </div>
         ))}
@@ -1430,10 +1507,14 @@ export function TelegramHealthPage({
                   <tr key={bot.code}>
                     <td>{hasText(name) ? tt(language, name) : bot.name}</td>
                     <td>
+                      {/* Telegram review fix 6: a bot that has never sent or received a message is
+                          not shown as Working. */}
                       {bot.failing ? (
                         <Chip icon="alert" tone="err">
                           {tt(language, "problem")}
                         </Chip>
+                      ) : bot.last_in === null && bot.last_out === null ? (
+                        <Chip tone="neutral">{tt(language, "not_used")}</Chip>
                       ) : (
                         <Chip tone="ok">{tt(language, "working")}</Chip>
                       )}
@@ -1593,6 +1674,7 @@ export function TelegramHealthPage({
           </div>
         )}
       </section>
+      {lock}
     </>
   );
 }
@@ -2043,7 +2125,7 @@ export function FaqPageView({
             <p>{tt(language, "none_faq")}</p>
             {edit && (
               <>
-                <p>{tt(language, "faq_starter_sub")}</p>
+                {/* Telegram review fix 7 (owner 17/11/2026): the button, then what happens. */}
                 <button
                   className="ui-btn"
                   disabled={busy}
@@ -2052,6 +2134,9 @@ export function FaqPageView({
                 >
                   {tt(language, "faq_starter")}
                 </button>
+                <p className="ui-muted tg-small">
+                  {tt(language, "faq_starter_sub")}
+                </p>
               </>
             )}
           </div>

@@ -389,7 +389,6 @@ export function SettingsPage({
   stayApi = shortStaysApi,
 }: SettingsPageProps) {
   const detail = useHashDetail(mode === "access" ? "access" : "settings");
-  const [accessTab] = useSubTab<AccessTab>(ACCESS_TAB_IDS, "users");
   // UI v81: Users and sign-in moved to its own menu item; an old address goes there.
   useEffect(() => {
     if (mode === "settings" && active && detail === "users")
@@ -424,17 +423,8 @@ export function SettingsPage({
           usersApi={usersApi}
         />
       )}
-      {/* The earlier forms stay mounted, as before, so what was typed survives a page change
-          (open question in 01_UI_AUDIT_REPORT.md). Administration review fix 10 (owner
-          13/11/2026): the new tabs do everything they did, so they show only at the foot of the
-          History tab, closed, until the old screens are removed. */}
-      {earlier.users !== undefined && (
-        <div hidden={mode !== "access" || accessTab !== "history"}>
-          <Earlier language={language} note="earlier_kept">
-            {earlier.users}
-          </Earlier>
-        </div>
-      )}
+      {/* Access review fix 13 (owner 17/11/2026): the earlier account forms are gone; the
+          Users, Roles and History tabs do all they did. */}
       {/* One wrapper, so the earlier forms stay mounted; "ui-settings" keeps the normal space
         between its cards and notes (owner 12/11/2026). */}
       <div className="ui-settings" hidden={mode === "access"}>

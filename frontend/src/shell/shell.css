@@ -1339,6 +1339,24 @@ a.shell-me-text[aria-current="page"] b {
   }
 }
 
+/* Telegram review fix 5 (owner 17/11/2026): a page with a table takes the tighter top space of a
+   fitting screen and a page without one did not, so the tab row moved when you changed tabs.
+   On such a screen every page with a tab row starts at the same place. */
+@media (min-width: 1024px) and (min-height: 700px) {
+  html
+    body
+    .shell-view.shell-view:has(
+      > .shell-head-tabbed,
+      > .shell-page:not([hidden]) .shell-head-tabbed
+    ) {
+    padding-top: 10px;
+  }
+
+  html body .shell-view .shell-head.shell-head-tabbed {
+    align-items: flex-end;
+  }
+}
+
 .shell-head-tabbed > .shell-tabs {
   flex: 1 1 auto;
   margin-top: 0;
@@ -1348,6 +1366,31 @@ a.shell-me-text[aria-current="page"] b {
 .shell-head-tabbed > .shell-head-actions {
   margin-left: auto;
   padding-bottom: 6px;
+}
+
+/* Access review fix 9 (owner 17/11/2026): a head with no buttons does not keep an empty row
+   for them. */
+.shell-head-tabbed > .shell-head-actions:empty {
+  display: none;
+}
+
+/* Access review fix 9: in-page tabs that are the head keep no space of their own under them;
+   the head's line and the page's gap give the space. */
+.shell-head.shell-head-tabbed > .ui-subtabs {
+  margin-bottom: 0;
+}
+
+/* A message area that is empty takes no room and leaves no gap in a stack of cards; it stays
+   on the page, so what it says later is still read out. */
+.ui-live:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 /* Administration review fix 2 (owner 13/11/2026): a row of page tabs is one line that slides

@@ -12,6 +12,7 @@ import {
   ContactOfficePage,
   FaqPageView,
   LinkedTenantsPage,
+  SentOnTelegramPage,
   NoticesPageView,
   TelegramHealthPage,
   VisitRequestsPageView,
@@ -523,7 +524,8 @@ describe("Office › Telegram", () => {
     });
     expect(within(tries).getByText("3 attempts left")).toBeTruthy();
     expect(within(tries).getByText(/^Blocked until 05\/11\/2026/)).toBeTruthy();
-    expect(tries.textContent).toContain(
+    // Telegram review fix 2: the rules are one small foot under the three parts.
+    expect(screen.getByRole("region", { name: "Links" }).textContent).toContain(
       "5 failed attempts, linking is blocked for 24 hours",
     );
     const ended = screen.getByRole("region", { name: "Ended links" });
@@ -545,7 +547,7 @@ describe("Office › Telegram", () => {
       Promise.resolve({ ...INVOICES, invoices: many }),
     );
     render(
-      <LinkedTenantsPage
+      <SentOnTelegramPage
         active
         api={api}
         capabilities={READER}
@@ -576,10 +578,88 @@ describe("Office › Telegram", () => {
     expect(within(invoices).getAllByRole("row")).toHaveLength(6);
   });
 
+  it("TEST-FE-2237 a paid Invoice shows Paid and needs no paper copy; Linked now, Failed link attempts and Ended links are parts of one Links card; Telegram health says who sees it at its foot (Telegram review fixes 1, 2, 6)", async () => {
+    const api = fakeApi();
+    const unsent = INVOICES.invoices[1];
+    if (unsent === undefined) throw new Error("the fixture has two Invoices");
+    api.invoices = vi.fn(() =>
+      Promise.resolve({
+        ...INVOICES,
+        invoices: [
+          {
+            ...unsent,
+            id: "inv-paid",
+            number: "INV-PAID",
+            to_pay_usd_cents: 0,
+          },
+          unsent,
+        ],
+      }),
+    );
+    render(
+      <SentOnTelegramPage
+        active
+        api={api}
+        capabilities={READER}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    const invoices = await screen.findByRole("region", {
+      name: "Invoices on Telegram",
+    });
+    const paid = await within(invoices).findByRole("row", { name: /INV-PAID/ });
+    // One list at a time: Invoices first, then the switch shows Receipts or Warnings.
+    expect(
+      screen.queryByRole("region", { name: "Receipts on Telegram" }),
+    ).toBeNull();
+    expect(within(paid).getByText("Paid")).toBeInTheDocument();
+    expect(within(paid).getByText("Not needed")).toBeInTheDocument();
+    expect(within(paid).queryByText("Give a paper copy")).toBeNull();
+    // Only the unpaid one is counted.
+    expect(
+      within(invoices).getByText(/did not reach anyone on Telegram: 1\./),
+    ).toBeInTheDocument();
+
+    cleanup();
+
+    // Linked tenants keeps only the links (owner 17/11/2026: Sent on Telegram is its own tab).
+    render(
+      <LinkedTenantsPage
+        active
+        api={fakeApi()}
+        capabilities={READER}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    const links = await screen.findByRole("region", { name: "Links" });
+    expect(
+      screen.queryByRole("region", { name: "Invoices on Telegram" }),
+    ).toBeNull();
+    for (const part of ["Linked now", "Failed link attempts", "Ended links"])
+      expect(within(links).getByRole("region", { name: part })).toBeTruthy();
+    cleanup();
+
+    render(
+      <TelegramHealthPage
+        active
+        api={fakeApi()}
+        capabilities={MANAGER}
+        language="en"
+        propertyId="prop-1"
+      />,
+    );
+    const note = await screen.findByText(
+      "Only the Owner and the Manager see this page.",
+    );
+    expect(note.closest("p")?.className).toContain("tg-foot-note");
+  });
+
   it("TEST-FE-1950 Invoices on Telegram shows who got each issued Invoice and its reminder, and which tenants need a paper copy", async () => {
     const api = fakeApi();
     render(
-      <LinkedTenantsPage
+      <SentOnTelegramPage
         active
         api={api}
         capabilities={READER}
@@ -613,7 +693,7 @@ describe("Office › Telegram", () => {
   it("TEST-FE-1954 Receipts on Telegram shows who got each Receipt, a Receipt that reached nobody, and a reversed one", async () => {
     const api = fakeApi();
     render(
-      <LinkedTenantsPage
+      <SentOnTelegramPage
         active
         api={api}
         capabilities={READER}
@@ -621,6 +701,7 @@ describe("Office › Telegram", () => {
         propertyId="prop-1"
       />,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "Receipts" }));
     const receipts = await screen.findByRole("region", {
       name: "Receipts on Telegram",
     });
@@ -738,7 +819,7 @@ describe("Office › Telegram", () => {
   it("TEST-FE-1957 Warnings on Telegram shows who got each late Rent letter and Lease warning, and which tenants need the letter by hand", async () => {
     const api = fakeApi();
     render(
-      <LinkedTenantsPage
+      <SentOnTelegramPage
         active
         api={api}
         capabilities={READER}
@@ -746,6 +827,7 @@ describe("Office › Telegram", () => {
         propertyId="prop-1"
       />,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "Warnings" }));
     const warnings = await screen.findByRole("region", {
       name: "Warnings on Telegram",
     });
@@ -862,7 +944,10 @@ describe("Office › Telegram", () => {
     const bots = await screen.findByRole("region", { name: "Bots" });
     const tenant = within(bots).getByRole("row", { name: /Tenant bot/ });
     expect(within(tenant).getByText("Problem")).toBeTruthy();
-    expect(within(bots).getAllByText("Working")).toHaveLength(2);
+    // Telegram review fix 6 (owner 17/11/2026): a bot that never sent or received a message is
+    // "Not used yet", not "Working".
+    expect(within(bots).queryAllByText("Working")).toHaveLength(0);
+    expect(within(bots).getAllByText("Not used yet")).toHaveLength(2);
     expect(within(bots).getAllByText("Never").length).toBeGreaterThan(0);
     expect(screen.getByText("4 received")).toBeTruthy();
     const cards = screen.getAllByRole("listitem");
@@ -1182,15 +1267,15 @@ describe("Office › Telegram", () => {
     );
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Load the 15 starter questions",
+        name: "Add the 15 starter questions",
       }),
     );
     await screen.findByText(
-      "15 questions loaded. Each waits for the Owner to approve it.",
+      "15 questions added. Each waits for the Owner to approve it.",
     );
     expect(api.loadFaqStarter).toHaveBeenCalledWith("prop-1");
     expect(
-      screen.queryByRole("button", { name: "Load the 15 starter questions" }),
+      screen.queryByRole("button", { name: "Add the 15 starter questions" }),
     ).toBeNull();
     cleanup();
 
@@ -1210,7 +1295,7 @@ describe("Office › Telegram", () => {
     );
     await screen.findByText(/No questions yet/);
     expect(
-      screen.queryByRole("button", { name: "Load the 15 starter questions" }),
+      screen.queryByRole("button", { name: "Add the 15 starter questions" }),
     ).toBeNull();
   });
 

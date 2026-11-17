@@ -90,6 +90,7 @@ const TABBED_HEAD: ReadonlySet<string> = new Set([
   "payroll",
   "attendance",
   "tglinks",
+  "tgsent",
   "tgcontact",
   "tgfaq",
   "tgnotices",

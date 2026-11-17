@@ -74,6 +74,11 @@
   align-items: flex-start;
 }
 
+/* Access review fix 10 (owner 17/11/2026): a link beside a button sits on its middle line. */
+.ui-actions.ui-actions-mid {
+  align-items: center;
+}
+
 .ui-crumb {
   display: inline-flex;
   align-items: center;
@@ -4591,6 +4596,27 @@ ul.ui-unitinv li b {
 
   table.ui-table.ui-rowcards td.ui-rc-wide {
     grid-column: 1 / -1;
+  }
+}
+
+/* Telegram and Users and access review (owner 17/11/2026): with "ui-rc-one" each card is one
+   column, a value per line, so a long value never squeezes the one beside it. */
+@media (max-width: 639px) {
+  table.ui-table.ui-rowcards.ui-rc-one tr {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  table.ui-table.ui-rowcards.ui-rc-one td {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  table.ui-table.ui-rowcards.ui-rc-one td:first-child {
+    font-weight: 600;
+  }
+
+  table.ui-table.ui-rowcards.ui-rc-one td:empty {
+    display: none;
   }
 }
 

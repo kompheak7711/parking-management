@@ -4,13 +4,7 @@
 import "../shell/screens.css";
 import "./hr.css";
 
-import {
-  type ReactNode,
-  type RefObject,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useState } from "react";
 
 import { usdFromCents } from "../shell/format";
 import { Icon } from "../shell/icons";
@@ -277,28 +271,4 @@ export function previousMonth(day: string): string {
   return new Date(Date.UTC(year, month - 2, 1)).toISOString().slice(0, 10);
 }
 
-/**
- * Staff review fix 4 (owner 16/11/2026): on a phone an HR table is a list of cards
- * ("ui-rowcards"). Each cell after the first is labelled with its column heading, read from
- * the table's head after every draw; a column whose heading is for screen readers only (the
- * buttons) gets no label.
- */
-export function useCardLabels(): RefObject<HTMLTableElement | null> {
-  const table = useRef<HTMLTableElement>(null);
-  useLayoutEffect(() => {
-    const element = table.current;
-    if (element === null) return;
-    const heads = [...element.querySelectorAll("thead th")].map((th) =>
-      th.querySelector(".ui-sr") !== null ? "" : th.textContent.trim(),
-    );
-    for (const row of element.querySelectorAll("tbody tr")) {
-      [...row.children].forEach((cell, index) => {
-        if (!(cell instanceof HTMLElement)) return;
-        const label = index === 0 ? "" : (heads[index] ?? "");
-        if (label === "") delete cell.dataset.label;
-        else cell.dataset.label = label;
-      });
-    }
-  });
-  return table;
-}
+export { useCardLabels } from "../shell/cardLabels";

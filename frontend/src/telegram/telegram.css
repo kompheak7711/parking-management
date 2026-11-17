@@ -1,0 +1,116 @@
+/* Telegram review (owner 17/11/2026). */
+
+/* Fix 2: Linked now, Failed link attempts and Ended links are parts of one Links card. */
+.shell-view .tg-part-h {
+  margin: 0;
+  padding: 14px 16px 6px;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.shell-view .ui-listbar + section > .tg-part-h:first-child {
+  border-top: 0;
+}
+
+.tg-part-h .ui-muted {
+  font-size: 0.86rem;
+  font-weight: 400;
+}
+
+.shell-view .tg-part-empty {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+.ui-tfoot > p {
+  margin: 0;
+}
+
+.ui-tfoot > p + p {
+  margin-top: 4px;
+}
+
+/* Fix 4: on a phone the 5 Telegram tabs are equal buttons, two in a row (the last one takes the
+   whole row), like Users and access, so no tab hides past the right edge. */
+@media (max-width: 640px) {
+  .shell-tabs:has(> a[href="#/tghealth"]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    contain: none;
+    border-bottom: 0;
+  }
+
+  .shell-tabs:has(> a[href="#/tghealth"])
+    > .shell-tab:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .shell-tabs:has(> a[href="#/tghealth"]) > .shell-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid var(--btn-edge);
+    border-radius: 8px;
+    background: var(--btn-bg);
+    text-align: center;
+    white-space: normal;
+  }
+
+  .shell-tabs:has(> a[href="#/tghealth"]) > .shell-tab[aria-current="page"] {
+    border-color: var(--primary);
+    background: var(--selected);
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
+}
+
+/* Fix 6: on Telegram health a value in words ("Not yet") is normal size, and who sees the page
+   is a small line at its foot. */
+.ui-kpi-value.tg-kpi-small {
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.shell-view p.tg-foot-note {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+/* Fix 7: the small line under the FAQ starter button. */
+.shell-view .ui-empty p.tg-small {
+  margin-top: 8px;
+  font-size: 0.86rem;
+}
+
+/* Fix 8: what a notice is for and how to write it read as one block. */
+.shell-view p.tg-tight {
+  margin-bottom: 4px;
+}
+
+.shell-view p.tg-tight + p {
+  margin-top: 0;
+}
+
+/* Sent on Telegram (owner 17/11/2026): the switch fits its 3 choices; on a phone they share
+   the row equally. */
+.ui-seg.tg-sent-switch {
+  justify-self: start;
+}
+
+@media (max-width: 640px) {
+  .ui-seg.tg-sent-switch {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-self: stretch;
+  }
+}

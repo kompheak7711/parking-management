@@ -15,6 +15,11 @@ MOVED_TEST_PATHS: Final = {
     "TEST-FE-028": "frontend/src/UnitManagement.test.tsx",
     "TEST-FE-029": "frontend/src/UnitManagement.test.tsx",
     "TEST-FE-030": "frontend/src/UnitManagement.test.tsx",
+    # Users and access review fix 13 (owner 17/11/2026): the earlier account forms are gone, so
+    # these checks run on the Users tab (settings/UsersTab.test.tsx).
+    "TEST-FE-012": "frontend/src/App.test.tsx",
+    "TEST-FE-014": "frontend/src/App.test.tsx",
+    "TEST-FE-684": "frontend/src/App.test.tsx",
 }
 # V1-058 R7b-6e bills every Service, so this test's name and notes changed; the history checks
 # below read the entry as first recorded.

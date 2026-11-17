@@ -802,7 +802,8 @@ export function UsersTab({
 
   return (
     <>
-      <div aria-live="polite" role="status">
+      {/* Access review fix 9 (owner 17/11/2026): "ui-live" takes no room while empty. */}
+      <div aria-live="polite" className="ui-live" role="status">
         {toast !== null && (
           <div className={toast.ok ? "ui-notice ok" : "ui-notice warn"}>
             <Icon name={toast.ok ? "check" : "alert"} />
@@ -829,7 +830,7 @@ export function UsersTab({
           </header>
           <div className="ui-tablewrap">
             {/* Administration review fix 6: one card per user on a phone. */}
-            <table className="ui-table ui-rowcards">
+            <table className="ui-table ui-rowcards ui-rc-one">
               <thead>
                 <tr>
                   <th scope="col">{sst(language, "se_user")}</th>
@@ -859,7 +860,9 @@ export function UsersTab({
                           language={language}
                         />
                       </td>
-                      <td>{roleText(language, user)}</td>
+                      <td data-label={sst(language, "se_class")}>
+                        {roleText(language, user)}
+                      </td>
                       <td
                         className="wrap ui-rc-wide"
                         data-label={at(language, "ur_roles_col")}
@@ -881,7 +884,8 @@ export function UsersTab({
                           </>
                         )}
                       </td>
-                      <td>
+                      {/* Access review fix 10 (owner 17/11/2026): labelled on a phone. */}
+                      <td data-label={sst(language, "se_mfa")}>
                         {user.mfa_policy_class === "required" ? (
                           <Chip icon="lock" tone="info">
                             {sst(language, "mfa_needed")}
@@ -892,7 +896,7 @@ export function UsersTab({
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td data-label={sst(language, "se_state")}>
                         {user.lifecycle_state === "active" ? (
                           <Chip icon="check" tone="ok">
                             {sst(language, "se_active")}
@@ -905,7 +909,7 @@ export function UsersTab({
                       </td>
                       <td className="ui-rc-wide">
                         {helpable ? (
-                          <span className="ui-actions">
+                          <span className="ui-actions ui-actions-mid">
                             <button
                               aria-label={`${sst(language, "ur_btn")}: ${user.display_name}`}
                               className="ui-btn"
@@ -961,6 +965,7 @@ export function UsersTab({
           <RolesSection
             data={roles}
             language={language}
+            users={users}
             onAdd={() => {
               start({ kind: "role", role: null });
             }}
@@ -976,7 +981,6 @@ export function UsersTab({
               {SIGN_IN_RULES.map((key) => (
                 <li key={key}>{sst(language, key)}</li>
               ))}
-              <li>{at(language, "se_signin_roles")}</li>
             </ul>
           </section>
         )}

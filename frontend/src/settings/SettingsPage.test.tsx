@@ -173,7 +173,6 @@ function show(
       capabilities={capabilities}
       earlier={{
         business: <p>Old business form</p>,
-        users: <p>Old account form</p>,
       }}
       healthApi={api}
       language={language}
@@ -258,7 +257,6 @@ describe("Settings", () => {
     ]);
     // The first tab opens; a tab not rebuilt yet keeps its earlier forms, folded.
     expect(onShownTab("Old business form")).toBe(true);
-    expect(onShownTab("Old account form")).toBe(false);
     openTab("services");
     expect(
       screen
@@ -444,16 +442,21 @@ describe("Settings", () => {
       .getAllByRole("tab")
       .map((tab) => tab.textContent);
     expect(tabs).toEqual(["Users", "Roles", "Sign-in and security", "History"]);
-    // On Users the earlier account forms are hidden; the Settings ones too.
-    expect(
-      screen.getByText("Old account form").closest("[hidden]"),
-    ).not.toBeNull();
+    // The Settings forms stay hidden here.
     expect(
       screen.getByText("Old business form").closest("[hidden]"),
     ).not.toBeNull();
     fireEvent.click(screen.getByRole("tab", { name: "History" }));
     expect(window.location.hash).toBe("#/access?tab=history");
-    expect(screen.getByText("Old account form").closest("[hidden]")).toBeNull();
+    // Access review fix 13 (owner 17/11/2026): the earlier English account forms are gone.
+    expect(
+      screen
+        .queryAllByText("Earlier forms (English)")
+        .filter((item) => item.closest("[hidden]") === null),
+    ).toHaveLength(0);
+    expect(
+      screen.queryByText(/The older English forms below do the same things/),
+    ).toBeNull();
     expect(
       await screen.findByText("No access change yet."),
     ).toBeInTheDocument();

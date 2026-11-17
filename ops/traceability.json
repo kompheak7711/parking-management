@@ -5005,7 +5005,7 @@
         "TEST-135"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/App.test.tsx",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
       "status": "implemented",
       "notes": "Account administration appears only after server capability and recent-authentication checks, and destructive session/account commands require explicit consequence confirmation."
     },
@@ -5032,7 +5032,7 @@
         "TEST-135"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/App.test.tsx",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
       "status": "implemented",
       "notes": "Owner-authorized Manager/Staff recovery remains server-gated and requires recent authentication, an audit reason, and explicit consequence confirmation before submission."
     },
@@ -48918,7 +48918,7 @@
         "UI-112"
       ],
       "test_level": "UI component",
-      "test_path": "frontend/src/App.test.tsx",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
       "status": "implemented",
       "notes": "A new account's first one-time password is shown once with its username and cleared by the button; loading the administration again clears it too (login slice sub-slice L4 review round 2, Q-2026-10-24-185, DL-081)."
     },
@@ -71712,6 +71712,28 @@
       "test_path": "frontend/src/hr/HrPages.test.tsx",
       "status": "implemented",
       "notes": "Audit log and Staff review (owner 16/11/2026, all 12), fixes 1, 2 and 8: the employee page's head is the name (shared record head), each Employment history entry is one block beside its dot, and the ID details have their own card with a dash for an empty value."
+    },
+    {
+      "test_id": "TEST-FE-2237",
+      "upstream_ids": [
+        "DL-211",
+        "DL-214"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/telegram/TelegramPages.test.tsx",
+      "status": "implemented",
+      "notes": "Telegram review (owner 17/11/2026): a fully paid Invoice shows Paid and is not counted for a paper copy; Linked now, Failed link attempts and Ended links are parts of one Links card; Telegram health says who sees it at its foot."
+    },
+    {
+      "test_id": "TEST-FE-2238",
+      "upstream_ids": [
+        "UI-112",
+        "DL-120"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/settings/UsersTab.test.tsx",
+      "status": "implemented",
+      "notes": "Users and access review (owner 17/11/2026): on a phone every value of a user and a role is labelled and Edit stays in the role's card; Reset and Disable sit on one line."
     },
     {
       "test_id": "test_migration_423_follows_the_head_and_is_forward_only",

@@ -8,6 +8,7 @@
 import { type FormEvent, type ReactNode, useState } from "react";
 
 import type { UserAccount } from "../adminClient";
+import { useCardLabels } from "../shell/cardLabels";
 import { Icon } from "../shell/icons";
 import { Chip, Dialog } from "../shell/ui";
 import type { Language } from "../signInText";
@@ -26,6 +27,41 @@ import {
 import { sst } from "../settings/text";
 import { at } from "./text";
 
+/**
+ * Access review fix 11 (owner 17/11/2026): two-step sign-in is needed by a role that can change
+ * business rules (and the Owner's), and also by every Owner and Manager account, whatever its
+ * roles (the server's rule). So a role whose people all must use it shows "Required" too: the
+ * Manager role said "Optional" while its Manager had to use it.
+ */
+function twoStepFor(
+  role: Role,
+  assignments: RolesAndPermissions["assignments"],
+  users: readonly Pick<UserAccount, "user_id" | "mfa_policy_class">[],
+): boolean {
+  if (needsTwoStep(role)) return true;
+  const holders = new Set(
+    assignments
+      .filter((item) => item.role_bundle_id === role.role_bundle_id)
+      .map((item) => item.user_id),
+  );
+  const people = users.filter((user) => holders.has(user.user_id));
+  return (
+    people.length > 0 &&
+    people.every((user) => user.mfa_policy_class === "required")
+  );
+}
+
+/** Fix 11: the Owner role first, then the others by name (Owner, Manager, Staff); a turned-off
+ * role last. */
+function roleOrder(roles: readonly Role[]): Role[] {
+  return [...roles].sort(
+    (a, b) =>
+      Number(b.owner_role) - Number(a.owner_role) ||
+      Number(a.turned_off) - Number(b.turned_off) ||
+      a.name.localeCompare(b.name),
+  );
+}
+
 /** The permissions shown on the screen (all but the one every role has). */
 function shown(permissions: readonly Permission[]): Permission[] {
   return permissions.filter((item) => item.group_code !== null);
@@ -42,15 +78,20 @@ function wholeCount(role: Role, permissions: readonly Permission[]): number {
 export function RolesSection({
   language,
   data,
+  users = [],
   onAdd,
   onEdit,
 }: {
   language: Language;
   data: RolesAndPermissions;
+  /** The accounts, to tell whether all the people of a role must use two-step sign-in. */
+  users?: readonly Pick<UserAccount, "user_id" | "mfa_policy_class">[];
   onAdd: () => void;
   onEdit: (role: Role) => void;
 }) {
   const total = shown(data.permissions).length;
+  // Access review fix 3 (owner 17/11/2026): on a phone each role is a card with its Edit button.
+  const table = useCardLabels();
   return (
     <section aria-labelledby="settings-roles" className="ui-card pad0">
       <header className="ui-chead pad">
@@ -63,7 +104,7 @@ export function RolesSection({
         </span>
       </header>
       <div className="ui-tablewrap">
-        <table className="ui-table">
+        <table className="ui-table ui-rowcards ui-rc-one" ref={table}>
           <thead>
             <tr>
               <th scope="col">{at(language, "ro_role")}</th>
@@ -76,7 +117,7 @@ export function RolesSection({
             </tr>
           </thead>
           <tbody>
-            {data.roles.map((role) => (
+            {roleOrder(data.roles).map((role) => (
               <tr key={role.role_bundle_id}>
                 <td>
                   <b>{roleName(role, language)}</b>
@@ -97,7 +138,7 @@ export function RolesSection({
                   )}
                 </td>
                 <td>
-                  {needsTwoStep(role) ? (
+                  {twoStepFor(role, data.assignments, users) ? (
                     <Chip icon="lock" tone="info">
                       {at(language, "ro_required")}
                     </Chip>

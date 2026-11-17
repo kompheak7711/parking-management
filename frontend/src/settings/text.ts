@@ -81,12 +81,6 @@ const TEXT = {
     "This tab is rebuilt in a later step. Until then the earlier forms below still work.",
     "ផ្ទាំងនេះនឹងរៀបចំឡើងវិញនៅជំហានក្រោយ។ រហូតដល់ពេលនោះ ទម្រង់មុនខាងក្រោមនៅតែប្រើបាន។",
   ],
-  // new: the Users tab is rebuilt; role bundles are not in the mock-up.
-  // Administration review fix 10: the old forms show only under History now. // new
-  earlier_kept: [
-    "The older English forms below do the same things as the tabs above. They go when the old screens are removed.",
-    "ទម្រង់អង់គ្លេសចាស់ខាងក្រោម ធ្វើរឿងដដែលនឹងផ្ទាំងខាងលើ។ វានឹងដកចេញ ពេលអេក្រង់ចាស់ត្រូវដកចេញ។",
-  ],
   // new: the Business tab is rebuilt; the earlier forms stay until the old screens go.
   earlier_same: [
     "The earlier forms below change the same things. They go when the old screens are removed.",
@@ -294,7 +288,8 @@ const TEXT = {
   se_role: ["Role", "តួនាទី"],
   // V1.1 part 3: the account type, now that a person has roles.
   se_class: ["Account type", "ប្រភេទគណនី"],
-  se_mfa: ["MFA", "MFA"],
+  // Access review fix 10 (owner 17/11/2026): the same words as the Roles tab.
+  se_mfa: ["Two-step sign-in", "ការចូលពីរជំហាន"],
   ua_col: ["Can change settings", "អាចប្តូរការកំណត់"],
   se_state: ["State", "ស្ថានភាព"],
   ur_col: ["Sign-in help", "ជំនួយការចូល"],
@@ -362,13 +357,15 @@ const TEXT = {
   // new
   no: ["No", "ទេ"],
   se_signin: ["Sign-in rules", "ច្បាប់ចូល"],
+  // Access review fix 12 (owner 17/11/2026): plain words; the two lines about two-step sign-in
+  // are one. The rules are the same. Khmer new, needs the native check.
   se_signin_1: [
-    "Local sign-in with name and password; no first Owner created from the web.",
-    "ចូលក្នុងមូលដ្ឋានដោយឈ្មោះ និងពាក្យសម្ងាត់; គ្មានម្ចាស់ដំបូងបង្កើតពីវេប។",
+    "Each person signs in with a user name and a password. The Owner account cannot be made from the website.",
+    "ម្នាក់ៗចូលដោយឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់។ មិនអាចបង្កើតគណនីម្ចាស់ពីគេហទំព័របានទេ។",
   ],
   se_signin_2: [
-    "Owner and Managers must use two-step sign-in, with recovery codes kept safe.",
-    "ម្ចាស់ និងអ្នកគ្រប់គ្រង ត្រូវប្រើកូដទីពីរ (កម្មវិធី MFA) ជាមួយកូដសង្គ្រោះរក្សាសុវត្ថិភាព។",
+    "The Owner and Managers must use two-step sign-in, and so must anyone whose role can change business rules. Keep the recovery codes safe.",
+    "ម្ចាស់ និងអ្នកគ្រប់គ្រង ត្រូវប្រើការចូលពីរជំហាន ហើយអ្នកដែលមានតួនាទីអាចប្តូរច្បាប់អាជីវកម្មក៏ដូចគ្នា។ រក្សាកូដសង្គ្រោះឱ្យមានសុវត្ថិភាព។",
   ],
   se_signin_3: [
     "A session ends after 30 minutes without activity, and always after 24 hours.",

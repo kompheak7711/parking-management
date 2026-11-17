@@ -131,7 +131,7 @@ describe("Settings: Users and sign-in", () => {
       "Name",
       "Account type",
       "Roles",
-      "MFA",
+      "Two-step sign-in",
       "State",
       "Sign-in help",
     ]);
@@ -185,17 +185,21 @@ describe("Settings: Users and sign-in", () => {
         .slice(0, 4)
         .map((td) => td.textContent),
     );
+    // Access review fix 11 (owner 17/11/2026): the Manager role's one person must use two-step
+    // sign-in (a Manager account), so it says Required; Owner, Manager, Staff, then turned off.
     expect(roleRows).toEqual([
       ["Owner", "1", "5 of 5", "Required"],
-      ["Manager", "1", "2 of 5", "Optional"],
+      ["Manager", "1", "2 of 5", "Required"],
       ["Staff", "1", "1 of 5", "Optional"],
       ["Night desk Turned off", "0", "0 of 5", "Optional"],
     ]);
+    // Access review fix 12: plain words; the two lines about two-step sign-in are one.
     const rules = screen.getByRole("region", { name: "Sign-in rules" });
-    expect(within(rules).getAllByRole("listitem")).toHaveLength(6);
+    expect(within(rules).getAllByRole("listitem")).toHaveLength(5);
     expect(rules.textContent).toContain(
-      "Two-step sign-in is needed for the Owner and for every role that can change business rules.",
+      "The Owner and Managers must use two-step sign-in, and so must anyone whose role can change business rules.",
     );
+    expect(rules.textContent).not.toContain("no first Owner created");
 
     fireEvent.click(screen.getByRole("button", { name: "End all sessions" }));
     const dialog = screen.getByRole("dialog", { name: "End all sessions" });
@@ -823,5 +827,164 @@ describe("Settings: Users and sign-in", () => {
     expect(region.textContent).toContain("អ្នកគ្រប់គ្រង");
     expect(region.textContent).toContain("ត្រូវការ");
     expect(screen.getByRole("button", { name: "បន្ថែមតួនាទី" })).toBeTruthy();
+  });
+
+  it("TEST-FE-2238 on a phone every value of a user and a role is labelled and Edit stays in the role's card; Reset and Disable sit on one line (Access review fixes 3 and 10)", async () => {
+    show();
+    await screen.findByRole("region", { name: "Users" });
+    const labels = Array.from(row("Vanna").querySelectorAll("td")).map(
+      (td) => td.dataset.label ?? "",
+    );
+    expect(labels.slice(1, 5)).toEqual([
+      "Account type",
+      "Roles",
+      "Two-step sign-in",
+      "State",
+    ]);
+    expect(
+      within(row("Vanna"))
+        .getByRole("button", { name: "Disable: Vanna" })
+        .closest(".ui-actions")?.className,
+    ).toContain("ui-actions-mid");
+    const roles = screen.getByRole("region", { name: "Roles" });
+    const table = roles.querySelector("table");
+    expect(table?.className).toContain("ui-rowcards");
+    const first = roles.querySelector("tbody tr");
+    expect(
+      Array.from(first?.querySelectorAll("td") ?? []).map(
+        (td) => td.dataset.label ?? "",
+      ),
+    ).toEqual(["", "Users", "Permissions", "Two-step sign-in", ""]);
+    expect(
+      within(first as HTMLElement).getByRole("button", { name: /^Edit/ }),
+    ).toBeTruthy();
+  });
+
+  // Access review fix 13 (owner 17/11/2026): the earlier English account forms are gone, so these
+  // three checks moved here from App.test.tsx and now run on the Users tab.
+  it("TEST-FE-012 account commands show only when the server allows them, and Disable says what happens, needs a press and, when the server asks, the password and code again", async () => {
+    show(apiOf(() => Promise.reject(new AdministrationUnavailableError())));
+    expect(
+      await screen.findByText("Your account cannot open this tab."),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Add user" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Disable/ })).toBeNull();
+    cleanup();
+
+    const api = apiOf();
+    api.disableUser.mockRejectedValueOnce(new ReauthenticationRequiredError());
+    const { reauthenticate } = show(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Disable: Vanna" }),
+    );
+    let dialog = screen.getByRole("dialog", { name: "Disable Vanna" });
+    expect(dialog.textContent).toContain(
+      "Vanna is signed out at once and can no longer sign in. Nothing is deleted.",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(api.disableUser).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Disable: Vanna" }));
+    dialog = screen.getByRole("dialog", { name: "Disable Vanna" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Disable" }));
+    dialog = await screen.findByRole("dialog", { name: "Confirm it is you" });
+    expect(api.disableUser).toHaveBeenCalledTimes(1);
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "my blue door opens" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("6-digit code"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
+    expect(await screen.findByText("Vanna is disabled.")).toBeTruthy();
+    expect(reauthenticate).toHaveBeenCalledTimes(1);
+    expect(api.disableUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("TEST-FE-014 Reset sign-in says what happens and needs what to reset and a reason before it is sent; the password and code are asked again when the server says so", async () => {
+    const api = apiOf();
+    api.administrativelyRecoverUser.mockRejectedValueOnce(
+      new ReauthenticationRequiredError(),
+    );
+    const { reauthenticate } = show(api);
+    fireEvent.click(await screen.findByRole("button", { name: "Reset: Dara" }));
+    let dialog = screen.getByRole("dialog", { name: "Reset sign-in for Dara" });
+    expect(dialog.textContent).toContain(
+      "Dara is signed out everywhere at once. This is written to the audit log.",
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reset now" }));
+    expect(within(dialog).getByText("Choose what to reset.")).toBeTruthy();
+    expect(within(dialog).getByText("Choose a reason.")).toBeTruthy();
+    expect(api.administrativelyRecoverUser).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("radio", { name: /Two-step/ }));
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "ur_r_forgot" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Reset now" }));
+    dialog = await screen.findByRole("dialog", { name: "Confirm it is you" });
+    fireEvent.change(within(dialog).getByLabelText("Your password"), {
+      target: { value: "my blue door opens" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("6-digit code"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
+    await screen.findByRole("dialog", { name: "One-time password for Dara" });
+    expect(reauthenticate).toHaveBeenCalledTimes(1);
+    expect(api.administrativelyRecoverUser).toHaveBeenCalledTimes(2);
+    expect(api.administrativelyRecoverUser).toHaveBeenLastCalledWith(
+      "user-Dara",
+      expect.objectContaining({ reset_mfa: true }),
+    );
+  });
+
+  it("TEST-FE-684 a new account's first one-time password shows once with its name and goes with Done; opening another Property clears it too", async () => {
+    const api = apiOf();
+    const { rerender } = render(
+      <UsersTab
+        active
+        api={api}
+        language="en"
+        myUserId="owner-1"
+        propertyId="property-1"
+        reauthenticate={vi.fn(() => Promise.resolve())}
+        rolesApi={rolesApiOf()}
+      />,
+    );
+    const addOne = async () => {
+      fireEvent.click(await screen.findByRole("button", { name: "Add user" }));
+      const form = screen.getByRole("dialog", { name: "Add user" });
+      fireEvent.change(within(form).getByLabelText(/^Name/), {
+        target: { value: "Mony" },
+      });
+      fireEvent.change(within(form).getByLabelText(/^Username/), {
+        target: { value: "mony" },
+      });
+      fireEvent.click(within(form).getByRole("button", { name: "Save" }));
+      return screen.findByRole("dialog", {
+        name: "One-time password for Mony",
+      });
+    };
+    let dialog = await addOne();
+    expect(dialog.textContent).toContain("river-mango-lotus-44");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+    expect(screen.queryByText("river-mango-lotus-44")).toBeNull();
+
+    dialog = await addOne();
+    expect(dialog.textContent).toContain("river-mango-lotus-44");
+    rerender(
+      <UsersTab
+        active
+        api={api}
+        language="en"
+        myUserId="owner-1"
+        propertyId="property-2"
+        reauthenticate={vi.fn(() => Promise.resolve())}
+        rolesApi={rolesApiOf()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("river-mango-lotus-44")).toBeNull();
+    });
   });
 });
