@@ -552,7 +552,7 @@ def test_a_joint_inspection_works_on_a_vehicle_agreement(migrated_database_url: 
 
 def test_vehicles_migration_is_head_and_forward_only() -> None:
     script = ScriptDirectory.from_config(Config(str(Path(__file__).parents[1] / "alembic.ini")))
-    assert script.get_current_head() == "20270810_433_parking"
+    assert script.get_current_head() == "20270811_434_parking"
     revision = script.get_revision("20270809_432_parking")
     assert revision is not None
     assert revision.down_revision == "20270808_431_parking"

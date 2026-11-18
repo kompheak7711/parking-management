@@ -105,7 +105,7 @@ def test_migration_391_follows_the_invoice_types() -> None:
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == "20270716_390"
     # On the UI v81 branch 360 to 364 follow 391.
-    assert scripts.get_heads() == ["20270810_433_parking"]
+    assert scripts.get_heads() == ["20270811_434_parking"]
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()
 

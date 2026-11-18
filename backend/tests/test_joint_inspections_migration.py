@@ -39,7 +39,7 @@ def test_migration_423_follows_the_head_and_is_forward_only() -> None:
     migration = scripts.get_revision(REVISION)
     assert migration is not None and migration.down_revision == "20270804_422"
     # The copy by the Tenant bot (DL-244) follows it.
-    assert scripts.get_heads() == ["20270810_433_parking"]
+    assert scripts.get_heads() == ["20270811_434_parking"]
     with pytest.raises(RuntimeError, match="forward-only"):
         migration.module.downgrade()
 

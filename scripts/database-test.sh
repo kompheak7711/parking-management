@@ -350,6 +350,7 @@ database_test_suites='
   tests/test_money_one_step_migration.py
   tests/test_meter_history_migration.py
   tests/test_parking_types_migration.py
+  tests/test_remove_home_types_migration.py
   tests/test_vehicles_migration.py
   tests/test_unit_rent_terms_migration.py
   tests/test_unit_features_migration.py

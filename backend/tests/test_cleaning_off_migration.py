@@ -239,7 +239,7 @@ def test_a_full_settlement_with_no_pet_deposit_is_exact_to_the_cent(
 def test_the_cleaning_off_migration_is_the_head_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     script = ScriptDirectory.from_config(config)
-    assert script.get_current_head() == REVISION
+    assert script.get_current_head() == "20270811_434_parking"
     revision = script.get_revision(REVISION)
     assert revision.down_revision == "20270809_432_parking"
     source = (

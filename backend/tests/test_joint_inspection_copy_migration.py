@@ -32,7 +32,7 @@ def test_migration_424_is_the_head_and_is_forward_only() -> None:
     migration = scripts.get_revision(REVISION)
     assert migration is not None and migration.down_revision == "20270805_423"
     # Parking Step 6: Parking's three migrations follow 424.
-    assert scripts.get_heads() == ["20270810_433_parking"]
+    assert scripts.get_heads() == ["20270811_434_parking"]
     with pytest.raises(RuntimeError, match="forward-only"):
         migration.module.downgrade()
 

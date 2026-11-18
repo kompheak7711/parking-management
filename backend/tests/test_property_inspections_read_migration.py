@@ -35,7 +35,7 @@ def test_migration_422_follows_430_and_is_forward_only() -> None:
     scripts = ScriptDirectory.from_config(config)
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == "20270806_430"
-    assert scripts.get_heads() == ["20270810_433_parking"]  # Parking 431-433 follow 424
+    assert scripts.get_heads() == ["20270811_434_parking"]  # Parking 431-434 follow 424
     with pytest.raises(NotImplementedError, match="forward-only"):
         revision.module.downgrade()
 

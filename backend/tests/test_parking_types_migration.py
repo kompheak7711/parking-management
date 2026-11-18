@@ -23,7 +23,7 @@ from test_unit_migration import insert_actor
 from test_unit_setup_lists_migration import create_item, property_for
 
 REVISION = "20270808_431"
-HEAD = "20270810_433_parking"
+HEAD = "20270811_434_parking"
 PARKING_TYPES = [
     ("UNIT_TYPE", "COVERED", "Covered", "ចំណតមានដំបូល"),
     ("UNIT_TYPE", "UNCOVERED", "Uncovered", "ចំណតគ្មានដំបូល"),
