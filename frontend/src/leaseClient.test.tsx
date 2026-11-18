@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   LeaseConflictError,
+  LeaseRefusedError,
   LeaseUnitBookedError,
   leaseApi,
 } from "./leaseClient";
@@ -115,12 +116,12 @@ describe("Lease API client", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-2167 a draft refused because a short-stay guest has booked the Unit carries the server's reason; any other refusal of that kind stays a conflict (DL-223)", async () => {
+  it("TEST-FE-2167 a draft refused because a short-stay guest has booked the Parking carries the server's reason; any other refusal of that kind stays a conflict (DL-223)", async () => {
     const booked = {
       error: {
         code: "LEASE_UNIT_BOOKED",
         message:
-          "A short-stay guest has booked this Unit on some of these days. Nothing was saved.",
+          "A short-stay guest has booked this Parking on some of these days. Nothing was saved.",
       },
     };
     const fetcher = vi
@@ -220,7 +221,7 @@ describe("Lease API client", () => {
     });
   });
 
-  it("TEST-FE-1135 the vehicle move-in and Change vehicle post to their own routes with the Lease version, and a coded refusal keeps the server's words (Parking Step 4)", async () => {
+  it("TEST-FE-3135 the vehicle move-in and Change vehicle post to their own routes with the Lease version, and a coded refusal keeps the server's words (Parking Step 4)", async () => {
     const lease = { lease_id: "lease-1", version: 4 } as Parameters<
       typeof leaseApi.recordVehicleMoveIn
     >[0];

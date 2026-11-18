@@ -260,7 +260,9 @@ class PostgresShortStayFlow:
         except psycopg.Error as exc:
             # Two people booking the same night at once: the database keeps one.
             if exc.sqlstate == "23P01":
-                raise ProductConflict("The Unit is already booked on one of these nights") from exc
+                raise ProductConflict(
+                    "The Parking is already booked on one of these nights"
+                ) from exc
             raise _refusal(exc) from exc
         return None if row is None else row[0]
 
@@ -916,7 +918,7 @@ def create_short_stays_router(
         ):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="A new link names its Unit; a change names the link and its version",
+                detail="A new link names its Parking; a change names the link and its version",
             )
         return act(request, property_id, SHORT_STAYS_APPROVE, "site_calendar", property_id, body)
 

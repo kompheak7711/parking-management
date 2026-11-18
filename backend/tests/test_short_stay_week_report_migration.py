@@ -129,6 +129,10 @@ def test_the_week_counts_paid_nights_money_and_costs(stay_database: BookingDatab
     assert before["totals"]["nights"] == 0 and before["complaints"] == []
 
 
+@pytest.mark.skip(
+    reason="Parking Step 6: short stays are hidden on Parking (SHORT_STAYS) and their month-only "
+    "prices are keyed by Property Rental's home Unit Types, which Parking does not seed"
+)
 def test_a_quote_shows_the_month_prices(stay_database: BookingDatabase) -> None:
     db = stay_database
     check_in = db.today + timedelta(days=60)

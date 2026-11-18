@@ -1,4 +1,4 @@
-"""PostgreSQL tests for the Parking Type seeds (Parking Step 3b, migration 255).
+"""PostgreSQL tests for the Parking Type seeds (Parking Step 3b, migration 255; Step 6: 431).
 
 Owner answers of 2026-10-29: a new Property starts with the four Parking Types (Covered,
 Uncovered, Motorbike, Tuk-Tuk/Food Cart) with the owner's Khmer names; a Property that already
@@ -22,7 +22,8 @@ from psycopg import Connection
 from test_unit_migration import insert_actor
 from test_unit_setup_lists_migration import create_item, property_for
 
-REVISION = "20270405_255"
+REVISION = "20270808_431"
+HEAD = "20270810_433_parking"
 PARKING_TYPES = [
     ("UNIT_TYPE", "COVERED", "Covered", "ចំណតមានដំបូល"),
     ("UNIT_TYPE", "UNCOVERED", "Uncovered", "ចំណតគ្មានដំបូល"),
@@ -78,6 +79,53 @@ def test_a_new_property_gets_the_four_parking_types_and_nothing_else(
     ).fetchone() == (4,)
 
 
+def test_a_new_property_gets_property_rentals_v1_1_lists_without_balcony(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    """Parking Step 6: the seed is Property Rental's V1.1 seed (Feature types, Unit features,
+    Item types; hidden on Parking) with the four Parking Types and no Balcony anywhere."""
+    actor_id = insert_actor(connection)
+    property_id = property_for(connection, actor_id)
+    rows = connection.execute(
+        "SELECT list_kind, code FROM app.unit_setup_items WHERE property_id = %s",
+        (property_id,),
+    ).fetchall()
+    codes = {(str(kind), str(code)) for kind, code in rows}
+    assert {
+        ("FEATURE_TYPE", "ROOM"),
+        ("FEATURE_TYPE", "BUILT_IN"),
+        ("UNIT_FEATURE", "BEDROOM"),
+        ("UNIT_FEATURE", "WALL_AIR_CONDITIONER"),
+        ("ITEM_TYPE", "KEYS"),
+    } <= codes
+    assert not {code for code in codes if code[1] == "BALCONY"}
+    assert not {code for code in codes if code[0] == "UNIT_TYPE"} - {
+        ("UNIT_TYPE", row[1]) for row in PARKING_TYPES
+    }
+
+
+def test_parking_migrations_run_again_change_nothing(migrated_database_url: str) -> None:
+    """Parking Step 6: the Parking database pkm ran 431-433 under their old ids (255-257), so it
+    runs them again after Property Rental's migrations; each must then change nothing."""
+    config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+    count = """
+        SELECT (SELECT count(*) FROM app.unit_setup_items),
+               (SELECT count(*) FROM app.audit_events),
+               to_regclass('app.vehicles') IS NOT NULL,
+               pg_catalog.pg_get_functiondef(
+                   'app.final_settlement_preview(uuid,uuid,uuid,text[])'::regprocedure)
+    """
+    with psycopg.connect(migrated_database_url) as connection:
+        before = connection.execute(count).fetchone()
+    command.stamp(config, "20270807_424")
+    command.upgrade(config, "head")
+    with psycopg.connect(migrated_database_url) as connection:
+        after = connection.execute(count).fetchone()
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (HEAD,)
+    assert after == before
+    assert before is not None and "IF false AND v_moved_in" in str(before[3])
+
+
 def test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing(
     connection: Connection[tuple[object, ...]],
 ) -> None:
@@ -110,10 +158,11 @@ def test_seeding_a_property_again_adds_only_what_is_missing_and_changes_nothing(
 
 def test_the_parking_types_migration_is_the_head_and_is_forward_only() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20270407_257"
+    assert ScriptDirectory.from_config(config).get_current_head() == HEAD
     source = (
         Path(__file__).parents[1] / "migrations" / "versions" / f"{REVISION}_parking_types.py"
     ).read_text(encoding="utf-8")
 
-    assert 'down_revision = "20270404_254"' in source
+    assert 'revision = "20270808_431_parking"' in source
+    assert 'down_revision = "20270807_424"' in source
     assert 'raise RuntimeError("Parking Type seeds migration is forward-only")' in source

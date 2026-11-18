@@ -35,7 +35,7 @@ const BOOKED = {
 const MOVED = {
   kind: "UNIT_CHANGED",
   occurred_at: "2026-11-12T03:00:00Z",
-  note: "A Lease takes the Unit the guest booked",
+  note: "A Lease takes the Parking the guest booked",
   details: {
     from_unit_id: "u-301",
     from_unit_number: "U301",
@@ -48,7 +48,7 @@ const MOVED = {
 const DISCOUNTED = {
   kind: "MOVE_DISCOUNT",
   occurred_at: "2026-11-12T03:10:00Z",
-  note: "A smaller Unit than the guest booked",
+  note: "A smaller Parking than the guest booked",
   details: { amount_usd_cents: 1000, credit_usd_cents: 1000 },
 };
 
@@ -181,12 +181,12 @@ function show(
   return api;
 }
 
-async function card(name = "Change Unit") {
+async function card(name = "Change Parking") {
   return within(await screen.findByRole("region", { name }));
 }
 
-describe("Short stays: Change Unit before check-in (DL-224)", () => {
-  it("TEST-FE-2110 the client reads the Units a stay can move to and sends the move and the special discount", async () => {
+describe("Short stays: Change Parking before check-in (DL-224)", () => {
+  it("TEST-FE-2110 the client reads the Parking a stay can move to and sends the move and the special discount", async () => {
     Object.defineProperty(document, "cookie", {
       configurable: true,
       value: "__Host-prm_csrf=token-1",
@@ -210,7 +210,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     const moved = await shortStaysApi.step("p-1", "b-1", "unit", {
       version: 4,
       unit_id: "u-505",
-      reason: "A Lease takes the Unit the guest booked",
+      reason: "A Lease takes the Parking the guest booked",
     });
     // The History keeps the old and the new Unit of a move.
     expect(moved.history[1]).toEqual({
@@ -222,7 +222,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     await shortStaysApi.step("p-1", "b-1", "move-discount", {
       version: 5,
       amount_usd_cents: 1000,
-      reason: "A smaller Unit than the guest booked",
+      reason: "A smaller Parking than the guest booked",
     });
     // A Unit the server did not describe in full is refused, not shown half empty.
     await expect(shortStaysApi.moveUnits("p-1", "b-1")).rejects.toBeInstanceOf(
@@ -244,12 +244,12 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
       JSON.stringify({
         version: 4,
         unit_id: "u-505",
-        reason: "A Lease takes the Unit the guest booked",
+        reason: "A Lease takes the Parking the guest booked",
       }),
     );
   });
 
-  it("TEST-FE-2111 the front desk moves a booked guest to a free Unit, the same type first, with a reason", async () => {
+  it("TEST-FE-2111 the front desk moves a booked guest to a free Parking, the same type first, with a reason", async () => {
     const moved = stay({
       unit_id: "u-505",
       unit_number: "U505",
@@ -265,7 +265,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     expect(
       change.getByText(/The guest keeps the agreed price of \$58\.00/),
     ).toBeInTheDocument();
-    fireEvent.click(change.getByRole("button", { name: "Change Unit" }));
+    fireEvent.click(change.getByRole("button", { name: "Change Parking" }));
     const select = await change.findByLabelText(/Move to/);
     expect(api.moveUnits).toHaveBeenCalledWith("p-1", "b-1");
     expect(
@@ -282,15 +282,17 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
 
     fireEvent.change(select, { target: { value: "u-505" } });
     // Another type: the price stays, and the screen says who may give a discount.
-    expect(change.getByText(/This Unit is another type/)).toBeInTheDocument();
+    expect(
+      change.getByText(/This Parking is another type/),
+    ).toBeInTheDocument();
     fireEvent.change(change.getByLabelText(/Reason/), {
-      target: { value: "  A Lease takes the Unit the guest booked " },
+      target: { value: "  A Lease takes the Parking the guest booked " },
     });
     fireEvent.click(change.getByRole("button", { name: "Move the guest" }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "unit", {
       version: 4,
       unit_id: "u-505",
-      reason: "A Lease takes the Unit the guest booked",
+      reason: "A Lease takes the Parking the guest booked",
     });
 
     // The page shows the new Unit; the History names the two Units and the reason.
@@ -301,22 +303,22 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Lim Dara · U505/)).toBeInTheDocument();
     const history = within(screen.getByRole("region", { name: "History" }));
-    expect(history.getByText("Moved to another Unit")).toBeInTheDocument();
+    expect(history.getByText("Moved to another Parking")).toBeInTheDocument();
     expect(history.getByText("U301 to U505")).toBeInTheDocument();
     expect(
-      history.getByText("A Lease takes the Unit the guest booked"),
+      history.getByText("A Lease takes the Parking the guest booked"),
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-2112 a move needs a Unit and a reason before anything is sent", async () => {
+  it("TEST-FE-2112 a move needs a Parking and a reason before anything is sent", async () => {
     const step = vi.fn(notUsed);
     show(fakeApi({ step }));
     const change = await card();
-    fireEvent.click(change.getByRole("button", { name: "Change Unit" }));
+    fireEvent.click(change.getByRole("button", { name: "Change Parking" }));
     const select = await change.findByLabelText(/Move to/);
     fireEvent.click(change.getByRole("button", { name: "Move the guest" }));
     expect(
-      change.getByText("Choose a Unit and write the reason."),
+      change.getByText("Choose a Parking and write the reason."),
     ).toBeInTheDocument();
     expect(select).toHaveAttribute("aria-invalid", "true");
     fireEvent.change(select, { target: { value: "u-302" } });
@@ -331,15 +333,15 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     expect(step).not.toHaveBeenCalled();
     // The same type: nothing about a discount.
     expect(
-      change.queryByText(/This Unit is another type/),
+      change.queryByText(/This Parking is another type/),
     ).not.toBeInTheDocument();
   });
 
-  it("TEST-FE-2113 Change Unit shows only to the front desk and only before check-in", async () => {
+  it("TEST-FE-2113 Change Parking shows only to the front desk and only before check-in", async () => {
     show(fakeApi({}), ["short_stays.read"]);
     await screen.findByRole("region", { name: "History" });
     expect(
-      screen.queryByRole("region", { name: "Change Unit" }),
+      screen.queryByRole("region", { name: "Change Parking" }),
     ).not.toBeInTheDocument();
     cleanup();
 
@@ -354,24 +356,24 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     );
     await screen.findByRole("region", { name: "History" });
     expect(
-      screen.queryByRole("region", { name: "Change Unit" }),
+      screen.queryByRole("region", { name: "Change Parking" }),
     ).not.toBeInTheDocument();
   });
 
-  it("TEST-FE-2114 says when no other Unit is free, and reads the list again after a failure", async () => {
+  it("TEST-FE-2114 says when no other Parking is free, and reads the list again after a failure", async () => {
     const moveUnits = vi
       .fn<ShortStaysApi["moveUnits"]>()
       .mockRejectedValueOnce(new ShortStaysError(500))
       .mockResolvedValueOnce([]);
     show(fakeApi({ moveUnits }));
     const change = await card();
-    fireEvent.click(change.getByRole("button", { name: "Change Unit" }));
+    fireEvent.click(change.getByRole("button", { name: "Change Parking" }));
     expect(
-      await change.findByText("The free Units could not be loaded."),
+      await change.findByText("The free Parking could not be loaded."),
     ).toBeInTheDocument();
     fireEvent.click(change.getByRole("button", { name: "Try again" }));
     expect(
-      await change.findByText("No other Unit is free on these nights."),
+      await change.findByText("No other Parking is free on these nights."),
     ).toBeInTheDocument();
     expect(moveUnits).toHaveBeenCalledTimes(2);
     expect(
@@ -379,7 +381,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("TEST-FE-2115 a Unit taken in the meantime is refused and the list of free Units is read again", async () => {
+  it("TEST-FE-2115 a Parking taken in the meantime is refused and the list of free Parking is read again", async () => {
     const moveUnits = vi
       .fn<ShortStaysApi["moveUnits"]>()
       .mockResolvedValueOnce(UNITS)
@@ -387,7 +389,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     const step = vi.fn(() => Promise.reject(new ShortStaysError(409)));
     show(fakeApi({ moveUnits, step }));
     const change = await card();
-    fireEvent.click(change.getByRole("button", { name: "Change Unit" }));
+    fireEvent.click(change.getByRole("button", { name: "Change Parking" }));
     fireEvent.change(await change.findByLabelText(/Move to/), {
       target: { value: "u-302" },
     });
@@ -447,7 +449,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     ).not.toBeInTheDocument();
     // After check-in the guest does not move again.
     expect(
-      change.queryByRole("button", { name: "Change Unit" }),
+      change.queryByRole("button", { name: "Change Parking" }),
     ).not.toBeInTheDocument();
   });
 
@@ -498,7 +500,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
       target: { value: "10" },
     });
     fireEvent.change(special.getByLabelText(/Reason/), {
-      target: { value: "A smaller Unit than the guest booked" },
+      target: { value: "A smaller Parking than the guest booked" },
     });
     fireEvent.click(
       special.getByRole("button", { name: "Give the special discount" }),
@@ -506,13 +508,13 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "move-discount", {
       version: 5,
       amount_usd_cents: 1000,
-      reason: "A smaller Unit than the guest booked",
+      reason: "A smaller Parking than the guest booked",
     });
 
     // Given: the form is gone, the amount and the reason stay, and the Credit is named.
     expect(
       await screen.findByText(
-        "$10.00 off: A smaller Unit than the guest booked",
+        "$10.00 off: A smaller Parking than the guest booked",
       ),
     ).toBeInTheDocument();
     const after = await card("Special discount after the move");
@@ -551,7 +553,7 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     }
   });
 
-  it("TEST-FE-2119 Change Unit speaks Khmer, and a Refund of the discount Credit names the special discount", async () => {
+  it("TEST-FE-2119 Change Parking speaks Khmer, and a Refund of the discount Credit names the special discount", async () => {
     const refund = vi.fn<ShortStaysApi["refund"]>(() => Promise.resolve());
     const paid = stay({
       version: 6,
@@ -595,8 +597,8 @@ describe("Short stays: Change Unit before check-in (DL-224)", () => {
     cleanup();
 
     show(fakeApi({}), DESK, "km");
-    const change = await card("ប្ដូរបន្ទប់");
-    fireEvent.click(change.getByRole("button", { name: "ប្ដូរបន្ទប់" }));
+    const change = await card("ប្ដូរចំណត");
+    fireEvent.click(change.getByRole("button", { name: "ប្ដូរចំណត" }));
     expect(await change.findByLabelText(/ផ្លាស់ទៅ/)).toBeInTheDocument();
     expect(
       change.getByRole("button", { name: "ផ្លាស់ភ្ញៀវ" }),

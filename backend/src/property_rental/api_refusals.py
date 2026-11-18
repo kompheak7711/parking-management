@@ -98,19 +98,19 @@ LEASE_REQUIRED_SERVICE_MISSING = Refusal(
 LEASE_UNIT_BOOKED = Refusal(
     409,
     "LEASE_UNIT_BOOKED",
-    "A short-stay guest has booked this Unit on some of these days. Nothing was saved. "
-    "Choose another Unit, or a Start Date on the guest's check-out day or later "
-    "(see Short stays), or move the guest to another Unit first (Short stays, Change Unit).",
+    "A short-stay guest has booked this Parking on some of these days. Nothing was saved. "
+    "Choose another Parking, or a Start Date on the guest's check-out day or later "
+    "(see Short stays), or move the guest to another Parking first (Short stays, Change Parking).",
     ("DL-223",),
     ("unit_id", "start_date"),
 )
 SIGNING_UNIT_BOOKED = Refusal(
     409,
     "SIGNING_UNIT_BOOKED",
-    "A short-stay guest has booked this Unit on some of the Lease days. Nothing was saved. "
+    "A short-stay guest has booked this Parking on some of the Lease days. Nothing was saved. "
     "Change the Start Date with Edit draft to the guest's check-out day or later "
-    "(see Short stays), or move the guest to another Unit first (Short stays, Change Unit), "
-    "or cancel this draft and make the Lease on another Unit.",
+    "(see Short stays), or move the guest to another Parking first (Short stays, Change Parking), "
+    "or cancel this draft and make the Lease on another Parking.",
     ("DL-223",),
 )
 # DL-225 (12 Nov 2026): a booked short-stay guest also wins over a new Reservation, as over a
@@ -118,9 +118,9 @@ SIGNING_UNIT_BOOKED = Refusal(
 RESERVATION_UNIT_BOOKED = Refusal(
     409,
     "RESERVATION_UNIT_BOOKED",
-    "A short-stay guest has booked this Unit. Nothing was saved and no money was taken. "
-    "Reserve another Unit, or move the guest to another Unit first "
-    "(Short stays, Change Unit).",
+    "A short-stay guest has booked this Parking. Nothing was saved and no money was taken. "
+    "Reserve another Parking, or move the guest to another Parking first "
+    "(Short stays, Change Parking).",
     ("DL-225",),
     ("unit_id",),
 )

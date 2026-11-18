@@ -82,9 +82,10 @@ def _rows(cells: _Rows) -> list[SheetRow]:
     # The header is the first row that is not empty; its three names may be in any order.
     if not cells.items:
         raise SheetError("EMPTY")
-    # "unit" is the header of files downloaded before the Parking wording; both names are read.
+    # Parking: the blank file says "Parking"; files with Property Rental's "Unit" header are read
+    # too, so both names count as the Unit column.
     names = [_text(cell).lower() for cell in cells.items[0][1]]
-    names = ["parking" if name == "unit" else name for name in names]
+    names = ["unit" if name == "parking" else name for name in names]
     if any(name not in names for name in COLUMNS):
         raise SheetError("COLUMNS")
     where = {name: names.index(name) for name in COLUMNS + BROKEN_COLUMNS if name in names}
@@ -177,7 +178,7 @@ def blank_sheet(units: list[str]) -> bytes:
     if sheet is None:  # pragma: no cover - a new Workbook always has one sheet
         raise RuntimeError("New workbook has no sheet")
     sheet.title = "Readings"
-    sheet.append(["Unit", "Electricity", "Electricity broken", "Water", "Water broken"])
+    sheet.append(["Parking", "Electricity", "Electricity broken", "Water", "Water broken"])
     for cell in sheet[1]:
         cell.font = Font(bold=True)
     for unit in units:

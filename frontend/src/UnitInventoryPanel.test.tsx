@@ -137,7 +137,7 @@ function show(client: UnitApi, unitId = "unit-1", onSaved = vi.fn()) {
   );
 }
 
-describe("Unit inventory", () => {
+describe("Parking inventory", () => {
   it("TEST-FE-819 shows the count by Item type and each item with its place; Edit inventory changes a line in place, removes one with × and adds one with Where (V1.1, DL-115 (I))", async () => {
     const client = api();
     const onSaved = vi.fn();
@@ -247,7 +247,7 @@ describe("Unit inventory", () => {
     ).toBeEnabled();
   });
 
-  it("TEST-FE-822 refuses an empty name, a wrong count and the same item twice in one place, and loads the new Unit after a switch", async () => {
+  it("TEST-FE-822 refuses an empty name, a wrong count and the same item twice in one place, and loads the new Parking after a switch", async () => {
     const client = api();
     const { rerender } = show(client);
     fireEvent.click(

@@ -528,7 +528,7 @@ describe("Language and parameters", () => {
     expect(
       screen.getByRole("region", { name: "សរុបតាមចំណត និងខែ" }),
     ).toBeTruthy();
-    expect(cardNames("សរុបតាមបន្ទប់ និងខែ")[0]).toBe("ចំណូលសរុប");
+    expect(cardNames("សរុបតាមចំណត និងខែ")[0]).toBe("ចំណូលសរុប");
     expect(screen.queryAllByText("បើករបាយការណ៍")).toHaveLength(0);
     cleanup();
 

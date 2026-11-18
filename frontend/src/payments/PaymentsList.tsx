@@ -7,7 +7,6 @@
 // said "Short stay". The one-time charges are now split by the type of the Invoice (DL-221):
 // Short stay, Products, Damage, Other charges, the names the Receipt page uses.
 
-import { CLEANING_CHARGE } from "../leases/parking";
 import {
   type FormEvent,
   useCallback,

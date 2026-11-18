@@ -17,7 +17,6 @@ from alembic.script import ScriptDirectory
 
 from lease_deposit_forfeiture_test_support import forfeit_through_draft
 from property_rental.deposit import PostgresDepositService
-from property_rental.identity import AuthenticatedActor
 from property_rental.final_settlement import (
     RecordFinalSettlementDraftCommand,
     SettlementDepositRefund,
@@ -25,6 +24,7 @@ from property_rental.final_settlement import (
     SettlementDepositStepKind,
     SettlementTargetKind,
 )
+from property_rental.identity import AuthenticatedActor
 from property_rental.invoice import (
     RecordOneTimeChargeCommand,
     RecordUnitCleaningChargeCommand,
@@ -53,7 +53,7 @@ from test_one_time_charges_migration import draft_and_issue
 from test_termination_deposit_migration import terminate
 from test_unpaid_initial_termination_migration import rent_line, signed_with_initial
 
-REVISION = "20270407_257"
+REVISION = "20270810_433_parking"
 PREVIEW = "app.final_settlement_preview(uuid,uuid,uuid,text[])"
 CLEANING = "CLEANING_CHARGE_MISSING"
 
@@ -241,9 +241,12 @@ def test_the_cleaning_off_migration_is_the_head_and_is_forward_only() -> None:
     script = ScriptDirectory.from_config(config)
     assert script.get_current_head() == REVISION
     revision = script.get_revision(REVISION)
-    assert revision.down_revision == "20270406_256"
+    assert revision.down_revision == "20270809_432_parking"
     source = (
-        Path(__file__).parents[1] / "migrations" / "versions" / f"{REVISION}_cleaning_charge_off.py"
+        Path(__file__).parents[1]
+        / "migrations"
+        / "versions"
+        / "20270810_433_cleaning_charge_off.py"
     ).read_text(encoding="utf-8")
     assert "forward-only" in source and "IF false AND v_moved_in" in source
 

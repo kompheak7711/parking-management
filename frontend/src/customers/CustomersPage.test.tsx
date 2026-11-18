@@ -901,7 +901,7 @@ describe("Vehicles (Parking Step 4)", () => {
     };
   }
 
-  it("TEST-FE-1127 the Vehicles card lists the Customer's vehicles and Add vehicle saves the type and the plate as typed", async () => {
+  it("TEST-FE-3127 the Vehicles card lists the Customer's vehicles and Add vehicle saves the type and the plate as typed", async () => {
     window.location.hash = "#/customers/customer-1";
     const listVehicles = vi
       .fn<CustomerApi["listVehicles"]>()
@@ -963,7 +963,7 @@ describe("Vehicles (Parking Step 4)", () => {
     expect(within(card).getByText("Tuk-tuk")).toBeInTheDocument();
   });
 
-  it("TEST-FE-1128 a plate another vehicle already has warns with the owner's name and saves only on Save anyway; nothing is merged", async () => {
+  it("TEST-FE-3128 a plate another vehicle already has warns with the owner's name and saves only on Save anyway; nothing is merged", async () => {
     window.location.hash = "#/customers/customer-1";
     const createVehicle = vi
       .fn<CustomerApi["createVehicle"]>()
@@ -1008,7 +1008,7 @@ describe("Vehicles (Parking Step 4)", () => {
     expect(createVehicle.mock.calls[0]?.[1].plate_text).toBe("1ab 1234");
   });
 
-  it("TEST-FE-1137 a failed plate lookup does not stop the save, and the plate box stops at 32 characters", async () => {
+  it("TEST-FE-3137 a failed plate lookup does not stop the save, and the plate box stops at 32 characters", async () => {
     window.location.hash = "#/customers/customer-1";
     const createVehicle = vi
       .fn<CustomerApi["createVehicle"]>()
@@ -1043,7 +1043,7 @@ describe("Vehicles (Parking Step 4)", () => {
     expect(createVehicle).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1129 Edit corrects the type and the plate with the version; a reader and a deactivated Customer get no Add vehicle", async () => {
+  it("TEST-FE-3129 Edit corrects the type and the plate with the version; a reader and a deactivated Customer get no Add vehicle", async () => {
     window.location.hash = "#/customers/customer-1";
     const updateVehicle = vi
       .fn<CustomerApi["updateVehicle"]>()

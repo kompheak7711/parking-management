@@ -64,7 +64,7 @@ const lines = (list: HTMLElement) =>
     .map((line) => line.textContent);
 
 describe("Customers: the coming birthdays (UI v81 round 11)", () => {
-  it("TEST-FE-1948 lists the birthdays of today and the next 7 days (what Home's card counts) in date order with the person's role, Unit and how soon, then the later ones of this month; only the day and month show; each row opens the Customer and the Unit; Hide closes it; a failed read offers Retry", async () => {
+  it("TEST-FE-1948 lists the birthdays of today and the next 7 days (what Home's card counts) in date order with the person's role, Parking and how soon, then the later ones of this month; only the day and month show; each row opens the Customer and the Parking; Hide closes it; a failed read offers Retry", async () => {
     expect(birthdayText("2026-11-14")).toBe("14/11");
     const { api, onHide } = show(() => Promise.resolve({ items: ROWS }));
     expect(screen.getByText("Loading the birthdays…")).toBeTruthy();

@@ -56,7 +56,8 @@ def test_each_property_has_the_default_lists(migrated_database_url: str) -> None
     assert features["MAIN_ROOM"] == "ROOM"
     assert features["BATHROOM"] == "BATHROOM"
     assert features["KITCHENETTE"] == "KITCHEN"
-    assert features["BALCONY"] == "OUTDOOR"
+    # Parking Step 6: no Balcony on Parking (migration 20270808_431_parking).
+    assert "BALCONY" not in features
     assert features["WALL_AIR_CONDITIONER"] == "BUILT_IN"
     assert set(_items(flow, case["prop"], "ITEM_TYPE")) >= {
         "FURNITURE",
@@ -99,11 +100,11 @@ def test_unit_features_are_set_at_the_unit_version_and_kept_in_history(
             )
     changed = flow.set_features(
         case["unit"],
-        features=((features["BEDROOM"], 3), (features["BALCONY"], 1)),
+        features=((features["BEDROOM"], 3), (features["LIVING_ROOM"], 1)),
         expected_version=updated.version,
         actor_id=actor,
     )
-    assert set(changed.features) == {(features["BEDROOM"], 3), (features["BALCONY"], 1)}
+    assert set(changed.features) == {(features["BEDROOM"], 3), (features["LIVING_ROOM"], 1)}
     with psycopg.connect(migrated_database_url) as connection:
         history = connection.execute(
             "SELECT previous_state->'features', resulting_state->'features' "

@@ -30,8 +30,8 @@ const TEXT = {
   unit: ["Parking", "ចំណត"],
   all_units: ["All Parking", "គ្រប់ចំណត"],
   unit_bad: [
-    'No Unit "{0}". Enter a Unit number such as {1}, or clear the box to see all Units.',
-    'គ្មានបន្ទប់ "{0}"។ វាយលេខបន្ទប់ដូចជា {1} ឬលុបប្រអប់ ដើម្បីមើលគ្រប់បន្ទប់។',
+    'No Parking "{0}". Enter a Parking number such as {1}, or clear the box to see all Parking.',
+    'គ្មានចំណត "{0}"។ វាយលេខចំណតដូចជា {1} ឬលុបប្រអប់ ដើម្បីមើលគ្រប់ចំណត។',
   ],
   period: ["Month", "ខែ"],
   p_all: ["All", "ទាំងអស់"],
@@ -77,7 +77,7 @@ const TEXT = {
     "Until then, this list shows the last readings, {0}.",
     "រហូតដល់ពេលនោះ បញ្ជីនេះបង្ហាញអំណានចុងក្រោយ {0}។",
   ],
-  col_unit_meter: ["Unit · Meter", "បន្ទប់ · នាឡិកាស្ទង់"],
+  col_unit_meter: ["Parking · Meter", "ចំណត · នាឡិកាស្ទង់"],
   col_last: ["Last reading", "អំណានចុងក្រោយ"],
   col_new: ["New reading", "អំណានថ្មី"],
   col_used: ["Used", "បានប្រើ"],
@@ -325,9 +325,9 @@ const TEXT = {
     "នាំចូលអំណានសម្រាប់ថ្ងៃអាន {0} ពីឯកសារ .xlsx ឬ .csv។",
   ],
   im_cols: [
-    "One row for each Unit, with the columns Unit, Electricity, Electricity broken, Water, Water broken. The Units are already filled in, so staff type only the readings. A broken column says yes or no (no by default); yes means the meter is broken, so leave its reading empty. No meter numbers.",
+    "One row for each Parking, with the columns Parking, Electricity, Electricity broken, Water, Water broken. The Parking is already filled in, so staff type only the readings. A broken column says yes or no (no by default); yes means the meter is broken, so leave its reading empty. No meter numbers.",
     // new (the broken columns, V1.1 part 7)
-    "មួយជួរសម្រាប់បន្ទប់នីមួយៗ មានជួរឈរ៖ បន្ទប់ អគ្គិសនី អគ្គិសនីខូច ទឹក ទឹកខូច។ បន្ទប់បានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ ជួរឈរខូចសរសេរ yes ឬ no (no ជាលំនាំដើម); yes មានន័យថានាឡិកាស្ទង់ខូច ដូច្នេះទុកអំណានទទេ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
+    "មួយជួរសម្រាប់ចំណតនីមួយៗ មានជួរឈរ៖ ចំណត អគ្គិសនី អគ្គិសនីខូច ទឹក ទឹកខូច។ ចំណតបានបំពេញរួចហើយ ដូច្នេះបុគ្គលិកវាយតែអំណានប៉ុណ្ណោះ។ ជួរឈរខូចសរសេរ yes ឬ no (no ជាលំនាំដើម); yes មានន័យថានាឡិកាស្ទង់ខូច ដូច្នេះទុកអំណានទទេ។ គ្មានលេខនាឡិកាស្ទង់ទេ។",
   ],
   im_blank: ["Download the blank file", "ទាញយកឯកសារទទេ"],
   im_blank_s: [

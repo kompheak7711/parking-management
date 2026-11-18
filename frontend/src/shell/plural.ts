@@ -1,8 +1,10 @@
 // UI v81 (B4): "1 days" reads "1 day". English only: Khmer words have no plural. The count is
 // a whole number standing alone, so "21 days" and "$1 days" are left as they are.
 
+// Parking Step 6: "Parking" is the same for one and many (owner, Step 2), so Property Rental's
+// "Units" is not in this list.
 const NOUNS =
-  "days|nights|months|weeks|years|items|times|lines|places|hours|minutes|readings|meters|rooms|payments|bills|advances|records|people|Invoices|Receipts|Units|Customers|Leases|stays|requests|reports|entries|scans|searches";
+  "days|nights|months|weeks|years|items|times|lines|places|hours|minutes|readings|meters|rooms|payments|bills|advances|records|people|Invoices|Receipts|Customers|Leases|stays|requests|reports|entries|scans|searches";
 
 const SINGULAR: Record<string, string> = {
   people: "person",

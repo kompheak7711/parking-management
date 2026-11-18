@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { GENERAL_LEDGER } from "../leases/parking";
 import { MENU, allowedGroupsOf, subItemsOf, switchName } from "./navigation";
 
 const ledger = MENU.flatMap((group) => group.items).find(
@@ -7,7 +8,11 @@ const ledger = MENU.flatMap((group) => group.items).find(
 );
 
 describe("Ledger tab groups (owner 16/11/2026)", () => {
-  it("TEST-FE-2233 the 11 Ledger pages show as 5 tabs, the menu lists the 5, and a staff member sees only Spending", () => {
+  it("TEST-FE-2233 the 11 Ledger pages show as 5 tabs, the menu lists the 5, and a staff member sees only Spending", ({
+    skip,
+  }) => {
+    // Parking Step 6: no General Ledger on Parking.
+    skip(!GENERAL_LEDGER);
     expect(ledger).toBeDefined();
     if (ledger === undefined) return;
     const groups = allowedGroupsOf(ledger, null, "en");

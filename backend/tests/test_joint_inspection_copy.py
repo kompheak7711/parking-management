@@ -115,7 +115,7 @@ def test_the_copy_shows_rooms_results_keys_meters_and_both_signatures() -> None:
         done_inspection(), tenant_signature=b"tenant-png", staff_signature=b"staff-png"
     )
     assert "JI260007" in page and "Joint Inspection" in page and "ការត្រួតពិនិត្យរួម" in page
-    assert "Sok Dara" in page and "Unit U203" in page and "Lease U203L0026" in page
+    assert "Sok Dara" in page and "Parking U203" in page and "Lease U203L0026" in page
     # The lines in their order, under their room, a new room each time it changes.
     assert page.index("The room itself") < page.index("TV remote") < page.index("Bedroom 1")
     assert "Missing" in page and "បាត់" in page and "Not found" in page

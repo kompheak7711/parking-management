@@ -2,6 +2,7 @@
 // Meters)"): the period switch and Type select, four summary cards that filter the list, the
 // add-up line, and the list with the Drafts at the top.
 
+import { PRODUCTS } from "../leases/parking";
 import { useState } from "react";
 
 import {
@@ -283,7 +284,8 @@ export function InvoicesList({
             ? ivt(language, "inv_sub")
             : ivt(language, "inv_sub_m", monthText(language, month))}
         </p>
-        {canCreate && (
+        {/* Parking Step 6: no Quotations on Parking (PRODUCTS). */}
+        {PRODUCTS && canCreate && (
           <div className="ui-actions">
             <a
               className="ui-btn primary"

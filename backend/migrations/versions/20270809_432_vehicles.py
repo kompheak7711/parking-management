@@ -1,8 +1,11 @@
 # ruff: noqa: E501
 """Vehicles (Parking Step 4, owner 2026-10-30).
 
-Revision ID: 20270406_256
-Revises: 20270405_255
+Revision ID: 20270809_432_parking
+Revises: 20270808_431_parking
+
+Parking Step 6 (owner 2026-11-17): moved after Property Rental's head (old id 20270406_256);
+skips itself when the vehicles are already there.
 Create Date: 2026-10-30
 
 A Lease of a Parking holds one vehicle at a time. The vehicle takes the Occupancy slot: an
@@ -37,9 +40,10 @@ Hidden names stay Property Rental's (`occupancy`, `occupant`); only vehicle part
 from collections.abc import Sequence
 
 from alembic import op
+from sqlalchemy import text
 
-revision: str = "20270406_256"
-down_revision: str | None = "20270405_255"
+revision: str = "20270809_432_parking"
+down_revision: str | None = "20270808_431_parking"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -50,6 +54,11 @@ CHANGE = "app.change_lease_vehicle(uuid,uuid,text,uuid,uuid,integer,uuid,uuid,da
 
 
 def upgrade() -> None:
+    # Parking Step 6: a database that already ran this migration under its old id
+    # (20270406_256) has the vehicles; it runs again after Property Rental's newer migrations
+    # and must change nothing.
+    if op.get_bind().execute(text("SELECT to_regclass('app.vehicles')")).scalar() is not None:
+        return
     op.execute("""
         CREATE TABLE app.vehicles (
             id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'::uuid),

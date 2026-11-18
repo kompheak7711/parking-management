@@ -8,7 +8,7 @@ import { singular } from "../shell/plural";
 const TEXT = {
   as_of: ["As of {0}", "គិតត្រឹមម៉ោង {0}"],
   // UI v81 round 2: the head line "CHETANA Residence · Tuesday 03/11/2026 · As of 10:30".
-  property: ["CHETANA Residence", "CHETANA Residence"],
+  property: ["CHETANA Parking", "CHETANA Parking"],
   qa_record: ["Receive payment", "ទទួលការបង់ប្រាក់"],
   qa_readings: ["Enter meter readings", "បញ្ចូលអំណាននាឡិកាស្ទង់"],
   // new
@@ -27,8 +27,8 @@ const TEXT = {
 
   // UI v81 round 2 (design v81 i18n25): the card names of the design.
   // Owner 12/11/2026: the Occupancy card is a Vacant card (vacant Units only).
-  k_vac: ["Vacant Units", "បន្ទប់ទំនេរ"], // new
-  k_vac_s: ["{0} Units · {1} reserved", "បន្ទប់ {0} · បានកក់ {1}"], // new
+  k_vac: ["Vacant Parking", "ចំណតទំនេរ"], // new
+  k_vac_s: ["{0} Parking · {1} reserved", "ចំណត {0} · បានកក់ {1}"], // new
   // Owner 14/11/2026: "Unpaid", the same word as the Invoices card it opens ("Total unpaid").
   k_pend: ["Unpaid", "ប្រាក់មិនទាន់បង់"],
   k_paid: ["Paid this month", "បានបង់ខែនេះ"],
@@ -45,7 +45,7 @@ const TEXT = {
   // DL-131 (mock-up round 32 A10); Khmer is new and needs the native check.
   n_problems: ["Problem reports", "របាយការណ៍បញ្ហា"],
   // Design v81 i18n13 (Viewing requests waiting on Home). Khmer from the design.
-  n_vr: ["Viewing requests", "សំណើមើលបន្ទប់កំពុងរង់ចាំ"],
+  n_vr: ["Viewing requests", "សំណើមើលចំណតកំពុងរង់ចាំ"],
   // Owner 14/11/2026: a note says only the parts above 0.
   n_vr_late: ["{0} late", "{0} យឺត"],
   n_vr_week: ["{0} visits this week", "{0} ការមកមើលសប្តាហ៍នេះ"],

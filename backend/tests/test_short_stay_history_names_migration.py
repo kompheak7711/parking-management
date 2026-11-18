@@ -40,7 +40,7 @@ def booked(db: HrDatabase) -> str:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
             "default_monthly_rent_usd_cents, created_by, updated_by) "
-            "VALUES (%s, %s, %s, '1', 'STUDIO', 'VACANT', 29900, %s, %s)",
+            "VALUES (%s, %s, %s, '1', 'COVERED', 'VACANT', 29900, %s, %s)",
             (unit, db.property_id, f"HN{unit.hex[:6].upper()}", db.owner, db.owner),
         )
         connection.execute(

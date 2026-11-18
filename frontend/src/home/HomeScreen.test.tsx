@@ -6,6 +6,14 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import {
+  GENERAL_LEDGER,
+  HR,
+  PROBLEM_REPORTS,
+  PRODUCTS,
+  SHORT_STAYS,
+  TELEGRAM,
+} from "../leases/parking";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -156,7 +164,7 @@ const card = (name: RegExp) => {
 describe("Home", () => {
   it("TEST-FE-928 shows the cards in the owner's order (12/11/2026) with their notes and links, and the head buttons", async () => {
     const { api } = show(() => Promise.resolve(PAGE));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     expect(api.home).toHaveBeenCalledWith("property-1");
     // UI v81 round 4 (owner 08/11/2026): no line under the title any more.
     expect(screen.queryByText(/As of 10:30/)).toBeNull();
@@ -167,7 +175,7 @@ describe("Home", () => {
     // Owner 12/11/2026: Vacant Units takes the place of Occupancy and there is no Paid on time
     // card; the cards from other reads are in TEST-FE-1931.
     expect(labels).toEqual([
-      "Vacant Units",
+      "Vacant Parking",
       "Leases ending soon",
       "Unpaid",
       "Paid this month",
@@ -185,10 +193,10 @@ describe("Home", () => {
       "#/customers?show=birthdays",
     );
     // Only the vacant Units are counted; the note says how many Units there are.
-    expect(card(/Vacant Units/).textContent).toBe(
-      "Vacant Units123 Units · 1 reserved",
+    expect(card(/Vacant Parking/).textContent).toBe(
+      "Vacant Parking123 Parking · 1 reserved",
     );
-    expect(card(/Vacant Units/).getAttribute("href")).toBe(
+    expect(card(/Vacant Parking/).getAttribute("href")).toBe(
       "#/units?show=vacant",
     );
     // Owner 14/11/2026: a card has a note only when it tells something the number does not.
@@ -230,7 +238,11 @@ describe("Home", () => {
     ).toBe("#/utilities");
   });
 
-  it("TEST-FE-1912 (UI v81 round 2, order of 12/11/2026) adds the Viewing requests waiting card after Vacant Units, and Problem reports before Birthdays, for a person who may read them", async () => {
+  it("TEST-FE-1912 (UI v81 round 2, order of 12/11/2026) adds the Viewing requests waiting card after Vacant Parking, and Problem reports before Birthdays, for a person who may read them", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no Viewing requests on Parking (TELEGRAM).
+    skip(!TELEGRAM);
     const problemsApi = {
       summary: vi.fn().mockResolvedValue({
         open: 4,
@@ -275,7 +287,7 @@ describe("Home", () => {
     // Owner 12/11/2026: Viewing requests waiting is the second card, after Vacant Units;
     // Problem reports sits before Birthdays.
     expect(labels.slice(0, 3)).toEqual([
-      "Vacant Units",
+      "Vacant Parking",
       "Viewing requests",
       "Leases ending soon",
     ]);
@@ -440,9 +452,9 @@ describe("Home", () => {
         }),
       { capabilities: new Set(["units.read", "utility.read"]) },
     );
-    expect((await screen.findByText("Vacant Units")).closest("a")).toHaveClass(
-      "none",
-    );
+    expect(
+      (await screen.findByText("Vacant Parking")).closest("a"),
+    ).toHaveClass("none");
     expect(document.querySelectorAll(".ui-home-kpi")).toHaveLength(2);
     expect(screen.queryByText("Unpaid")).toBeNull();
     // Owner 14/11/2026: an empty Tasks card has no "Nothing here" line.
@@ -479,7 +491,7 @@ describe("Home", () => {
     ).toBeTruthy();
     fail = false;
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     expect(api.home).toHaveBeenCalledTimes(2);
     cleanup();
 
@@ -493,14 +505,18 @@ describe("Home", () => {
     cleanup();
 
     show(() => Promise.resolve(PAGE), { language: "km" });
-    expect(await screen.findByText("បន្ទប់ទំនេរ")).toBeTruthy();
+    expect(await screen.findByText("ចំណតទំនេរ")).toBeTruthy();
     expect(screen.getByText("ការងារត្រូវធ្វើ")).toBeTruthy();
     await waitFor(() => {
       expect(screen.getByText("បានបង់ខែនេះ")).toBeTruthy();
     });
   });
 
-  it("TEST-FE-1294 the Problem reports card shows open, urgent and late to a person who may read them; a Manager who checks repair costs sees each cost still waiting with a link; a person without the right reads nothing", async () => {
+  it("TEST-FE-1294 the Problem reports card shows open, urgent and late to a person who may read them; a Manager who checks repair costs sees each cost still waiting with a link; a person without the right reads nothing", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no Problem reports on Parking.
+    skip(!PROBLEM_REPORTS);
     const summary = vi.fn(() =>
       Promise.resolve({
         open: 4,
@@ -536,7 +552,7 @@ describe("Home", () => {
       );
 
     showWith(new Set(["reports.read"]));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     expect(summary).not.toHaveBeenCalled();
     expect(screen.queryByText("Problem reports")).toBeNull();
     cleanup();
@@ -570,7 +586,7 @@ describe("Home", () => {
 
   it("TEST-FE-1925 Home batch (owner 08/11/2026): Home is drawn with the shared PageHeader (one title, the two buttons beside it) and its cards with the shared CardGrid, the Tasks cards as one named group", async () => {
     show(() => Promise.resolve(PAGE));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     const head = document.querySelector("header.ui-pagehead");
     if (!(head instanceof HTMLElement)) throw new Error("no page header");
     expect(
@@ -592,7 +608,20 @@ describe("Home", () => {
     expect(within(tasks).getAllByRole("button")).toHaveLength(4);
   });
 
-  it("TEST-FE-1931 (owner 12/11/2026) an Owner sees the fifteen cards in the owner's order: the two Short stays cards, Low stock in place of Paid on time, and Attendance last as a card; a read that fails leaves only its own card out", async () => {
+  it("TEST-FE-1931 (owner 12/11/2026) an Owner sees the fifteen cards in the owner's order: the two Short stays cards, Low stock in place of Paid on time, and Attendance last as a card; a read that fails leaves only its own card out", async ({
+    skip,
+  }) => {
+    // Parking Step 6: this test counts the cards of parts hidden on Parking.
+    skip(
+      !(
+        GENERAL_LEDGER &&
+        HR &&
+        PRODUCTS &&
+        PROBLEM_REPORTS &&
+        SHORT_STAYS &&
+        TELEGRAM
+      ),
+    );
     const all = new Set([
       "reports.home",
       "visit_requests.read",
@@ -689,7 +718,7 @@ describe("Home", () => {
     expect(await screen.findByText("Attendance")).toBeTruthy();
     await waitFor(() => {
       expect(names()).toEqual([
-        "Vacant Units",
+        "Vacant Parking",
         "Viewing requests",
         "Leases ending soon",
         "Bookings",
@@ -761,7 +790,7 @@ describe("Home", () => {
       attendanceApi: { day: vi.fn() },
     };
     showAll(quiet, new Set(["reports.home"]));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     expect(quiet.shortStaysApi.list).not.toHaveBeenCalled();
     expect(quiet.productsApi.catalogue).not.toHaveBeenCalled();
     expect(quiet.attendanceApi.day).not.toHaveBeenCalled();
@@ -770,7 +799,7 @@ describe("Home", () => {
 
   it("TEST-FE-1932 (owner 12/11/2026) every Home card and Tasks card holds its number beside its name, in the card's head, with the note under it; only Paid this month has a bar", async () => {
     show(() => Promise.resolve(PAGE));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     const cards = Array.from(
       document.querySelectorAll(".ui-home-kpis .ui-kpi, .ui-tasks .ui-kpi"),
     );
@@ -791,7 +820,20 @@ describe("Home", () => {
     expect(document.querySelectorAll(".ui-home-meter")).toHaveLength(0);
   });
 
-  it('TEST-FE-1942 (owner 12/11/2026: "check all card is link to correct place") each Home card opens the part of its page that the card counts, named by a word in the address; Approvals, which has one view, opens the page', async () => {
+  it('TEST-FE-1942 (owner 12/11/2026: "check all card is link to correct place") each Home card opens the part of its page that the card counts, named by a word in the address; Approvals, which has one view, opens the page', async ({
+    skip,
+  }) => {
+    // Parking Step 6: this test opens the cards of parts hidden on Parking.
+    skip(
+      !(
+        GENERAL_LEDGER &&
+        HR &&
+        PRODUCTS &&
+        PROBLEM_REPORTS &&
+        SHORT_STAYS &&
+        TELEGRAM
+      ),
+    );
     render(
       <HomeScreen
         active
@@ -841,7 +883,7 @@ describe("Home", () => {
       );
     await waitFor(() => {
       expect(addresses()).toEqual([
-        ["Vacant Units", "#/units?show=vacant"],
+        ["Vacant Parking", "#/units?show=vacant"],
         ["Viewing requests", "#/visitreqs?show=waiting"],
         ["Leases ending soon", "#/leases?show=ending"],
         ["Bookings", "#/shortstays?show=booked"],
@@ -892,7 +934,7 @@ describe("Home", () => {
         business_date: "2026-11-24",
       }),
     );
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     expect(card(/Missing readings/).textContent).toBe("Missing readings15");
     // No card note that only says what the card opens.
     expect(screen.queryByText("Day-20 and day-30 notices")).toBeNull();
@@ -901,7 +943,7 @@ describe("Home", () => {
 
   it("TEST-FE-2221 (Home screen review, owner 14/11/2026) the two head buttons share one equal-width group; a calm jobs line stays under the Tasks and no warning bar shows", async () => {
     show(() => Promise.resolve(PAGE));
-    expect(await screen.findByText("Vacant Units")).toBeTruthy();
+    expect(await screen.findByText("Vacant Parking")).toBeTruthy();
     const buttons = [
       screen.getByRole("link", { name: "Receive payment" }),
       screen.getByRole("link", { name: "Enter meter readings" }),

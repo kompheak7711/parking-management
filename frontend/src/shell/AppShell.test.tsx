@@ -68,7 +68,7 @@ describe("V1-058 R1 app shell", () => {
       "Short stays",
       "Notices",
       "Customers",
-      "Units",
+      "Parking",
       // UI v81 round 2 (owner 07/11/2026): Inspections after Units; the menu order of design v81.
       "Inspections",
       "Problem reports",
@@ -191,7 +191,7 @@ describe("V1-058 R1 app shell", () => {
     ).toEqual([
       ["Home", "#/home"],
       ["Long stays", "#/moveout"],
-      ["Units", "#/units"],
+      ["Parking", "#/units"],
       // UI v81 round 2: Inspections opens with units.read.
       ["Inspections", "#/inspections"],
       // audit.view reads the Audit activity report (V1-060 B6).

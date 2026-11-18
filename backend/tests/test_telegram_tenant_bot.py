@@ -208,7 +208,7 @@ def test_the_report_buttons_open_the_form_on_the_relay() -> None:
         "inline_keyboard": [
             [
                 {
-                    "text": "បញ្ហាក្នុងបន្ទប់",
+                    "text": "បញ្ហាក្នុងចំណត",
                     "web_app": {
                         "url": "https://relay.example.workers.dev/app/tenant?form=unit&lang=km"
                     },
@@ -335,7 +335,7 @@ def test_my_requests_lists_each_report_with_its_state_and_visit() -> None:
         "UP260002 · Door: Closed"
     )
     text = render("tenant.my_requests", "en", details)
-    assert text.startswith("Your requests (Unit 305):\n\nUP260009")
+    assert text.startswith("Your requests (Parking 305):\n\nUP260009")
     in_khmer = linked_store("km")
     in_khmer.my_reports = store.my_reports
     khmer = say(in_khmer, "សំណើរបស់ខ្ញុំ")

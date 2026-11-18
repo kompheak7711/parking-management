@@ -33,8 +33,8 @@ const TEXT = {
   ex_title: ["Export the audit log", "នាំចេញកំណត់ហេតុសវនកម្ម"], // new
   ex_as: ["File type", "ប្រភេទឯកសារ"], // new
   ex_same: [
-    "The file uses the same days, person and Unit as the list.",
-    "ឯកសារប្រើថ្ងៃ មនុស្ស និងបន្ទប់ ដូចបញ្ជីដែរ។",
+    "The file uses the same days, person and Parking as the list.",
+    "ឯកសារប្រើថ្ងៃ មនុស្ស និងចំណត ដូចបញ្ជីដែរ។",
   ], // new
   ex_close: ["Close", "បិទ"], // new
   hi_note: [
@@ -90,7 +90,7 @@ const TEXT = {
   k_reservation: ["Reservation", "ការកក់"],
   k_lease: ["Lease", "កិច្ចសន្យា"],
   k_customer: ["Customer", "អតិថិជន"],
-  k_unit: ["Unit", "បន្ទប់"],
+  k_unit: ["Parking", "ចំណត"],
   k_moveout: ["Move-outs", "ការចាកចេញ"],
   k_settle: ["Final Settlement", "ការទូទាត់ចុងក្រោយ"],
   k_deposit: ["Deposit", "ប្រាក់កក់"],

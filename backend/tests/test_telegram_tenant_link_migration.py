@@ -45,7 +45,7 @@ def add_lease(
         unit_id, customer_id = uuid.uuid4(), uuid.uuid4()
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
-            "created_by, updated_by) VALUES (%s, %s, %s, '3', 'ONE_BEDROOM', 'VACANT', %s, %s)",
+            "created_by, updated_by) VALUES (%s, %s, %s, '3', 'UNCOVERED', 'VACANT', %s, %s)",
             (unit_id, db.property_id, unit_number, db.owner, db.owner),
         )
         connection.execute(

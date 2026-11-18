@@ -1,0 +1,27 @@
+# Telegram bots step 1 (bots plan, shared base): the office job that sends the waiting Telegram messages, one try per message per run.
+# Started every 10 seconds by pkm-telegram-send.timer (DL-218). It does nothing while telegram_bots.enabled is false.
+[Unit]
+Description=CHETANA Parking Telegram send job
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pkm-ops
+Group=pkm-ops
+UMask=0077
+# /etc/pkm/telegram-jobs.env (mode 0600, owner pkm-ops) holds three lines:
+# APP_DATABASE_URL (the runtime login), PRM_PROPERTY_ID and PRM_TELEGRAM_ACTOR_ID
+# (the account the jobs run as; it needs the Telegram rights of an Owner or Manager).
+EnvironmentFile=/etc/pkm/telegram-jobs.env
+ExecStart=/opt/pkm/venv/bin/parking-telegram-send --config /etc/pkm/production-operations.json --property-id ${PRM_PROPERTY_ID} --actor-id ${PRM_TELEGRAM_ACTOR_ID}
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=50s
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/pkm/status
+PrivateTmp=true
+# The secret files live in /etc/pkm/secrets (kept across restarts); the job sees them at
+# /run/secrets, the paths of production-operations.json.
+BindReadOnlyPaths=/etc/pkm/secrets:/run/secrets

@@ -19,7 +19,7 @@ afterEach(() => {
 const SOFA: FixedAsset = {
   id: "fa-1",
   asset_number: "FA260001",
-  item: "Sofa, Unit 205",
+  item: "Sofa, Parking 205",
   account_code: "1520",
   account_name: "Furniture and appliances in Units",
   account_name_km: null,
@@ -187,7 +187,7 @@ async function openDialog(): Promise<HTMLElement> {
 describe("Fixed assets", () => {
   it("TEST-FE-1199 shows the register with its totals and the 1590 check", async () => {
     show(fakeAssets());
-    expect(await screen.findByText("Sofa, Unit 205")).toBeInTheDocument();
+    expect(await screen.findByText("Sofa, Parking 205")).toBeInTheDocument();
     expect(screen.queryByText("Old fridge")).not.toBeInTheDocument();
     expect(screen.getByText("5 years")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ER260002" })).toHaveAttribute(
@@ -313,7 +313,7 @@ describe("Fixed assets", () => {
 
   it("TEST-FE-1202 shows the register without Add to a reader who cannot record", async () => {
     show(fakeAssets(), fakeSpending(), new Set(["ledger.read"]));
-    expect(await screen.findByText("Sofa, Unit 205")).toBeInTheDocument();
+    expect(await screen.findByText("Sofa, Parking 205")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Add fixed asset" }),
     ).not.toBeInTheDocument();

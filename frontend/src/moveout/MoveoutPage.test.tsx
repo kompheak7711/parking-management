@@ -8,7 +8,11 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CLEANING_CHARGE, PET_DEPOSIT } from "../leases/parking";
+import {
+  CLEANING_CHARGE,
+  PET_DEPOSIT,
+  PROBLEM_REPORTS,
+} from "../leases/parking";
 
 import type { DepositResource } from "../depositClient";
 import type { ProblemReport } from "../problems/problemsClient";
@@ -874,7 +878,7 @@ describe("Move-out", () => {
         "Tenant U105",
         "10/10/2026End Date was 24/10/2026",
         "12/10/2026",
-        "Unit handed overRecord final readings",
+        "Parking handed overRecord final readings",
         "$500.00",
       ],
       [
@@ -910,7 +914,9 @@ describe("Move-out", () => {
         "$500.00",
       ],
     ]);
-    fireEvent.click(screen.getByRole("button", { name: /Unit handed over/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Parking handed over/ }),
+    );
     expect(rows().map((row) => row[0])).toEqual(["U105", "U106"]);
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(rows()).toHaveLength(5);
@@ -3497,7 +3503,11 @@ describe("Move-out", () => {
     });
   });
 
-  it("TEST-FE-1296 a finding of the inspection in force shows its Problem report, or Make a Problem report to a person who may add one; without the right to read reports nothing is read", async () => {
+  it("TEST-FE-1296 a finding of the inspection in force shows its Problem report, or Make a Problem report to a person who may add one; without the right to read reports nothing is read", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no Problem reports on Parking.
+    skip(!PROBLEM_REPORTS);
     window.location.hash = "#/moveout/lease-U105";
     const current = inspectionOf("inspection-1", [
       ["finding-1", "Broken window", false],
@@ -3831,7 +3841,7 @@ describe("Move-out step 6: after closure", () => {
         action: "CREDIT_ADJUSTMENT",
         expected_outstanding_usd_cents: 80000,
         expected_credit_usd_cents: 72258,
-        reason: "Unit handed back on 03/10/2026: Rent for 3 of 31 days",
+        reason: "Parking handed back on 03/10/2026: Rent for 3 of 31 days",
       },
     ]);
     await waitFor(() => {
@@ -3854,7 +3864,7 @@ describe("Move-out step 6: after closure", () => {
 
 // Parking Step 4: the hand-back names the vehicle by its plate.
 describe("Vehicle on the hand-back (Parking Step 4)", () => {
-  it("TEST-FE-1134 Who moved out lists the vehicle's plate with its owner", async () => {
+  it("TEST-FE-3134 Who moved out lists the vehicle's plate with its owner", async () => {
     window.location.hash = "#/moveout/lease-U101";
     const withVehicle = lease("U101", {
       occupancies: lease("U101").occupancies.map((occupancy) => ({
@@ -3870,7 +3880,7 @@ describe("Vehicle on the hand-back (Parking Step 4)", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("1AB-1234 · Tenant U101")).toBeTruthy();
   });
-  it("TEST-FE-1141 Parking Step 5: no pet on Parking: a finding has no Caused by the pet tick, and the Deposits card says nothing about a Pet Deposit", async ({
+  it("TEST-FE-3141 Parking Step 5: no pet on Parking: a finding has no Caused by the pet tick, and the Deposits card says nothing about a Pet Deposit", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);
@@ -3895,7 +3905,7 @@ describe("Vehicle on the hand-back (Parking Step 4)", () => {
     });
     expect(card).not.toHaveTextContent("Pet Deposit");
   });
-  it("TEST-FE-1147 Parking Step 5: step 4 has no cleaning charge: no rate read, no Cleaning charge section or button, and the step is done without one", async ({
+  it("TEST-FE-3147 Parking Step 5: step 4 has no cleaning charge: no rate read, no Cleaning charge section or button, and the step is done without one", async ({
     skip,
   }) => {
     skip(CLEANING_CHARGE);

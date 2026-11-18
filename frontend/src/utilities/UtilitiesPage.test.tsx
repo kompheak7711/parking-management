@@ -679,7 +679,7 @@ describe("Utilities page (V1-058 R4)", () => {
     fireEvent.blur(box);
     expect(
       screen.getByText(
-        'No Unit "u999". Enter a Unit number such as U101, or clear the box to see all Units.',
+        'No Parking "u999". Enter a Parking number such as U101, or clear the box to see all Parking.',
       ),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "All Parking" }));
@@ -933,7 +933,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
       labels.findIndex((text) => text.startsWith("Serial")),
     );
     expect(labels.indexOf("Installed on")).toBeGreaterThan(
-      labels.findIndex((text) => text.startsWith("Unit")),
+      labels.findIndex((text) => text.startsWith("Parking")),
     );
     const serial = () =>
       within(dialog).getByLabelText<HTMLInputElement>(/^Serial/).value;
@@ -968,7 +968,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
     expect(autoSerial("WATER", "2026-1", [])).toBe("");
   });
 
-  it("TEST-FE-884 Add meter does not offer a Unit that has a working meter of the kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
+  it("TEST-FE-884 Add meter does not offer a Parking that has a working meter of the kind, sends the meter with its first reading on the day it is put in, and names a serial already used", async () => {
     openMeters();
     const installMeter = vi
       .fn()
@@ -1492,7 +1492,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
       expect(units.list).toHaveBeenCalledTimes(2);
     });
   });
-  it("TEST-FE-2197 (owner 13/11/2026) the Meters list has one row for each Unit with its Electricity and Water meters side by side, and a type card shows only that type's column", async () => {
+  it("TEST-FE-2197 (owner 13/11/2026) the Meters list has one row for each Parking with its Electricity and Water meters side by side, and a type card shows only that type's column", async () => {
     openMeters();
     show();
     await screen.findByRole("button", { name: /^Electricity meters: 3/ });
@@ -1501,7 +1501,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent.trim()),
-    ).toEqual(["Unit", "Electricity", "Water"]);
+    ).toEqual(["Parking", "Electricity", "Water"]);
     // Three Units, three rows (the replaced U201 meter sits in the U201 row).
     expect(within(table).getAllByRole("row")).toHaveLength(4);
     const u201 = within(table).getByText("U201").closest("tr");
@@ -1514,7 +1514,7 @@ describe("Utilities Meters tab (V1-058 R4b)", () => {
       within(screen.getByRole("table"))
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent.trim()),
-    ).toEqual(["Unit", "Water"]);
+    ).toEqual(["Parking", "Water"]);
   });
 });
 
@@ -1639,7 +1639,7 @@ describe("Utilities Import readings (V1-058 R4c)", () => {
       "Lower than previous",
       "Already saved this month: 330",
       "Empty. Enter the reading.",
-      "There is no Unit U999.",
+      "There is no Parking U999.",
     ]) {
       expect(within(dialog).getByText(text)).toBeTruthy();
     }

@@ -87,7 +87,7 @@ def stock_database(migrated_database_url: str) -> Iterator[StockDatabase]:
                 setup.execute(
                     "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, "
                     "status, for_rent, created_by, updated_by) "
-                    "VALUES (%s, %s, %s, '1', 'ONE_BEDROOM', 'VACANT', %s, %s, %s)",
+                    "VALUES (%s, %s, %s, '1', 'UNCOVERED', 'VACANT', %s, %s, %s)",
                     (unit_id, property_id, number, for_rent, owner, owner),
                 )
                 setup.execute(

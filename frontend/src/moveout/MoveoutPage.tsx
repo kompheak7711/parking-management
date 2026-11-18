@@ -4,7 +4,11 @@
 // come next. The list cannot yet tell a closed Final
 // Settlement apart (the server has no read of it), so "To confirm" and "Closed" come later.
 
-import { CLEANING_CHARGE, PET_DEPOSIT } from "../leases/parking";
+import {
+  CLEANING_CHARGE,
+  PET_DEPOSIT,
+  PROBLEM_REPORTS,
+} from "../leases/parking";
 import "../shell/screens.css";
 import { BackLink } from "../shell/backNav";
 
@@ -599,8 +603,11 @@ function MoveoutDetail({
   const mayRate =
     CLEANING_CHARGE && (may("invoices.create") || may("property.manage"));
   // DL-132: only a person known to see Problem reports reads which findings have one.
-  const seesProblems = capabilities?.has("problem_reports.read") === true;
-  const addsProblems = capabilities?.has("problem_reports.add") === true;
+  // Parking Step 6: no Problem reports on Parking (PROBLEM_REPORTS).
+  const seesProblems =
+    PROBLEM_REPORTS && capabilities?.has("problem_reports.read") === true;
+  const addsProblems =
+    PROBLEM_REPORTS && capabilities?.has("problem_reports.add") === true;
   const [reported, setReported] = useState<Map<string, ReportLink> | null>(
     null,
   );

@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { ABA_QR } from "../leases/parking";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ExchangeRate } from "../configurationClient";
@@ -285,16 +286,16 @@ const rowsOf = (table: HTMLElement) =>
     );
 
 describe("Settings: Business", () => {
-  it("TEST-FE-950 shows the Property with its description and counted Rentable Units, the business name, the business rules by group with Not used yet and a waiting change, the Invoice types, Payment Methods, the latest riel rate, App preferences and the document numbering with the next numbers", async () => {
+  it("TEST-FE-950 shows the Property with its description and counted Rentable Parking, the business name, the business rules by group with Not used yet and a waiting change, the Invoice types, Payment Methods, the latest riel rate, App preferences and the document numbering with the next numbers", async () => {
     const api = show();
     const property = await screen.findByRole("region", { name: "Property" });
     expect(api.property.load).toHaveBeenCalledWith("property-1");
     expect(api.settings.rules).toHaveBeenCalledWith("property-1");
     expect(pairs(property)).toEqual([
-      "Property: CHETANA Residence",
+      "Property: CHETANA Parking",
       "Description: Apartments near Camko",
       "Address: Street 271, Phnom Penh",
-      "Rentable Units: 2Counted from the Units list each time. Never entered.",
+      "Rentable Parking: 2Counted from the Parking list each time. Never entered.",
     ]);
     expect(pairs(card("Business"))).toEqual([
       "Business name: Not setCan differ from the property name.",
@@ -435,7 +436,7 @@ describe("Settings: Business", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(await screen.findByText("Saved.")).toBeTruthy();
     expect(api.property.updateSource).toHaveBeenCalledWith(PROPERTY, {
-      name: "CHETANA Residence 2",
+      name: "CHETANA Parking 2",
       description: "Rooms by the river",
       address_text: null,
     });
@@ -449,7 +450,7 @@ describe("Settings: Business", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => {
       expect(api.property.updateSource).toHaveBeenLastCalledWith(PROPERTY, {
-        name: "CHETANA Residence",
+        name: "CHETANA Parking",
         address_text: "Street 271, Phnom Penh",
         business_name: "CHETANA Co.",
       });
@@ -650,7 +651,11 @@ describe("Settings: Business", () => {
     expect(race.property.load).toHaveBeenLastCalledWith("property-2");
   });
 
-  it("TEST-FE-2141 a Payment Method can be used for ABA QR payments: the list marks it, ticking another method says the mark moves and the save takes it off the first one, a method that is off cannot have it, and untick saves no mark (DL-227)", async () => {
+  it("TEST-FE-2141 a Payment Method can be used for ABA QR payments: the list marks it, ticking another method says the mark moves and the save takes it off the first one, a method that is off cannot have it, and untick saves no mark (DL-227)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no ABA QR on Parking (ABA_QR).
+    skip(!ABA_QR);
     const marked = METHODS.map((method) =>
       method.code === "ABA_PAY" ? { ...method, aba_qr: true } : method,
     );

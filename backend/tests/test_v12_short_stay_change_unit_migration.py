@@ -115,7 +115,7 @@ def test_a_booked_stay_moves_to_another_unit_and_keeps_its_price(
         ("U503", False),
         ("U505", False),
     ]
-    assert found["units"][3]["unit_type"] == "TWO_BEDROOM"
+    assert found["units"][3]["unit_type"] == "MOTORBIKE"
     assert found["units"][3]["monthly_rent_usd_cents"] == 49900
     version = before["version"]
 
@@ -152,7 +152,7 @@ def test_a_booked_stay_moves_to_another_unit_and_keeps_its_price(
     assert (moved["unit_id"], moved["unit_number"], moved["unit_type"]) == (
         str(db.two_bedroom),
         "U505",
-        "TWO_BEDROOM",
+        "MOTORBIKE",
     )
     # The guest keeps the agreed price: a bigger Unit is a free upgrade.
     assert moved["total_usd_cents"] == before["total_usd_cents"]
@@ -177,10 +177,10 @@ def test_a_booked_stay_moves_to_another_unit_and_keeps_its_price(
     assert event["details"] == {
         "from_unit_id": str(db.studio),
         "from_unit_number": "U501",
-        "from_unit_type": "STUDIO",
+        "from_unit_type": "COVERED",
         "to_unit_id": str(db.two_bedroom),
         "to_unit_number": "U505",
-        "to_unit_type": "TWO_BEDROOM",
+        "to_unit_type": "MOTORBIKE",
     }
     with psycopg.connect(db.owner_url) as connection:
         audit = connection.execute(
@@ -536,7 +536,7 @@ def test_the_owners_case_the_guest_moves_and_the_lease_draft_is_then_saved(
     assert stopped.status_code == 409, stopped.text
     error = stopped.json()["error"]
     assert error["code"] == "LEASE_UNIT_BOOKED"
-    assert "move the guest to another Unit first" in error["message"]
+    assert "move the guest to another Parking first" in error["message"]
 
     moved = move(db, made, db.studio)
     assert (moved["unit_number"], moved["payment"]) == ("U501", "PAID")

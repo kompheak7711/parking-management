@@ -524,7 +524,7 @@ describe('UI v81 module batch 2: the "Exchange rate for riel" card', () => {
 });
 
 describe("UI v81 module batch 2: the payer's Customer card", () => {
-  it("TEST-FE-2132 the card names the payer's Lease status and Unit from their newest signed Lease; a payer without a Lease shows the Unit alone and no status; a deactivated Customer says so instead", async () => {
+  it("TEST-FE-2132 the card names the payer's Lease status and Parking from their newest signed Lease; a payer without a Lease shows the Parking alone and no status; a deactivated Customer says so instead", async () => {
     const { card } = reads();
     const { rerender } = render(
       <PayerCard

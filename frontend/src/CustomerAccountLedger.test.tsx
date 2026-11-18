@@ -545,7 +545,7 @@ it.each([false, true])(
 );
 
 describe("Customer account ledger on Parking", () => {
-  it("TEST-FE-1142 Parking Step 5: Pet Deposit held is not shown while it is zero, and shows again when money is held", async ({
+  it("TEST-FE-3142 Parking Step 5: Pet Deposit held is not shown while it is zero, and shows again when money is held", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);

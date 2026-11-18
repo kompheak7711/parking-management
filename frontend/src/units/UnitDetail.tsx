@@ -700,31 +700,37 @@ export function UnitDetail({
             {unit.notes !== null && <p className="ui-small">{unit.notes}</p>}
             {/* V1.1 (DL-115 (I)): the features list replaces Bedrooms, Bathrooms, Kitchen and
                 the Room features. */}
-            <UnitFeaturesPanel
-              api={unitApi}
-              canManage={canManage && unit.can_manage !== false}
-              language={language}
-              lists={lists}
-              onConflict={() => {
-                setWarning(ut(language, "conflict"));
-                load();
-              }}
-              onSaved={(saved) => {
-                setNotice(ut(language, "uf_saved", saved.unit_number));
-                onChanged(saved);
-                load();
-              }}
-              unit={unit}
-            />
-            <UnitInventoryCard
-              api={productsApi}
-              capabilities={capabilities}
-              key={unit.unit_id}
-              language={language}
-              propertyId={propertyId}
-              unitId={unit.unit_id}
-              unitNumber={unit.unit_number}
-            />
+            {/* Parking Step 5: no Parking features on Parking (ROOM_FEATURES); the panel stays. */}
+            {ROOM_FEATURES && (
+              <UnitFeaturesPanel
+                api={unitApi}
+                canManage={canManage && unit.can_manage !== false}
+                language={language}
+                lists={lists}
+                onConflict={() => {
+                  setWarning(ut(language, "conflict"));
+                  load();
+                }}
+                onSaved={(saved) => {
+                  setNotice(ut(language, "uf_saved", saved.unit_number));
+                  onChanged(saved);
+                  load();
+                }}
+                unit={unit}
+              />
+            )}
+            {/* Parking Step 5: no Parking inventory on Parking (UNIT_INVENTORY); the card stays. */}
+            {UNIT_INVENTORY && (
+              <UnitInventoryCard
+                api={productsApi}
+                capabilities={capabilities}
+                key={unit.unit_id}
+                language={language}
+                propertyId={propertyId}
+                unitId={unit.unit_id}
+                unitNumber={unit.unit_number}
+              />
+            )}
           </section>
           <RentTermsCard
             canManage={canManage && unit.can_manage !== false}

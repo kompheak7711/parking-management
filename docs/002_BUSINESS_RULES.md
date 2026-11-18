@@ -87,6 +87,8 @@ Replaces: BR-MONEY-013.
 
 ---
 
+Amended for Parking (owner, 2026-11-17, Parking Step 6): Parking takes these Property Rental rules exactly as written in this document, with no Parking difference: the unpaid Rent notices on day 10, 20 and 25 and the termination letter of day 30, issued by a Manager or the Owner after the three notices (DL-237, BR-LEASE-024); the late-payment charge made by itself as a Late-payment Invoice, which the Owner or a Manager lowers or cancels only after a customer complaint of a staff mistake (DL-076, DL-226, DL-233); a hand-back before the 5th pays only the days used, from the 1st to the hand-back day (DL-229); a Draft Invoice may be changed or deleted with no reason, while an issued Invoice is only corrected by adjustments (DL-239). The parts Parking does not use stay in the code and are hidden on screen behind the flags in `frontend/src/leases/parking.ts`: General Ledger, HR and payroll, the Telegram bots, short stays (with Housekeeping and the booking sites), Products and Quotations, Problem reports, Monthly services and the ABA QR. Their rules below apply only if the owner switches a part on.
+
 # 4. Unit Rules
 
 ## BR-UNIT-001 — Unit Type and Unit Number
@@ -97,6 +99,12 @@ The Unit number is unique in the Property and cannot change after the Unit is ma
 
 Replaces: BR-UNIT-003.
 Decisions: DL-001, DL-074, DL-075, DL-078.
+
+Amended for Parking (owner, 2026-10-29, Parking Step 3; migration `20270405_255`, since Step 6 `20270808_431_parking`): a new Property starts with the four Parking Types COVERED (Covered, ចំណតមានដំបូល), UNCOVERED (Uncovered, ចំណតគ្មានដំបូល), MOTORBIKE (Motorbike, ម៉ូតូ) and TUK_TUK_FOOD_CART (Tuk-Tuk/Food Cart, តុកតុក/រទេះលក់ម្ហូប) instead of the four Unit Types above, and no Balcony Room feature. A Property that already exists gets the four added; nothing is removed. The list stays a Settings list (DL-075).
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): Parking has no Room features ("Parking features"), no Parking inventory and no home-only fields (Size, Bedrooms, Bathrooms, View, Kitchen). The screens that show or set them are hidden behind the flags `ROOM_FEATURES`, `UNIT_INVENTORY` and `HOME_FIELDS` in `frontend/src/leases/parking.ts`; the Settings cards Views, Kitchens and Room features are hidden too. Floor, Parking Type and Notes stay. The tables, routes and rules stay as they are; a hidden field is left out of an Update request, so a value already stored is kept.
+
+Amended for Parking (owner, 2026-11-17, Parking Step 6): Property Rental V1.1 replaced Bedrooms, Bathrooms, Kitchen and Room features with counted Unit features (places) and an inventory by Item type and place (DL-115, DL-116). On Parking the Unit features ("Parking features") are hidden with the Room features (`ROOM_FEATURES`), the inventory with `UNIT_INVENTORY`, and Size and View with `HOME_FIELDS`. The Settings list of Parking setup shows Floors and Parking Types only. The seed of a new Property is Property Rental's V1.1 seed with the four Parking Types and no Balcony; its Feature types, Unit features and Item types are seeded but not shown.
 
 ## BR-UNIT-002 — Unit Status
 
@@ -398,6 +406,8 @@ Decisions: DL-100.
 ---
 
 # 11. Pet Deposit Rules
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): Parking has no pet and no Pet Deposit. The pet approval on the Lease form, the pet tick on an inspection finding, the pet forms of the old screens, the "Qualified Pet Deposit" Refund source and the always-on texts about a Pet Deposit are hidden behind the flag `PET_DEPOSIT`; the form always sends "no pet". The rules below and their tables, routes and settlement steps stay in the code: a Pet Deposit that already exists in a database still shows and settles exactly as before (rows are data-driven). The Deposits report speaks of Security Deposits and lists the PET kind only while money is held.
 
 ## BR-DEP-007 — Only for an Approved Pet
 
@@ -1294,6 +1304,8 @@ Every Deposit use keeps its Deposit, the debt it pays, the amount, who, when, wh
 
 Replaces: BR-SETTLE-005, BR-SETTLE-006, BR-SETTLE-017.
 Decisions: DL-013, DL-032, DL-068.
+
+Amended for Parking (owner, 2026-10-30, Parking Step 5): with no Pet Deposit on Parking, steps 3 and 5 of DL-032 are empty and the settlement math needs no special case (`tests/test_cleaning_off_migration.py` proves a full settlement with no Pet Deposit is exact to the cent: a 10,000 Security Deposit pays a 7,525 debt and refunds 2,475, held 0, owed 0, closed).
 
 ## BR-SETTLE-007 — What Is Left After the Settlement
 

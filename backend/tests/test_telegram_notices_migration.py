@@ -41,7 +41,7 @@ def tenant(
     with psycopg.connect(db.owner_url) as connection:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
-            "created_by, updated_by) VALUES (%s, %s, %s, %s, 'ONE_BEDROOM', 'VACANT', %s, %s)",
+            "created_by, updated_by) VALUES (%s, %s, %s, %s, 'UNCOVERED', 'VACANT', %s, %s)",
             (unit_id, db.property_id, number, floor, db.owner, db.owner),
         )
         connection.execute(

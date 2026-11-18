@@ -975,13 +975,15 @@ export function LeaseForm({
                 19,
               )}
               {/* At most 20 occupants with the Primary Tenant, and 19 other Signers. */}
-              {pick(
-                occupants,
-                setOccupants,
-                "other_occupants",
-                [tenantId, ...occupants],
-                19,
-              )}
+              {/* Parking Step 4: the vehicle, not a person, moves in (PEOPLE_MOVE_IN). */}
+              {PEOPLE_MOVE_IN &&
+                pick(
+                  occupants,
+                  setOccupants,
+                  "other_occupants",
+                  [tenantId, ...occupants],
+                  19,
+                )}
               {field(
                 "lease-form-start",
                 lt(language, "start"),
@@ -1107,23 +1109,29 @@ export function LeaseForm({
                     />,
                     problems.depositReason,
                   )}
-                <label className="ui-chk">
-                  <input
-                    aria-describedby="lease-form-pet-help"
-                    aria-labelledby="lease-form-pet-ok"
-                    checked={pet}
-                    onChange={(event) => {
-                      setPet(event.currentTarget.checked);
-                    }}
-                    type="checkbox"
-                  />
-                  <span>
-                    <span id="lease-form-pet-ok">{lt(language, "pet_ok")}</span>
-                    <span className="ui-sub2" id="lease-form-pet-help">
-                      {lt(language, "pet_help2")}
+                {/* Parking Step 5: no pet on Parking (PET_DEPOSIT); the code stays. A renewal of a
+                    Lease that has a pet keeps it and shows the tick (data-driven). */}
+                {(PET_DEPOSIT || pet) && (
+                  <label className="ui-chk">
+                    <input
+                      aria-describedby="lease-form-pet-help"
+                      aria-labelledby="lease-form-pet-ok"
+                      checked={pet}
+                      onChange={(event) => {
+                        setPet(event.currentTarget.checked);
+                      }}
+                      type="checkbox"
+                    />
+                    <span>
+                      <span id="lease-form-pet-ok">
+                        {lt(language, "pet_ok")}
+                      </span>
+                      <span className="ui-sub2" id="lease-form-pet-help">
+                        {lt(language, "pet_help2")}
+                      </span>
                     </span>
-                  </span>
-                </label>
+                  </label>
+                )}
                 {pet &&
                   field(
                     "lease-form-pet",

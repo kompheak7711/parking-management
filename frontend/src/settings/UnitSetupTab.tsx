@@ -44,7 +44,8 @@ function noteFor(kind: UnitSetupListKind): SettingsTextKey | undefined {
 // Parking features. The list kinds stay in `unitSetupListKinds` (the parser checks them).
 function shownOnParking(kind: UnitSetupListKind): boolean {
   if (kind === "VIEW" || kind === "KITCHEN") return HOME_FIELDS;
-  if (kind === "ROOM_FEATURE") return ROOM_FEATURES;
+  // Parking Step 6: the V1.1 Unit features (places) are the Parking features too.
+  if (kind === "ROOM_FEATURE" || kind === "UNIT_FEATURE") return ROOM_FEATURES;
   return true;
 }
 

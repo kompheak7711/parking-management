@@ -1,7 +1,10 @@
 """Parking Step 5: no cleaning charge at move-out (owner 2026-10-30).
 
-Revision ID: 20270407_257
-Revises: 20270406_256
+Revision ID: 20270810_433_parking
+Revises: 20270809_432_parking
+
+Parking Step 6 (owner 2026-11-17): moved after Property Rental's head (old id 20270407_257);
+skips itself when the edit is already there.
 Create Date: 2026-10-30
 
 Property Rental's settlement preview (migration 89) refuses to close a move-out until a cleaning
@@ -22,8 +25,8 @@ from collections.abc import Sequence
 from alembic import op
 from sqlalchemy import text
 
-revision: str = "20270407_257"
-down_revision: str | None = "20270406_256"
+revision: str = "20270810_433_parking"
+down_revision: str | None = "20270809_432_parking"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -58,6 +61,19 @@ def _patch(signature: str, replacements: tuple[tuple[str, str], ...]) -> None:
 
 
 def upgrade() -> None:
+    # Parking Step 6: a database that already ran this migration under its old id
+    # (20270407_257) has the edit; it runs again after Property Rental's newer migrations and
+    # must change nothing.
+    definition = (
+        op.get_bind()
+        .execute(
+            text("SELECT pg_catalog.pg_get_functiondef(CAST(:signature AS regprocedure))"),
+            {"signature": PREVIEW},
+        )
+        .scalar_one()
+    )
+    if CLEANING_AFTER in str(definition):
+        return
     _patch(PREVIEW, ((CLEANING_BEFORE, CLEANING_AFTER),))
 
 

@@ -7,6 +7,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
+import { MONTHLY_SERVICES, SHORT_STAYS } from "../leases/parking";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -212,7 +213,11 @@ describe("Settings", () => {
     }
   });
 
-  it("TEST-FE-937 shows only the tabs the person may use; a Manager without Settings access lands on System health, which lists the health records", async () => {
+  it("TEST-FE-937 shows only the tabs the person may use; a Manager without Settings access lands on System health, which lists the health records", async ({
+    skip,
+  }) => {
+    // Parking Step 6: this test opens Monthly services, hidden on Parking; TEST-FE-3157 covers the tabs.
+    skip(!MONTHLY_SERVICES);
     const api = show(() => Promise.resolve(HEALTHY), {
       capabilities: new Set(["operations.status.read"]),
     });
@@ -253,7 +258,7 @@ describe("Settings", () => {
       ["Business", "#/settings/business"],
       ["Utility rates", "#/settings/rates"],
       ["Monthly services", "#/settings/services"],
-      ["Unit setup", "#/settings/units"],
+      ["Parking setup", "#/settings/units"],
     ]);
     // The first tab opens; a tab not rebuilt yet keeps its earlier forms, folded.
     expect(onShownTab("Old business form")).toBe(true);
@@ -531,7 +536,11 @@ describe("Settings", () => {
     );
   });
 
-  it("TEST-FE-2187 Booking sites is a Settings tab for the Owner and the Manager (owner 13/11/2026: moved from Short stays)", async () => {
+  it("TEST-FE-2187 Booking sites is a Settings tab for the Owner and the Manager (owner 13/11/2026: moved from Short stays)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no Booking sites on Parking (SHORT_STAYS).
+    skip(!SHORT_STAYS);
     window.location.hash = "#/settings/sites";
     const siteCalendars = vi.fn(() => new Promise<never>(() => undefined));
     const calendar = vi.fn(() => new Promise<never>(() => undefined));

@@ -3,7 +3,7 @@
 
 import { FormEvent, useState } from "react";
 
-import { HOME_FIELDS, ROOM_FEATURES, UNIT_INVENTORY } from "../leases/parking";
+import { HOME_FIELDS, UNIT_INVENTORY } from "../leases/parking";
 import type { Language } from "../signInText";
 import { Icon } from "../shell/icons";
 import { Dialog } from "../shell/ui";
@@ -50,7 +50,9 @@ function choices(items: UnitSetupItem[], current?: string | null) {
 function detailsFrom(
   data: FormData,
 ): Partial<Pick<UnitDetails, "size_square_metres" | "view_item_id" | "notes">> {
-  const details: Partial<Pick<UnitDetails, "size_square_metres" | "view_item_id" | "notes">> = {
+  const details: Partial<
+    Pick<UnitDetails, "size_square_metres" | "view_item_id" | "notes">
+  > = {
     notes: text(data, "notes") || null,
   };
   if (HOME_FIELDS) {
@@ -174,7 +176,8 @@ function DetailFields({
           </div>
         )}
       </div>
-      {HOME_FIELDS && optionalSelect("VIEW", "view", unit?.view_item_id ?? null)}
+      {HOME_FIELDS &&
+        optionalSelect("VIEW", "view", unit?.view_item_id ?? null)}
       <div className="ui-field">
         <label htmlFor="unit-notes">{ut(language, "notes")}</label>
         <textarea

@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { PRODUCTS } from "../leases/parking";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CustomerApi, CustomerDetail } from "../customerClient";
@@ -717,7 +718,11 @@ describe("Invoices page (V1-058 R5)", () => {
     ).toBeTruthy();
   });
 
-  it("TEST-FE-904 V1.1 part 6: New Quotation replaced Create Invoice: the list links to it for a person who may make Quotations, and an old Create Invoice address opens it", async () => {
+  it("TEST-FE-904 V1.1 part 6: New Quotation replaced Create Invoice: the list links to it for a person who may make Quotations, and an old Create Invoice address opens it", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no Quotations on Parking (PRODUCTS).
+    skip(!PRODUCTS);
     show({ capabilities: new Set(["invoices.read", "quotations.make"]) });
     expect(
       (await screen.findByRole("link", { name: "New Quotation" })).getAttribute(
@@ -1499,7 +1504,7 @@ describe("Invoices page (V1-058 R5)", () => {
     expect(within(card).getByText("Draft saved by Chan Sophea")).toBeTruthy();
   });
 
-  it("TEST-FE-2137 UI v81 module batch 3: beside an Invoice the shared Customer card shows the Customer's phone, Paid on time, Credit and Unpaid Invoices, with Open Lease and All Invoices for the Unit under it", async () => {
+  it("TEST-FE-2137 UI v81 module batch 3: beside an Invoice the shared Customer card shows the Customer's phone, Paid on time, Credit and Unpaid Invoices, with Open Lease and All Invoices for the Parking under it", async () => {
     const get = vi.fn<CustomerApi["get"]>((id) =>
       Promise.resolve({
         customer_id: id,

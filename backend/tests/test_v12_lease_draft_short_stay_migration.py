@@ -138,9 +138,9 @@ def test_a_lease_draft_over_a_booked_night_is_not_saved(stay_database: BookingDa
     assert over.status_code == 409, over.text
     error = over.json()["error"]
     assert error["code"] == "LEASE_UNIT_BOOKED"
-    assert "short-stay guest has booked this Unit" in error["message"]
+    assert "short-stay guest has booked this Parking" in error["message"]
     # DL-224: the words also name the third way out.
-    assert "move the guest to another Unit first" in error["message"]
+    assert "move the guest to another Parking first" in error["message"]
     assert leases_of(db, unit) == []
 
     # The check-out day is free: the Lease may start on it. Another Unit is free on every day.
@@ -209,8 +209,8 @@ def test_a_booking_made_after_the_draft_wins_and_signing_says_why(
         sign(db, lease, total)
     refusal = caught.value.refusal
     assert (refusal.status_code, refusal.code) == (409, "SIGNING_UNIT_BOOKED")
-    assert "short-stay guest has booked this Unit" in refusal.message
-    assert "move the guest to another Unit first" in refusal.message
+    assert "short-stay guest has booked this Parking" in refusal.message
+    assert "move the guest to another Parking first" in refusal.message
     assert lease_state(db, lease) == ("DRAFTED", db.today)
     with psycopg.connect(db.owner_url) as connection:
         paid = connection.execute(

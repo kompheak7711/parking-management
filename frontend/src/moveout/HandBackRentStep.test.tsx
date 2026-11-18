@@ -161,7 +161,7 @@ describe("the Rent for the days used after a hand-back (DL-229)", () => {
       action: "CREDIT_ADJUSTMENT",
       expected_outstanding_usd_cents: 81000,
       expected_credit_usd_cents: 73161,
-      reason: "Unit handed back on 03/08/2026: Rent for 3 of 31 days",
+      reason: "Parking handed back on 03/08/2026: Rent for 3 of 31 days",
     });
     expect(key).toMatch(/^[0-9a-f-]{36}$/);
   });

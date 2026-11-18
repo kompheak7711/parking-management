@@ -399,8 +399,8 @@ const TEXT = {
   ],
   // new
   sign_res_failed: [
-    "The Reservations could not be loaded. If this Unit is Reserved, signing will be blocked; ask someone who can see Reservations.",
-    "មិនអាចអានការកក់បានទេ។ បើបន្ទប់នេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
+    "The Reservations could not be loaded. If this Parking is Reserved, signing will be blocked; ask someone who can see Reservations.",
+    "មិនអាចអានការកក់បានទេ។ បើចំណតនេះត្រូវបានកក់ ការចុះហត្ថលេខានឹងត្រូវបដិសេធ។ សូមសួរអ្នកដែលអាចមើលការកក់។",
   ],
   // new
   sign_refused: [
@@ -529,16 +529,16 @@ const TEXT = {
   ],
   // new
   form_failed: [
-    "The Units and Customers could not be loaded. Check the connection and your access, and try again.",
-    "មិនអាចអានបន្ទប់ និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
+    "The Parking and Customers could not be loaded. Check the connection and your access, and try again.",
+    "មិនអាចអានចំណត និងអតិថិជនបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ និងសិទ្ធិរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
   ],
   terms: ["Lease terms", "លក្ខខណ្ឌកិច្ចសន្យា"],
   // new
   choose_unit: ["Choose a Parking", "ជ្រើសចំណត"],
   // new
   unit_help: [
-    "Vacant Units, Units being cleaned or maintained, and the Unit of an active Reservation.",
-    "បន្ទប់ទំនេរ បន្ទប់កំពុងសម្អាត ឬជួសជុល និងបន្ទប់នៃការកក់ដែលកំពុងដំណើរការ។",
+    "Vacant Parking, Parking being cleaned or maintained, and the Parking of an active Reservation.",
+    "ចំណតទំនេរ ចំណតកំពុងសម្អាត ឬជួសជុល និងចំណតនៃការកក់ដែលកំពុងដំណើរការ។",
   ],
   // new
   choose_customer: ["Choose a Customer", "ជ្រើសអតិថិជន"],
@@ -758,8 +758,8 @@ const TEXT = {
   ],
   // new
   draft_refused: [
-    "The draft could not be saved. Another Lease may already cover this Unit for these dates, or the details do not fit the rules.",
-    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់បន្ទប់នេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
+    "The draft could not be saved. Another Lease may already cover this Parking for these dates, or the details do not fit the rules.",
+    "ម៉ាស៊ីនមេបានបដិសេធសេចក្តីព្រាង។ កិច្ចសន្យាផ្សេងប្រហែលគ្របដណ្តប់ចំណតនេះសម្រាប់ថ្ងៃទាំងនេះរួចហើយ ឬព័ត៌មានមិនត្រូវតាមច្បាប់។ គ្មានអ្វីបន្ថែមត្រូវបានរក្សាទុកទេ។",
   ],
   // Terminate dialog (mock-up i18n3.js "tg_"; lines marked new are not in the mock-up)
   terminate: ["Terminate Lease", "បញ្ចប់កិច្ចសន្យា"],
@@ -1248,8 +1248,8 @@ const TEXT = {
     "បោះពុម្ពវា ហើយឱ្យអ្នកចុះហត្ថលេខាទាំងអស់ចុះលើក្រដាស។",
   ], // new
   next_3: [
-    "A Manager records the signing. The Unit becomes Occupied and the Initial Rent Invoice is made.",
-    "អ្នកគ្រប់គ្រងកត់ត្រាការចុះហត្ថលេខា។ បន្ទប់ក្លាយជាមានអ្នកជួល ហើយវិក្កយបត្រថ្លៃឈ្នួលដំបូងត្រូវបានបង្កើត។",
+    "A Manager records the signing. The Parking becomes Occupied and the Initial Rent Invoice is made.",
+    "អ្នកគ្រប់គ្រងកត់ត្រាការចុះហត្ថលេខា។ ចំណតក្លាយជាមានអ្នកជួល ហើយវិក្កយបត្រថ្លៃឈ្នួលដំបូងត្រូវបានបង្កើត។",
   ], // new
   next_4: [
     "Record the move-in when the keys are handed over.",

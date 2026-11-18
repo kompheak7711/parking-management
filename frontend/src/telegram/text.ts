@@ -33,7 +33,7 @@ const TEXT = {
   linked_now: ["Linked now", "កំពុងភ្ជាប់"],
   c_acc: ["Telegram account", "គណនីតេឡេក្រាម"],
   c_cust: ["Customer", "អតិថិជន"],
-  c_unit: ["Unit", "បន្ទប់"],
+  c_unit: ["Parking", "ចំណត"],
   c_lease_end: [
     "Lease ends",
     // new
@@ -41,12 +41,12 @@ const TEXT = {
   ],
   c_on: ["Linked on", "ភ្ជាប់នៅ"],
   c_how: ["How", "របៀប"],
-  how: ["Phone, name and Unit matched", "ទូរស័ព្ទ ឈ្មោះ និងបន្ទប់ត្រូវគ្នា"],
+  how: ["Phone, name and Parking matched", "ទូរស័ព្ទ ឈ្មោះ និងចំណតត្រូវគ្នា"],
   remove: ["Remove link", "ដកការភ្ជាប់"],
   links_n: [
-    "A link needs the phone, the name and the Unit to match an active Lease, or a one-time Telegram QR from the Lease or Booking page. Several people on one Lease can each link. A guest's link ends at check-out.",
+    "A link needs the phone, the name and the Parking to match an active Lease, or a one-time Telegram QR from the Lease or Booking page. Several people on one Lease can each link. A guest's link ends at check-out.",
     // DL-214: the QR part is new and needs the native check.
-    "ការភ្ជាប់ត្រូវការទូរស័ព្ទ ឈ្មោះ និងបន្ទប់ ត្រូវនឹងកិច្ចសន្យាសកម្ម ឬ QR តេឡេក្រាមប្រើបានតែម្តង ពីទំព័រកិច្ចសន្យា ឬការកក់។ មនុស្សច្រើននាក់ក្នុងកិច្ចសន្យាតែមួយ អាចភ្ជាប់ម្នាក់ៗ។ ការភ្ជាប់របស់ភ្ញៀវបញ្ចប់ពេលចេញពីបន្ទប់។",
+    "ការភ្ជាប់ត្រូវការទូរស័ព្ទ ឈ្មោះ និងចំណត ត្រូវនឹងកិច្ចសន្យាសកម្ម ឬ QR តេឡេក្រាមប្រើបានតែម្តង ពីទំព័រកិច្ចសន្យា ឬការកក់។ មនុស្សច្រើននាក់ក្នុងកិច្ចសន្យាតែមួយ អាចភ្ជាប់ម្នាក់ៗ។ ការភ្ជាប់របស់ភ្ញៀវបញ្ចប់ពេលចេញពីចំណត។",
   ],
   none_linked: [
     "No tenant is linked yet.",
@@ -60,7 +60,7 @@ const TEXT = {
   tries_h: ["Failed link attempts", "ការភ្ជាប់ដែលមិនត្រូវ"],
   c_phone: ["Phone", "ទូរស័ព្ទ"],
   c_name: ["Name typed", "ឈ្មោះដែលវាយ"],
-  c_unit_t: ["Unit typed", "បន្ទប់ដែលវាយ"],
+  c_unit_t: ["Parking typed", "ចំណតដែលវាយ"],
   c_tries: ["Attempts", "ចំនួនដង"],
   c_last: [
     "Last attempt",
@@ -411,16 +411,16 @@ const TEXT = {
   // Telegram bots step 3a (DL-171): Bookings › Visit requests, words from the mock-up rounds 9,
   // 10 and 13 (i18n11.js, i18n13.js, i18n25.js; keys vr_*, ch_*).
   vr_sub: [
-    "New customers who asked to see a Unit. Oldest first: first come, first served.",
-    "អតិថិជនថ្មីដែលសុំមកមើលបន្ទប់។ ចាស់មុន៖ មកមុន បានមុន។",
+    "New customers who asked to see a Parking. Oldest first: first come, first served.",
+    "អតិថិជនថ្មីដែលសុំមកមើលចំណត។ ចាស់មុន៖ មកមុន បានមុន។",
   ],
   vr_how: [
     "Customers send a request from the Telegram bot. They choose how we contact them: Telegram, email, phone call or SMS, or WhatsApp. A new request from the same phone joins the open one and keeps its place.",
     "អតិថិជនផ្ញើសំណើពី Telegram bot។ ពួកគេជ្រើសរបៀបទាក់ទង៖ Telegram អ៊ីមែល ទូរស័ព្ទ ឬ SMS ឬ WhatsApp។ សំណើថ្មីពីលេខទូរស័ព្ទដដែល ភ្ជាប់ទៅសំណើដែលកំពុងបើក ហើយរក្សាលំដាប់ដដែល។",
   ],
-  vr_title: ["Viewing requests", "សំណើមកមើលបន្ទប់"],
+  vr_title: ["Viewing requests", "សំណើមកមើលចំណត"],
   vr_n: ["{0} requests", "សំណើ {0}"],
-  vr_none: ["No viewing requests here.", "គ្មានសំណើមកមើលបន្ទប់នៅទីនេះទេ។"],
+  vr_none: ["No viewing requests here.", "គ្មានសំណើមកមើលចំណតនៅទីនេះទេ។"],
   vr_col_req: ["Request", "សំណើ"],
   vr_col_who: ["Customer", "អតិថិជន"],
   vr_col_ch: ["Contact by", "ទាក់ទងតាម"],
@@ -490,8 +490,8 @@ const TEXT = {
     "ការមកមើលរបស់អ្នកត្រូវបានកក់។\nថ្ងៃ៖ {0} ម៉ោង {1}\nអាសយដ្ឋាន៖ {2}\nបុគ្គលិក៖ {3}\nបើចង់ប្ដូរម៉ោង សូមឆ្លើយតបសារនេះ។",
   ],
   msg_rem: [
-    "Reminder: your viewing at CHETANA Residence is tomorrow, {0} at {1}. See you soon.",
-    "រំលឹក៖ ការមកមើល CHETANA Residence របស់អ្នកគឺនៅថ្ងៃស្អែក {0} ម៉ោង {1}។ ជួបគ្នាឆាប់ៗ។",
+    "Reminder: your viewing at CHETANA Parking is tomorrow, {0} at {1}. See you soon.",
+    "រំលឹក៖ ការមកមើល CHETANA Parking របស់អ្នកគឺនៅថ្ងៃស្អែក {0} ម៉ោង {1}។ ជួបគ្នាឆាប់ៗ។",
   ],
   wd_1: ["Monday", "ថ្ងៃច័ន្ទ"],
   wd_2: ["Tuesday", "ថ្ងៃអង្គារ"],
@@ -520,7 +520,7 @@ const TEXT = {
   d_move: ["Reschedule viewing", "ប្ដូរការមកមើល"],
   d_day: ["Day", "ថ្ងៃ"],
   d_time: ["Time", "ម៉ោង"],
-  d_shows: ["Shown by", "អ្នកបង្ហាញបន្ទប់"],
+  d_shows: ["Shown by", "អ្នកបង្ហាញចំណត"],
   d_book_btn: ["Book viewing", "កក់ការមកមើល"],
   d_move_btn: ["Reschedule", "ប្ដូរការមកមើល"],
   d_book_help: [
@@ -546,7 +546,7 @@ const TEXT = {
   d_close_btn: ["Close request", "បិទសំណើ"],
   d_cancelled: ["Customer cancelled", "អតិថិជនបានបោះបង់"],
   reason_PRICE: ["Price too high", "តម្លៃខ្ពស់ពេក"],
-  reason_TYPE_NOT_FREE: ["Unit Type unavailable", "ប្រភេទបន្ទប់មិនទំនេរ"],
+  reason_TYPE_NOT_FREE: ["Parking Type unavailable", "ប្រភេទចំណតមិនទំនេរ"],
   reason_LOCATION: ["Location", "ទីតាំង"],
   reason_FOUND_OTHER: ["Found another place", "រកបានកន្លែងផ្សេង"],
   reason_MOVE_IN_FAR: ["Move-in date too far", "ថ្ងៃចូលនៅឆ្ងាយពេក"],
@@ -725,7 +725,7 @@ const TEXT = {
   nt_who: ["Who gets it", "អ្នកណាទទួល"],
   nt_ALL: ["Everyone linked", "អ្នកភ្ជាប់ទាំងអស់"],
   nt_FLOORS: ["Some floors", "ជាន់ខ្លះ"],
-  nt_UNITS: ["Some Units", "បន្ទប់ខ្លះ"],
+  nt_UNITS: ["Some Parking", "ចំណតខ្លះ"],
   nt_floor: ["Floor {0}", "ជាន់ {0}"],
   nt_send: ["Send notice", "ផ្ញើសេចក្តីជូនដំណឹង"],
   nt_confirm: [
@@ -739,8 +739,8 @@ const TEXT = {
     "សូមសរសេរសេចក្តីជូនដំណឹងជាភាសាអង់គ្លេស ឬខ្មែរ។",
   ],
   nt_e_who: [
-    "Choose at least one floor or Unit.",
-    "សូមជ្រើសយ៉ាងហោចណាស់ជាន់ ឬបន្ទប់មួយ។",
+    "Choose at least one floor or Parking.",
+    "សូមជ្រើសយ៉ាងហោចណាស់ជាន់ ឬចំណតមួយ។",
   ],
   nt_e_422: [
     "The notice was not sent. Check the words and who it is for.",
@@ -774,7 +774,7 @@ const TEXT = {
   ],
   qr_sub_stay: [
     "Show a one-time QR. The guest scans it with the phone camera and taps Start in Telegram. The link ends at check-out. Guests get no Invoices on Telegram.",
-    "បង្ហាញ QR ប្រើបានតែម្តង។ ភ្ញៀវស្កេនវាដោយកាមេរ៉ាទូរស័ព្ទ ហើយចុច Start ក្នុងតេឡេក្រាម។ ការភ្ជាប់បញ្ចប់ពេលចេញពីបន្ទប់។ ភ្ញៀវមិនទទួលវិក្កយបត្រតាមតេឡេក្រាមទេ។",
+    "បង្ហាញ QR ប្រើបានតែម្តង។ ភ្ញៀវស្កេនវាដោយកាមេរ៉ាទូរស័ព្ទ ហើយចុច Start ក្នុងតេឡេក្រាម។ ការភ្ជាប់បញ្ចប់ពេលចេញពីចំណត។ ភ្ញៀវមិនទទួលវិក្កយបត្រតាមតេឡេក្រាមទេ។",
   ],
   qr_open: ["Show Telegram QR", "បង្ហាញ QR តេឡេក្រាម"],
   qr_for: ["QR for {0}", "QR សម្រាប់ {0}"],
@@ -783,8 +783,8 @@ const TEXT = {
     "គ្មាននរណាម្នាក់ក្នុងកិច្ចសន្យា ឬការស្នាក់នៅនេះ អាចទទួល QR ឥឡូវនេះទេ។",
   ],
   qr_not_ready: [
-    "The Telegram QR is not ready yet. The app learns the bot's name within a day after the bot key is set. Until then, the person links with phone, name and Unit.",
-    "QR តេឡេក្រាមមិនទាន់រួចរាល់ទេ។ កម្មវិធីស្គាល់ឈ្មោះបូតក្នុងរយៈពេលមួយថ្ងៃ បន្ទាប់ពីដាក់សោបូត។ រហូតដល់ពេលនោះ សូមភ្ជាប់តាមទូរស័ព្ទ ឈ្មោះ និងបន្ទប់។",
+    "The Telegram QR is not ready yet. The app learns the bot's name within a day after the bot key is set. Until then, the person links with phone, name and Parking.",
+    "QR តេឡេក្រាមមិនទាន់រួចរាល់ទេ។ កម្មវិធីស្គាល់ឈ្មោះបូតក្នុងរយៈពេលមួយថ្ងៃ បន្ទាប់ពីដាក់សោបូត។ រហូតដល់ពេលនោះ សូមភ្ជាប់តាមទូរស័ព្ទ ឈ្មោះ និងចំណត។",
   ],
   qr_scan: [
     "Ask {0} ({1}) to scan this with the phone camera, then tap Start in Telegram. It works once, until {2}.",

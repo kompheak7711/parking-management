@@ -73,7 +73,7 @@ def another_studio(db: BookingDatabase, number: str) -> uuid.UUID:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
             "default_monthly_rent_usd_cents, created_by, updated_by) "
-            "VALUES (%s, %s, %s, '6', 'STUDIO', 'VACANT', 29900, %s, %s)",
+            "VALUES (%s, %s, %s, '6', 'COVERED', 'VACANT', 29900, %s, %s)",
             (unit, db.property_id, number, db.manager, db.manager),
         )
     return unit
@@ -105,7 +105,7 @@ def test_migration_391_follows_the_invoice_types() -> None:
     revision = scripts.get_revision(REVISION)
     assert revision is not None and revision.down_revision == "20270716_390"
     # On the UI v81 branch 360 to 364 follow 391.
-    assert scripts.get_heads() == ["20270807_424"]
+    assert scripts.get_heads() == ["20270810_433_parking"]
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()
 

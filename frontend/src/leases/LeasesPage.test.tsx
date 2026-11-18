@@ -947,7 +947,7 @@ describe("Lease actions", () => {
   it("TEST-FE-2169 Edit draft: dates that a short-stay guest has booked are refused with the reason; the dialog stays open and the Lease is not read again (DL-223)", async () => {
     window.location.hash = "#/leases/lease-sign";
     const reason =
-      "A short-stay guest has booked this Unit on some of these days. Nothing was saved. Choose another Unit, or a Start Date on the guest's check-out day or later (see Short stays).";
+      "A short-stay guest has booked this Parking on some of these days. Nothing was saved. Choose another Parking, or a Start Date on the guest's check-out day or later (see Short stays).";
     const update = vi
       .fn()
       .mockRejectedValueOnce(new LeaseUnitBookedError(reason))
@@ -978,7 +978,7 @@ describe("Lease actions", () => {
     expect(update.mock.calls[1]?.[2]).not.toBe(update.mock.calls[0]?.[2]);
   });
 
-  it("TEST-FE-853 a draft whose Customer has an active Booking of the Unit takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
+  it("TEST-FE-853 a draft whose Customer has an active Booking of the Parking takes only the rest of its deposit; a refusal saves nothing and shows why, and changed values are a new request", async () => {
     window.location.hash = "#/leases/lease-sign";
     const reservation = (
       id: string,
@@ -2262,11 +2262,11 @@ describe("New Lease and Renew", () => {
       fireEvent.change(screen.getByLabelText("Which pet"), {
         target: { value: "One small cat" },
       });
+      // D4 (DL-234): a new Lease with a pet records its Pet Deposit too.
+      fireEvent.change(screen.getByLabelText("Pet Deposit (USD)"), {
+        target: { value: "100" },
+      });
     }
-    // D4 (DL-234): a new Lease with a pet records its Pet Deposit too.
-    fireEvent.change(screen.getByLabelText("Pet Deposit (USD)"), {
-      target: { value: "100" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Save as draft" }));
     const dialog = screen.getByRole("dialog", {
       name: "Save the draft · U402?",
@@ -2314,7 +2314,11 @@ describe("New Lease and Renew", () => {
     });
   });
 
-  it("TEST-FE-2273 New Lease: a pet kept from the start needs its Pet Deposit, shown in the bill and saved after the draft and its Security Deposit (D4, DL-234)", async () => {
+  it("TEST-FE-2273 New Lease: a pet kept from the start needs its Pet Deposit, shown in the bill and saved after the draft and its Security Deposit (D4, DL-234)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: no pet on Parking (PET_DEPOSIT).
+    skip(!PET_DEPOSIT);
     const create = vi
       .fn<LeaseApi["create"]>()
       .mockImplementation((_property, source) =>
@@ -2336,8 +2340,8 @@ describe("New Lease and Renew", () => {
       money,
     );
     fireEvent.click(await screen.findByRole("link", { name: "New Lease" }));
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Start Date"), {
       target: { value: "2026-12-22" },
@@ -2525,7 +2529,7 @@ describe("New Lease and Renew", () => {
 
   it("TEST-FE-2168 New Lease: a draft over a short-stay booking is refused with the reason, not the general words; nothing is read again, and other dates save (DL-223)", async () => {
     const reason =
-      "A short-stay guest has booked this Unit on some of these days. Nothing was saved. Choose another Unit, or a Start Date on the guest's check-out day or later (see Short stays).";
+      "A short-stay guest has booked this Parking on some of these days. Nothing was saved. Choose another Parking, or a Start Date on the guest's check-out day or later (see Short stays).";
     const create = vi
       .fn<LeaseApi["create"]>()
       .mockRejectedValueOnce(new LeaseUnitBookedError(reason))
@@ -2537,10 +2541,10 @@ describe("New Lease and Renew", () => {
     const get = vi.fn().mockRejectedValue(new LeaseRequestError());
     window.location.hash = "#/leases/new";
     show(api({ create, get }), deposits(), null, undefined, people(), units);
-    await screen.findByLabelText("Unit");
-    pickIn("Unit", "unit-U402");
+    await screen.findByLabelText("Parking");
+    pickIn("Parking", "unit-U402");
     await waitFor(() => {
-      expect(screen.getByLabelText("Unit")).toHaveValue("unit-U402");
+      expect(screen.getByLabelText("Parking")).toHaveValue("unit-U402");
     });
     pickIn("Primary Tenant", "customer-a");
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
@@ -2573,7 +2577,7 @@ describe("New Lease and Renew", () => {
     expect(create.mock.calls[1]?.[2]).not.toBe(create.mock.calls[0]?.[2]);
   });
 
-  it("TEST-FE-1010 New Lease says when the chosen Unit has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
+  it("TEST-FE-1010 New Lease says when the chosen Parking has no electricity or water meter on the Start Date (nothing of that kind is billed); a meter put in later counts from its day; a failed meter read shows nothing", async () => {
     const loadMeters = vi.fn<UtilityApi["loadMeters"]>().mockResolvedValue({
       items: [meterOf("WATER", "2027-01-01")],
       nextCursor: null,
@@ -3893,7 +3897,7 @@ describe("New Lease and Renew", () => {
   });
 
   // Parking Step 4: the people list is hidden (PEOPLE_MOVE_IN), the code kept.
-  it("TEST-FE-1133 the New Lease form has no Other occupants list on Parking (people lists hidden, code kept)", async () => {
+  it("TEST-FE-3133 the New Lease form has no Other occupants list on Parking (people lists hidden, code kept)", async () => {
     show(
       api({}),
       deposits(),
@@ -3918,7 +3922,7 @@ describe("New Lease and Renew", () => {
     expect(screen.getByLabelText("Other Signers")).toBeInTheDocument();
     expect(screen.queryByLabelText("Other occupants")).toBeNull();
   });
-  it("TEST-FE-1140 Parking Step 5: no pet on Parking: New Lease has no pet tick and sends no pet term; the Lease page and Terminate say nothing about pets", async ({
+  it("TEST-FE-3140 Parking Step 5: no pet on Parking: New Lease has no pet tick and sends no pet term; the Lease page and Terminate say nothing about pets", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);
@@ -3954,11 +3958,13 @@ describe("New Lease and Renew", () => {
     fireEvent.change(screen.getByLabelText("Monthly Rent"), {
       target: { value: "310" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save as draft" }));
     const dialog = screen.getByRole("dialog", {
       name: "Save the draft · U402?",
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save draft" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save as draft" }),
+    );
     await waitFor(() => {
       expect(create).toHaveBeenCalledTimes(1);
     });
@@ -4720,7 +4726,7 @@ describe("Vehicle (Parking Step 4)", () => {
       ...overrides,
     });
 
-  it("TEST-FE-1130 the Lease page shows the vehicle moved in, the earlier vehicles with their move-out day, Change vehicle, and no people buttons", async () => {
+  it("TEST-FE-3130 the Lease page shows the vehicle moved in, the earlier vehicles with their move-out day, Change vehicle, and no people buttons", async () => {
     window.location.hash = "#/leases/lease-U101";
     show(api({ get: vi.fn().mockResolvedValue(parked()) }));
     const card = await screen.findByRole("region", { name: "Vehicle" });
@@ -4775,7 +4781,7 @@ describe("Vehicle (Parking Step 4)", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-1131 Record move-in picks one vehicle of the Signers, checks the date, keeps the ids on Try again, and points to the Customer page when there is none", async () => {
+  it("TEST-FE-3131 Record move-in picks one vehicle of the Signers, checks the date, keeps the ids on Try again, and points to the Customer page when there is none", async () => {
     window.location.hash = "#/leases/lease-move";
     const start = addDays(today, -3);
     const ready = lease("U302", {
@@ -4898,7 +4904,7 @@ describe("Vehicle (Parking Step 4)", () => {
     expect(within(none).queryByRole("radio")).toBeNull();
   });
 
-  it("TEST-FE-1132 Change vehicle offers the Signers' other vehicles, needs a reason, sends the vehicle and the day, and shows the server's words when refused", async () => {
+  it("TEST-FE-3132 Change vehicle offers the Signers' other vehicles, needs a reason, sends the vehicle and the day, and shows the server's words when refused", async () => {
     window.location.hash = "#/leases/lease-U101";
     const current = parked({
       signers: [
@@ -4997,7 +5003,7 @@ describe("Vehicle (Parking Step 4)", () => {
     expect(changeVehicle.mock.calls[1]?.[0].version).toBe(3);
   });
 
-  it("TEST-FE-1138 Change vehicle opens on the End Date when that day is already past", async () => {
+  it("TEST-FE-3138 Change vehicle opens on the End Date when that day is already past", async () => {
     window.location.hash = "#/leases/lease-U101";
     const overdue = parked({
       end_date: addDays(today, -2),

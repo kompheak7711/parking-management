@@ -286,7 +286,7 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
     // The stock number says Set or Piece (no "Unit" column) and is orange when low; the
     // category is a small line under the name.
     expect(
-      within(table).queryByRole("columnheader", { name: "Unit" }),
+      within(table).queryByRole("columnheader", { name: "Parking" }),
     ).toBeNull();
     expect(kettle?.querySelector("td.ui-lowstock")?.textContent).toMatch(
       / \d+ Piece$/,
@@ -358,7 +358,9 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
     change("Category", "SERVICES");
     // A Service is counted in times, hours or bags and has no reorder level.
     expect(screen.queryByLabelText("Reorder level")).toBeNull();
-    const units = within(screen.getByLabelText("Unit")).getAllByRole("option");
+    const units = within(screen.getByLabelText("Parking")).getAllByRole(
+      "option",
+    );
     expect(units.map((option) => option.textContent)).toEqual([
       "Time",
       "Hour",
@@ -601,7 +603,7 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
     });
   });
 
-  it("TEST-FE-1146 Locations: the warehouse shows every place with what it holds, a Unit for rent only when it holds items, and Add place gives the next number", async () => {
+  it("TEST-FE-1146 Locations: the warehouse shows every place with what it holds, a Parking for rent only when it holds items, and Add place gives the next number", async () => {
     const api = apiOf();
     show("locations", api, MANAGER);
     // Owner 14/11/2026: the card is named by the Unit number only, with no "Not for rent".
@@ -623,7 +625,7 @@ describe("Building › Products (V1.1 part 4, DL-121)", () => {
       within(warehouse).getByRole("button", { name: "Add place: W01" }),
     );
     const dialog = screen.getByRole("dialog", {
-      name: "Add place to Unit W01",
+      name: "Add place to Parking W01",
     });
     expect(
       within(dialog).getByText("It will be W01 · Cabinet 3."),

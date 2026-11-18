@@ -42,7 +42,7 @@ def lease(invoice_database: HrDatabase) -> dict[str, uuid.UUID]:
     with psycopg.connect(db.owner_url) as connection:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
-            "created_by, updated_by) VALUES (%s, %s, 'Unit 306', '3', 'ONE_BEDROOM', 'VACANT', "
+            "created_by, updated_by) VALUES (%s, %s, 'Unit 306', '3', 'UNCOVERED', 'VACANT', "
             "%s, %s)",
             (unit_id, db.property_id, db.owner, db.owner),
         )

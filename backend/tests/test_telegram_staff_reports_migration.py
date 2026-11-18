@@ -50,7 +50,7 @@ def add_unit(db: HrDatabase, number: str) -> str:
     with psycopg.connect(db.owner_url) as connection:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
-            "created_by, updated_by) VALUES (%s, %s, %s, '2', 'ONE_BEDROOM', 'VACANT', %s, %s)",
+            "created_by, updated_by) VALUES (%s, %s, %s, '2', 'UNCOVERED', 'VACANT', %s, %s)",
             (unit_id, db.property_id, number, db.owner, db.owner),
         )
     return str(unit_id)

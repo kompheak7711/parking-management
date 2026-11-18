@@ -486,7 +486,10 @@ export function RatesTab({
                   label: sst(language, "se_util"),
                   count: utilityRates.length,
                 },
-                { id: "cleaning", label: sst(language, "cl_title") },
+                // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE).
+                ...(CLEANING_CHARGE
+                  ? [{ id: "cleaning", label: sst(language, "cl_title") }]
+                  : []),
               ]
         }
       />
@@ -603,7 +606,8 @@ export function RatesTab({
         )}
         {/* UI v81 round 2: the Move-out cleaning rates sit under Utility rates, as in the design;
             round 4: on their own sub-tab. */}
-        {showCleaning && (
+        {/* Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE); the card stays in the code. */}
+        {showCleaning && CLEANING_CHARGE && (
           <CleaningRatesCard
             active={active}
             api={cleaning}

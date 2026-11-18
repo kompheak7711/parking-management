@@ -499,7 +499,7 @@ function go(hash: string) {
 }
 
 describe("Daily and weekly rent: Short stays", () => {
-  it("TEST-FE-1600 shows one row per Unit and one bar per stay, each with a word", async () => {
+  it("TEST-FE-1600 shows one row per Parking and one bar per stay, each with a word", async () => {
     const { api } = show();
     const table = await screen.findByRole("table");
     expect(api.calendar).toHaveBeenCalledWith("p-1", "2026-11-04", 14);
@@ -611,7 +611,7 @@ describe("Daily and weekly rent: Short stays", () => {
     });
     expect(await screen.findByText("3 × night $26.00")).toBeInTheDocument();
     expect(screen.getAllByText("$54.60")).toHaveLength(2);
-    expect(screen.getByLabelText(/^Unit/)).toHaveValue("u-503");
+    expect(screen.getByLabelText(/^Parking/)).toHaveValue("u-503");
     // Typing the phone shows the matching Customers (owner test 06/11/2026).
     fireEvent.change(screen.getByLabelText(/^Phone/), {
       target: { value: "010" },
@@ -640,7 +640,7 @@ describe("Daily and weekly rent: Short stays", () => {
     expect(window.location.hash).toBe("#/shortstays/st%3Ab-2");
   });
 
-  it("TEST-FE-1603 says what is missing, why a Unit cannot be booked, and offers the monthly Lease", async () => {
+  it("TEST-FE-1603 says what is missing, why a Parking cannot be booked, and offers the monthly Lease", async () => {
     go("#/shortstays/new:u-501:2026-11-06");
     const api = fakeApi({
       price: vi.fn(() =>
@@ -689,7 +689,9 @@ describe("Daily and weekly rent: Short stays", () => {
       within(summary).getByText("Name the booking site."),
     ).toBeInTheDocument();
     expect(
-      within(summary).getByText("These nights cannot be booked in this Unit."),
+      within(summary).getByText(
+        "These nights cannot be booked in this Parking.",
+      ),
     ).toBeInTheDocument();
     expect(api.book).not.toHaveBeenCalled();
   });
@@ -701,7 +703,7 @@ describe("Daily and weekly rent: Short stays", () => {
       .mockRejectedValueOnce(
         new ShortStaysError(
           409,
-          "The Unit is already booked on one of these nights",
+          "The Parking is already booked on one of these nights",
         ),
       )
       .mockResolvedValueOnce({
@@ -929,7 +931,7 @@ describe("Daily and weekly rent: Short stays", () => {
     // The room check never asks for money.
     expect(screen.queryByLabelText(/Cost/)).toBeNull();
     expect(screen.queryByLabelText(/Amount/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Parking check done/ }));
     expect(screen.getByText("Pick the type of problem.")).toBeInTheDocument();
     expect(screen.getByText("Say what is wrong.")).toBeInTheDocument();
     expect(step).not.toHaveBeenCalled();
@@ -950,7 +952,7 @@ describe("Daily and weekly rent: Short stays", () => {
     expect(urgent[1]).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Remove 2" }));
     expect(screen.queryByLabelText(/Type 2/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Parking check done/ }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
       problems: [
         { problem_type_id: "pt-1", description: "Lamp broken", urgent: true },
@@ -1022,7 +1024,7 @@ describe("Daily and weekly rent: Short stays", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "The deposit ends after check-out and the Unit check, once the damage charge is decided.",
+        "The deposit ends after check-out and the Parking check, once the damage charge is decided.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -1097,7 +1099,7 @@ describe("Daily and weekly rent: Short stays", () => {
     fireEvent.change(screen.getByLabelText("Note"), {
       target: { value: "All fine" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /Unit check done/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Parking check done/ }));
     expect(step).toHaveBeenCalledWith("p-1", "b-1", "room-check", {
       note: "All fine",
     });
@@ -1389,7 +1391,7 @@ describe("Daily and weekly rent: Short stays", () => {
     expect(cleaning).toHaveBeenCalledWith("p-1", "2026-11-04");
     expect(screen.getByText("2 to do")).toBeInTheDocument();
     expect(screen.getByText("Due 03/11/2026")).toBeInTheDocument();
-    expect(screen.getByText("Unit check")).toBeInTheDocument();
+    expect(screen.getByText("Parking check")).toBeInTheDocument();
     expect(screen.getByText("Waiting for a cleaner")).toBeInTheDocument();
     expect(
       screen.getByText("Waiting for Chan Thida in Telegram"),
@@ -1408,7 +1410,7 @@ describe("Daily and weekly rent: Short stays", () => {
     });
   });
 
-  it("TEST-FE-2264 (DL-242) a Unit check where the cleaner found a problem asks the front desk to write it on the booking, and a cleaner with no Telegram is told in person", async () => {
+  it("TEST-FE-2264 (DL-242) a Parking check where the cleaner found a problem asks the front desk to write it on the booking, and a cleaner with no Telegram is told in person", async () => {
     const day: CleaningDay = {
       day: "2026-11-04",
       today: "2026-11-04",
@@ -2007,7 +2009,7 @@ describe("Daily and weekly rent: Short stays", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByDisplayValue(
-        "Thank you for staying with CHETANA Residence, Lim! If you liked your stay, please leave us a short review on Google Maps: https://search.google.com/local/writereview?placeid=ChIJH87t_fRTCTER6g_sn780yZI",
+        "Thank you for staying with CHETANA Parking, Lim! If you liked your stay, please leave us a short review on Google Maps: https://search.google.com/local/writereview?placeid=ChIJH87t_fRTCTER6g_sn780yZI",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Mark as asked" }));
@@ -2069,7 +2071,7 @@ describe("Daily and weekly rent: Short stays", () => {
       check_out_on: "2026-11-07",
     });
     const message = await screen.findByDisplayValue(
-      /^CHETANA Residence: quote SQ260001/,
+      /^CHETANA Parking: quote SQ260001/,
     );
     expect((message as HTMLTextAreaElement).value).toContain(
       "06/11/2026 to 07/11/2026, 1 night\nTotal $26.00\nCheck-in from 14:00, check-out by 12:00.",
@@ -2080,7 +2082,7 @@ describe("Daily and weekly rent: Short stays", () => {
     // A change of guests makes the message out of date, so it goes.
     fireEvent.change(byId("sb-guests"), { target: { value: "3" } });
     expect(
-      screen.queryByDisplayValue(/^CHETANA Residence: quote SQ260001/),
+      screen.queryByDisplayValue(/^CHETANA Parking: quote SQ260001/),
     ).toBeNull();
   });
 
@@ -2157,7 +2159,7 @@ describe("Daily and weekly rent: Short stays", () => {
     fireEvent.change(screen.getByLabelText("What happened"), {
       target: { value: " Noise after midnight " },
     });
-    fireEvent.change(screen.getByLabelText("Tenant's Unit"), {
+    fireEvent.change(screen.getByLabelText("Tenant's Parking"), {
       target: { value: "u-501" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save complaint" }));
@@ -2179,11 +2181,11 @@ describe("Daily and weekly rent: Short stays", () => {
     const refused = (detail: string) =>
       bookingRefusal("en", new ShortStaysError(409, detail));
     expect(
-      refused("The Unit is already booked on one of these nights"),
+      refused("The Parking is already booked on one of these nights"),
     ).toMatch(/Someone has just booked/);
     expect(
-      refused("The Unit cannot be booked for these nights: LEASE"),
-    ).toMatch(/cannot be booked in this Unit/);
+      refused("The Parking cannot be booked for these nights: LEASE"),
+    ).toMatch(/cannot be booked in this Parking/);
     expect(
       refused("The Unit has no monthly Rent to price a short stay from"),
     ).toMatch(/no monthly Rent/);
@@ -2192,7 +2194,7 @@ describe("Daily and weekly rent: Short stays", () => {
     );
   });
 
-  it("TEST-FE-1630 keeps a Unit without a monthly Rent out of a new booking", async () => {
+  it("TEST-FE-1630 keeps a Parking without a monthly Rent out of a new booking", async () => {
     go("#/shortstays/new:u-503:2026-11-06");
     const api = fakeApi({
       calendar: vi.fn((_: string, from: string, days: number) => {
@@ -2579,7 +2581,7 @@ describe("Daily and weekly rent: Short stays", () => {
       expect(api.calendar).toHaveBeenCalledWith("p-1", "2026-12-04", 30);
     });
 
-    it("TEST-FE-2179 counts the free rooms of each Unit type each night and shows the room's own state under its number", async () => {
+    it("TEST-FE-2179 counts the free rooms of each Parking Type each night and shows the room's own state under its number", async () => {
       show({
         api: fakeApi({
           calendar: vi.fn((_: string, from: string, days: number) => {
@@ -2802,7 +2804,7 @@ describe("Daily and weekly rent: Short stays", () => {
       status,
     });
 
-    it("TEST-FE-2200 the Bookings search finds a guest, booking number or Unit, and the status counts follow it", async () => {
+    it("TEST-FE-2200 the Bookings search finds a guest, booking number or Parking, and the status counts follow it", async () => {
       const api = fakeApi({
         list: vi.fn(() =>
           Promise.resolve([
@@ -2815,7 +2817,7 @@ describe("Daily and weekly rent: Short stays", () => {
       show({ api });
       fireEvent.click(await screen.findByRole("link", { name: "Bookings" }));
       const box = await screen.findByRole("searchbox", {
-        name: "Search guest, phone, booking or Unit",
+        name: "Search guest, phone, booking or Parking",
       });
       const numbers = () =>
         screen
@@ -2896,11 +2898,11 @@ describe("Daily and weekly rent: Short stays", () => {
       expect(within(done).getByText("U502")).toBeInTheDocument();
     });
 
-    it("TEST-FE-2203 the Calendar leaves out a Unit leased for every day shown and a Unit not for rent; a Unit whose tenant moves out within the days shown stays", async () => {
+    it("TEST-FE-2203 the Calendar leaves out a Parking leased for every day shown and a Parking not for rent; a Parking whose tenant moves out within the days shown stays", async () => {
       const base = calendar("2026-11-04", 14);
       const [free, laterLease] = base.units;
       if (free === undefined || laterLease === undefined)
-        throw new Error("No sample Units");
+        throw new Error("No sample Parking");
       const unit = (
         number: string,
         extra: Partial<(typeof base.units)[number]>,
@@ -3190,7 +3192,7 @@ describe("Daily and weekly rent: Short stays", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-2301 the booking page names the person on each History step and the Unit check", async () => {
+  it("TEST-FE-2301 the booking page names the person on each History step and the Parking check", async () => {
     show({
       api: fakeApi({
         get: vi.fn(() =>
@@ -3214,14 +3216,14 @@ describe("Daily and weekly rent: Short stays", () => {
     });
     go("#/shortstays/st:b-1");
     expect(
-      await screen.findByText(/^Unit checked by Sok Mony, /),
+      await screen.findByText(/^Parking checked by Sok Mony, /),
     ).toBeInTheDocument();
     const history = within(screen.getByRole("region", { name: "History" }));
     expect(history.getByText(/By Kompheak$/)).toBeInTheDocument();
     expect(history.getByText(/By the app, by itself$/)).toBeInTheDocument();
   });
 
-  it("TEST-FE-2302 a Unit check with a problem found in the Staff bot says who found it", async () => {
+  it("TEST-FE-2302 a Parking check with a problem found in the Staff bot says who found it", async () => {
     show({
       api: fakeApi({
         get: vi.fn(() =>

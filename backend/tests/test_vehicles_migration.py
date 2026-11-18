@@ -1,4 +1,4 @@
-"""Migration 20270406_256 (Parking Step 4, owner 2026-10-30): Vehicles.
+"""Migration 20270809_432_parking (Parking Step 4, owner 2026-10-30; was 256): Vehicles.
 
 A vehicle is a record under a Customer (type, plate as typed). A Lease of a Parking holds one
 vehicle at a time: the vehicle, not a person, moves in; Change vehicle ends the old vehicle's
@@ -8,6 +8,7 @@ and the Move-out page end it). Each vehicle type parks only in its own kind of p
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
@@ -44,12 +45,14 @@ from property_rental.vehicle import (
     VehicleUpdateCommand,
     VehicleVersionConflictError,
 )
+from test_default_role_bundles_migration import SEED_QUERY
 from test_lease_lifecycle_migration import actor, database_now, draft_command, signature_command
 from test_lease_occupant_addition_migration import _customer, _walk_in
 from test_lease_signing_reservation_migration import business_date, leases
 from test_move_in_migration import migrated_database_url as migrated_database_url
 from test_move_in_migration import runtime_database_url
 from test_physical_move_out_migration import record as hand_back
+from test_role_bundle_migration import add_account
 from test_termination_deposit_migration import terminate
 
 MOVE_IN = (
@@ -448,11 +451,110 @@ def test_termination_and_the_move_out_page_end_the_vehicle_row(
     assert case.rows() == [(case.tenant, case.tenant_car, case.today, case.today)]
 
 
+def test_a_vehicle_holds_its_parking_under_the_holder_rule(migrated_database_url: str) -> None:
+    """Parking Step 6: Property Rental works out who holds a Unit from its records (DL-241). On
+    Parking the vehicle's open Occupancy holds the Parking; a same-day vehicle change leaves no
+    gap, and the stored status stays the condition only."""
+    case = Garage(migrated_database_url)
+
+    def held() -> tuple[object, ...] | None:
+        with psycopg.connect(case.url) as connection:
+            return connection.execute(
+                "SELECT app.unit_held_by(%s, %s), status FROM app.units WHERE id = %s",
+                (case.unit, case.today, case.unit),
+            ).fetchone()
+
+    # The Signed Lease holds the Parking from its Start Date, before any vehicle moves in.
+    assert held() == ("OCCUPIED", "VACANT")
+    case.move_in(case.move_in_command(case.tenant_car))
+    assert held() == ("OCCUPIED", "VACANT")
+    case.change(case.change_command(case.joint_car))
+    assert held() == ("OCCUPIED", "VACANT")
+    second = make(case.tenant, case.actor, "CAR", "1AB-0002")
+    assert case.refused_move_in(case.move_in_command(second)) == "VEHICLE_SECOND"
+
+
+def test_a_joint_inspection_works_on_a_vehicle_agreement(migrated_database_url: str) -> None:
+    """Parking Step 6: the Joint Inspection of DL-243 is about the Lease, not the people. On a
+    Parking with no features and no inventory (hidden on Parking) it lists no place lines, takes
+    the keys and both signatures, and is Done."""
+    case = Garage(migrated_database_url)
+    case.move_in(case.move_in_command(case.tenant_car))
+    with psycopg.connect(case.url) as setup:
+        # The Staff role holds joint_inspections.record (migration 423).
+        staff = add_account(setup, "staff")
+        seeded = setup.execute(SEED_QUERY, (case.prop,)).fetchone()
+        assert seeded is not None
+        setup.execute(
+            "INSERT INTO app.user_role_assignments (assignment_id, actor_id, role_bundle_id, "
+            "property_id, provenance) VALUES (%s, %s, %s, %s, 'test')",
+            (uuid4(), staff, seeded[2], case.prop),
+        )
+    with psycopg.connect(runtime_database_url()) as connection:
+
+        def call(sql: str, *params: object) -> object:
+            row = connection.execute(sql, params).fetchone()
+            return None if row is None else row[0]
+
+        inspection = call(
+            "SELECT app.joint_inspection_start(%s, %s, %s, %s, %s, %s, NULL)",
+            case.prop,
+            case.lease,
+            "MOVE_IN",
+            None,
+            None,
+            staff,
+        )
+        read = "SELECT app.joint_inspection_read(%s, %s, %s)"
+        found = cast(dict[str, object], call(read, case.prop, inspection, staff))
+        assert found["lines"] == []
+        call(
+            "SELECT app.joint_inspection_save(%s, %s, %s, %s::jsonb, %s)",
+            case.prop,
+            inspection,
+            found["version"],
+            '{"keys": {"door_keys": 0, "key_cards": 1, "mailbox_keys": 0, "other_keys": 0}}',
+            staff,
+        )
+        for role in ("TENANT_SIGNATURE", "STAFF_SIGNATURE"):
+            found = cast(dict[str, object], call(read, case.prop, inspection, staff))
+            call(
+                "SELECT app.joint_inspection_add_file(%s, %s, %s, %s::jsonb, %s)",
+                case.prop,
+                inspection,
+                found["version"],
+                json.dumps(
+                    {
+                        "role": role,
+                        "media_type": "image/png",
+                        "byte_size": 1200,
+                        "sha256": "a" * 64,
+                        "storage_key": f"inspections/{inspection}/{uuid4()}.png",
+                    }
+                ),
+                staff,
+            )
+        found = cast(dict[str, object], call(read, case.prop, inspection, staff))
+        done = cast(
+            dict[str, object],
+            call(
+                "SELECT app.joint_inspection_finish(%s, %s, %s, %s, NULL)",
+                case.prop,
+                inspection,
+                found["version"],
+                staff,
+            ),
+        )
+        assert done["reports"] == [] and done["damage_findings"] == 0
+        found = cast(dict[str, object], call(read, case.prop, inspection, staff))
+        assert found["status"] == "DONE"
+
+
 def test_vehicles_migration_is_head_and_forward_only() -> None:
     script = ScriptDirectory.from_config(Config(str(Path(__file__).parents[1] / "alembic.ini")))
-    assert script.get_current_head() == "20270407_257"
-    revision = script.get_revision("20270406_256")
+    assert script.get_current_head() == "20270810_433_parking"
+    revision = script.get_revision("20270809_432_parking")
     assert revision is not None
-    assert revision.down_revision == "20270405_255"
+    assert revision.down_revision == "20270808_431_parking"
     with pytest.raises(RuntimeError, match="forward-only"):
         revision.module.downgrade()

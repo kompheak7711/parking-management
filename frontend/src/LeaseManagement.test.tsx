@@ -616,7 +616,7 @@ describe("Lease staff workflow", () => {
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-1149 Parking Step 5: the old Lease screen's draft form has no pet terms", async ({
+  it("TEST-FE-3149 Parking Step 5: the old Lease screen's draft form has no pet terms", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);
@@ -630,7 +630,7 @@ describe("Lease staff workflow", () => {
     expect(screen.queryByText("Approved pet terms")).toBeNull();
   });
 
-  it("TEST-FE-1153 Parking Step 5: the old Lease screen's move-in checklist does not mention a Pet Deposit", async ({
+  it("TEST-FE-3153 Parking Step 5: the old Lease screen's move-in checklist does not mention a Pet Deposit", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);

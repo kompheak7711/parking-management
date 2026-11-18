@@ -958,7 +958,7 @@ describe("Settings: Rates and services", () => {
     expect(within(khmer).getByText("សំរាម")).toBeTruthy();
     expect(screen.getByText("ប្រមូលសំរាម")).toBeTruthy();
   });
-  it("TEST-FE-1152 Parking Step 5: the Rates tab has no Move-out cleaning rates card and never reads the cleaning rates", async ({
+  it("TEST-FE-3152 Parking Step 5: the Rates tab has no Move-out cleaning rates card and never reads the cleaning rates", async ({
     skip,
   }) => {
     skip(CLEANING_CHARGE);

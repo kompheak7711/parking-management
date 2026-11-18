@@ -162,7 +162,7 @@ describe("Staff bot readings in Utilities", () => {
     ).toBeTruthy();
   });
 
-  it("TEST-FE-1518 Ask to read again names the Units, a reading already saved that day is left waiting, Don't use closes it, and nothing ticked is refused on the screen", async () => {
+  it("TEST-FE-1518 Ask to read again names the Parking, a reading already saved that day is left waiting, Don't use closes it, and nothing ticked is refused on the screen", async () => {
     const { api, calls } = fakeApi(runs());
     render(
       <StaffReadings

@@ -82,7 +82,7 @@ def task(db: HrDatabase, kind: str = "DAILY_CLEAN") -> tuple[str, str]:
         # from its records, so a new Unit is stored ready (VACANT).
         connection.execute(
             "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,created_by,"
-            "updated_by) VALUES (%s,%s,%s,'1','STUDIO','VACANT',%s,%s)",
+            "updated_by) VALUES (%s,%s,%s,'1','COVERED','VACANT',%s,%s)",
             (unit, db.property_id, number, db.owner, db.owner),
         )
         made = connection.execute(

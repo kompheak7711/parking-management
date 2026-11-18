@@ -539,7 +539,7 @@ describe("Letters page (V1-058 R3)", () => {
         event_kind: "TWENTY_FIVE_DAY_NOTICE",
         reason: "Day-25 notice given",
         communication_record:
-          "Left at the Unit with a witness: Witness Sok Dara",
+          "Left at the Parking with a witness: Witness Sok Dara",
         notice_document_reference: "L-025",
       },
       expect.any(String),

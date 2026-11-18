@@ -217,8 +217,8 @@ def invoice_html(
     phone = f"<small>Phone {e(customer_phone)}</small>" if customer_phone else ""
     period_html = f"<small>{e(period)}</small>" if period else ""
     # A Unit number may be kept as "U203" or as "Unit 203": the page says "Unit" once.
-    unit_name = unit.strip().removeprefix("Unit ").strip() if unit else ""
-    unit_html = f"Unit {e(unit_name)}" if unit_name else ""
+    unit_name = unit.strip().removeprefix("Unit ").removeprefix("Parking ").strip() if unit else ""
+    unit_html = f"Parking {e(unit_name)}" if unit_name else ""
     style = STYLE.replace("FONT_DIR", ASSETS.as_uri())
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
@@ -226,7 +226,7 @@ def invoice_html(
         '<article class="doc a4" lang="en">'
         '<div class="top"><div><img class="logo" src="'
         f'{(ASSETS / "CHETANA_Logo_Horizontal_FullColor.svg").as_uri()}" alt="CHETANA">'
-        '<div class="biz"><b>CHETANA Residence</b></div></div>'
+        '<div class="biz"><b>CHETANA Parking</b></div></div>'
         '<div class="title"><span class="kh">វិក្កយបត្រ</span><span class="en">Invoice</span>'
         '<table class="meta">'
         f'<tr><td>{_label("លេខវិក្កយបត្រ", "Invoice No.")}</td><td class="dd">{number}</td></tr>'

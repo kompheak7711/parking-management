@@ -161,7 +161,7 @@ def test_name_phone_and_account_go_after_12_months(telegram_database: TelegramDa
     assert phone == (None,)
     # Nothing else can change on a request, removed or not.
     refused(
-        db.owner_url, "55000", "UPDATE app.visit_requests SET unit_type = 'STUDIO' WHERE id = %s "
+        db.owner_url, "55000", "UPDATE app.visit_requests SET unit_type = 'COVERED' WHERE id = %s "
         "RETURNING 1", stale,
     )  # fmt: skip
     refused(

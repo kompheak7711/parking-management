@@ -83,7 +83,8 @@ def test_the_blank_file_lists_every_unit_under_the_five_columns() -> None:
     workbook = load_workbook(io.BytesIO(blank_sheet(["U101", "U102"])))
     sheet = workbook.worksheets[0]
     assert [list(row) for row in sheet.iter_rows(values_only=True)] == [
-        ["Unit", "Electricity", "Electricity broken", "Water", "Water broken"],
+        # Parking Step 2: the blank file says "Parking"; the reader also takes "Unit" (below).
+        ["Parking", "Electricity", "Electricity broken", "Water", "Water broken"],
         ["U101", None, "no", None, "no"],
         ["U102", None, "no", None, "no"],
     ]

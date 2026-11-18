@@ -87,7 +87,7 @@ def quotation_database(migrated_database_url: str) -> Iterator[QuotationDatabase
             setup.execute(
                 "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, "
                 "status, for_rent, created_by, updated_by) "
-                "VALUES (%s, %s, 'W01', '1', 'ONE_BEDROOM', 'VACANT', false, %s, %s)",
+                "VALUES (%s, %s, 'W01', '1', 'UNCOVERED', 'VACANT', false, %s, %s)",
                 (warehouse, property_id, owner, owner),
             )
             setup.execute(

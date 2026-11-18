@@ -592,7 +592,7 @@ describe("Parking list", () => {
     show(client);
     expect(
       await screen.findByText(
-        "The Units could not be loaded. Retry when the service is available.",
+        "The Parking could not be loaded. Retry when the service is available.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -637,7 +637,7 @@ describe("Parking list", () => {
 
     // The card's address opened again while a floor is chosen: every floor shows again.
     fireEvent.click(screen.getByRole("button", { name: "Floor 1" }));
-    expect(screen.getByText("2 Units")).toBeInTheDocument();
+    expect(screen.getByText("2 Parking")).toBeInTheDocument();
     window.location.hash = "#/units?show=vacant";
     window.dispatchEvent(new HashChangeEvent("hashchange"));
     expect(await screen.findByText(/Showing: Vacant\./)).toBeInTheDocument();
@@ -686,7 +686,7 @@ describe("Parking page", () => {
     ).toBeInTheDocument();
     // Owner 14/11/2026: no line under the title; the Unit details card has these facts.
     expect(
-      screen.queryByText("Floor 1 · Studio · 36 m² · CHETANA Residence"),
+      screen.queryByText("Floor 1 · Studio · 36 m² · CHETANA Parking"),
     ).toBeNull();
     for (const name of [
       "Parking details",
@@ -702,9 +702,10 @@ describe("Parking page", () => {
       .getByRole("heading", { name: "Parking details" })
       .closest("section");
     if (details === null) throw new Error("no details card");
-    expect(details).toHaveTextContent("ViewRiver view");
+    // Parking Step 5/6: View and the Parking features are hidden on Parking; the code stays.
+    if (HOME_FIELDS) expect(details).toHaveTextContent("ViewRiver view");
     // V1.1 (DL-115 (I)): the features list replaces Bedrooms, Bathrooms, Kitchen and Balcony.
-    expect(details).toHaveTextContent("Bedroom ×1");
+    if (ROOM_FEATURES) expect(details).toHaveTextContent("Bedroom ×1");
     expect(details).not.toHaveTextContent("Bathrooms");
     expect(details).not.toHaveTextContent("Kitchen");
     const leaseCard = screen
@@ -730,7 +731,7 @@ describe("Parking page", () => {
     }
   });
 
-  it("TEST-FE-2210 (Property fix 5, owner 14/11/2026) the Unit page lists the running Lease's unpaid and part-paid Invoices by due date, each opening its Invoice, with no builder notes", async () => {
+  it("TEST-FE-2210 (Property fix 5, owner 14/11/2026) the Parking page lists the running Lease's unpaid and part-paid Invoices by due date, each opening its Invoice, with no builder notes", async () => {
     window.location.hash = "#/units/unit-U101";
     const invoices = invoiceApi([
       invoice("inv-2", "PARTIALLY_PAID", "2026-11-05", 12000),
@@ -740,7 +741,7 @@ describe("Parking page", () => {
     show(unitApi(), { invoices });
 
     const card = (
-      await screen.findByRole("heading", { name: "Invoices for this Unit" })
+      await screen.findByRole("heading", { name: "Invoices for this Parking" })
     ).closest("section");
     if (card === null) throw new Error("no Invoices card");
     await waitFor(() => {
@@ -761,7 +762,7 @@ describe("Parking page", () => {
     expect(screen.getByText("No photo yet")).toBeInTheDocument();
   });
 
-  it("TEST-FE-1105 the Unit page shows each Meter with the price in force and the next one, and a kind with no Meter is not billed (V1-061)", async () => {
+  it("TEST-FE-1105 the Parking page shows each Meter with the price in force and the next one, and a kind with no Meter is not billed (V1-061)", async () => {
     window.location.hash = "#/units/unit-U101";
     const utilities = utilityApi([
       {
@@ -891,7 +892,7 @@ describe("Parking page", () => {
     expect(within(card).queryByRole("button", { name: "Change" })).toBeNull();
   });
 
-  it("TEST-FE-1124 Rent and Services needs a reason before it saves, and sends it trimmed (Parking Step 3: a price change is a money action)", async () => {
+  it("TEST-FE-3124 Rent and Services needs a reason before it saves, and sends it trimmed (Parking Step 3: a price change is a money action)", async () => {
     window.location.hash = "#/units/unit-U103";
     const terms = unit("U103", { default_monthly_rent_usd_cents: 35_000 });
     const setRentTerms = vi.fn().mockResolvedValue({
@@ -939,7 +940,7 @@ describe("Parking page", () => {
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-1125 History shows who changed the price, when, the old and new price and the reason (Parking Step 3)", async () => {
+  it("TEST-FE-3125 History shows who changed the price, when, the old and new price and the reason (Parking Step 3)", async () => {
     window.location.hash = "#/units/unit-U103";
     const change = (
       id: string,
@@ -1105,7 +1106,7 @@ describe("Parking page", () => {
       await screen.findByRole("button", { name: "Change status" }),
     );
     expect(screen.getByRole("dialog")).toHaveTextContent(
-      "This Unit has a signed Lease. Its status changes only through a move-out.",
+      "This Parking has a signed Lease. Its status changes only through a move-out.",
     );
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -1139,7 +1140,7 @@ describe("Parking page", () => {
     });
   });
 
-  it("TEST-FE-2280 C2: a Unit with a Lease that starts later shows Vacant with the start date and offers no Reservation; Change status starts at the condition staff set (DL-241)", async () => {
+  it("TEST-FE-2280 C2: a Parking with a Lease that starts later shows Vacant with the start date and offers no Reservation; Change status starts at the condition staff set (DL-241)", async () => {
     const later = unit("U401", {
       status: "VACANT",
       condition: "VACANT",
@@ -1172,7 +1173,7 @@ describe("Parking page", () => {
     const page = show(client);
     expect(
       await screen.findByText(
-        "A signed Lease starts on 01/12/2026. Until then the Unit is empty, but it cannot be reserved or leased to someone else.",
+        "A signed Lease starts on 01/12/2026. Until then the Parking is empty, but it cannot be reserved or leased to someone else.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -1189,7 +1190,7 @@ describe("Parking page", () => {
     expect(within(dialog).getByRole("radio", { name: "Vacant" })).toBeChecked();
   });
 
-  it("TEST-FE-1121 New Unit takes the default Rent and the required Services and saves them right after the Unit; a wrong amount is refused first (V1-061, DL-110)", async () => {
+  it("TEST-FE-1121 New Parking takes the default Rent and the required Services and saves them right after the Parking; a wrong amount is refused first (V1-061, DL-110)", async () => {
     const setRentTerms = vi
       .fn()
       .mockResolvedValue(unit("U107", { version: 2 }));
@@ -1254,7 +1255,11 @@ describe("Parking page", () => {
     expect(client.create).toHaveBeenCalledTimes(1);
   });
 
-  it("TEST-FE-1125 Edit features changes how many of each, removes one with × and adds one from Settings, then saves the whole list (V1.1, DL-115 (I))", async () => {
+  it("TEST-FE-1125 Edit features changes how many of each, removes one with × and adds one from Settings, then saves the whole list (V1.1, DL-115 (I))", async ({
+    skip,
+  }) => {
+    // Parking Step 6: Parking features are hidden on Parking (ROOM_FEATURES).
+    skip(!ROOM_FEATURES);
     window.location.hash = "#/units/unit-U103";
     const before = unit("U103", {
       features: [{ item_id: "UNIT_FEATURE-BEDROOM", count: 2 }],
@@ -1275,7 +1280,7 @@ describe("Parking page", () => {
     });
     show(client);
     const details = (
-      await screen.findByRole("heading", { name: "Unit details" })
+      await screen.findByRole("heading", { name: "Parking details" })
     ).closest("section");
     if (details === null) throw new Error("no details card");
     await waitFor(() => {
@@ -1313,14 +1318,18 @@ describe("Parking page", () => {
       ]);
     });
     expect(
-      await screen.findByText("The features of Unit U103 are saved."),
+      await screen.findByText("The features of Parking U103 are saved."),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(details).toHaveTextContent("Main room ×1");
     });
   });
 
-  it("TEST-FE-1126 Edit features: someone else's change closes the form and reads the Unit again; a refused list stays open with the reason (V1.1)", async () => {
+  it("TEST-FE-1126 Edit features: someone else's change closes the form and reads the Parking again; a refused list stays open with the reason (V1.1)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: Parking features are hidden on Parking (ROOM_FEATURES).
+    skip(!ROOM_FEATURES);
     window.location.hash = "#/units/unit-U103";
     const before = unit("U103");
     const setFeatures = vi
@@ -1346,7 +1355,7 @@ describe("Parking page", () => {
     expect(get.mock.calls.length).toBeGreaterThan(1);
   });
 
-  it("TEST-FE-1123 the Unit page offers Add electricity meter and Add water meter for a kind with no meter, set to this Unit (V1-061)", async () => {
+  it("TEST-FE-1123 the Parking page offers Add electricity meter and Add water meter for a kind with no meter, set to this Parking (V1-061)", async () => {
     window.location.hash = "#/units/unit-U101";
     const installMeter = vi.fn().mockResolvedValue({
       id: "meter-2",
@@ -1445,12 +1454,15 @@ describe("Parking page", () => {
     fireEvent.change(within(dialog).getByLabelText("Parking Type"), {
       target: { value: "ONE_BEDROOM" },
     });
-    fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
-      target: { value: "36" },
-    });
-    fireEvent.change(within(dialog).getByLabelText("View"), {
-      target: { value: "VIEW-RIVER" },
-    });
+    // Parking Step 5: Size and View are hidden on Parking and left out of what is sent.
+    if (HOME_FIELDS) {
+      fireEvent.change(within(dialog).getByLabelText("Size (m²)"), {
+        target: { value: "36" },
+      });
+      fireEvent.change(within(dialog).getByLabelText("View"), {
+        target: { value: "VIEW-RIVER" },
+      });
+    }
     // V1.1 (DL-115 (I)): New Unit no longer asks Bedrooms, Bathrooms, Kitchen or Room features.
     for (const gone of [/^Bedrooms/, /^Bathrooms/, /^Kitchen/, "Balcony"]) {
       expect(within(dialog).queryByLabelText(gone)).toBeNull();
@@ -1464,8 +1476,9 @@ describe("Parking page", () => {
       floor_item_id: "FLOOR-F002",
       unit_type: "ONE_BEDROOM",
       status: "VACANT",
-      size_square_metres: "36.00",
-      view_item_id: "VIEW-RIVER",
+      ...(HOME_FIELDS
+        ? { size_square_metres: "36.00", view_item_id: "VIEW-RIVER" }
+        : {}),
       notes: null,
     });
 
@@ -1489,7 +1502,7 @@ describe("Parking page", () => {
     expect(sent).toMatchObject({
       floor_item_id: "FLOOR-F002",
       unit_type: "STUDIO",
-      notes: "Corner Unit",
+      notes: "Corner Parking",
     });
     // The old details are left as they were.
     for (const kept of [
@@ -1502,7 +1515,7 @@ describe("Parking page", () => {
       expect(sent).not.toHaveProperty(kept);
     }
   });
-  it("TEST-FE-1139 Parking Step 5: Update Parking leaves the hidden fields out of what it sends, so stored values are kept", async ({
+  it("TEST-FE-3139 Parking Step 5: Update Parking leaves the hidden fields out of what it sends, so stored values are kept", async ({
     skip,
   }) => {
     skip(HOME_FIELDS || ROOM_FEATURES);
@@ -1528,7 +1541,7 @@ describe("Parking page", () => {
     });
   });
 
-  it("TEST-FE-1144 Parking Step 5: the Parking page shows no inventory and no feature tiles, and New Parking has no Room features", async ({
+  it("TEST-FE-3144 Parking Step 5: the Parking page shows no inventory and no feature tiles, and New Parking has no Room features", async ({
     skip,
   }) => {
     skip(UNIT_INVENTORY || ROOM_FEATURES);
@@ -1557,7 +1570,7 @@ describe("Parking page", () => {
     expect(dialog).not.toHaveTextContent("empty inventory");
   });
 
-  it("TEST-FE-1146 Parking Step 5: Size, Bedrooms, Bathrooms, View and Kitchen are gone from the dialogs and the Parking page; Floor, Parking Type and Notes stay", async ({
+  it("TEST-FE-3146 Parking Step 5: Size, Bedrooms, Bathrooms, View and Kitchen are gone from the dialogs and the Parking page; Floor, Parking Type and Notes stay", async ({
     skip,
   }) => {
     skip(HOME_FIELDS);
@@ -1567,9 +1580,8 @@ describe("Parking page", () => {
     expect(
       await screen.findByRole("heading", { name: "U101" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Floor 1 · Studio · CHETANA Parking"),
-    ).toBeInTheDocument();
+    // UI v81 took the "Floor · Type · Size" line under the heading away; the size never shows.
+    expect(screen.queryByText(/m²/)).toBeNull();
     const details = screen
       .getByRole("heading", { name: "Parking details" })
       .closest("section");
@@ -1605,7 +1617,7 @@ describe("For rent (V1.1 rework part 1)", () => {
     ],
   });
 
-  it("TEST-FE-1131 a Unit not for rent leaves the Units table and its counts and shows in the Units not for rent card", async () => {
+  it("TEST-FE-1131 a Parking not for rent leaves the Parking table and its counts and shows in the Parking not for rent card", async () => {
     show(
       unitApi({
         list: vi.fn().mockResolvedValue({
@@ -1616,7 +1628,7 @@ describe("For rent (V1.1 rework part 1)", () => {
       }),
     );
     const card = (
-      await screen.findByRole("heading", { name: "Units not for rent" })
+      await screen.findByRole("heading", { name: "Parking not for rent" })
     ).closest("section");
     if (card === null) throw new Error("no card");
     expect(within(card).getByRole("link", { name: "W01" })).toHaveAttribute(
@@ -1628,10 +1640,10 @@ describe("For rent (V1.1 rework part 1)", () => {
     const table = screen.getAllByRole("table")[0];
     if (table === undefined) throw new Error("no table");
     expect(within(table).queryByRole("link", { name: "W01" })).toBeNull();
-    expect(screen.getByText("4 Units")).toBeInTheDocument();
+    expect(screen.getByText("4 Parking")).toBeInTheDocument();
   });
 
-  it("TEST-FE-1132 the Unit page shows For rent with Change; a Unit not for rent offers no Reservation or Lease; a Unit in use stays for rent", async () => {
+  it("TEST-FE-1132 the Parking page shows For rent with Change; a Parking not for rent offers no Reservation or Lease; a Parking in use stays for rent", async () => {
     window.location.hash = "#/units/unit-U201";
     const before = unit("U201");
     const saved = { ...before, version: 3, for_rent: false };
@@ -1646,7 +1658,7 @@ describe("For rent (V1.1 rework part 1)", () => {
       );
     show(unitApi({ get, setForRent }));
     const details = (
-      await screen.findByRole("heading", { name: "Unit details" })
+      await screen.findByRole("heading", { name: "Parking details" })
     ).closest("section");
     if (details === null) throw new Error("no details card");
     expect(details).toHaveTextContent("For rentYes");
@@ -1661,7 +1673,7 @@ describe("For rent (V1.1 rework part 1)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
       await within(dialog).findByText(
-        "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+        "This Parking has a Reservation or a Lease, so it stays for rent until they end.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
@@ -1678,7 +1690,7 @@ describe("For rent (V1.1 rework part 1)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("TEST-FE-1133 New Unit and Update Unit ask For rent: Not for rent is saved right after the Unit, and a Unit in use refuses it before anything is saved", async () => {
+  it("TEST-FE-1133 New Parking and Update Parking ask For rent: Not for rent is saved right after the Parking, and a Parking in use refuses it before anything is saved", async () => {
     const created = unit("W01");
     const marked = { ...created, version: 3, for_rent: false };
     const setForRent = vi.fn().mockResolvedValue(marked);
@@ -1687,10 +1699,10 @@ describe("For rent (V1.1 rework part 1)", () => {
       setForRent,
     });
     show(client);
-    fireEvent.click(await screen.findByRole("button", { name: "New Unit" }));
+    fireEvent.click(await screen.findByRole("button", { name: "New Parking" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByLabelText("Yes")).toBeChecked();
-    fireEvent.change(within(dialog).getByLabelText(/^Unit number/), {
+    fireEvent.change(within(dialog).getByLabelText(/^Parking number/), {
       target: { value: "W01" },
     });
     fireEvent.change(within(dialog).getByLabelText(/^Floor/), {
@@ -1708,38 +1720,42 @@ describe("For rent (V1.1 rework part 1)", () => {
     const update = vi.fn();
     const refused = vi.fn().mockRejectedValue(new UnitInUseError());
     show(unitApi({ setForRent: refused, update }));
-    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Update Parking" }),
+    );
     const edit = screen.getByRole("dialog");
     fireEvent.click(within(edit).getByLabelText("Not for rent"));
     fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
     expect(
       await within(edit).findByText(
-        "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+        "This Parking has a Reservation or a Lease, so it stays for rent until they end.",
       ),
     ).toBeInTheDocument();
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1134 an Occupied Unit keeps For rent locked: no Change on the Unit page and the choice is disabled in Update Unit", async () => {
+  it("TEST-FE-1134 an Occupied Parking keeps For rent locked: no Change on the Parking page and the choice is disabled in Update Parking", async () => {
     window.location.hash = "#/units/unit-U301";
     const occupied = unit("U301", { status: "OCCUPIED" });
     const setForRent = vi.fn();
     show(unitApi({ get: vi.fn().mockResolvedValue(occupied), setForRent }));
     const details = (
-      await screen.findByRole("heading", { name: "Unit details" })
+      await screen.findByRole("heading", { name: "Parking details" })
     ).closest("section");
     if (details === null) throw new Error("no details card");
     expect(details).toHaveTextContent("For rentYes");
     expect(
       within(details).queryByRole("button", { name: "Change" }),
     ).toBeNull();
-    fireEvent.click(await screen.findByRole("button", { name: "Update Unit" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Update Parking" }),
+    );
     const edit = screen.getByRole("dialog");
     expect(within(edit).getByLabelText("Yes")).toBeChecked();
     expect(within(edit).getByLabelText("Yes")).toBeDisabled();
     expect(within(edit).getByLabelText("Not for rent")).toBeDisabled();
     expect(edit).toHaveTextContent(
-      "This Unit is Reserved or Occupied, so it stays for rent.",
+      "This Parking is Reserved or Occupied, so it stays for rent.",
     );
     fireEvent.click(within(edit).getByRole("button", { name: "Save" }));
     await waitFor(() => {

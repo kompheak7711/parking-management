@@ -79,11 +79,11 @@ def short_stay_database(name: str) -> Iterator[BookingDatabase]:
             assert today is not None
             units: list[uuid.UUID] = []
             for number, kind, rent in (
-                ("U501", "STUDIO", 29900),
-                ("U503", "ONE_BEDROOM", 26900),
-                ("U505", "TWO_BEDROOM", 49900),
-                ("U506", "STUDIO", None),
-                ("U507", "STUDIO", 29900),
+                ("U501", "COVERED", 29900),
+                ("U503", "UNCOVERED", 26900),
+                ("U505", "MOTORBIKE", 49900),
+                ("U506", "COVERED", None),
+                ("U507", "COVERED", 29900),
             ):
                 unit = uuid.uuid4()
                 setup.execute(
@@ -188,6 +188,10 @@ def test_the_prices_match_the_owner_table(booking_database: BookingDatabase) -> 
         assert price(db, unit, 21)["total_usd_cents"] == three_weeks
 
 
+@pytest.mark.skip(
+    reason="Parking Step 6: short stays are hidden on Parking (SHORT_STAYS) and their month-only "
+    "prices are keyed by Property Rental's home Unit Types, which Parking does not seed"
+)
 def test_weeks_extra_nights_and_never_more_than_the_next_week(
     booking_database: BookingDatabase,
 ) -> None:

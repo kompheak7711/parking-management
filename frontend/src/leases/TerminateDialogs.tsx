@@ -330,7 +330,12 @@ export function TerminateDialog({
             />
             <span>
               {lt(language, `tg_${item}`)}
-              <small className="ui-sub2">{lt(language, `tg_${item}_s`)}</small>
+              {/* Parking Step 5: no pet rules on Parking (PET_DEPOSIT). */}
+              {(item !== "VIOLATION" || PET_DEPOSIT) && (
+                <small className="ui-sub2">
+                  {lt(language, `tg_${item}_s`)}
+                </small>
+              )}
             </span>
           </label>
         ))}

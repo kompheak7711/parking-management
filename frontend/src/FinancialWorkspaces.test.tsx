@@ -3724,7 +3724,7 @@ describe("immutable command results and separately current positions", () => {
       expect(stringifyFinancialJson(data)).toBe(before);
     },
   );
-  it("TEST-FE-1151 Parking Step 5: the Refund workspace offers no Pet Deposit source", ({
+  it("TEST-FE-3151 Parking Step 5: the Refund workspace offers no Pet Deposit source", ({
     skip,
   }) => {
     skip(PET_DEPOSIT);

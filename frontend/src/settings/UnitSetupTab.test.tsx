@@ -172,18 +172,22 @@ async function openTab(name: string) {
   return screen.findByRole("region", { name });
 }
 
-describe("Settings: Unit setup", () => {
-  it("TEST-FE-940 shows the lists as tabs Floors, Unit Types, Unit features and Views with how many Units use each item; an item in use offers no Remove; Floors have no Edit (V1.1 rework part 1: no Feature types or Item types)", async () => {
+describe("Settings: Parking setup", () => {
+  it("TEST-FE-940 shows the lists as tabs Floors, Parking Types, Parking features and Views with how many Parking use each item; an item in use offers no Remove; Floors have no Edit (V1.1 rework part 1: no Feature types or Item types)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: Views and Parking features are hidden on Parking; TEST-FE-1145 covers the tabs.
+    skip(!(HOME_FIELDS && ROOM_FEATURES));
     const api = show();
     const floors = await screen.findByRole("region", { name: "Floors" });
     expect(api.setupLists).toHaveBeenCalledWith("property-1");
     const tabs = within(
-      screen.getByRole("group", { name: "Unit setup lists" }),
+      screen.getByRole("group", { name: "Parking setup lists" }),
     ).getAllByRole("button");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       "Floors",
-      "Unit Types",
-      "Unit features",
+      "Parking Types",
+      "Parking features",
       "Views",
     ]);
     expect(tabs[0]?.getAttribute("aria-pressed")).toBe("true");
@@ -206,15 +210,15 @@ describe("Settings: Unit setup", () => {
         name: "Remove: Floor 2",
       }),
     ).toBeTruthy();
-    expect(rows[1]?.textContent).toContain("No Units yet");
+    expect(rows[1]?.textContent).toContain("No Parking yet");
 
-    const features = await openTab("Unit features");
+    const features = await openTab("Parking features");
     const [header, bedroom, terrace] = within(features).getAllByRole("row");
     expect(
       within(header ?? features)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Order", "Name", "Khmer", "Units", "Edit"]);
+    ).toEqual(["Order", "Name", "Khmer", "Parking", "Edit"]);
     expect(
       within(bedroom ?? features)
         .getAllByRole("cell")
@@ -230,19 +234,25 @@ describe("Settings: Unit setup", () => {
     expect(
       within(features).getByRole("button", { name: "Remove: Terrace" }),
     ).toBeTruthy();
-    expect(features.textContent).toContain("A Unit feature is always a place");
+    expect(features.textContent).toContain(
+      "A Parking feature is always a place",
+    );
 
-    const types = await openTab("Unit Types");
+    const types = await openTab("Parking Types");
     expect(
       within(types).getByRole("button", { name: "Edit: Studio" }),
     ).toBeTruthy();
     expect(types.textContent).toContain(
-      "Rename keeps every Unit of this type.",
+      "Rename keeps every Parking of this type.",
     );
-    expect(list("Unit Types")).toBe(types);
+    expect(list("Parking Types")).toBe(types);
   });
 
-  it("TEST-FE-941 Add asks a name (and checks it is not in the list yet), a Floor asks its number; Edit renames; Remove asks first; the lists are read again", async () => {
+  it("TEST-FE-941 Add asks a name (and checks it is not in the list yet), a Floor asks its number; Edit renames; Remove asks first; the lists are read again", async ({
+    skip,
+  }) => {
+    // Parking Step 6: this test opens the Views tab, hidden on Parking.
+    skip(!(HOME_FIELDS && ROOM_FEATURES));
     // Parking Step 5: Views and Kitchens are hidden on Parking, so Add is tried on the
     // Parking Types and Remove on a Parking Type; the code stays.
     const add = HOME_FIELDS
@@ -310,7 +320,7 @@ describe("Settings: Unit setup", () => {
       sort_order: 30,
     });
 
-    await openTab("Unit Types");
+    await openTab("Parking Types");
     fireEvent.click(screen.getByRole("button", { name: "Edit: One Bedroom" }));
     dialog = screen.getByRole("dialog", { name: "Edit · Parking Type" });
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
@@ -323,7 +333,7 @@ describe("Settings: Unit setup", () => {
       name_km: null,
     });
 
-    await openTab("Unit features");
+    await openTab("Parking features");
     fireEvent.click(screen.getByRole("button", { name: "Remove: Terrace" }));
     dialog = screen.getByRole("dialog", { name: "Remove · Terrace" });
     expect(dialog.textContent).toContain(
@@ -336,11 +346,17 @@ describe("Settings: Unit setup", () => {
     );
   });
 
-  it("TEST-FE-1124 a Unit feature is added and renamed with no Feature type (V1.1 rework part 1)", async () => {
+  it("TEST-FE-1124 a Parking feature is added and renamed with no Feature type (V1.1 rework part 1)", async ({
+    skip,
+  }) => {
+    // Parking Step 6: Parking features are hidden on Parking.
+    skip(!ROOM_FEATURES);
     const api = show();
-    await openTab("Unit features");
-    fireEvent.click(screen.getByRole("button", { name: "Add: Unit feature" }));
-    let dialog = screen.getByRole("dialog", { name: "Add · Unit feature" });
+    await openTab("Parking features");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add: Parking feature" }),
+    );
+    let dialog = screen.getByRole("dialog", { name: "Add · Parking feature" });
     expect(within(dialog).queryByLabelText(/Feature type/)).toBeNull();
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
       target: { value: "Cabinet" },
@@ -354,7 +370,7 @@ describe("Settings: Unit setup", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Edit: Terrace" }));
-    dialog = screen.getByRole("dialog", { name: "Edit · Unit feature" });
+    dialog = screen.getByRole("dialog", { name: "Edit · Parking feature" });
     expect(within(dialog).queryByLabelText(/Feature type/)).toBeNull();
     fireEvent.change(within(dialog).getByLabelText(/Name in English/), {
       target: { value: "Pallet Racking" },
@@ -368,7 +384,11 @@ describe("Settings: Unit setup", () => {
     );
   });
 
-  it("TEST-FE-942 a change refused because the list changed says so and reads again; without the right to change, the lists show with no buttons; a failed read offers Retry", async () => {
+  it("TEST-FE-942 a change refused because the list changed says so and reads again; without the right to change, the lists show with no buttons; a failed read offers Retry", async ({
+    skip,
+  }) => {
+    // Parking Step 6: this test counts the four V1.1 tabs, two of them hidden on Parking.
+    skip(!(HOME_FIELDS && ROOM_FEATURES));
     const api = apiOf();
     api.removeSetupItem.mockRejectedValueOnce(new UnitConflictError());
     show(api);
@@ -419,7 +439,7 @@ describe("Settings: Unit setup", () => {
     await screen.findByRole("region", { name: "Floors" });
     // Only the four list tabs are buttons.
     expect(screen.queryAllByRole("button")).toHaveLength(4);
-    await openTab("Unit features");
+    await openTab("Parking features");
     expect(screen.queryAllByRole("button")).toHaveLength(4);
     expect(
       screen.getByText(
@@ -455,7 +475,7 @@ describe("Settings: Unit setup", () => {
     // Parking Step 5: no cleaning charge on Parking (CLEANING_CHARGE); the code stays.
     skip(!CLEANING_CHARGE);
     show(apiOf(), "en", cleaningOf(["ONE_BEDROOM"]));
-    const types = await openTab("Unit Types");
+    const types = await openTab("Parking Types");
     const one = within(types).getByText("One Bedroom").closest("li");
     await within(one ?? types).findByText("No cleaning rate");
     const studio = within(types).getByText("Studio").closest("li");
@@ -464,27 +484,41 @@ describe("Settings: Unit setup", () => {
     const failing = cleaningOf(["ONE_BEDROOM"]);
     failing.read.mockImplementation(() => Promise.reject(new Error("down")));
     show(apiOf(), "en", failing);
-    const again = await openTab("Unit Types");
+    const again = await openTab("Parking Types");
     expect(within(again).queryByText("No cleaning rate")).toBeNull();
   });
-  it("TEST-FE-1145 Parking Step 5: the tab shows Floors and Parking Types only; Views, Kitchens and Room features are hidden", async ({
+  it("TEST-FE-3145 Parking Step 5: the tab shows Floors and Parking Types only; Views, Kitchens and Room features are hidden", async ({
     skip,
   }) => {
     skip(HOME_FIELDS || ROOM_FEATURES);
     show();
     await screen.findByRole("region", { name: "Floors" });
-    expect(screen.getByRole("region", { name: "Parking Types" })).toBeTruthy();
-    for (const name of ["Views", "Kitchens", "Room features"]) {
+    // Parking Step 6: the V1.1 lists are tabs; Parking shows Floors and Parking Types only.
+    const tabs = within(
+      screen.getByRole("group", { name: "Parking setup lists" }),
+    ).getAllByRole("button");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "Floors",
+      "Parking Types",
+    ]);
+    for (const name of [
+      "Views",
+      "Kitchens",
+      "Room features",
+      "Parking features",
+    ]) {
+      expect(screen.queryByRole("button", { name })).toBeNull();
       expect(screen.queryByRole("region", { name })).toBeNull();
     }
   });
 
-  it("TEST-FE-1148 Parking Step 5: no cleaning rate chip on a Parking Type, and the cleaning rates are not read", async ({
+  it("TEST-FE-3148 Parking Step 5: no cleaning rate chip on a Parking Type, and the cleaning rates are not read", async ({
     skip,
   }) => {
     skip(CLEANING_CHARGE);
     const cleaning = cleaningOf(["STUDIO", "ONE_BEDROOM"]);
     show(apiOf(), "en", cleaning);
+    await openTab("Parking Types");
     const types = await screen.findByRole("region", { name: "Parking Types" });
     expect(types.textContent).toContain("Studio");
     expect(within(types).queryByText("No cleaning rate")).toBeNull();

@@ -653,7 +653,7 @@ class PostgresProductFlow:
                     (unit_id, property_id),
                 ).fetchone()
                 if found is None:
-                    raise ProductNotFound("The Unit was not found")
+                    raise ProductNotFound("The Parking was not found")
                 row = connection.execute(
                     "SELECT app.add_unit_place(%s, %s, %s, %s)",
                     (unit_id, item_id, UUID(actor_id), uuid4()),

@@ -472,7 +472,7 @@ describe("Customer API client", () => {
     );
   });
 
-  it("TEST-FE-1136 the vehicle calls read a Customer's vehicles, add and correct one with CSRF and the version, and look a plate up (Parking Step 4)", async () => {
+  it("TEST-FE-3136 the vehicle calls read a Customer's vehicles, add and correct one with CSRF and the version, and look a plate up (Parking Step 4)", async () => {
     Object.defineProperty(document, "cookie", {
       configurable: true,
       value: "__Host-prm_csrf=csrf-token",

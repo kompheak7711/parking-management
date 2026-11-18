@@ -98,7 +98,7 @@ def problem_database(migrated_database_url: str) -> Iterator[ProblemDatabase]:
                 setup.execute(
                     "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, "
                     "status, created_by, updated_by) "
-                    "VALUES (%s, %s, %s, '1', 'ONE_BEDROOM', 'VACANT', %s, %s)",
+                    "VALUES (%s, %s, %s, '1', 'UNCOVERED', 'VACANT', %s, %s)",
                     (unit, property_id, number, owner, owner),
                 )
                 setup.execute(

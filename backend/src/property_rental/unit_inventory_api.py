@@ -276,7 +276,7 @@ class PostgresUnitInventoryFlow:
                     (property_id,),
                 ).fetchall()
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
         return _merge_known(
             [(str(code), UUID(str(item_id))) for code, item_id in types],
             (UnitInventoryItemName(UUID(str(kind)), str(name)) for kind, name in rows),
@@ -321,7 +321,7 @@ class UnitInventoryLineInput(BaseModel):
     @model_validator(mode="after")
     def check_place(self) -> UnitInventoryLineInput:
         if (self.where_item_id is None) != (self.where_number is None):
-            raise ValueError("a place names the Unit feature and which one")
+            raise ValueError("a place names the Parking feature and which one")
         return self
 
 

@@ -453,7 +453,7 @@ describe("Expense requests", () => {
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
 
-  it("TEST-FE-1168 sends a request with its Unit, a new supplier and the advance", async () => {
+  it("TEST-FE-1168 sends a request with its Parking, a new supplier and the advance", async () => {
     const api = fakeApi();
     show("exreqs", api);
     await press("New Expense request");
@@ -462,7 +462,7 @@ describe("Expense requests", () => {
     expect(dialog).toHaveTextContent("Write why this is needed.");
     expect(dialog).toHaveTextContent("Type the amount.");
     expect(api.submitRequest).not.toHaveBeenCalled();
-    fireEvent.change(within(dialog).getByLabelText("Unit"), {
+    fireEvent.change(within(dialog).getByLabelText("Parking"), {
       target: { value: "unit-1" },
     });
     fireEvent.change(within(dialog).getByLabelText(/Reason/), {

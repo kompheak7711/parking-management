@@ -197,16 +197,18 @@ const LIVING_KEY = "unit-101|item-living|1";
 
 async function openForm() {
   fireEvent.click(
-    await screen.findByRole("button", { name: "Unit inventory" }),
+    await screen.findByRole("button", { name: "Parking inventory" }),
   );
-  return screen.findByRole("dialog", { name: "Unit inventory: U101" });
+  return screen.findByRole("dialog", { name: "Parking inventory: U101" });
 }
 
-describe("Unit page › Unit inventory (V1.1 part 5, DL-122)", () => {
-  it("TEST-FE-1148 the Unit page counts what is in the Unit from the stock, starts empty, and is hidden without products.read", async () => {
+describe("Parking page › Parking inventory (V1.1 part 5, DL-122)", () => {
+  it("TEST-FE-1148 the Parking page counts what is in the Parking from the stock, starts empty, and is hidden without products.read", async () => {
     const empty = apiOf();
     show(empty, STAFF);
-    expect(await screen.findByText("Nothing in this Unit yet.")).toBeTruthy();
+    expect(
+      await screen.findByText("Nothing in this Parking yet."),
+    ).toBeTruthy();
     expect(empty.locations).toHaveBeenCalledWith("property-1");
     cleanup();
 
@@ -309,7 +311,9 @@ describe("Unit page › Unit inventory (V1.1 part 5, DL-122)", () => {
     });
     pick(buy, /^Put in/, W01_KEY);
     fireEvent.click(within(buy).getByRole("button", { name: "Save" }));
-    form = await screen.findByRole("dialog", { name: "Unit inventory: U101" });
+    form = await screen.findByRole("dialog", {
+      name: "Parking inventory: U101",
+    });
     expect(api.recordMovement).toHaveBeenCalledWith(
       "property-1",
       expect.objectContaining({
@@ -377,7 +381,7 @@ describe("Unit page › Unit inventory (V1.1 part 5, DL-122)", () => {
     });
     show(api, STAFF);
     let form = await openForm();
-    const now = within(form).getByText("Now in this Unit");
+    const now = within(form).getByText("Now in this Parking");
     expect(now).toBeTruthy();
     fireEvent.click(
       within(form).getByRole("button", { name: "Take out: Fan, Bedroom 1" }),
@@ -396,7 +400,7 @@ describe("Unit page › Unit inventory (V1.1 part 5, DL-122)", () => {
       target: { value: "Tenant moved out" },
     });
     fireEvent.click(within(take).getByRole("button", { name: "Save" }));
-    await screen.findByRole("dialog", { name: "Unit inventory: U101" });
+    await screen.findByRole("dialog", { name: "Parking inventory: U101" });
     expect(api.recordMovement).toHaveBeenCalledWith(
       "property-1",
       expect.objectContaining({

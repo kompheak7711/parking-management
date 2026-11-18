@@ -7,6 +7,7 @@
 // the next number, and an Invoice type says whether it gets the late-payment charge. The time
 // zone is fixed from the business location (Cambodia).
 
+import { ABA_QR } from "../leases/parking";
 import {
   type FormEvent,
   Fragment,
@@ -778,7 +779,7 @@ export function BusinessTab({
                     </small>
                   </span>
                   <span className="ui-actions">
-                    {method.aba_qr && (
+                    {ABA_QR && method.aba_qr && (
                       <Chip tone="info">{sst(language, "pm_aba_chip")}</Chip>
                     )}
                     {method.accepted ? (
@@ -1941,7 +1942,8 @@ function MethodDialog({
     ) {
       found.on = sst(language, "pm_e_last");
     }
-    if (abaQr && !accepted) found.aba = sst(language, "pm_e_aba");
+    // Parking Step 6: the ABA QR field is hidden (ABA_QR), so it never blocks a save.
+    if (ABA_QR && abaQr && !accepted) found.aba = sst(language, "pm_e_aba");
     setErrors(found);
     const first =
       found.name !== undefined
@@ -2005,27 +2007,32 @@ function MethodDialog({
         <span>{sst(language, "pm_on")}</span>
       </label>
       <FieldError id="pm-on-e" text={errors.on ?? null} />
-      <label className="ui-chk">
-        <input
-          aria-describedby={
-            errors.aba === undefined ? "pm-aba-n" : "pm-aba-n pm-aba-e"
-          }
-          aria-invalid={errors.aba !== undefined}
-          checked={abaQr}
-          id="pm-aba"
-          onChange={(event) => {
-            setAbaQr(event.currentTarget.checked);
-          }}
-          type="checkbox"
-        />
-        <span>{sst(language, "pm_aba")}</span>
-      </label>
-      <p className="ui-small ui-muted" id="pm-aba-n">
-        {abaQr && holder !== undefined
-          ? sst(language, "pm_aba_move", holder.display_name)
-          : sst(language, "pm_aba_note")}
-      </p>
-      <FieldError id="pm-aba-e" text={errors.aba ?? null} />
+      {/* Parking Step 6: no ABA QR on Parking (ABA_QR); the field stays in the code. */}
+      {ABA_QR && (
+        <>
+          <label className="ui-chk">
+            <input
+              aria-describedby={
+                errors.aba === undefined ? "pm-aba-n" : "pm-aba-n pm-aba-e"
+              }
+              aria-invalid={errors.aba !== undefined}
+              checked={abaQr}
+              id="pm-aba"
+              onChange={(event) => {
+                setAbaQr(event.currentTarget.checked);
+              }}
+              type="checkbox"
+            />
+            <span>{sst(language, "pm_aba")}</span>
+          </label>
+          <p className="ui-small ui-muted" id="pm-aba-n">
+            {abaQr && holder !== undefined
+              ? sst(language, "pm_aba_move", holder.display_name)
+              : sst(language, "pm_aba_note")}
+          </p>
+          <FieldError id="pm-aba-e" text={errors.aba ?? null} />
+        </>
+      )}
       <p className="ui-small ui-muted">{sst(language, "pm_note")}</p>
       <Problem text={problem} />
     </Dialog>

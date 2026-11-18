@@ -88,14 +88,14 @@ def test_the_page_is_the_approved_sample_filled_with_the_invoice() -> None:
     html = page(rent_invoice())
     # The template's header, parties, lines (in order), totals, late note and footer.
     for text in (
-        "CHETANA Residence",
+        "CHETANA Parking",
         "វិក្កយបត្រ",
         "INV260015",
         "25/10/2026",
         "05/11/2026",
         "Sok Dara",
         "Phone 010 000 000",
-        "Unit U203",
+        "Parking U203",
         "01/11/2026 - 30/11/2026",
         "ថ្លៃឈ្នួល</span>Rent",
         "$350.00",

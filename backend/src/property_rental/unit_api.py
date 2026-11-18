@@ -822,7 +822,7 @@ class PostgresUnitResourceFlow:
         ) as exc:
             raise UnitResourceInvalid("Unit features are invalid") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
     def set_for_rent(
         self,
@@ -870,11 +870,11 @@ class PostgresUnitResourceFlow:
         except (UnitResourceNotFound, UnitVersionConflict):
             raise
         except psycopg.errors.ObjectNotInPrerequisiteState as exc:
-            raise UnitInUseForRenting("The Unit is in use for renting") from exc
+            raise UnitInUseForRenting("The Parking is in use for renting") from exc
         except (ValueError, psycopg.errors.InvalidParameterValue) as exc:
             raise UnitResourceInvalid("For rent is invalid") from exc
         except psycopg.Error as exc:
-            raise UnitResourceUnavailable("Unit persistence is unavailable") from exc
+            raise UnitResourceUnavailable("Parking persistence is unavailable") from exc
 
     def patch(
         self,

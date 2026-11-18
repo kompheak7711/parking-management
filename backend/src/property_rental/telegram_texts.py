@@ -31,13 +31,13 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # tenant mock-up v15). The Khmer waits for the native-speaker check.
     "tenant.welcome": {
         "km": (
-            "សូមស្វាគមន៍មកកាន់ CHETANA Residence support។\n"
-            "Welcome to CHETANA Residence support.\n\n"
+            "សូមស្វាគមន៍មកកាន់ CHETANA Parking support។\n"
+            "Welcome to CHETANA Parking support.\n\n"
             "សូមជ្រើសរើសភាសា។ Please choose your language."
         ),
         "en": (
-            "សូមស្វាគមន៍មកកាន់ CHETANA Residence support។\n"
-            "Welcome to CHETANA Residence support.\n\n"
+            "សូមស្វាគមន៍មកកាន់ CHETANA Parking support។\n"
+            "Welcome to CHETANA Parking support.\n\n"
             "សូមជ្រើសរើសភាសា។ Please choose your language."
         ),
     },
@@ -51,12 +51,12 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         ),
     },
     "tenant.hello_linked": {
-        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
-        "en": "Welcome, {name}. You are linked to Unit {unit}. How can we help you today?",
+        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយចំណត {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
+        "en": "Welcome, {name}. You are linked to Parking {unit}. How can we help you today?",
     },
     "tenant.ask_phone": {
-        "km": ("សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ បន្ទាប់មក សូមសរសេរឈ្មោះ និងលេខបន្ទប់របស់លោកអ្នក។"),
-        "en": ("Please tap “Share my phone number” below. Then type your name and your Unit."),
+        "km": ("សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ បន្ទាប់មក សូមសរសេរឈ្មោះ និងលេខចំណតរបស់លោកអ្នក។"),
+        "en": ("Please tap “Share my phone number” below. Then type your name and your Parking."),
     },
     "tenant.ask_phone_again": {
         "km": "សូមចុច «ចែករំលែកលេខទូរស័ព្ទ» ខាងក្រោម។ មានតែលេខរបស់លោកអ្នកផ្ទាល់ទេ ដែលអាចភ្ជាប់បាន។",
@@ -67,32 +67,32 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "en": "Thank you. Please type your full name as written on your Lease.",
     },
     "tenant.ask_unit": {
-        "km": "សូមអរគុណ។ សូមសរសេរលេខបន្ទប់របស់លោកអ្នក ឧទាហរណ៍ 305។",
-        "en": "Thank you. Please type your Unit number, for example 305.",
+        "km": "សូមអរគុណ។ សូមសរសេរលេខចំណតរបស់លោកអ្នក ឧទាហរណ៍ 305។",
+        "en": "Thank you. Please type your Parking number, for example 305.",
     },
     "tenant.linked": {
         "km": (
-            "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?\n\n"
-            "យើងប្រើលេខទូរស័ព្ទ ឈ្មោះ និងលេខបន្ទប់របស់លោកអ្នក "
+            "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយចំណត {unit}។ តើលោកអ្នកត្រូវការអ្វី?\n\n"
+            "យើងប្រើលេខទូរស័ព្ទ ឈ្មោះ និងលេខចំណតរបស់លោកអ្នក "
             "តែដើម្បីស្វែងរកកិច្ចសន្យាជួល និងឆ្លើយតបសំណើរបស់លោកអ្នកប៉ុណ្ណោះ។"
         ),
         "en": (
-            "Welcome, {name}. You are linked to Unit {unit}. How can we help you "
-            "today?\n\nWe use your phone number, name and Unit only to find your "
+            "Welcome, {name}. You are linked to Parking {unit}. How can we help you "
+            "today?\n\nWe use your phone number, name and Parking only to find your "
             "Lease and answer your requests."
         ),
     },
     "tenant.no_match": {
         "km": (
-            "យើងរកមិនឃើញអ្នកជួលដែលមានលេខទូរស័ព្ទ ឈ្មោះ និងបន្ទប់នេះទេ។ សូមពិនិត្យ៖\n"
+            "យើងរកមិនឃើញអ្នកជួលដែលមានលេខទូរស័ព្ទ ឈ្មោះ និងចំណតនេះទេ។ សូមពិនិត្យ៖\n"
             "• ឈ្មោះពេញរបស់លោកអ្នក ដូចក្នុងកិច្ចសន្យាជួល (លំដាប់ណាក៏បាន)\n"
-            "• លេខបន្ទប់របស់លោកអ្នក ឧទាហរណ៍ 305\n"
+            "• លេខចំណតរបស់លោកអ្នក ឧទាហរណ៍ 305\n"
             "លោកអ្នកនៅសល់ {tries_left} ដងទៀត។"
         ),
         "en": (
-            "We could not find a Lease with this phone number, name and Unit. "
+            "We could not find a Lease with this phone number, name and Parking. "
             "Please check:\n• Your full name as written on your Lease (any order is "
-            "fine)\n• Your Unit number, for example 305\nYou have {tries_left} "
+            "fine)\n• Your Parking number, for example 305\nYou have {tries_left} "
             "attempts left."
         ),
     },
@@ -109,8 +109,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     # DL-214 (owner 11/11/2026): the one-time QR staff show at Lease signing or guest check-in.
     "tenant.linked_code": {
-        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
-        "en": "Welcome, {name}. You are linked to Unit {unit}. What do you need?",
+        "km": "សូមស្វាគមន៍ {name}។ លោកអ្នកបានភ្ជាប់ជាមួយចំណត {unit}។ តើលោកអ្នកត្រូវការអ្វី?",
+        "en": "Welcome, {name}. You are linked to Parking {unit}. What do you need?",
     },
     "tenant.code_bad": {
         "km": "QR នេះមិនដំណើរការទៀតទេ។ សូមសុំ QR ថ្មីពីការិយាល័យ។",
@@ -123,9 +123,10 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # DL-210: what the relay says while the office app is closed (owner 07/11/2026). The relay
     # cannot say the person's name, so "linked" names only the Unit.
     "tenant.linked_offline": {
-        "km": ("សូមអរគុណ។ លោកអ្នកបានភ្ជាប់ជាមួយបន្ទប់ {unit} ហើយ។ ប្រសិនបើមានបញ្ហា សូមចុច «រាយការណ៍បញ្ហា»។"),
+        "km": ("សូមអរគុណ។ លោកអ្នកបានភ្ជាប់ជាមួយចំណត {unit} ហើយ។ ប្រសិនបើមានបញ្ហា សូមចុច «រាយការណ៍បញ្ហា»។"),
         "en": (
-            "Thank you. You are linked to Unit {unit}. If you have a problem, tap Problem report."
+            "Thank you. You are linked to Parking {unit}. "
+            "If you have a problem, tap Problem report."
         ),
     },
     "tenant.report_sent_offline": {
@@ -457,13 +458,13 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "tenant.report_kind": {
         "km": (
             "តើជាបញ្ហាប្រភេទណា?\n"
-            "• បញ្ហាក្នុងបន្ទប់៖ អ្វីមួយនៅក្នុងបន្ទប់របស់លោកអ្នក។ លោកអ្នកអាចសម្គាល់ថាបន្ទាន់។\n"
+            "• បញ្ហាក្នុងចំណត៖ អ្វីមួយនៅក្នុងចំណតរបស់លោកអ្នក។ លោកអ្នកអាចសម្គាល់ថាបន្ទាន់។\n"
             "• បញ្ហាអគារ៖ កន្លែងរួម ឧទាហរណ៍ ជណ្ដើរ ចំណតយានយន្ត ជណ្ដើរយន្ត ឬទ្វារធំ។\n"
             "ភ្លើងឆេះ ឬគ្រោះថ្នាក់ឥឡូវនេះ៖ សូមទូរស័ព្ទ 118 (ពន្លត់អគ្គិភ័យ) ឬ 117 (ប៉ូលិស) ជាមុនសិន។"
         ),
         "en": (
-            "What kind of problem is it?\n• Unit problem: something inside your "
-            "Unit. You can mark it urgent.\n• Building problem: a shared area, for "
+            "What kind of problem is it?\n• Parking problem: something inside your "
+            "Parking. You can mark it urgent.\n• Building problem: a shared area, for "
             "example stairs, parking, lift or gate.\nIn an emergency (fire or "
             "danger), call 118 (fire) or 117 (police) first."
         ),
@@ -612,8 +613,8 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "en": "There are no repairs waiting for you to check.",
     },
     "tenant.my_requests": {
-        "km": "សំណើរបស់លោកអ្នក (បន្ទប់ {unit})៖\n\n{list}",
-        "en": "Your requests (Unit {unit}):\n\n{list}",
+        "km": "សំណើរបស់លោកអ្នក (ចំណត {unit})៖\n\n{list}",
+        "en": "Your requests (Parking {unit}):\n\n{list}",
     },
     "tenant.my_none": {
         "km": "លោកអ្នកមិនមានសំណើដែលកំពុងបើកទេឥឡូវនេះ។",
@@ -635,13 +636,13 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # and the FAQ document. Texts marked "new" are not in the mock-up and need the Khmer check.
     "customer.welcome": {
         "km": (
-            "សូមស្វាគមន៍មកកាន់ CHETANA Residence។\n"
-            "Welcome to CHETANA Residence.\n\n"
+            "សូមស្វាគមន៍មកកាន់ CHETANA Parking។\n"
+            "Welcome to CHETANA Parking.\n\n"
             "សូមជ្រើសរើសភាសា។ Please choose a language."
         ),
         "en": (
-            "សូមស្វាគមន៍មកកាន់ CHETANA Residence។\n"
-            "Welcome to CHETANA Residence.\n\n"
+            "សូមស្វាគមន៍មកកាន់ CHETANA Parking។\n"
+            "Welcome to CHETANA Parking.\n\n"
             "សូមជ្រើសរើសភាសា។ Please choose a language."
         ),
     },
@@ -691,13 +692,13 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "en": "What is your name?",
     },
     "customer.ask_type": {
-        "km": "តើអ្នកចង់បានប្រភេទបន្ទប់មួយណា?",
-        "en": "Which Unit Type do you want?",
+        "km": "តើអ្នកចង់បានប្រភេទចំណតមួយណា?",
+        "en": "Which Parking Type do you want?",
     },
     # new
     "customer.type_again": {
-        "km": "សូមចុចលើប្រភេទបន្ទប់មួយខាងក្រោម។",
-        "en": "Please tap one of the Unit Types below.",
+        "km": "សូមចុចលើប្រភេទចំណតមួយខាងក្រោម។",
+        "en": "Please tap one of the Parking Types below.",
     },
     "customer.ask_day": {
         "km": "តើអ្នកចង់មកមើលនៅថ្ងៃណា?",
@@ -730,7 +731,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "km": (
             "សូមពិនិត្យសំណើរបស់អ្នក។\n\n"
             "ឈ្មោះ៖ {name}\nទូរស័ព្ទ៖ {phone}\nទាក់ទងតាម៖ {contact}\n"
-            "ប្រភេទបន្ទប់៖ {type}\nមកមើល៖ {visit}\nចូលស្នាក់នៅ៖ {move}\nកំណត់សម្គាល់៖ {note}"
+            "ប្រភេទចំណត៖ {type}\nមកមើល៖ {visit}\nចូលស្នាក់នៅ៖ {move}\nកំណត់សម្គាល់៖ {note}"
         ),
         "en": (
             "Please check your request.\n\nName: {name}\nPhone: {phone}\nContact by: "
@@ -809,10 +810,9 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         ),
     },
     "customer.visit_reminder": {
-        "km": ("រំលឹក៖ ការមកមើល CHETANA Residence របស់អ្នកគឺនៅថ្ងៃស្អែក {day} ម៉ោង {time}។ ជួបគ្នាឆាប់ៗ។"),
+        "km": ("រំលឹក៖ ការមកមើល CHETANA Parking របស់អ្នកគឺនៅថ្ងៃស្អែក {day} ម៉ោង {time}។ ជួបគ្នាឆាប់ៗ។"),
         "en": (
-            "Reminder: your viewing at CHETANA Residence is tomorrow, {day} at "
-            "{time}. See you soon."
+            "Reminder: your viewing at CHETANA Parking is tomorrow, {day} at {time}. See you soon."
         ),
     },
     # Step 4a: the Staff bot (Khmer only, owner rule; the English is the same Khmer text).
@@ -982,11 +982,11 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "staff.report_invalid": {
         "km": (
-            "❌ របាយការណ៍មិនទាន់គ្រប់គ្រាន់។ សូមជ្រើសប្រភេទ បន្ទប់"
+            "❌ របាយការណ៍មិនទាន់គ្រប់គ្រាន់។ សូមជ្រើសប្រភេទ ចំណត"
             " ឬកន្លែង បញ្ហា ថតរូប ១ សន្លឹក ហើយសរសេរ ឬថតសារជាសំឡេង។"
         ),
         "en": (
-            "❌ របាយការណ៍មិនទាន់គ្រប់គ្រាន់។ សូមជ្រើសប្រភេទ បន្ទប់"
+            "❌ របាយការណ៍មិនទាន់គ្រប់គ្រាន់។ សូមជ្រើសប្រភេទ ចំណត"
             " ឬកន្លែង បញ្ហា ថតរូប ១ សន្លឹក ហើយសរសេរ ឬថតសារជាសំឡេង។"
         ),
     },
@@ -1097,22 +1097,22 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
         "en": "❌ សូមជ្រើសកន្លែងដែលបានល្បាត ហើយផ្ញើម្តងទៀត។",
     },
     "staff.unit_check_good": {
-        "km": "✅ បានទទួលការត្រួតពិនិត្យបន្ទប់។ ល្អទាំងអស់។ អរគុណ!",
-        "en": "✅ បានទទួលការត្រួតពិនិត្យបន្ទប់។ ល្អទាំងអស់។ អរគុណ!",
+        "km": "✅ បានទទួលការត្រួតពិនិត្យចំណត។ ល្អទាំងអស់។ អរគុណ!",
+        "en": "✅ បានទទួលការត្រួតពិនិត្យចំណត។ ល្អទាំងអស់។ អរគុណ!",
     },
     "staff.unit_check_findings": {
         "km": (
-            "✅ បានទទួលការត្រួតពិនិត្យបន្ទប់ · រកឃើញ {count}៖ {numbers}។"
+            "✅ បានទទួលការត្រួតពិនិត្យចំណត · រកឃើញ {count}៖ {numbers}។"
             " បានរក្សាទុកក្នុង «របាយការណ៍បញ្ហា»។ អ្នកគ្រប់គ្រងនឹងរៀបចំការងារ។"
         ),
         "en": (
-            "✅ បានទទួលការត្រួតពិនិត្យបន្ទប់ · រកឃើញ {count}៖ {numbers}។"
+            "✅ បានទទួលការត្រួតពិនិត្យចំណត · រកឃើញ {count}៖ {numbers}។"
             " បានរក្សាទុកក្នុង «របាយការណ៍បញ្ហា»។ អ្នកគ្រប់គ្រងនឹងរៀបចំការងារ។"
         ),
     },
     "staff.unit_check_invalid": {
-        "km": ("❌ សូមជ្រើសបន្ទប់ ប្រភេទ និងតំបន់។ តំបន់ខូច ឬបាត់ ត្រូវសរសេរ និងថតរូប (សរុបរហូតដល់ 5)។"),
-        "en": ("❌ សូមជ្រើសបន្ទប់ ប្រភេទ និងតំបន់។ តំបន់ខូច ឬបាត់ ត្រូវសរសេរ និងថតរូប (សរុបរហូតដល់ 5)។"),
+        "km": ("❌ សូមជ្រើសចំណត ប្រភេទ និងតំបន់។ តំបន់ខូច ឬបាត់ ត្រូវសរសេរ និងថតរូប (សរុបរហូតដល់ 5)។"),
+        "en": ("❌ សូមជ្រើសចំណត ប្រភេទ និងតំបន់។ តំបន់ខូច ឬបាត់ ត្រូវសរសេរ និងថតរូប (សរុបរហូតដល់ 5)។"),
     },
     "staff.tech_only": {
         "km": "❌ ទម្រង់នេះ សម្រាប់តែអ្នកបច្ចេកទេស និងអ្នកអនុម័តប៉ុណ្ណោះ។",
@@ -1132,10 +1132,10 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     },
     "staff.maint_invalid": {
         "km": (
-            "❌ សូមជ្រើសការងារ របៀបចូលបន្ទប់ មូលហេតុ ហើយថតរូប 1 ដល់ 5 សន្លឹក។ ជួសជុលភ្លាមៗ បានតែការងារបន្ទាន់ប៉ុណ្ណោះ។"
+            "❌ សូមជ្រើសការងារ របៀបចូលចំណត មូលហេតុ ហើយថតរូប 1 ដល់ 5 សន្លឹក។ ជួសជុលភ្លាមៗ បានតែការងារបន្ទាន់ប៉ុណ្ណោះ។"
         ),
         "en": (
-            "❌ សូមជ្រើសការងារ របៀបចូលបន្ទប់ មូលហេតុ ហើយថតរូប 1 ដល់ 5 សន្លឹក។ ជួសជុលភ្លាមៗ បានតែការងារបន្ទាន់ប៉ុណ្ណោះ។"
+            "❌ សូមជ្រើសការងារ របៀបចូលចំណត មូលហេតុ ហើយថតរូប 1 ដល់ 5 សន្លឹក។ ជួសជុលភ្លាមៗ បានតែការងារបន្ទាន់ប៉ុណ្ណោះ។"
         ),
     },
     "staff.daily_summary": {
@@ -1154,30 +1154,30 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # DL-236 (owner 13 Nov 2026): the front desk gave this person a Housekeeping task. The Khmer
     # waits for the native-speaker check.
     "staff.task_given": {
-        "km": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · បន្ទប់ {unit} · ថ្ងៃ {day}។",
-        "en": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · បន្ទប់ {unit} · ថ្ងៃ {day}។",
+        "km": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · ចំណត {unit} · ថ្ងៃ {day}។",
+        "en": "🧹 ការងារថ្មីសម្រាប់អ្នក៖ {task} · ចំណត {unit} · ថ្ងៃ {day}។",
     },
     # The cleaner's tap on Cleaned or Not cleaned (owner card 14 Nov 2026: "Telegram: get and
     # tick tasks").
     "staff.task_done": {
-        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} សម្អាតរួច។ អរគុណ!",
-        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} សម្អាតរួច។ អរគុណ!",
+        "km": "✅ បានកត់ត្រា៖ ចំណត {unit} សម្អាតរួច។ អរគុណ!",
+        "en": "✅ បានកត់ត្រា៖ ចំណត {unit} សម្អាតរួច។ អរគុណ!",
     },
     "staff.task_why": {
-        "km": "បន្ទប់ {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
-        "en": "បន្ទប់ {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
+        "km": "ចំណត {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
+        "en": "ចំណត {unit}៖ ហេតុអ្វីមិនបានសម្អាត? សូមជ្រើសរើស។",
     },
     "staff.task_skipped": {
-        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} មិនបានសម្អាតថ្ងៃនេះ។",
-        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} មិនបានសម្អាតថ្ងៃនេះ។",
+        "km": "✅ បានកត់ត្រា៖ ចំណត {unit} មិនបានសម្អាតថ្ងៃនេះ។",
+        "en": "✅ បានកត់ត្រា៖ ចំណត {unit} មិនបានសម្អាតថ្ងៃនេះ។",
     },
     "staff.task_closed": {
-        "km": "ការងារបន្ទប់ {unit} នេះបានបញ្ចប់រួចហើយ។",
-        "en": "ការងារបន្ទប់ {unit} នេះបានបញ្ចប់រួចហើយ។",
+        "km": "ការងារចំណត {unit} នេះបានបញ្ចប់រួចហើយ។",
+        "en": "ការងារចំណត {unit} នេះបានបញ្ចប់រួចហើយ។",
     },
     "staff.task_not_due": {
-        "km": "ការងារបន្ទប់ {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
-        "en": "ការងារបន្ទប់ {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
+        "km": "ការងារចំណត {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
+        "en": "ការងារចំណត {unit} នេះមិនទាន់ដល់ថ្ងៃទេ។",
     },
     "staff.task_not_yours": {
         "km": "ការងារនេះមិនមែនសម្រាប់អ្នកទេ។ សូមសួរផ្នែកទទួលភ្ញៀវ។",
@@ -1186,12 +1186,12 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     # DL-242 (owner 16 Nov 2026): the cleaner's tap on Unit OK or Problem found after a short
     # stay. The Khmer waits for the native-speaker check.
     "staff.unit_ok": {
-        "km": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
-        "en": "✅ បានកត់ត្រា៖ បន្ទប់ {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
+        "km": "✅ បានកត់ត្រា៖ ចំណត {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
+        "en": "✅ បានកត់ត្រា៖ ចំណត {unit} ពិនិត្យរួច គ្មានបញ្ហា។ អរគុណ!",
     },
     "staff.unit_problem": {
-        "km": "⚠️ បានកត់ត្រា៖ បន្ទប់ {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
-        "en": "⚠️ បានកត់ត្រា៖ បន្ទប់ {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
+        "km": "⚠️ បានកត់ត្រា៖ ចំណត {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
+        "en": "⚠️ បានកត់ត្រា៖ ចំណត {unit} មានបញ្ហា។ ផ្នែកទទួលភ្ញៀវនឹងមកមើល។ អរគុណ!",
     },
     # Report states as the tenant sees them (the app's words, Building > Problem reports).
     "status.RECEIVED": {"km": "បានទទួល", "en": "Received"},
@@ -1211,7 +1211,7 @@ TEXTS: Final[dict[str, dict[str, str]]] = {
     "button.my_requests": {"km": "សំណើរបស់ខ្ញុំ", "en": "My requests"},
     "button.faq": {"km": "សំណួរញឹកញាប់", "en": "FAQ"},
     "button.contact": {"km": "ទាក់ទងការិយាល័យ", "en": "Contact office"},
-    "button.unit_problem": {"km": "បញ្ហាក្នុងបន្ទប់", "en": "Unit problem"},
+    "button.unit_problem": {"km": "បញ្ហាក្នុងចំណត", "en": "Parking problem"},
     "button.building_problem": {"km": "បញ្ហាអគារ", "en": "Building problem"},
     "button.back_menu": {"km": "ត្រឡប់ទៅម៉ឺនុយ", "en": "Back to menu"},
     "button.fixed": {"km": "ជួសជុលរួច", "en": "Fixed"},

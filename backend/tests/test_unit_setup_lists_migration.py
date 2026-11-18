@@ -168,7 +168,7 @@ def test_every_property_gets_the_four_parking_types(
           )
         """,
         (property_id,),
-    ).fetchone() == (3,)
+    ).fetchone() == (2,)
 
 
 def test_list_items_get_codes_from_their_names_and_are_audited(

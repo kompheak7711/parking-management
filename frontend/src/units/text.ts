@@ -10,8 +10,8 @@ const TEXT = {
   loading: ["Loading Parking…", "កំពុងផ្ទុកចំណត…"],
   // new
   failed: [
-    "The Units could not be loaded. Retry when the service is available.",
-    "មិនអាចអានបន្ទប់បានទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
+    "The Parking could not be loaded. Retry when the service is available.",
+    "មិនអាចអានចំណតបានទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
   ],
   // new
   retry: ["Retry", "ព្យាយាមម្តងទៀត"],
@@ -22,8 +22,8 @@ const TEXT = {
   ],
   // new
   lists_failed: [
-    "The Settings lists could not be loaded, so Units cannot be added or changed now.",
-    "មិនអាចអានបញ្ជីការកំណត់បានទេ ដូច្នេះមិនអាចបន្ថែម ឬកែបន្ទប់បានឥឡូវនេះ។",
+    "The Settings lists could not be loaded, so Parking cannot be added or changed now.",
+    "មិនអាចអានបញ្ជីការកំណត់បានទេ ដូច្នេះមិនអាចបន្ថែម ឬកែចំណតបានឥឡូវនេះ។",
   ],
   // new
   tenants_hidden: [
@@ -70,8 +70,8 @@ const TEXT = {
   // C2 (DL-241): a Signed Lease that starts later; the Unit is Vacant until then.
   lease_from: ["Lease from {0}", "កិច្ចសន្យាចាប់ពី {0}"],
   a_lease_from: [
-    "A signed Lease starts on {0}. Until then the Unit is empty, but it cannot be reserved or leased to someone else.",
-    "កិច្ចសន្យាដែលបានចុះហត្ថលេខាចាប់ផ្តើមនៅថ្ងៃ {0}។ រហូតដល់ពេលនោះ បន្ទប់នៅទំនេរ ប៉ុន្តែមិនអាចកក់ ឬជួលឱ្យអ្នកផ្សេងបានទេ។",
+    "A signed Lease starts on {0}. Until then the Parking is empty, but it cannot be reserved or leased to someone else.",
+    "កិច្ចសន្យាដែលបានចុះហត្ថលេខាចាប់ផ្តើមនៅថ្ងៃ {0}។ រហូតដល់ពេលនោះ ចំណតនៅទំនេរ ប៉ុន្តែមិនអាចកក់ ឬជួលឱ្យអ្នកផ្សេងបានទេ។",
   ],
   back: ["Back", "ត្រឡប់ក្រោយ"],
   // new
@@ -86,8 +86,8 @@ const TEXT = {
   open_draft: ["Open draft Lease", "បើកសេចក្តីព្រាងកិច្ចសន្យា"],
   open_reservation: ["Open Reservation", "បើកការកក់"],
   change_status: ["Change status", "ប្តូរស្ថានភាព"],
-  update_unit: ["Update Unit", "ធ្វើបច្ចុប្បន្នភាពបន្ទប់"],
-  details: ["Unit details", "ព័ត៌មានលម្អិតបន្ទប់"],
+  update_unit: ["Update Parking", "ធ្វើបច្ចុប្បន្នភាពចំណត"],
+  details: ["Parking details", "ព័ត៌មានលម្អិតចំណត"],
   no_photo: ["No photo yet", "មិនទាន់មានរូបថតទេ"],
   // new
   size: ["Size", "ទំហំ"],
@@ -102,7 +102,7 @@ const TEXT = {
   // new
   not_recorded: ["Not recorded", "មិនទាន់កត់ត្រា"],
   // V1.1 (DL-115 (I)): the Unit's features.
-  uf_title: ["Unit features", "លក្ខណៈបន្ទប់"],
+  uf_title: ["Parking features", "លក្ខណៈចំណត"],
   uf_none: ["No features recorded yet.", "មិនទាន់កត់ត្រាលក្ខណៈទេ។"],
   uf_unknown: ["Removed feature", "លក្ខណៈដែលបានដកចេញ"],
   uf_edit: ["Edit features", "កែលក្ខណៈ"],
@@ -119,12 +119,12 @@ const TEXT = {
   ],
   uf_add: ["Add", "បន្ថែម"],
   uf_note: [
-    "Each feature can be 1 to 9. A shop or office lists only what it has, for example Main room ×1. New features are added in Settings → Unit setup. Every change is kept in the audit log.",
-    "លក្ខណៈនីមួយៗអាចមានពី ១ ដល់ ៩។ ហាង ឬការិយាល័យ បង្ហាញតែអ្វីដែលវាមាន ឧទាហរណ៍ បន្ទប់ធំ ×១។ លក្ខណៈថ្មីត្រូវបន្ថែមនៅក្នុង ការកំណត់ → ការរៀបចំបន្ទប់។ ការផ្លាស់ប្តូរនីមួយៗត្រូវបានរក្សាក្នុងប្រវត្តិ។",
+    "Each feature can be 1 to 9. A shop or office lists only what it has, for example Main room ×1. New features are added in Settings → Parking setup. Every change is kept in the audit log.",
+    "លក្ខណៈនីមួយៗអាចមានពី ១ ដល់ ៩។ ហាង ឬការិយាល័យ បង្ហាញតែអ្វីដែលវាមាន ឧទាហរណ៍ បន្ទប់ធំ ×១។ លក្ខណៈថ្មីត្រូវបន្ថែមនៅក្នុង ការកំណត់ → ការរៀបចំចំណត។ ការផ្លាស់ប្តូរនីមួយៗត្រូវបានរក្សាក្នុងប្រវត្តិ។",
   ],
   uf_saved: [
-    "The features of Unit {0} are saved.",
-    "លក្ខណៈរបស់បន្ទប់ {0} ត្រូវបានរក្សាទុក។",
+    "The features of Parking {0} are saved.",
+    "លក្ខណៈរបស់ចំណត {0} ត្រូវបានរក្សាទុក។",
   ],
   notes: ["Notes", "កំណត់ចំណាំ"],
   current_lease: ["Current Lease", "កិច្ចសន្យាបច្ចុប្បន្ន"],
@@ -230,8 +230,8 @@ const TEXT = {
     "ចំណត {0} បានរក្សាទុក ប៉ុន្តែថ្លៃឈ្នួល និងសេវាមិនទាន់រក្សាទុកទេ។ សូមកំណត់វានៅទំព័រចំណត ដោយចុច ប្តូរ។",
   ],
   edit_note: [
-    "Changes are dated and kept in the audit log. The Unit number cannot change.",
-    "ការផ្លាស់ប្តូរមានកាលបរិច្ឆេទ និងរក្សាទុកក្នុងប្រវត្តិ។ លេខបន្ទប់មិនអាចប្តូរបានទេ។",
+    "Changes are dated and kept in the audit log. The Parking number cannot change.",
+    "ការផ្លាស់ប្តូរមានកាលបរិច្ឆេទ និងរក្សាទុកក្នុងប្រវត្តិ។ លេខចំណតមិនអាចប្តូរបានទេ។",
   ],
   save: ["Save", "រក្សាទុក"],
   cancel: ["Cancel", "បោះបង់"],
@@ -254,8 +254,8 @@ const TEXT = {
     "ការផ្លាស់ប្តូរមិនត្រូវបានរក្សាទុកទេ។ សូមព្យាយាមម្តងទៀតពេលសេវាអាចប្រើបាន។",
   ],
   blocked_lease: [
-    "This Unit has a signed Lease. Its status changes only through a move-out.",
-    "បន្ទប់នេះមានកិច្ចសន្យាបានចុះហត្ថលេខា។ ស្ថានភាពប្តូរបានតែតាមរយៈការចាកចេញប៉ុណ្ណោះ។",
+    "This Parking has a signed Lease. Its status changes only through a move-out.",
+    "ចំណតនេះមានកិច្ចសន្យាបានចុះហត្ថលេខា។ ស្ថានភាពប្តូរបានតែតាមរយៈការចាកចេញប៉ុណ្ណោះ។",
   ],
   blocked_res: [
     "This Parking has an active Reservation. Cancel the Reservation first.",
@@ -375,14 +375,14 @@ const TEXT = {
   fr_yes: ["Yes", "បាទ/ចាស"],
   fr_no: ["Not for rent", "មិនសម្រាប់ជួល"],
   fr_help: [
-    "A Unit not for rent (for example the warehouse) is hidden from Home, Vacant lists, Reservations, Leases, billing, meter readings and reports.",
-    "បន្ទប់មិនសម្រាប់ជួល (ឧទាហរណ៍ ឃ្លាំង) ត្រូវបានលាក់ពីទំព័រដើម បញ្ជីទំនេរ ការកក់ កិច្ចសន្យា ការចេញវិក្កយបត្រ ការអានម៉ែត្រ និងរបាយការណ៍។",
+    "A Parking not for rent (for example the warehouse) is hidden from Home, Vacant lists, Reservations, Leases, billing, meter readings and reports.",
+    "ចំណតមិនសម្រាប់ជួល (ឧទាហរណ៍ ឃ្លាំង) ត្រូវបានលាក់ពីទំព័រដើម បញ្ជីទំនេរ ការកក់ កិច្ចសន្យា ការចេញវិក្កយបត្រ ការអានម៉ែត្រ និងរបាយការណ៍។",
   ],
   fr_unit_help: [
     "Not for rent: it is left out of every renting screen. It can be switched to For rent later.",
     "មិនសម្រាប់ជួល៖ វាមិនបង្ហាញក្នុងអេក្រង់ជួលណាមួយទេ។ អាចប្ដូរទៅ សម្រាប់ជួល នៅពេលក្រោយ។",
   ],
-  fr_card: ["Units not for rent", "បន្ទប់មិនសម្រាប់ជួល"],
+  fr_card: ["Parking not for rent", "ចំណតមិនសម្រាប់ជួល"],
   fr_card_s: [
     "Kept out of every renting screen. Switch to For rent later if you want to rent it.",
     "មិនបង្ហាញក្នុងទំព័រជួលណាមួយ។ ប្តូរទៅ សម្រាប់ជួល ពេលក្រោយ បើចង់ជួល។",
@@ -395,18 +395,18 @@ const TEXT = {
   fr_title: ["Change For rent", "ប្តូរ សម្រាប់ជួល"],
   // new
   fr_in_use: [
-    "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
-    "បន្ទប់នេះមានការកក់ ឬកិច្ចសន្យា ដូច្នេះវានៅតែសម្រាប់ជួល រហូតដល់ពួកវាបញ្ចប់។",
+    "This Parking has a Reservation or a Lease, so it stays for rent until they end.",
+    "ចំណតនេះមានការកក់ ឬកិច្ចសន្យា ដូច្នេះវានៅតែសម្រាប់ជួល រហូតដល់ពួកវាបញ្ចប់។",
   ],
   // new
   fr_locked: [
-    "This Unit is Reserved or Occupied, so it stays for rent. You can change it after it is Vacant.",
-    "បន្ទប់នេះត្រូវបានកក់ ឬមានអ្នកស្នាក់នៅ ដូច្នេះវានៅតែសម្រាប់ជួល។ អាចប្តូរបាន ពេលវាទំនេរ។",
+    "This Parking is Reserved or Occupied, so it stays for rent. You can change it after it is Vacant.",
+    "ចំណតនេះត្រូវបានកក់ ឬមានអ្នកស្នាក់នៅ ដូច្នេះវានៅតែសម្រាប់ជួល។ អាចប្តូរបាន ពេលវាទំនេរ។",
   ],
   // new
   fr_new_not_saved: [
-    "Unit {0} is saved, but For rent is not. Change it on the Unit page.",
-    "បន្ទប់ {0} ត្រូវបានរក្សាទុក ប៉ុន្តែ សម្រាប់ជួល មិនទាន់។ សូមប្តូរវានៅទំព័របន្ទប់។",
+    "Parking {0} is saved, but For rent is not. Change it on the Parking page.",
+    "ចំណត {0} ត្រូវបានរក្សាទុក ប៉ុន្តែ សម្រាប់ជួល មិនទាន់។ សូមប្តូរវានៅទំព័រចំណត។",
   ],
   // new
   fr_saved_yes: ["{0} is for rent now.", "{0} ឥឡូវសម្រាប់ជួល។"],

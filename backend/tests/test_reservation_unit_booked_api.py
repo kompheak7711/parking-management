@@ -69,6 +69,6 @@ def test_make_reservation_on_a_booked_unit_answers_the_reason_with_a_code() -> N
         assert answer.status_code == 409, answer.text
         error = answer.json()["error"]
         assert error["code"] == "RESERVATION_UNIT_BOOKED"
-        assert "A short-stay guest has booked this Unit" in error["message"]
-        assert "Change Unit" in error["message"]
+        assert "A short-stay guest has booked this Parking" in error["message"]
+        assert "Change Parking" in error["message"]
         assert "DL-225" in error["rule_ids"]

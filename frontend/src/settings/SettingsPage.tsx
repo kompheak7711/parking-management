@@ -2,6 +2,7 @@
 // a person who may use it. System health is rebuilt here (R7b-1); a tab not rebuilt yet keeps
 // the earlier forms, folded, until its own step.
 
+import { settingsTabShownOnParking } from "../shell/navigation";
 import "../shell/screens.css";
 
 import {
@@ -397,8 +398,10 @@ export function SettingsPage({
 
   const allowed = TABS.filter(
     (item) =>
-      capabilities === null ||
-      item.needs.some((capability) => capabilities.has(capability)),
+      // Parking Step 6: Monthly services and Booking sites are hidden on Parking.
+      settingsTabShownOnParking(item.tab) &&
+      (capabilities === null ||
+        item.needs.some((capability) => capabilities.has(capability))),
   );
   const tab =
     allowed.find((item) => item.tab === detail)?.tab ?? allowed[0]?.tab;

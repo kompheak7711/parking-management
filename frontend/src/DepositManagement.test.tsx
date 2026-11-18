@@ -621,7 +621,7 @@ describe("DepositManagement", () => {
       expected_reservation_version: null,
     });
   });
-  it("TEST-FE-1150 Parking Step 5: the old Deposit screen offers no Create Pet Deposit form", async ({
+  it("TEST-FE-3150 Parking Step 5: the old Deposit screen offers no Create Pet Deposit form", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);
@@ -645,7 +645,7 @@ describe("DepositManagement", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-1154 Parking Step 5: the old Deposit screen's help and loading words do not mention a Pet Deposit", async ({
+  it("TEST-FE-3154 Parking Step 5: the old Deposit screen's help and loading words do not mention a Pet Deposit", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);

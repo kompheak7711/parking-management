@@ -1480,7 +1480,7 @@ const COLUMN_KEYS: Readonly<Record<string, readonly [string, string]>> = {
   year_to_date: ["Year to date", "ពីដើមឆ្នាំដល់ឥឡូវ"],
   difference: ["Difference", "ភាពខុសគ្នា"],
   customer_name: ["Customer", "អតិថិជន"],
-  unit_number: ["Unit", "បន្ទប់"],
+  unit_number: ["Parking", "ចំណត"],
   supplier: ["Supplier", "អ្នកផ្គត់ផ្គង់"],
   not_due: ["Not yet due", "មិនទាន់ដល់ថ្ងៃកំណត់"],
   days_1_30: ["1-30 days", "១-៣០ ថ្ងៃ"],

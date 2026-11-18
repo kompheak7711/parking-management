@@ -117,7 +117,7 @@ def stay_database(migrated_database_url: str) -> Iterator[StayDatabase]:
                 setup.execute(
                     "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, "
                     "status, created_by, updated_by) "
-                    "VALUES (%s, %s, %s, '2', 'STUDIO', 'VACANT', %s, %s)",
+                    "VALUES (%s, %s, %s, '2', 'COVERED', 'VACANT', %s, %s)",
                     (unit, property_id, number, owner, owner),
                 )
                 units.append(unit)

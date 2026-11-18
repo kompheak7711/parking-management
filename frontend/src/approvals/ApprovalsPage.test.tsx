@@ -330,7 +330,7 @@ describe("Waiting for approval", () => {
     });
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Review: Move payment to the right Unit",
+        name: "Review: Move payment to the right Parking",
       }),
     );
     const dialog = screen.getByRole("dialog");
@@ -519,7 +519,7 @@ describe("Waiting for approval", () => {
     );
   });
 
-  it("TEST-FE-2143 (round 15) the row button says Review; Review shows the Refund method by name and the reference note; a name that could not be read leaves its row out; a Customer with no Unit is written as plain text in the list", async () => {
+  it("TEST-FE-2143 (round 15) the row button says Review; Review shows the Refund method by name and the reference note; a name that could not be read leaves its row out; a Customer with no Parking is written as plain text in the list", async () => {
     const CREDIT = draft(
       "d-7",
       "REFUND",

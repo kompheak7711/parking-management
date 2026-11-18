@@ -1,5 +1,6 @@
 // DL-243: the Joint Inspection screens. TEST-FE-2290 to TEST-FE-2299.
 // DL-244: the printed copy and the Unit page card. TEST-FE-2305 and TEST-FE-2306.
+import { PROBLEM_REPORTS } from "../leases/parking";
 import {
   cleanup,
   fireEvent,
@@ -587,9 +588,17 @@ describe("Joint Inspection (DL-243)", () => {
     });
     const { api } = fakeApi(done);
     openForm(api, STAFF);
-    expect(
-      await screen.findByRole("link", { name: "Problem report UP260007" }),
-    ).toHaveAttribute("href", "#/problems/pr%3Ar-7");
+    // Parking Step 6: no Problem reports page on Parking, so the report is not a link.
+    if (PROBLEM_REPORTS) {
+      expect(
+        await screen.findByRole("link", { name: "Problem report UP260007" }),
+      ).toHaveAttribute("href", "#/problems/pr%3Ar-7");
+    } else {
+      await screen.findByRole("img", { name: "Tenant signs here" });
+      expect(
+        screen.queryByRole("link", { name: "Problem report UP260007" }),
+      ).toBeNull();
+    }
     expect(screen.queryByRole("button", { name: "Broken" })).toBeNull();
     expect(
       screen.getByRole("img", { name: "Tenant signs here" }),
@@ -742,7 +751,7 @@ describe("Joint Inspection (DL-243)", () => {
     });
   });
 
-  it("TEST-FE-2306 the Unit page lists the Unit's inspections newest first and leaves out other Units", async () => {
+  it("TEST-FE-2306 the Parking page lists the Parking's inspections newest first and leaves out other Parking", async () => {
     const list = vi.fn(() =>
       Promise.resolve([
         row(),

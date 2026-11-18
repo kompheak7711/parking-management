@@ -527,7 +527,7 @@ def customer_aging(
         "Customer debt aging",
         f"{TODAY}, {_day(today)}",
         TODAY,
-        (C("customer_name", "Customer"), C("unit_number", "Unit"), *BUCKETS),
+        (C("customer_name", "Customer"), C("unit_number", "Parking"), *BUCKETS),
         tuple(rows),
         ok,
         text,

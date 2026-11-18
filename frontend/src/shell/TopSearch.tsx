@@ -13,8 +13,8 @@ const TEXT = {
   label: ["Search", "ស្វែងរក"], // new
   // Owner 07/11/2026: the design's placeholder (i18n.js search_ph).
   placeholder: [
-    "Search Invoice, Receipt, Customer or Unit",
-    "ស្វែងរក វិក្កយបត្រ បង្កាន់ដៃ អតិថិជន ឬបន្ទប់",
+    "Search Invoice, Receipt, Customer or Parking",
+    "ស្វែងរក វិក្កយបត្រ បង្កាន់ដៃ អតិថិជន ឬចំណត",
   ],
   // new: the server has no number search yet (open question in the UI audit report).
   numbers: [
@@ -23,7 +23,7 @@ const TEXT = {
   ],
   none: ["Nothing found for “{0}”.", "រកមិនឃើញ “{0}” ទេ។"], // new
   customer: ["Customer", "អតិថិជន"], // new
-  unit: ["Unit", "បន្ទប់"], // new
+  unit: ["Parking", "ចំណត"], // new
   failed: [
     "Search did not answer. Try again.",
     "ការស្វែងរកមិនឆ្លើយ។ សូមព្យាយាមម្តងទៀត។",

@@ -48,7 +48,7 @@ def request(today: date, **changes: Any) -> str:
         "contact_by": "EMAIL",
         "email": "sokha@example.com",
         "name": " Sokha Chan ",
-        "unit_type": "TWO_BEDROOM",
+        "unit_type": "MOTORBIKE",
         "visit_on": visit_day(today).isoformat(),
         "visit_part": "AFTERNOON",
         "move_in": f"{today + timedelta(days=40):%Y-%m}",
@@ -64,10 +64,10 @@ def test_an_inquiry_is_saved_with_a_number_and_a_repeat_joins_it(
     sokha, other = 950001, 950002
     choices = run(db.runtime_url, CHOICES, db.property_id, sokha, db.owner)
     assert [entry["code"] for entry in choices["unit_types"]] == [
-        "STUDIO",
-        "ONE_BEDROOM",
-        "TWO_BEDROOM",
-        "THREE_BEDROOM",
+        "COVERED",
+        "UNCOVERED",
+        "MOTORBIKE",
+        "TUK_TUK_FOOD_CART",
     ]
     assert choices["phone"] is None
     today = date.fromisoformat(choices["today"])
@@ -128,7 +128,7 @@ def test_an_inquiry_is_saved_with_a_number_and_a_repeat_joins_it(
     joined = run(
         db.runtime_url, INQUIRY, db.property_id, again, sokha, sokha, "km",
         request(today, contact_by="WHATSAPP", email=None, visit_on=None, visit_part=None,
-                move_in="LATER", note=None, unit_type="STUDIO"),
+                move_in="LATER", note=None, unit_type="COVERED"),
         db.owner,
     )  # fmt: skip
     assert joined == {
@@ -153,7 +153,7 @@ def test_an_inquiry_is_saved_with_a_number_and_a_repeat_joins_it(
     ]
     first_row = rows[0]
     assert first_row["phone"] == "+85512800200" and first_row["email"] == "sokha@example.com"
-    assert first_row["unit_type_en"] == "2 bedrooms" and first_row["visit_part"] == "AFTERNOON"
+    assert first_row["unit_type_en"] == "Motorbike" and first_row["visit_part"] == "AFTERNOON"
     assert first_row["move_in_month"] == f"{today + timedelta(days=40):%Y-%m}"
     assert [kid["number"] for kid in first_row["joined"]] == [f"VR{year}0002"]
     assert first_row["joined"][0]["move_in_month"] is None

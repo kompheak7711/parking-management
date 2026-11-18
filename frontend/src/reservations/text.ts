@@ -230,16 +230,16 @@ const TEXT = {
   saved_cancel: ["The Reservation was cancelled.", "ការកក់ត្រូវបានលុបចោល។"],
   // V1-060 B6: Make Reservation in the new design (owner 27/10/2026).
   mk_title: ["New Reservation", "ធ្វើការកក់"],
-  mk_unit: ["Unit", "បន្ទប់"],
-  mk_choose_unit: ["Choose a vacant Unit", "ជ្រើសរើសបន្ទប់ទំនេរ"],
-  mk_no_units: ["No Unit is vacant now.", "ឥឡូវនេះមិនមានបន្ទប់ទំនេរទេ។"],
+  mk_unit: ["Parking", "ចំណត"],
+  mk_choose_unit: ["Choose a vacant Parking", "ជ្រើសរើសចំណតទំនេរ"],
+  mk_no_units: ["No Parking is vacant now.", "ឥឡូវនេះមិនមានចំណតទំនេរទេ។"],
   mk_customer: ["Customer", "អតិថិជន"],
   mk_choose_customer: ["Choose a Customer", "ជ្រើសរើសអតិថិជន"],
   mk_new_customer: ["New Customer", "អតិថិជនថ្មី"],
   // Telegram step 3c (DL-173): Make Reservation from a Visit request. New Khmer.
   mk_visit_from: [
     "From Viewing request {0}: {1} · {2}",
-    "ពីសំណើមកមើលបន្ទប់ {0}៖ {1} · {2}",
+    "ពីសំណើមកមើលចំណត {0}៖ {1} · {2}",
   ],
   mk_visit_found: [
     "The Customer with this phone is chosen.",

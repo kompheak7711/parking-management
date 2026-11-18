@@ -18,26 +18,26 @@ const TEXT = {
   cancel: ["Cancel", "បោះបង់"],
   // Page
   sub: [
-    "Daily and weekly guests in vacant Units. Full payment before check-in.",
+    "Daily and weekly guests in vacant Parking. Full payment before check-in.",
     // new
-    "ភ្ញៀវប្រចាំថ្ងៃ និងប្រចាំសប្ដាហ៍ក្នុងបន្ទប់ទំនេរ។ បង់ពេញមុនពេលចូល។",
+    "ភ្ញៀវប្រចាំថ្ងៃ និងប្រចាំសប្ដាហ៍ក្នុងចំណតទំនេរ។ បង់ពេញមុនពេលចូល។",
   ],
   add: ["New booking", "ការកក់ថ្មី"],
   tabs: ["Views", "ទិដ្ឋភាព"],
   tab_cal: ["Calendar", "ប្រតិទិន"],
   tab_list: ["Bookings", "ការកក់"],
   f_search: [
-    "Search guest, phone, booking or Unit",
-    "ស្វែងរកភ្ញៀវ ទូរស័ព្ទ ការកក់ ឬបន្ទប់",
+    "Search guest, phone, booking or Parking",
+    "ស្វែងរកភ្ញៀវ ទូរស័ព្ទ ការកក់ ឬចំណត",
   ],
   prev: ["Earlier", "មុន"],
   next: ["Later", "បន្ទាប់"],
   this_week: ["Today", "ថ្ងៃនេះ"],
-  c_unit: ["Unit", "បន្ទប់"],
+  c_unit: ["Parking", "ចំណត"],
   lease: ["Lease", "កិច្ចសន្យា"],
   reserved: ["Reserved", "បានកក់ទុក"],
   not_for_rent: ["Not for rent", "មិនជួល"],
-  cal_none: ["There are no Units yet.", "មិនទាន់មានបន្ទប់នៅឡើយទេ។"],
+  cal_none: ["There are no Parking yet.", "មិនទាន់មានចំណតនៅឡើយទេ។"],
   // List
   c_no: ["No.", "លេខ"],
   c_guest: ["Guest", "ភ្ញៀវ"],
@@ -65,11 +65,11 @@ const TEXT = {
   src_BOOKING_SITE: ["Booking site", "គេហទំព័រកក់"],
   // New booking
   new_sub: [
-    "Choose the Unit and the nights. The price follows the rules in Settings.",
+    "Choose the Parking and the nights. The price follows the rules in Settings.",
     // new
-    "ជ្រើសបន្ទប់ និងយប់។ តម្លៃគិតតាមច្បាប់ក្នុងការកំណត់។",
+    "ជ្រើសចំណត និងយប់។ តម្លៃគិតតាមច្បាប់ក្នុងការកំណត់។",
   ],
-  f_unit: ["Unit", "បន្ទប់"],
+  f_unit: ["Parking", "ចំណត"],
   f_in: ["Check-in", "ថ្ងៃចូល"],
   f_out: ["Check-out", "ថ្ងៃចេញ"],
   f_guests: ["Guests", "ចំនួនភ្ញៀវ"],
@@ -102,9 +102,9 @@ const TEXT = {
   // Price box
   p_title: ["Price", "តម្លៃ"],
   p_pick: [
-    "Choose a Unit and the nights to see the price.",
+    "Choose a Parking and the nights to see the price.",
     // new
-    "ជ្រើសបន្ទប់ និងយប់ ដើម្បីមើលតម្លៃ។",
+    "ជ្រើសចំណត និងយប់ ដើម្បីមើលតម្លៃ។",
   ],
   l_NIGHTS: ["{0} × night {1}", "{0} × យប់ {1}"],
   l_WEEKS: ["{0} × week {1}", "{0} × សប្ដាហ៍ {1}"],
@@ -132,30 +132,30 @@ const TEXT = {
     "កិច្ចសន្យាជួលគ្របដណ្តប់យប់មួយក្នុងចំណោមយប់ទាំងនេះ។",
   ],
   b_RESERVED: [
-    "The Unit is reserved for a tenant.",
+    "The Parking is reserved for a tenant.",
     // new
-    "បន្ទប់នេះបានកក់ទុកសម្រាប់អ្នកជួល។",
+    "ចំណតនេះបានកក់ទុកសម្រាប់អ្នកជួល។",
   ],
-  b_NOT_FOR_RENT: ["The Unit is not for rent.", "បន្ទប់នេះមិនជួលទេ។"],
+  b_NOT_FOR_RENT: ["The Parking is not for rent.", "ចំណតនេះមិនជួលទេ។"],
   b_UNIT_UNDER_MAINTENANCE: [
-    "The Unit is under maintenance.",
-    "បន្ទប់កំពុងជួសជុល។",
+    "The Parking is under maintenance.",
+    "ចំណតកំពុងជួសជុល។",
   ],
-  b_UNIT_OUT_OF_SERVICE: ["The Unit is out of service.", "បន្ទប់ឈប់ប្រើ។"],
+  b_UNIT_OUT_OF_SERVICE: ["The Parking is out of service.", "ចំណតឈប់ប្រើ។"],
   p_too_long: [
     "A short stay is at most 29 nights. A longer stay is a Lease.",
     // new
     "ការស្នាក់នៅខ្លីមិនលើសពី 29 យប់ទេ។ ការស្នាក់នៅយូរជាងនេះគឺកិច្ចសន្យាជួល។",
   ],
   p_no_rent: [
-    "This Unit has no monthly Rent, so it has no short-stay price.",
+    "This Parking has no monthly Rent, so it has no short-stay price.",
     // new
-    "បន្ទប់នេះគ្មានថ្លៃជួលប្រចាំខែ ដូច្នេះគ្មានតម្លៃស្នាក់នៅខ្លីទេ។",
+    "ចំណតនេះគ្មានថ្លៃជួលប្រចាំខែ ដូច្នេះគ្មានតម្លៃស្នាក់នៅខ្លីទេ។",
   ],
   // Errors
   e_sum1: ["1 thing needs fixing:", "មាន 1 ចំណុចត្រូវកែ៖"],
   e_sum: ["{0} things need fixing:", "មាន {0} ចំណុចត្រូវកែ៖"],
-  e_unit: ["Choose the Unit.", "ជ្រើសបន្ទប់។"],
+  e_unit: ["Choose the Parking.", "ជ្រើសចំណត។"],
   e_dates: [
     "The check-out day is after the check-in day.",
     "ថ្ងៃចេញត្រូវនៅក្រោយថ្ងៃចូល។",
@@ -167,9 +167,9 @@ const TEXT = {
   e_site: ["Name the booking site.", "ដាក់ឈ្មោះគេហទំព័រកក់។"],
   e_guests: ["Guests are 1 to 10.", "ភ្ញៀវពី 1 ដល់ 10 នាក់។"],
   e_free: [
-    "These nights cannot be booked in this Unit.",
+    "These nights cannot be booked in this Parking.",
     // new
-    "យប់ទាំងនេះមិនអាចកក់ក្នុងបន្ទប់នេះបានទេ។",
+    "យប់ទាំងនេះមិនអាចកក់ក្នុងចំណតនេះបានទេ។",
   ],
   f_right: [
     "Your account may not make bookings.",
@@ -177,9 +177,9 @@ const TEXT = {
     "គណនីរបស់អ្នកមិនអាចធ្វើការកក់បានទេ។",
   ],
   f_taken: [
-    "Someone has just booked one of these nights. Choose other nights or another Unit.",
+    "Someone has just booked one of these nights. Choose other nights or another Parking.",
     // new
-    "មាននរណាម្នាក់ទើបតែកក់យប់មួយក្នុងចំណោមនេះ។ ជ្រើសយប់ផ្សេង ឬបន្ទប់ផ្សេង។",
+    "មាននរណាម្នាក់ទើបតែកក់យប់មួយក្នុងចំណោមនេះ។ ជ្រើសយប់ផ្សេង ឬចំណតផ្សេង។",
   ],
   f_refused: [
     "This booking could not be saved. Check what you entered.",
@@ -253,8 +253,8 @@ const TEXT = {
     "ទុក {0} សម្រាប់ការខូចខាត ប្រគល់ {1} វិញ",
   ],
   dep_wait: [
-    "The deposit ends after check-out and the Unit check, once the damage charge is decided.",
-    "ប្រាក់កក់បញ្ចប់ក្រោយចេញ និងពិនិត្យបន្ទប់ ពេលសម្រេចថ្លៃខូចខាតរួច។",
+    "The deposit ends after check-out and the Parking check, once the damage charge is decided.",
+    "ប្រាក់កក់បញ្ចប់ក្រោយចេញ និងពិនិត្យចំណត ពេលសម្រេចថ្លៃខូចខាតរួច។",
   ],
   in_t: ["Check-in", "ការចូល"],
   in_paid: ["The stay is paid", "ការស្នាក់នៅបានបង់"],
@@ -276,8 +276,8 @@ const TEXT = {
   in_b: ["Check in", "ចូល"],
   out_t: ["Check-out", "ការចេញ"],
   out_s: [
-    "The Unit is Cleaning until the Unit check is done.",
-    "បន្ទប់កំពុងសម្អាតរហូតដល់ពិនិត្យបន្ទប់រួច។",
+    "The Parking is Cleaning until the Parking check is done.",
+    "ចំណតកំពុងសម្អាតរហូតដល់ពិនិត្យចំណតរួច។",
   ],
   out_b: ["Check out", "ចេញ"],
   // UI v81 (owner 07/11): Check out before the booked check-out day.
@@ -293,14 +293,14 @@ const TEXT = {
   ], // new
   out_early_ok: ["Check out early", "ចុះចេញមុនថ្ងៃ"], // new
   out_early_keep: ["Keep the stay", "រក្សាការស្នាក់នៅ"], // new
-  room_t: ["Unit check", "ពិនិត្យបន្ទប់"],
-  room_due: ["Unit check due on {0}.", "ត្រូវពិនិត្យបន្ទប់នៅថ្ងៃ {0}។"],
-  room_done: ["Unit checked {0}.", "បានពិនិត្យបន្ទប់ {0}។"],
+  room_t: ["Parking check", "ពិនិត្យបន្ទប់"],
+  room_due: ["Parking check due on {0}.", "ត្រូវពិនិត្យចំណតនៅថ្ងៃ {0}។"],
+  room_done: ["Parking checked {0}.", "បានពិនិត្យចំណត {0}។"],
   // DL-222: the room check reports problems (Problem reports), never a cost. Khmer is new.
   room_problems: ["Problems found", "បញ្ហាដែលរកឃើញ"],
   room_hint: [
-    "Report each problem. It becomes a Problem report of the Unit. The charge is set on the booking later.",
-    "រាយការណ៍បញ្ហានីមួយៗ។ វាក្លាយជារបាយការណ៍បញ្ហារបស់បន្ទប់។ ថ្លៃត្រូវកំណត់លើការកក់ពេលក្រោយ។",
+    "Report each problem. It becomes a Problem report of the Parking. The charge is set on the booking later.",
+    "រាយការណ៍បញ្ហានីមួយៗ។ វាក្លាយជារបាយការណ៍បញ្ហារបស់ចំណត។ ថ្លៃត្រូវកំណត់លើការកក់ពេលក្រោយ។",
   ],
   room_add: ["Report a problem", "រាយការណ៍បញ្ហា"],
   room_type: ["Type", "ប្រភេទ"],
@@ -313,7 +313,7 @@ const TEXT = {
     "ដើម្បីរាយការណ៍បញ្ហា គណនីរបស់អ្នកត្រូវមានសិទ្ធិបន្ថែមរបាយការណ៍បញ្ហា។",
   ],
   room_note: ["Note", "កំណត់ចំណាំ"],
-  room_b: ["Unit check done", "ពិនិត្យបន្ទប់រួច"],
+  room_b: ["Parking check done", "ពិនិត្យចំណតរួច"],
   e_type: ["Pick the type of problem.", "សូមជ្រើសរើសប្រភេទបញ្ហា។"],
   e_wrong: ["Say what is wrong.", "សូមប្រាប់ថាមានបញ្ហាអ្វី។"],
   e_cost: [
@@ -321,7 +321,7 @@ const TEXT = {
     "វាយតម្លៃជាដុល្លារ ឧទាហរណ៍ 80 ឬ 80.50។",
   ],
   dmg_t: ["Damage", "ការខូចខាត"],
-  dmg_problems: ["Problems from the Unit check", "បញ្ហាពីការពិនិត្យបន្ទប់"],
+  dmg_problems: ["Problems from the Parking check", "បញ្ហាពីការពិនិត្យចំណត"],
   dmg_due: [
     "Decide the damage charge. The deposit waits until then.",
     "សូមសម្រេចថ្លៃខូចខាត។ ប្រាក់កក់រង់ចាំរហូតដល់ពេលនោះ។",
@@ -379,11 +379,11 @@ const TEXT = {
   ev_DEPOSIT_TAKEN: ["Deposit taken", "បានទទួលប្រាក់កក់"],
   ev_CHECKED_IN: ["Checked in", "បានចូល"],
   ev_CHECKED_OUT: ["Checked out", "បានចេញ"],
-  ev_ROOM_CHECKED: ["Unit checked", "បានពិនិត្យបន្ទប់"],
+  ev_ROOM_CHECKED: ["Unit checked", "បានពិនិត្យចំណត"],
   // DL-242: the cleaner tapped Problem found in the Staff bot. Khmer is new.
   ev_UNIT_PROBLEM_FOUND: [
-    "Problem found at the Unit check",
-    "រកឃើញបញ្ហាពេលពិនិត្យបន្ទប់",
+    "Problem found at the Parking check",
+    "រកឃើញបញ្ហាពេលពិនិត្យចំណត",
   ],
   ev_DAMAGE_APPROVED: ["Damage approved", "បានអនុម័តការខូចខាត"],
   ev_DAMAGE_REFUSED: ["Damage rejected", "បានបដិសេធការខូចខាត"],
@@ -415,8 +415,8 @@ const TEXT = {
   f_nights: ["Nights", "ចំនួនយប់"],
   // new
   f_free_only: [
-    "Only Units free on all these nights can be picked.",
-    "អាចជ្រើសបានតែបន្ទប់ដែលទំនេរគ្រប់យប់ទាំងនេះ។",
+    "Only Parking free on all these nights can be picked.",
+    "អាចជ្រើសបានតែចំណតដែលទំនេរគ្រប់យប់ទាំងនេះ។",
   ],
   // new
   u_busy: ["not free", "មិនទំនេរ"],
@@ -480,7 +480,7 @@ const TEXT = {
   ],
   // Booking page, more
   // new
-  d_unit: ["Unit", "បន្ទប់"],
+  d_unit: ["Parking", "ចំណត"],
   // new
   d_nights: ["Nights", "ចំនួនយប់"],
   // new
@@ -542,7 +542,7 @@ const TEXT = {
   cl_count: ["{0} to do", "{0} ត្រូវធ្វើ"],
   cl_DAILY_CLEAN: ["Daily clean", "សម្អាតប្រចាំថ្ងៃ"],
   cl_CHANGE_OVER: ["Change-over clean", "សម្អាតពេលប្ដូរភ្ញៀវ"],
-  cl_ROOM_CHECK: ["Unit check", "ពិនិត្យបន្ទប់"],
+  cl_ROOM_CHECK: ["Parking check", "ពិនិត្យបន្ទប់"],
   cl_late: ["Due {0}", "ត្រូវធ្វើ {0}"],
   // Owner 13/11/2026: a task not done on its day shows red, and done or skipped ones fold.
   cl_late_chip: ["Late", "យឺត"],
@@ -568,7 +568,7 @@ const TEXT = {
     "{0} គ្មាន Telegram៖ សូមប្រាប់ផ្ទាល់",
   ],
   cl_cleaned_by: ["Cleaned by {0}", "{0} បានសម្អាត"],
-  cl_checked_by: ["Unit checked by {0}", "{0} បានពិនិត្យបន្ទប់"],
+  cl_checked_by: ["Parking checked by {0}", "{0} បានពិនិត្យចំណត"],
   cl_not_cleaned: ["Not cleaned: {0}", "មិនបានសម្អាត៖ {0}"],
   cl_problem_by: ["Problem found by {0}", "{0} បានរកឃើញបញ្ហា"],
   cl_problem_do: ["Write the problem on the booking", "សរសេរបញ្ហានៅលើការកក់"],
@@ -764,8 +764,8 @@ const TEXT = {
   ],
   // Mock-up round 31 (v73): the Google Maps review link of the owner's place.
   rv_message: [
-    "Thank you for staying with CHETANA Residence, {0}! If you liked your stay, please leave us a short review on Google Maps: {1}",
-    "អរគុណដែលបានស្នាក់នៅ CHETANA Residence {0}! បើអ្នកពេញចិត្ត សូមសរសេរការវាយតម្លៃខ្លីៗឱ្យយើងលើ Google Maps៖ {1}",
+    "Thank you for staying with CHETANA Parking, {0}! If you liked your stay, please leave us a short review on Google Maps: {1}",
+    "អរគុណដែលបានស្នាក់នៅ CHETANA Parking {0}! បើអ្នកពេញចិត្ត សូមសរសេរការវាយតម្លៃខ្លីៗឱ្យយើងលើ Google Maps៖ {1}",
   ],
   rv_copy: ["Copy message", "ចម្លងសារ"],
   rv_copied: ["Copied.", "បានចម្លង។"],
@@ -773,30 +773,30 @@ const TEXT = {
   rv_done: ["Review asked for on {0}.", "បានស្នើសុំការវាយតម្លៃនៅ {0}។"],
   // DL-224 (new, owner's rules of 12/11/2026): Change Unit for a booking that is not checked in
   // yet, and the special discount after a move. The Khmer needs the native check.
-  cu_t: ["Change Unit", "ប្ដូរបន្ទប់"],
+  cu_t: ["Change Parking", "ប្ដូរចំណត"],
   cu_s: [
-    "Move the guest to another Unit before check-in. The guest keeps the agreed price of {0}.",
-    "ផ្លាស់ភ្ញៀវទៅបន្ទប់ផ្សេងមុនពេលចូល។ ភ្ញៀវរក្សាតម្លៃដែលបានព្រមព្រៀង {0}។",
+    "Move the guest to another Parking before check-in. The guest keeps the agreed price of {0}.",
+    "ផ្លាស់ភ្ញៀវទៅចំណតផ្សេងមុនពេលចូល។ ភ្ញៀវរក្សាតម្លៃដែលបានព្រមព្រៀង {0}។",
   ],
-  cu_loading: ["Looking for free Units…", "កំពុងរកបន្ទប់ទំនេរ…"],
+  cu_loading: ["Looking for free Parking…", "កំពុងរកចំណតទំនេរ…"],
   cu_failed: [
-    "The free Units could not be loaded.",
-    "មិនអាចអានបន្ទប់ទំនេរបានទេឥឡូវនេះ។",
+    "The free Parking could not be loaded.",
+    "មិនអាចអានចំណតទំនេរបានទេឥឡូវនេះ។",
   ],
   cu_none: [
-    "No other Unit is free on these nights.",
-    "គ្មានបន្ទប់ផ្សេងទំនេរនៅយប់ទាំងនេះទេ។",
+    "No other Parking is free on these nights.",
+    "គ្មានចំណតផ្សេងទំនេរនៅយប់ទាំងនេះទេ។",
   ],
   cu_to: ["Move to", "ផ្លាស់ទៅ"],
   cu_same: ["Same type", "ប្រភេទដូចគ្នា"],
   cu_other: ["Other types", "ប្រភេទផ្សេង"],
   cu_other_note: [
-    "This Unit is another type. The price stays the same. An Owner or Manager can give a special discount after the move.",
-    "បន្ទប់នេះជាប្រភេទផ្សេង។ តម្លៃនៅដដែល។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងអាចផ្ដល់ការបញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់។",
+    "This Parking is another type. The price stays the same. An Owner or Manager can give a special discount after the move.",
+    "ចំណតនេះជាប្រភេទផ្សេង។ តម្លៃនៅដដែល។ ម្ចាស់ ឬអ្នកគ្រប់គ្រងអាចផ្ដល់ការបញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់។",
   ],
   cu_wrong: [
-    "Choose a Unit and write the reason.",
-    "សូមជ្រើសបន្ទប់ និងសរសេរមូលហេតុ។",
+    "Choose a Parking and write the reason.",
+    "សូមជ្រើសចំណត និងសរសេរមូលហេតុ។",
   ],
   cu_b: ["Move the guest", "ផ្លាស់ភ្ញៀវ"],
   cu_moved: [
@@ -806,11 +806,11 @@ const TEXT = {
   cu_hist: ["{0} to {1}", "{0} ទៅ {1}"],
   cu_no_extend: [
     "A moved stay is not extended. Make a new booking for the extra nights.",
-    "ការស្នាក់នៅដែលបានផ្លាស់បន្ទប់មិនអាចបន្តបានទេ។ សូមធ្វើការកក់ថ្មីសម្រាប់យប់បន្ថែម។",
+    "ការស្នាក់នៅដែលបានផ្លាស់ចំណតមិនអាចបន្តបានទេ។ សូមធ្វើការកក់ថ្មីសម្រាប់យប់បន្ថែម។",
   ],
   md_t: [
     "Special discount after the move",
-    "បញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់បន្ទប់",
+    "បញ្ចុះតម្លៃពិសេសក្រោយពេលផ្លាស់ចំណត",
   ],
   md_s: [
     "Owner or Manager only, once for each move. If the stay is already paid, the amount becomes the guest's Credit.",
@@ -818,7 +818,7 @@ const TEXT = {
   ],
   md_b: ["Give the special discount", "ផ្ដល់ការបញ្ចុះតម្លៃពិសេស"],
   md_credit: ["{0} is now the guest's Credit.", "{0} ឥឡូវជាឥណទានរបស់ភ្ញៀវ។"],
-  ev_UNIT_CHANGED: ["Moved to another Unit", "បានផ្លាស់ទៅបន្ទប់ផ្សេង"],
+  ev_UNIT_CHANGED: ["Moved to another Parking", "បានផ្លាស់ទៅចំណតផ្សេង"],
   ev_MOVE_DISCOUNT: ["Special discount given", "បានផ្ដល់ការបញ្ចុះតម្លៃពិសេស"],
   gh_t: ["Guest", "ភ្ញៀវ"],
   gh_returning: ["Returning guest", "ភ្ញៀវត្រឡប់មកវិញ"],
@@ -871,7 +871,7 @@ const TEXT = {
     "Quote {0} made. Copy the message for the guest.",
     "បានធ្វើសម្រង់តម្លៃ {0}។ ចម្លងសារសម្រាប់ភ្ញៀវ។",
   ],
-  q_book: ["Book this", "កក់បន្ទប់នេះ"],
+  q_book: ["Book this", "កក់ចំណតនេះ"],
   // Leasing batch (owner 13/11/2026, new; Khmer needs the native check): the price message is
   // copied on New booking instead of the Quotes tab.
   // Leasing batch (owner 13/11/2026, new; Khmer needs the native check): the new Calendar
@@ -932,8 +932,8 @@ const TEXT = {
   ],
   td_out_t: ["Check out {0}", "ចុះឈ្មោះចេញ {0}"],
   td_out_s: [
-    "{0} leaves {1}. The Unit check comes next on the booking.",
-    "{0} ចេញពី {1}។ ការពិនិត្យបន្ទប់បន្ទាប់នៅលើការកក់។",
+    "{0} leaves {1}. The Parking check comes next on the booking.",
+    "{0} ចេញពី {1}។ ការពិនិត្យចំណតបន្ទាប់នៅលើការកក់។",
   ],
   td_done_in: ["{0} is checked in.", "{0} បានចុះឈ្មោះចូល។"],
   td_done_out: ["{0} is checked out.", "{0} បានចុះឈ្មោះចេញ។"],
@@ -952,8 +952,8 @@ const TEXT = {
   pm_name: ["Type the guest's name first.", "សូមវាយឈ្មោះភ្ញៀវជាមុនសិន។"],
   pm_select: ["Select the message and copy it.", "សូមជ្រើសសារ ហើយចម្លងវា។"],
   q_message: [
-    "CHETANA Residence: quote {0}\nRoom {1}, {2} guests\n{3} to {4}, {5}\nTotal {6}\nCheck-in from {7}, check-out by {8}. Deposit {9} at check-in (cash or a card hold), given back after the Unit check.\nThis is today's price; the room is held only when you book.",
-    "CHETANA Residence៖ សម្រង់តម្លៃ {0}\nបន្ទប់ {1} ភ្ញៀវ {2} នាក់\n{3} ដល់ {4} {5}\nសរុប {6}\nចូលចាប់ពីម៉ោង {7} ចេញមុនម៉ោង {8}។ ប្រាក់កក់ {9} ពេលចូល (សាច់ប្រាក់ ឬកាត) ហើយប្រគល់វិញក្រោយពិនិត្យបន្ទប់។\nនេះជាតម្លៃថ្ងៃនេះ បន្ទប់ត្រូវបានរក្សាទុកតែពេលអ្នកកក់ប៉ុណ្ណោះ។",
+    "CHETANA Parking: quote {0}\nRoom {1}, {2} guests\n{3} to {4}, {5}\nTotal {6}\nCheck-in from {7}, check-out by {8}. Deposit {9} at check-in (cash or a card hold), given back after the Parking check.\nThis is today's price; the room is held only when you book.",
+    "CHETANA Parking៖ សម្រង់តម្លៃ {0}\nចំណត {1} ភ្ញៀវ {2} នាក់\n{3} ដល់ {4} {5}\nសរុប {6}\nចូលចាប់ពីម៉ោង {7} ចេញមុនម៉ោង {8}។ ប្រាក់កក់ {9} ពេលចូល (សាច់ប្រាក់ ឬកាត) ហើយប្រគល់វិញក្រោយពិនិត្យចំណត។\nនេះជាតម្លៃថ្ងៃនេះ ចំណតត្រូវបានរក្សាទុកតែពេលអ្នកកក់ប៉ុណ្ណោះ។",
   ],
   // Step 5c (new): month prices on a quote, the weekly report and complaints.
   q_month: [
@@ -963,7 +963,7 @@ const TEXT = {
   tab_report: ["Weekly report", "របាយការណ៍ប្រចាំសប្ដាហ៍"],
   rp_sub: [
     "Occupancy and income per unit, after cleaning, laundry and booking-site costs.",
-    "អត្រាមានអ្នកស្នាក់ និងចំណូលតាមបន្ទប់ ក្រោយដកថ្លៃសម្អាត បោកអ៊ុត និងកម្រៃគេហទំព័រកក់។",
+    "អត្រាមានអ្នកស្នាក់ និងចំណូលតាមចំណត ក្រោយដកថ្លៃសម្អាត បោកអ៊ុត និងកម្រៃគេហទំព័រកក់។",
   ],
   rp_week: ["Week {0} to {1}", "សប្ដាហ៍ {0} ដល់ {1}"],
   rp_so_far: ["so far", "រហូតមកដល់ពេលនេះ"],
@@ -972,7 +972,7 @@ const TEXT = {
   rp_occ: ["Occupancy", "អត្រាមានអ្នកស្នាក់"],
   rp_occ_s: [
     "{0} of {1} unit-nights paid · before the test {2}",
-    "បានបង់ {0} ក្នុង {1} យប់-បន្ទប់ · មុនការសាកល្បង {2}",
+    "បានបង់ {0} ក្នុង {1} យប់-ចំណត · មុនការសាកល្បង {2}",
   ],
   rp_net: ["Income after costs", "ចំណូលក្រោយដកថ្លៃ"],
   rp_net_s: ["Room income {0}", "ចំណូលបន្ទប់ {0}"],
@@ -988,7 +988,7 @@ const TEXT = {
   rp_site: ["Site fees", "កម្រៃគេហទំព័រ"],
   rp_clean: ["Cleaning", "សម្អាត"],
   rp_after: ["After costs", "ក្រោយដកថ្លៃ"],
-  rp_all: ["All units", "បន្ទប់ទាំងអស់"],
+  rp_all: ["All units", "ចំណតទាំងអស់"],
   rp_note: [
     "Site fees are the booking-site share (0% until you set it in Settings). Cleaning covers cleaning and laundry: {0} per change-over, plus {1} for each towel and sheet change.",
     "កម្រៃគេហទំព័រ ជាចំណែករបស់គេហទំព័រកក់ (០% រហូតដល់អ្នកកំណត់ក្នុងការកំណត់)។ សម្អាត រួមទាំងសម្អាត និងបោកអ៊ុត៖ {0} ក្នុងមួយការប្ដូរភ្ញៀវ បូក {1} សម្រាប់ការប្ដូរកន្សែង និងកម្រាលម្ដងៗ។",
@@ -1014,8 +1014,8 @@ const TEXT = {
   rp_print: ["Print", "បោះពុម្ព"],
   cp_add: ["Record a complaint", "កត់ត្រាបណ្ដឹង"],
   cp_what: ["What happened", "អ្វីដែលបានកើតឡើង"],
-  cp_unit: ["Tenant's Unit", "បន្ទប់អ្នកជួល"],
-  cp_none_unit: ["Not one Unit", "មិនមែនបន្ទប់ណាមួយ"],
+  cp_unit: ["Tenant's Parking", "ចំណតអ្នកជួល"],
+  cp_none_unit: ["Not one Parking", "មិនមែនចំណតណាមួយ"],
   cp_save: ["Save complaint", "រក្សាទុកបណ្ដឹង"],
   cp_empty: ["Write what happened first.", "សូមសរសេរអ្វីដែលបានកើតឡើងជាមុន។"],
   // Owner's review of 16/11/2026: History and the Unit check name the person; the paid amount.
@@ -1024,7 +1024,7 @@ const TEXT = {
   // new
   h_app: ["By the app, by itself", "ដោយកម្មវិធីដោយស្វ័យប្រវត្តិ"],
   // new
-  room_done_by: ["Unit checked by {0}, {1}.", "បានពិនិត្យបន្ទប់ដោយ {0} {1}។"],
+  room_done_by: ["Parking checked by {0}, {1}.", "បានពិនិត្យចំណតដោយ {0} {1}។"],
   // new
   room_problem_by: [
     "Problem found by {0} in the Staff bot.",

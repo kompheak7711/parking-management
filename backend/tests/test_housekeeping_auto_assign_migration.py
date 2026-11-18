@@ -70,7 +70,7 @@ def task(
     with psycopg.connect(db.owner_url) as connection:
         connection.execute(
             "INSERT INTO app.units(id,property_id,unit_number,floor,unit_type,status,created_by,"
-            "updated_by) VALUES (%s,%s,%s,'1','STUDIO',%s,%s,%s)",
+            "updated_by) VALUES (%s,%s,%s,'1','COVERED',%s,%s,%s)",
             (unit, db.property_id, number, status, db.owner, db.owner),
         )
         made = connection.execute(

@@ -70,6 +70,6 @@
         "token_file": "/run/secrets/prm_production_staff_bot_token"
       }
     },
-    "media_directory": "/var/lib/prm/media"
+    "media_directory": "/var/lib/pkm/media"
   }
 }

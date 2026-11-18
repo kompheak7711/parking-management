@@ -255,7 +255,7 @@ export class UnitUnavailableError extends Error {
 export class UnitConflictError extends Error {
   readonly status: number | undefined;
   constructor(status?: number) {
-    super("The Unit changed. Reload it before retrying.");
+    super("The Parking changed. Reload it before retrying.");
     this.name = "UnitConflictError";
     this.status = status;
   }
@@ -265,7 +265,7 @@ export class UnitConflictError extends Error {
 export class UnitInUseError extends Error {
   constructor() {
     super(
-      "This Unit has a Reservation or a Lease, so it stays for rent until they end.",
+      "This Parking has a Reservation or a Lease, so it stays for rent until they end.",
     );
     this.name = "UnitInUseError";
   }

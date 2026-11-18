@@ -9,6 +9,14 @@
 // Home screen review (owner 14/11/2026): shorter names (Viewing requests, Bookings, Checked in,
 // Missing readings); a card has a note only when it tells something the number does not.
 
+import {
+  GENERAL_LEDGER,
+  HR,
+  PRODUCTS,
+  PROBLEM_REPORTS,
+  SHORT_STAYS,
+  TELEGRAM,
+} from "../leases/parking";
 import "../shell/screens.css";
 
 import {
@@ -985,13 +993,17 @@ export function HomeScreen({
   const [lowStock, setLowStock] = useState<number | null>(null);
   const [attendance, setAttendance] = useState<AttendanceNow | null>(null);
   const sequence = useRef(0);
-  const seesVisits = capabilities?.has("visit_requests.read") === true;
+  // Parking Step 6: the cards of the parts Parking hides are never read.
+  const seesVisits =
+    TELEGRAM && capabilities?.has("visit_requests.read") === true;
   // Owner 12/11/2026: each of these cards is read only by a person known to hold its right.
-  const seesStays = capabilities?.has("short_stays.read") === true;
-  const seesStock = capabilities?.has("products.read") === true;
-  const seesAttendance = capabilities?.has("hr.attendance.read") === true;
+  const seesStays =
+    SHORT_STAYS && capabilities?.has("short_stays.read") === true;
+  const seesStock = PRODUCTS && capabilities?.has("products.read") === true;
+  const seesAttendance = HR && capabilities?.has("hr.attendance.read") === true;
   // Only a person known to see Problem reports reads the card.
-  const seesProblems = capabilities?.has("problem_reports.read") === true;
+  const seesProblems =
+    PROBLEM_REPORTS && capabilities?.has("problem_reports.read") === true;
   const checksCosts = capabilities?.has("problem_reports.costs") === true;
 
   const load = useCallback(() => {
@@ -1149,6 +1161,7 @@ export function HomeScreen({
   }
   // UI v81: shown only to a person known to hold the rights (the server checks again).
   const seesOwnerMoney =
+    GENERAL_LEDGER &&
     capabilities?.has("ledger.owner_money") === true &&
     capabilities.has("ledger.read");
   return (

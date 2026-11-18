@@ -441,7 +441,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       expect(api.list).toHaveBeenCalled();
     });
     fireEvent.click(await screen.findByRole("button", { name: "Save report" }));
-    expect(screen.getByText("Choose the Unit.")).toBeTruthy();
+    expect(screen.getByText("Choose the Parking.")).toBeTruthy();
     expect(screen.getByText("Choose the type.")).toBeTruthy();
     expect(screen.getByText("Please write this.")).toBeTruthy();
     expect(api.add).not.toHaveBeenCalled();
@@ -459,7 +459,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     fireEvent.change(screen.getByLabelText(/^What is wrong/), {
       target: { value: "  Smoke from the plug  " },
     });
-    fireEvent.change(screen.getByLabelText("Place in the Unit (if known)"), {
+    fireEvent.change(screen.getByLabelText("Place in the Parking (if known)"), {
       target: { value: "i-bath|1" },
     });
     fireEvent.click(screen.getByLabelText("Walk-in"));
@@ -1026,7 +1026,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     ).toBeNull();
   });
 
-  it("TEST-FE-1293 Monthly report: a person who may plan repairs opens it from the list; it shows one month's counts, who pays, repeats, late reports and the repair cost by Unit and by type with dollars and riel apart; another month is read again; Staff get no button", async () => {
+  it("TEST-FE-1293 Monthly report: a person who may plan repairs opens it from the list; it shows one month's counts, who pays, repeats, late reports and the repair cost by Parking and by type with dollars and riel apart; another month is read again; Staff get no button", async () => {
     const DAY: ProblemMonth = {
       month: "2026-11-01",
       received: 5,
@@ -1128,7 +1128,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     expect(await screen.findByText("Reports received")).toBeTruthy();
     expect(month).toHaveBeenCalledWith("property-1", "2026-11");
     expect(
-      screen.getByText("3 Unit · 2 Building · 1 joined, not counted again"),
+      screen.getByText("3 Parking · 2 Building · 1 joined, not counted again"),
     ).toBeTruthy();
     expect(screen.getByText("1.5 days to fix on average")).toBeTruthy();
     expect(screen.getByText("1 opened again · 0 not accepted")).toBeTruthy();
@@ -1149,9 +1149,11 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       within(byPlace).getByRole("columnheader", { name: "Place" }),
     ).toBeTruthy();
     expect(within(byPlace).getByRole("row", { name: "U101 3" })).toBeTruthy();
-    const byUnit = screen.getByRole("region", { name: "Repair cost by Unit" });
+    const byUnit = screen.getByRole("region", {
+      name: "Repair cost by Parking",
+    });
     expect(
-      within(byUnit).getByRole("columnheader", { name: "Unit" }),
+      within(byUnit).getByRole("columnheader", { name: "Parking" }),
     ).toBeTruthy();
     const u101 = within(byUnit).getByRole("row", { name: /U101/ });
     expect(within(u101).getByText("$14.00 + 40,000 ៛")).toBeTruthy();
@@ -1165,7 +1167,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
       ).getByText("No repair done this month."),
     ).toBeTruthy();
     const repeats = screen.getByRole("region", {
-      name: "Same problem again in one Unit",
+      name: "Same problem again in one Parking",
     });
     expect(
       within(repeats)
@@ -1192,7 +1194,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     expect(screen.getAllByRole("option")).toHaveLength(12);
   });
 
-  it("TEST-FE-1295 Make a Problem report from a move-out inspection finding: the form says where it comes from, keeps the Unit, copies the text and saves with the source Inspection and the finding; a finding with a report links to it; the report page links back to the move-out", async () => {
+  it("TEST-FE-1295 Make a Problem report from a move-out inspection finding: the form says where it comes from, keeps the Parking, copies the text and saves with the source Inspection and the finding; a finding with a report links to it; the report page links back to the move-out", async () => {
     window.location.hash = "#/problems/finding:f-1";
     const add = vi.fn(() =>
       Promise.resolve(report({ report_id: "r-9", report_number: "UP260009" })),
@@ -1201,7 +1203,7 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     show(apiOf({ add, finding }), STAFF);
     expect(
       await screen.findByText(
-        "From the move-out inspection of 03/11/2026, finding 2. The Unit and the text come from the finding; you may change the text.",
+        "From the move-out inspection of 03/11/2026, finding 2. The Parking and the text come from the finding; you may change the text.",
       ),
     ).toBeTruthy();
     expect(finding).toHaveBeenCalledWith("property-1", "f-1");
@@ -1312,12 +1314,12 @@ describe("Building › Problem reports (V1.1 part 7, DL-124)", () => {
     );
     expect(
       await screen.findByText(
-        /From the Unit check after short stay ST260001 \(Lim Dara, 04\/11\/2026 to 07\/11\/2026\)\./,
+        /From the Parking check after short stay ST260001 \(Lim Dara, 04\/11\/2026 to 07\/11\/2026\)\./,
       ),
     ).toBeTruthy();
-    expect(screen.getAllByText(/Short-stay Unit check/).length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByText(/Short-stay Parking check/).length,
+    ).toBeGreaterThan(0);
     expect(
       screen.getByRole("link", { name: "Open the stay" }).getAttribute("href"),
     ).toBe("#/shortstays/st%3Ab-1");

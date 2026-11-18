@@ -25,7 +25,7 @@ const TEXT = {
   sv_tabs: ["Sections of Monthly services", "ផ្នែកនៃសេវាប្រចាំខែ"],
   se_tab_rates: ["Utility rates", "អត្រាទឹកភ្លើង"], // new
   se_tab_msvc: ["Monthly services", "សេវាប្រចាំខែ"], // new
-  se_tab_units: ["Unit setup", "ការរៀបចំបន្ទប់"],
+  se_tab_units: ["Parking setup", "ការរៀបចំចំណត"],
   se_tab_users: ["Users and access", "អ្នកប្រើ និងសិទ្ធិ"], // new
   // UI v81: the Users and access page and its sub-tabs.
   ac_sub: [
@@ -173,13 +173,13 @@ const TEXT = {
   cf_one_UNIT_TYPE: ["Parking Type", "ប្រភេទចំណត"],
   cf_one_VIEW: ["View", "ទេសភាព"],
   cf_one_KITCHEN: ["Kitchen", "ផ្ទះបាយ"],
-  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈបន្ទប់"],
+  cf_one_ROOM_FEATURE: ["Room feature", "លក្ខណៈចំណត"],
   // V1.1 (DL-115 (I)): Unit features with their Feature types, and the inventory Item types.
   cf_FEATURE_TYPE: ["Feature types", "ប្រភេទលក្ខណៈ"],
-  cf_UNIT_FEATURE: ["Unit features", "លក្ខណៈបន្ទប់"],
+  cf_UNIT_FEATURE: ["Parking features", "លក្ខណៈចំណត"],
   cf_ITEM_TYPE: ["Item types", "ប្រភេទរបស់របរ"],
   cf_one_FEATURE_TYPE: ["Feature type", "ប្រភេទលក្ខណៈ"],
-  cf_one_UNIT_FEATURE: ["Unit feature", "លក្ខណៈបន្ទប់"],
+  cf_one_UNIT_FEATURE: ["Parking feature", "លក្ខណៈចំណត"],
   cf_one_ITEM_TYPE: ["Item type", "ប្រភេទរបស់របរ"],
   cf_ftype: ["Feature type", "ប្រភេទលក្ខណៈ"],
   cf_e_ftype: [
@@ -187,31 +187,31 @@ const TEXT = {
     "សូមជ្រើសប្រភេទលក្ខណៈ។ សូមបន្ថែមវានៅក្នុងបញ្ជីប្រភេទលក្ខណៈជាមុន។",
   ],
   cf_UNIT_FEATURE_note: [
-    "What the place is or has built in. It stays with the Unit and does not move. Each Unit page lists its features and how many.",
-    "អ្វីដែលកន្លែងនេះជា ឬមានភ្ជាប់ជាប់។ វានៅជាមួយបន្ទប់ ហើយមិនផ្លាស់ទី។ ទំព័របន្ទប់នីមួយៗបង្ហាញលក្ខណៈ និងចំនួន។",
+    "What the place is or has built in. It stays with the Parking and does not move. Each Parking page lists its features and how many.",
+    "អ្វីដែលកន្លែងនេះជា ឬមានភ្ជាប់ជាប់។ វានៅជាមួយចំណត ហើយមិនផ្លាស់ទី។ ទំព័រចំណតនីមួយៗបង្ហាញលក្ខណៈ និងចំនួន។",
   ],
   cf_FEATURE_TYPE_note: [
-    "Each Unit feature has one Feature type. A type a feature uses cannot be removed.",
-    "លក្ខណៈបន្ទប់នីមួយៗមានប្រភេទលក្ខណៈមួយ។ ប្រភេទដែលលក្ខណៈកំពុងប្រើ មិនអាចដកចេញបានទេ។",
+    "Each Parking feature has one Feature type. A type a feature uses cannot be removed.",
+    "លក្ខណៈចំណតនីមួយៗមានប្រភេទលក្ខណៈមួយ។ ប្រភេទដែលលក្ខណៈកំពុងប្រើ មិនអាចដកចេញបានទេ។",
   ],
   cf_ITEM_TYPE_note: [
-    "Item types group the things in a Unit's inventory, such as furniture or keys.",
-    "ប្រភេទរបស់របរ ដាក់ជាក្រុមនូវរបស់ក្នុងបញ្ជីសារពើភណ្ឌរបស់បន្ទប់ ដូចជាគ្រឿងសង្ហារឹម ឬសោ។",
+    "Item types group the things in a Parking's inventory, such as furniture or keys.",
+    "ប្រភេទរបស់របរ ដាក់ជាក្រុមនូវរបស់ក្នុងបញ្ជីសារពើភណ្ឌរបស់ចំណត ដូចជាគ្រឿងសង្ហារឹម ឬសោ។",
   ],
   // V1.1 rework part 1 (owner 2026-11-02, mock-up v53): Unit features are places.
-  us_lists: ["Unit setup lists", "បញ្ជីរៀបចំបន្ទប់"],
+  us_lists: ["Parking setup lists", "បញ្ជីរៀបចំចំណត"],
   uf20_sub: [
-    "One list. A Unit feature is always a place: a room, an area or a storage spot. Bedroom × 2 gives the places Bedroom 1 and Bedroom 2. The order here is the order on the Unit page.",
-    "បញ្ជីតែមួយ។ លក្ខណៈបន្ទប់ជាកន្លែងជានិច្ច៖ បន្ទប់ តំបន់ ឬកន្លែងទុកដាក់។ បន្ទប់គេង × 2 ផ្តល់កន្លែង បន្ទប់គេង 1 និង បន្ទប់គេង 2។ លំដាប់នៅទីនេះជាលំដាប់នៅទំព័របន្ទប់។",
+    "One list. A Parking feature is always a place: a room, an area or a storage spot. Bedroom × 2 gives the places Bedroom 1 and Bedroom 2. The order here is the order on the Parking page.",
+    "បញ្ជីតែមួយ។ លក្ខណៈចំណតជាកន្លែងជានិច្ច៖ ចំណត តំបន់ ឬកន្លែងទុកដាក់។ បន្ទប់គេង × 2 ផ្តល់កន្លែង បន្ទប់គេង 1 និង បន្ទប់គេង 2។ លំដាប់នៅទីនេះជាលំដាប់នៅទំព័រចំណត។",
   ],
   uf20_note: [
-    "Feature types and Item types are gone. Built-in things such as a wall air conditioner or a built-in wardrobe are now Products in the Unit inventory.",
-    "ប្រភេទលក្ខណៈ និងប្រភេទសម្ភារៈ ត្រូវបានដកចេញ។ របស់ភ្ជាប់ជាប់ ដូចជាម៉ាស៊ីនត្រជាក់ ឬទូខោអាវភ្ជាប់ជញ្ជាំង ឥឡូវជាផលិតផលក្នុងបញ្ជីសម្ភារៈបន្ទប់។",
+    "Feature types and Item types are gone. Built-in things such as a wall air conditioner or a built-in wardrobe are now Products in the Parking inventory.",
+    "ប្រភេទលក្ខណៈ និងប្រភេទសម្ភារៈ ត្រូវបានដកចេញ។ របស់ភ្ជាប់ជាប់ ដូចជាម៉ាស៊ីនត្រជាក់ ឬទូខោអាវភ្ជាប់ជញ្ជាំង ឥឡូវជាផលិតផលក្នុងបញ្ជីសម្ភារៈចំណត។",
   ],
   uf20_order: ["Order", "លំដាប់"],
   uf20_name: ["Name", "ឈ្មោះ"],
   uf20_khmer: ["Khmer", "ខ្មែរ"],
-  uf20_used: ["Units", "បន្ទប់"],
+  uf20_used: ["Parking", "ចំណត"],
   set_n_feature1: ["1 feature", "1 លក្ខណៈ"],
   set_n_features: ["{0} features", "{0} លក្ខណៈ"],
   cf_add: ["Add", "បន្ថែម"],
@@ -327,8 +327,8 @@ const TEXT = {
   se_bundles: ["What each role can do", "តួនាទីនីមួយៗធ្វើអ្វីបាន"],
   se_cap: ["Work", "ការងារ"],
   cap_daily: [
-    "Operations: Payments, Invoices, readings, Units, Customers, Reservations, Leases, move-out steps",
-    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន បន្ទប់ អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
+    "Operations: Payments, Invoices, readings, Parking, Customers, Reservations, Leases, move-out steps",
+    "ការងារប្រចាំថ្ងៃ៖ ការបង់ប្រាក់ វិក្កយបត្រ អំណាន ចំណត អតិថិជន ការកក់ កិច្ចសន្យា ជំហានចាកចេញ",
   ],
   cap_drafts: [
     "Prepare drafts: Final Settlements, Refunds, corrections",
@@ -551,7 +551,7 @@ const TEXT = {
   address: ["Address", "អាសយដ្ឋាន"],
   // new
   no_address: ["Not set", "មិនទាន់កំណត់"], // UI v81 round 4: "Not set" everywhere
-  se_units: ["Units", "បន្ទប់"],
+  se_units: ["Parking", "ចំណត"],
   se_tz: ["Time zone", "ល្វែងម៉ោង"],
   se_tz_n: [
     "Due dates, expiry and reading days use Phnom Penh time.",
@@ -915,8 +915,8 @@ const TEXT = {
     "មិនអាចអានអត្រាសម្អាតបានទេឥឡូវនេះ។ សូមពិនិត្យការតភ្ជាប់ ហើយព្យាយាមម្តងទៀត។",
   ],
   f_needs_rate: [
-    "A Unit Type that has Units needs a cleaning rate. Put it in another rate first. The list has been refreshed.",
-    "ប្រភេទបន្ទប់ដែលមានបន្ទប់ ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
+    "A Parking Type that has Parking needs a cleaning rate. Put it in another rate first. The list has been refreshed.",
+    "ប្រភេទចំណតដែលមានចំណត ត្រូវការអត្រាសម្អាត។ សូមដាក់វាក្នុងអត្រាផ្សេងជាមុនសិន។ បញ្ជីត្រូវបានអានម្តងទៀត។",
   ],
   // new
   note_l: ["Note", "កំណត់ចំណាំ"],
@@ -945,10 +945,10 @@ const TEXT = {
   ],
   // V1.1 part 2 (DL-118, mock-up rounds 20-25): Settings › Business.
   se20_desc: ["Description", "ការពិពណ៌នា"],
-  se20_units: ["Rentable Units", "បន្ទប់សម្រាប់ជួល"],
+  se20_units: ["Rentable Parking", "ចំណតសម្រាប់ជួល"],
   se20_units_n: [
-    "Counted from the Units list each time. Never entered.",
-    "រាប់ពីបញ្ជីបន្ទប់រាល់ពេល។ មិនវាយទេ។",
+    "Counted from the Parking list each time. Never entered.",
+    "រាប់ពីបញ្ជីចំណតរាល់ពេល។ មិនវាយទេ។",
   ],
   se20_biz: ["Business", "អាជីវកម្ម"], // UI v81 round 4: the card with the business name is "Business"
   se20_biz_name: ["Business name", "ឈ្មោះអាជីវកម្ម"],
@@ -1122,10 +1122,10 @@ const TEXT = {
   // new
   nr_STOCK_MOVEMENT: ["Stock movement", "ចលនាស្តុក"],
   nr_QUOTATION: ["Quotation", "សម្រង់តម្លៃ"],
-  nr_UNIT_PROBLEM: ["Unit Problem", "បញ្ហាបន្ទប់"],
+  nr_UNIT_PROBLEM: ["Parking Problem", "បញ្ហាចំណត"],
   nr_BUILDING_PROBLEM: ["Building problem", "បញ្ហាអគារ"],
   // new: Telegram bots step 3a (DL-171).
-  nr_VISIT_REQUEST: ["Viewing request", "សំណើមកមើលបន្ទប់"],
+  nr_VISIT_REQUEST: ["Viewing request", "សំណើមកមើលចំណត"],
   // Daily and weekly rent.
   nr_SHORT_STAY: ["Short-stay booking", "ការកក់ស្នាក់នៅខ្លី"],
   nr_SHORT_STAY_QUOTE: ["Short-stay price quote", "សម្រង់តម្លៃស្នាក់នៅខ្លី"],

@@ -6,7 +6,13 @@
 // Lease) and DetailLayout (about 60 / 40); the Lease facts in columns; the Customer card under
 // Deposits (design v81).
 
-import { PET_DEPOSIT } from "./parking";
+import { PET_DEPOSIT, TELEGRAM } from "./parking";
+import { PEOPLE_MOVE_IN } from "./parking";
+import {
+  ChangeVehicleDialog,
+  MoveInVehicleDialog,
+  VehicleCard,
+} from "./VehicleDialogs";
 import { LeaseJointCard } from "../joint/LeaseJointCard";
 import {
   type JointApi,
@@ -83,11 +89,6 @@ import {
   leaseNo,
 } from "./leasesData";
 import { hasLeaseText, lt } from "./text";
-import {
-  ChangeVehicleDialog,
-  MoveInVehicleDialog,
-  VehicleCard,
-} from "./VehicleDialogs";
 import {
   DetailLayout,
   FactList,
@@ -916,30 +917,6 @@ export function LeaseDetail({
                             dayText(lease.actual_termination_date),
                           )}
                         </span>
-                      </span>
-                      <span className="ui-small">
-                        {lt(language, "in_pending")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : lease.occupancies.length === 0 ? (
-                <p className="ui-muted">
-                  {lease.planned_occupant_customer_ids.length > 0
-                    ? lt(
-                        language,
-                        "planned",
-                        lease.planned_occupant_customer_ids.length,
-                      )
-                    : lt(language, "no_movein_yet")}
-                </p>
-              ) : (
-                <ul className="ui-plain">
-                  {lease.occupancies.map((occupancy) => (
-                    <li className="ui-line" key={occupancy.occupancy_id}>
-                      {customerLink(
-                        occupancy.customer_id,
-                        occupancy.customer_name,
                       ) : undefined,
                   },
                   {
@@ -1068,107 +1045,125 @@ export function LeaseDetail({
                   propertyId={propertyId}
                 />
               )}
-            <section aria-labelledby="lease-occupants" className="ui-card">
-              <div className="ui-chead">
-                <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
-                {mayAddOccupant && occupantsFull && (
-                  <span className="ui-sub2">{lt(language, "occ_full")}</span>
-                )}
-                {mayAddOccupant && !occupantsFull && (
-                  <button
-                    className="ui-btn"
-                    onClick={() => {
-                      open("occupant");
-                    }}
-                    type="button"
-                  >
-                    <Icon name="plus" />
-                    {lt(language, "add_occ")}
-                  </button>
-                )}
-              </div>
-              {lease.occupancies.length === 0 &&
-              lease.planned_occupants.length > 0 ? (
-                <ul className="ui-plain">
-                  {lease.planned_occupants.map((person) => (
-                    <li className="ui-line" key={person.customer_id}>
-                      <span>
-                        {customerLink(person.customer_id, person.customer_name)}
-                        <span className="ui-sub2">
-                          {lt(
-                            language,
-                            person.customer_id === lease.primary_tenant_id
-                              ? "primary_tag"
-                              : "occ_tag",
+            {/* Parking Step 4: the vehicle takes the Occupants card; the people card stays
+                behind PEOPLE_MOVE_IN. */}
+            {!PEOPLE_MOVE_IN && (
+              <VehicleCard
+                customerLink={customerLink}
+                language={language}
+                lease={lease}
+                mayChange={mayChangeVehicle}
+                onChange={() => {
+                  open("vehicle");
+                }}
+              />
+            )}
+            {PEOPLE_MOVE_IN && (
+              <section aria-labelledby="lease-occupants" className="ui-card">
+                <div className="ui-chead">
+                  <h2 id="lease-occupants">{lt(language, "occupants")}</h2>
+                  {mayAddOccupant && occupantsFull && (
+                    <span className="ui-sub2">{lt(language, "occ_full")}</span>
+                  )}
+                  {mayAddOccupant && !occupantsFull && (
+                    <button
+                      className="ui-btn"
+                      onClick={() => {
+                        open("occupant");
+                      }}
+                      type="button"
+                    >
+                      <Icon name="plus" />
+                      {lt(language, "add_occ")}
+                    </button>
+                  )}
+                </div>
+                {lease.occupancies.length === 0 &&
+                lease.planned_occupants.length > 0 ? (
+                  <ul className="ui-plain">
+                    {lease.planned_occupants.map((person) => (
+                      <li className="ui-line" key={person.customer_id}>
+                        <span>
+                          {customerLink(
+                            person.customer_id,
+                            person.customer_name,
                           )}
-                        </span>
-                      </span>
-                      <span className="ui-small">
-                        {lt(language, "in_pending")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : lease.occupancies.length === 0 ? (
-                <p className="ui-muted">
-                  {lease.planned_occupant_customer_ids.length > 0
-                    ? lt(
-                        language,
-                        "planned",
-                        lease.planned_occupant_customer_ids.length,
-                      )
-                    : lt(language, "no_movein_yet")}
-                </p>
-              ) : (
-                <ul className="ui-plain">
-                  {lease.occupancies.map((occupancy) => (
-                    <li className="ui-line" key={occupancy.occupancy_id}>
-                      {customerLink(
-                        occupancy.customer_id,
-                        occupancy.customer_name,
-                      )}
-                      <span className="ui-small ui-num">
-                        {lt(
-                          language,
-                          "in_since",
-                          dayText(occupancy.move_in_date),
-                        )}
-                        {occupancy.move_out_date !== null &&
-                          ` · ${lt(language, "out_on", dayText(occupancy.move_out_date))}`}
-                      </span>
-                      {moveOutState(occupancy) === "may" && (
-                        <button
-                          className="ui-btn"
-                          onClick={() => {
-                            setLeaving(occupancy);
-                            open("moveout");
-                          }}
-                          type="button"
-                        >
-                          {lt(language, "mo_button")}
-                        </button>
-                      )}
-                      {running &&
-                        may("reservations.complete") &&
-                        (moveOutState(occupancy) === "last" ||
-                          moveOutState(occupancy) === "primary") && (
-                          <span className="ui-small ui-muted">
+                          <span className="ui-sub2">
                             {lt(
                               language,
-                              moveOutState(occupancy) === "last"
-                                ? "mo_last_signer"
-                                : "mo_primary",
+                              person.customer_id === lease.primary_tenant_id
+                                ? "primary_tag"
+                                : "occ_tag",
                             )}
                           </span>
+                        </span>
+                        <span className="ui-small">
+                          {lt(language, "in_pending")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : lease.occupancies.length === 0 ? (
+                  <p className="ui-muted">
+                    {lease.planned_occupant_customer_ids.length > 0
+                      ? lt(
+                          language,
+                          "planned",
+                          lease.planned_occupant_customer_ids.length,
+                        )
+                      : lt(language, "no_movein_yet")}
+                  </p>
+                ) : (
+                  <ul className="ui-plain">
+                    {lease.occupancies.map((occupancy) => (
+                      <li className="ui-line" key={occupancy.occupancy_id}>
+                        {customerLink(
+                          occupancy.customer_id,
+                          occupancy.customer_name,
                         )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="ui-small ui-muted">
-                {lt(language, "occupants_note")}
-              </p>
-            </section>
+                        <span className="ui-small ui-num">
+                          {lt(
+                            language,
+                            "in_since",
+                            dayText(occupancy.move_in_date),
+                          )}
+                          {occupancy.move_out_date !== null &&
+                            ` · ${lt(language, "out_on", dayText(occupancy.move_out_date))}`}
+                        </span>
+                        {moveOutState(occupancy) === "may" && (
+                          <button
+                            className="ui-btn"
+                            onClick={() => {
+                              setLeaving(occupancy);
+                              open("moveout");
+                            }}
+                            type="button"
+                          >
+                            {lt(language, "mo_button")}
+                          </button>
+                        )}
+                        {running &&
+                          may("reservations.complete") &&
+                          (moveOutState(occupancy) === "last" ||
+                            moveOutState(occupancy) === "primary") && (
+                            <span className="ui-small ui-muted">
+                              {lt(
+                                language,
+                                moveOutState(occupancy) === "last"
+                                  ? "mo_last_signer"
+                                  : "mo_primary",
+                              )}
+                            </span>
+                          )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="ui-small ui-muted">
+                  {lt(language, "occupants_note")}
+                </p>
+              </section>
+            )}
             <section aria-labelledby="lease-rent" className="ui-card">
               <h2 id="lease-rent">{lt(language, "rent_t")}</h2>
               {/* Design v81: one label column (Initial Rent, Period, Due date, Then,
@@ -1364,9 +1359,10 @@ export function LeaseDetail({
                               )}
                       </p>
                     </>
-                  ) : (
+                  ) : PET_DEPOSIT ? (
+                    // Parking Step 5: no pet on Parking, so no line about one.
                     <p className="ui-muted">{lt(language, "no_pet")}</p>
-                  )}
+                  ) : null}
                 </>
               )}
               <p className="ui-small ui-muted">{lt(language, "dep_note")}</p>
@@ -1383,7 +1379,9 @@ export function LeaseDetail({
               propertyId={propertyId}
               reports={reports}
             />
-            {signed &&
+            {/* Parking Step 6: no Telegram on Parking (TELEGRAM). */}
+            {TELEGRAM &&
+              signed &&
               lease.end_date !== null &&
               today <= lease.end_date &&
               may("leases.sign") && (

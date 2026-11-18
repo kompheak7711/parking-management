@@ -67,7 +67,7 @@ def make_lease(db: HrDatabase, unit: str, name: str) -> dict[str, Any]:
     with psycopg.connect(db.owner_url) as connection:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
-            "created_by, updated_by) VALUES (%s, %s, %s, '6', 'ONE_BEDROOM', 'VACANT', %s, %s)",
+            "created_by, updated_by) VALUES (%s, %s, %s, '6', 'UNCOVERED', 'VACANT', %s, %s)",
             (unit_id, db.property_id, unit, db.owner, db.owner),
         )
         connection.execute(

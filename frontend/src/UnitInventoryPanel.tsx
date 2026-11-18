@@ -266,14 +266,14 @@ export function UnitInventoryPanel({
     const operation = ++sequence.current;
     setBusy(true);
     setProblem(null);
-    setNote("Saving the Unit inventory…");
+    setNote("Saving the Parking inventory…");
     void api
       .saveInventory(inventory, lines)
       .then((saved) => {
         if (operation !== sequence.current) return;
         setInventory(saved);
         setRows(null);
-        setNote("Unit inventory saved. The earlier list stays in History.");
+        setNote("Parking inventory saved. The earlier list stays in History.");
         onSaved?.();
       })
       .catch((error: unknown) => {
@@ -524,8 +524,8 @@ export function UnitInventoryPanel({
       </table>
       <p className="ui-small ui-muted">
         {places.length === 0
-          ? "Where lists this Unit's own features. Add them with Edit features first."
-          : `Where lists this Unit's own features (${places
+          ? "Where lists this Parking's own features. Add them with Edit features first."
+          : `Where lists this Parking's own features (${places
               .map((place) => place.label)
               .join(", ")}).`}{" "}
         Each save is dated and kept in History.

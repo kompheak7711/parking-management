@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe("Top-bar search (UI v81)", () => {
-  it("TEST-FE-1909 finds Units by number and Customers by name, opens the chosen record with Enter, and says when nothing is found", async () => {
+  it("TEST-FE-1909 finds Parking by number and Customers by name, opens the chosen record with Enter, and says when nothing is found", async () => {
     vi.useFakeTimers();
     const customers = vi.fn((_: string, query: string) =>
       Promise.resolve(
@@ -53,7 +53,7 @@ describe("Top-bar search (UI v81)", () => {
     });
     expect(
       screen.getAllByRole("option").map((option) => option.textContent),
-    ).toEqual(["U101Unit", "U102Unit"]);
+    ).toEqual(["U101Parking", "U102Parking"]);
     fireEvent.keyDown(box, { key: "ArrowDown" });
     fireEvent.keyDown(box, { key: "Enter" });
     expect(window.location.hash).toBe("#/units/unit-102");
@@ -79,7 +79,7 @@ describe("Top-bar search (UI v81)", () => {
     const box = screen.getByRole("combobox", { name: "Search" });
     expect(box).toHaveAttribute(
       "placeholder",
-      "Search Invoice, Receipt, Customer or Unit",
+      "Search Invoice, Receipt, Customer or Parking",
     );
     fireEvent.change(box, { target: { value: "INV260006" } });
     await act(async () => {

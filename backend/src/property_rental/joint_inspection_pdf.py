@@ -32,7 +32,7 @@ WORDS: Final[dict[str, tuple[str, str]]] = {
     "kind": ("ប្រភេទ", "Kind"),
     "date": ("កាលបរិច្ឆេទ", "Date"),
     "tenant": ("អ្នកជួល", "Tenant"),
-    "unit_lease": ("បន្ទប់ និងកិច្ចសន្យា", "Unit and Lease"),
+    "unit_lease": ("ចំណត និងកិច្ចសន្យា", "Parking and Lease"),
     "rooms": ("បន្ទប់ និងរបស់របរ", "Rooms and items"),
     "item": ("របស់", "Item"),
     "result": ("លទ្ធផល", "Result"),
@@ -240,7 +240,7 @@ def joint_inspection_html(
         f"<title>{number}</title><style>{style}</style></head><body>"
         '<article class="doc" lang="en">'
         f'<div class="top"><div><img class="logo" src="{logo}" alt="CHETANA">'
-        '<div class="biz"><b>CHETANA Residence</b></div></div>'
+        '<div class="biz"><b>CHETANA Parking</b></div></div>'
         f'<div class="title"><span class="kh">{WORDS["title"][0]}</span>'
         f'<span class="en">{WORDS["title"][1]}</span>'
         '<table class="meta">'
@@ -252,7 +252,7 @@ def joint_inspection_html(
         f'<div class="parties"><div>{_label("tenant")}<div class="v">'
         f"{e(inspection.get('tenant_name')) or '—'}</div></div>"
         f'<div>{_label("unit_lease")}<div class="v">'
-        + (f"Unit {unit.removeprefix('Unit ')}" if unit else "—")
+        + (f"Parking {unit.removeprefix('Unit ').removeprefix('Parking ')}" if unit else "—")
         + (f"<small>Lease {lease}</small>" if lease else "")
         + f"<small>{kind_html}</small></div></div></div>"
         + "".join(f'<p class="notice">{notice}</p>' for notice in notices)

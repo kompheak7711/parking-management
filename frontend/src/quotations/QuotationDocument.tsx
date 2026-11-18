@@ -39,7 +39,7 @@ export function QuotationDocument({ quotation }: { quotation: Quotation }) {
         <div>
           <img alt="CHETANA" className="logo" src={logoUrl} />
           <div className="biz">
-            <b>CHETANA Residence</b>
+            <b>CHETANA Parking</b>
           </div>
         </div>
         <div className="title">
@@ -68,7 +68,7 @@ export function QuotationDocument({ quotation }: { quotation: Quotation }) {
         <div>
           <div className="v">
             {quotation.unit_number !== null
-              ? `Unit ${quotation.unit_number}`
+              ? `Parking ${quotation.unit_number}`
               : ""}
             {quotation.note !== null && <small>{quotation.note}</small>}
           </div>

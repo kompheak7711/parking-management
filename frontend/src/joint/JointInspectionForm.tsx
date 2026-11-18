@@ -3,6 +3,7 @@
 // with its Problem reports, photos and both signatures; a Manager can replace a Done one.
 // Every change saves at once; the server checks every right and rule again.
 
+import { PROBLEM_REPORTS } from "../leases/parking";
 import "./joint.css";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -1362,7 +1363,8 @@ function DoneView({
                             ` · ${jt(language, "pet_caused")}`}
                         </Chip>
                       )}
-                      {line.problem_report !== null && (
+                      {/* Parking Step 6: no Problem reports page on Parking (PROBLEM_REPORTS). */}
+                      {PROBLEM_REPORTS && line.problem_report !== null && (
                         <a
                           className="ui-num"
                           href={hashForPage(

@@ -124,7 +124,7 @@ describe("UI v81 shared layouts", () => {
           main={
             <FieldGrid>
               <label>
-                Unit <input name="unit" />
+                Parking <input name="unit" />
               </label>
               <label>
                 Primary tenant <input name="tenant" />
@@ -139,7 +139,7 @@ describe("UI v81 shared layouts", () => {
         />
         <FactList
           facts={[
-            { key: "unit", label: "Unit", value: "U206" },
+            { key: "unit", label: "Parking", value: "U206" },
             {
               key: "rent",
               label: "Monthly rent",
@@ -167,7 +167,9 @@ describe("UI v81 shared layouts", () => {
     expect(
       screen.getByLabelText("What will be billed").parentElement,
     ).toHaveClass("ui-formlayout-side");
-    expect(screen.getByLabelText("Unit").closest(".ui-fields")).not.toBeNull();
+    expect(
+      screen.getByLabelText("Parking").closest(".ui-fields"),
+    ).not.toBeNull();
     expect(
       screen.getByRole("button", { name: "Save as draft" }).parentElement,
     ).toHaveClass("ui-span2");
@@ -176,7 +178,7 @@ describe("UI v81 shared layouts", () => {
     // Facts: a term over each value; the note only where one is given.
     const facts = screen.getByText("Monthly rent").closest("dl");
     expect(facts).toHaveClass("ui-factlist");
-    const unit = screen.getByText("Unit", { selector: "dt" }).parentElement;
+    const unit = screen.getByText("Parking", { selector: "dt" }).parentElement;
     expect(unit?.querySelectorAll("dd")).toHaveLength(1);
     const rent = screen.getByText("Monthly rent").parentElement;
     expect(rent?.querySelectorAll("dd")).toHaveLength(2);

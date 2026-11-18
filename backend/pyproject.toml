@@ -27,8 +27,8 @@ parking-scheduled-billing = "property_rental.billing_worker:main"
 parking-backup = "property_rental.backup_job:main"
 parking-ops-check = "property_rental.operations_check:main"
 parking-log-retention = "property_rental.log_retention:main"
-property-rental-telegram-pull = "property_rental.telegram_pull_job:main"
-property-rental-telegram-send = "property_rental.telegram_send_job:main"
+parking-telegram-pull = "property_rental.telegram_pull_job:main"
+parking-telegram-send = "property_rental.telegram_send_job:main"
 
 [project.optional-dependencies]
 dev = [

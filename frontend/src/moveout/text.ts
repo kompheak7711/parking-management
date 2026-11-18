@@ -18,7 +18,7 @@ const TEXT = {
     "កិច្ចសន្យាបញ្ចប់ក្នុង 60 ថ្ងៃ ឬបានបញ្ចប់ហើយនៅមិនទាន់ចេញ",
   ],
   // UI v81 round 2: the design's card name (C10).
-  c_out: ["Unit handed over", "បានប្រគល់បន្ទប់"],
+  c_out: ["Parking handed over", "បានប្រគល់ចំណត"],
   c_out_s: [
     "Readings, inspection and charges to finish",
     "អំណាន ការត្រួតពិនិត្យ និងថ្លៃត្រូវបញ្ចប់",
@@ -43,7 +43,7 @@ const TEXT = {
   col_unit: ["Parking", "ចំណត"],
   col_cust: ["Customer", "អតិថិជន"],
   col_end: ["Lease ends", "កិច្ចសន្យាបញ្ចប់"],
-  col_hb: ["Unit handed over", "បានប្រគល់"],
+  col_hb: ["Parking handed over", "បានប្រគល់"],
   col_step: ["Step", "ជំហាន"],
   col_dep: ["Deposits held", "ប្រាក់កក់កាន់កាប់"],
   was: ["End Date was {0}", "ថ្ងៃបញ្ចប់គឺ {0}"],
@@ -62,11 +62,11 @@ const TEXT = {
   in1: ["in 1 day", "ក្នុង 1 ថ្ងៃ"],
   rule_note: [
     "Order of work: hand-back, final readings, inspection and charges, Final Settlement. One Final Settlement per Lease; corrections after that are made as new records.",
-    "លំដាប់ការងារ៖ ប្រគល់បន្ទប់ អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
+    "លំដាប់ការងារ៖ ប្រគល់ចំណត អំណានចុងក្រោយ ត្រួតពិនិត្យ និងថ្លៃ ការទូទាត់ចុងក្រោយ។ ការទូទាត់ចុងក្រោយតែមួយក្នុងមួយកិច្ចសន្យា; ការកែបន្ទាប់ពីបិទ ជាកំណត់ត្រាដាច់ដោយឡែក។",
   ],
   s_soon: ["Leaving soon", "ជិតចាកចេញ"],
-  s_in: ["Still in the Unit", "នៅក្នុងបន្ទប់"],
-  s_out: ["Unit handed over", "បានប្រគល់"],
+  s_in: ["Still in the Parking", "នៅក្នុងចំណត"],
+  s_out: ["Parking handed over", "បានប្រគល់"],
   // new: terminated before anybody moved in.
   s_skip: ["Never moved in", "មិនដែលចូលស្នាក់នៅ"],
   // new (M5)
@@ -198,8 +198,8 @@ const TEXT = {
     "ទុកទទេ ដើម្បីរក្សាទុកមូលហេតុដែលបង្ហាញក្នុងប្រអប់។",
   ],
   hbr_reason_default: [
-    "Unit handed back on {0}: Rent for {1} of {2} days",
-    "ប្រគល់បន្ទប់នៅ {0}៖ ថ្លៃឈ្នួលសម្រាប់ {1} ថ្ងៃ ក្នុងចំណោម {2} ថ្ងៃ",
+    "Parking handed back on {0}: Rent for {1} of {2} days",
+    "ប្រគល់ចំណតនៅ {0}៖ ថ្លៃឈ្នួលសម្រាប់ {1} ថ្ងៃ ក្នុងចំណោម {2} ថ្ងៃ",
   ],
   hbr_btn: [
     "Lower the Invoice to the days used",
@@ -254,8 +254,8 @@ const TEXT = {
   st3_taken: ["{0}, read on {1}", "{0} អាននៅ {1}"],
   // new
   st3_meters_failed: [
-    "The meters of this Unit could not be loaded. Close and try again.",
-    "មិនអាចអាននាឡិកាស្ទង់នៃបន្ទប់នេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
+    "The meters of this Parking could not be loaded. Close and try again.",
+    "មិនអាចអាននាឡិកាស្ទង់នៃចំណតនេះបានទេឥឡូវនេះ។ សូមបិទ ហើយព្យាយាមម្តងទៀត។",
   ],
   // new
   st3_no_meters: [
@@ -269,7 +269,7 @@ const TEXT = {
   ],
   st3_note: [
     "Final Utility Invoice at move-out: readings from the last cycle reading to the hand-back date.",
-    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់បន្ទប់។",
+    "វិក្កយបត្រទឹកភ្លើងចុងក្រោយពេលចាកចេញ៖ អំណានពីអំណានវដ្តចុងក្រោយ ដល់ថ្ងៃប្រគល់ចំណត។",
   ],
   // new
   st3_note_only: [
@@ -988,7 +988,7 @@ const TEXT = {
     "ការប្រគល់ត្រូវបានកែ៖ {0}; ចំណត {1}។",
   ],
   open_lease: ["Open Lease", "បើកកិច្ចសន្យា"],
-  open_unit: ["Open Unit", "បើកបន្ទប់"],
+  open_unit: ["Open Parking", "បើកចំណត"],
   back: ["Back to Move-outs", "ការចាកចេញ"],
   loading: ["Reading the move-outs…", "កំពុងអានការចាកចេញ…"],
   failed: [

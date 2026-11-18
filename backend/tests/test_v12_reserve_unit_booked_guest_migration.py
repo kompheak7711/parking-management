@@ -59,7 +59,7 @@ def spare_unit(db: BookingDatabase, number: str) -> uuid.UUID:
         connection.execute(
             "INSERT INTO app.units (id, property_id, unit_number, floor, unit_type, status, "
             "default_monthly_rent_usd_cents, created_by, updated_by) "
-            "VALUES (%s, %s, %s, '6', 'STUDIO', 'VACANT', 29900, %s, %s)",
+            "VALUES (%s, %s, %s, '6', 'COVERED', 'VACANT', 29900, %s, %s)",
             (unit, db.property_id, number, db.manager, db.manager),
         )
     return unit
@@ -145,7 +145,7 @@ def test_make_reservation_stops_on_a_unit_with_a_booked_guest_and_keeps_no_money
     assert isinstance(answer, RefusedRequest)
     assert answer.refusal is RESERVATION_UNIT_BOOKED
     assert (answer.refusal.status_code, answer.refusal.code) == (409, "RESERVATION_UNIT_BOOKED")
-    assert "Change Unit" in answer.refusal.message
+    assert "Change Parking" in answer.refusal.message
 
     # The database itself refuses, whichever command saves the Reservation.
     with psycopg.connect(db.owner_url) as connection, pytest.raises(psycopg.Error) as raised:

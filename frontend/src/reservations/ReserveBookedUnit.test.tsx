@@ -28,10 +28,10 @@ import type { UnitApi, UnitResource } from "../unitClient";
 import { MakeReservationDialog } from "./MakeReservationDialog";
 
 const WORDS =
-  "A short-stay guest has booked this Unit. Nothing was saved and no money was taken. " +
-  "Reserve another Unit, or move the guest to another Unit first (Short stays, Change Unit).";
+  "A short-stay guest has booked this Parking. Nothing was saved and no money was taken. " +
+  "Reserve another Parking, or move the guest to another Parking first (Short stays, Change Parking).";
 const GENERAL =
-  "The Reservation was not saved: the Unit or the Customer changed meanwhile (for example, someone else reserved this Unit first). Check them, then try again.";
+  "The Reservation was not saved: the Parking or the Customer changed meanwhile (for example, someone else reserved this Parking first). Check them, then try again.";
 
 function refusal(code: string, message: string): Response {
   return new Response(
@@ -53,7 +53,7 @@ afterEach(() => {
   cleanup();
 });
 
-describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the client", () => {
+describe("Reserve Parking on a Parking a short-stay guest has booked (DL-225): the client", () => {
   const source = {
     unit_id: "unit-2",
   } as unknown as ReservationWithPaymentSource;
@@ -105,7 +105,7 @@ describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the cli
   });
 });
 
-describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the dialog", () => {
+describe("Reserve Parking on a Parking a short-stay guest has booked (DL-225): the dialog", () => {
   function apis() {
     const unitApi = {
       list: vi.fn(() =>
@@ -172,7 +172,7 @@ describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the dia
       />,
     );
     const dialog = await screen.findByRole("dialog");
-    await within(dialog).findByLabelText("Unit");
+    await within(dialog).findByLabelText("Parking");
     fireEvent.change(within(dialog).getByLabelText("Customer"), {
       target: { value: "customer-dara" },
     });
@@ -195,7 +195,7 @@ describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the dia
     // Nothing was saved, so there is nothing to look for, and the Unit may be changed.
     expect(onSaved).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
-    expect(within(dialog).getByLabelText("Unit")).toBeEnabled();
+    expect(within(dialog).getByLabelText("Parking")).toBeEnabled();
     expect(within(dialog).getByLabelText("Customer")).toBeEnabled();
 
     // After Change Unit moved the guest, the same Reservation is saved.
@@ -206,12 +206,12 @@ describe("Reserve Unit on a Unit a short-stay guest has booked (DL-225): the dia
     expect(within(dialog).queryByText(WORDS)).toBeNull();
   });
 
-  it("TEST-FE-2107 the Khmer screen has Khmer words for this refusal, with the name of Change Unit", () => {
+  it("TEST-FE-2107 the Khmer screen has Khmer words for this refusal, with the name of Change Parking", () => {
     const error = new ReservationUnitBookedError(WORDS);
     expect(serverWords("en", error)).toBe(WORDS);
     const khmer = serverWords("km", error);
     expect(khmer).not.toContain(WORDS);
-    expect(khmer).toContain("ប្ដូរបន្ទប់");
+    expect(khmer).toContain("ប្ដូរចំណត");
     expect(khmer).toMatch(/[ក-៿]/);
   });
 });

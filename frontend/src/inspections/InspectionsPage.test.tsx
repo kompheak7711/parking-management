@@ -61,7 +61,7 @@ function apiWith(inspections: ProblemsApi["inspections"]): ProblemsApi {
 }
 
 describe("Inspections", () => {
-  it("TEST-FE-1914 with nothing recorded yet, says where move-out inspections and Unit checks come from", async () => {
+  it("TEST-FE-1914 with nothing recorded yet, says where move-out inspections and Parking checks come from", async () => {
     const inspections = vi.fn(() =>
       Promise.resolve({ as_of: "2026-11-16", move_outs: [], unit_checks: [] }),
     );
@@ -79,7 +79,7 @@ describe("Inspections", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "No Unit check yet. Staff send Unit checks from the Telegram Staff bot.",
+        "No Parking check yet. Staff send Parking checks from the Telegram Staff bot.",
       ),
     ).toBeInTheDocument();
     expect(inspections).toHaveBeenCalledWith("property-1");
@@ -95,12 +95,12 @@ describe("Inspections", () => {
     );
     expect(
       await screen.findByText(
-        "អ្នកត្រូវមានសិទ្ធិ អានបន្ទប់ ដើម្បីមើលការត្រួតពិនិត្យ។",
+        "អ្នកត្រូវមានសិទ្ធិ អានចំណត ដើម្បីមើលការត្រួតពិនិត្យ។",
       ),
     ).toBeInTheDocument();
   });
 
-  it("TEST-FE-2215 (owner 16/11/2026) lists the move-out inspections and the Staff bot's Unit checks with links to the Unit, the Move-out page and each Problem report; a page that is not on screen reads nothing", async () => {
+  it("TEST-FE-2215 (owner 16/11/2026) lists the move-out inspections and the Staff bot's Parking checks with links to the Parking, the Move-out page and each Problem report; a page that is not on screen reads nothing", async () => {
     const inspections = vi.fn(() => Promise.resolve(LIST));
     const { rerender } = render(
       <InspectionsPage
@@ -132,7 +132,7 @@ describe("Inspections", () => {
       within(row).getByRole("link", { name: "Open" }).getAttribute("href"),
     ).toBe("#/moveout/l-1");
 
-    const checks = screen.getByRole("region", { name: "Unit checks 2" });
+    const checks = screen.getByRole("region", { name: "Parking checks 2" });
     const regular = within(checks).getByRole("row", { name: /U203/ });
     expect(within(regular).getByText("Regular check")).toBeInTheDocument();
     expect(within(regular).getByText("Son Sokhen")).toBeInTheDocument();

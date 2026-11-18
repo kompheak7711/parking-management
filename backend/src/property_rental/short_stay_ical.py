@@ -111,7 +111,7 @@ def write_calendar(
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//CHETANA Residence//Short stays//EN",
+        "PRODID:-//CHETANA Parking//Short stays//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
         f"X-WR-CALNAME:{_escape(name)}",

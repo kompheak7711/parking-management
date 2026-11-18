@@ -927,7 +927,7 @@ describe("Registers", () => {
     ).toBeTruthy();
     expect(within(summaryCard()).getAllByRole("button")).toHaveLength(31);
   });
-  it("TEST-FE-1143 Parking Step 5: the Deposits report lists Security only while no Pet Deposit is held, and its words say Security Deposits", async ({
+  it("TEST-FE-3143 Parking Step 5: the Deposits report lists Security only while no Pet Deposit is held, and its words say Security Deposits", async ({
     skip,
   }) => {
     skip(PET_DEPOSIT);

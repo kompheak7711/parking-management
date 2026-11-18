@@ -405,7 +405,7 @@ def test_hand_back_before_the_fifth_lowers_the_unpaid_invoice_and_its_service_li
         uuid4(),
         "CREDIT_ADJUSTMENT",
         81_000,
-        "Customer handed back the Unit on 3 August",
+        "Customer handed back the Parking on 3 August",
         version(url, august),
         73_161,
     )
@@ -454,8 +454,8 @@ def test_hand_back_before_the_fifth_lowers_the_unpaid_invoice_and_its_service_li
             "ORDER BY amount_usd_cents DESC",
             (august,),
         ).fetchall() == [
-            (72_258, "Customer handed back the Unit on 3 August"),
-            (903, "Customer handed back the Unit on 3 August"),
+            (72_258, "Customer handed back the Parking on 3 August"),
+            (903, "Customer handed back the Parking on 3 August"),
         ]
         resolution = connection.execute(
             "SELECT physical_move_out_event_id,hand_back_date,coverage,action,"

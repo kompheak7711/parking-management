@@ -185,7 +185,7 @@ describe("Parking API client", () => {
     );
   });
 
-  it("TEST-FE-1126 the History rows keep who did it by name when the server says, and leave it empty otherwise (Parking Step 3)", async () => {
+  it("TEST-FE-3126 the History rows keep who did it by name when the server says, and leave it empty otherwise (Parking Step 3)", async () => {
     const row = (event_id: string, extra: Record<string, unknown>) => ({
       event_id,
       occurred_at: "2026-10-29T03:00:00Z",

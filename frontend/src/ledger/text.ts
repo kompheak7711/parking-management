@@ -388,12 +388,12 @@ const TEXT = {
   er_amt: ["Amount", "ចំនួនទឹកប្រាក់"],
   er_sup: ["Supplier (if known)", "អ្នកផ្គត់ផ្គង់ (បើដឹង)"],
   er_sup_s: ["Supplier", "អ្នកផ្គត់ផ្គង់"],
-  er_unit: ["Unit", "បន្ទប់"],
+  er_unit: ["Parking", "ចំណត"],
   er_unit_h: [
-    "For repairs only, so you can see what each Unit costs in repairs.",
-    "សម្រាប់ការជួសជុលប៉ុណ្ណោះ ដើម្បីមើលថ្លៃជួសជុលរបស់បន្ទប់នីមួយៗ។",
+    "For repairs only, so you can see what each Parking costs in repairs.",
+    "សម្រាប់ការជួសជុលប៉ុណ្ណោះ ដើម្បីមើលថ្លៃជួសជុលរបស់ចំណតនីមួយៗ។",
   ],
-  er_unit_none: ["Whole building (no Unit)", "អគារទាំងមូល (គ្មានបន្ទប់)"],
+  er_unit_none: ["Whole building (no Parking)", "អគារទាំងមូល (គ្មានចំណត)"],
   er_c_open: ["Show all open", "បង្ហាញទាំងអស់ដែលបើក"],
   er_from: ["Paid from", "បង់ពី"],
   er_f_ADV: ["Advance to staff", "ប្រាក់បុរេប្រទានឱ្យបុគ្គលិក"],
@@ -629,7 +629,7 @@ const TEXT = {
   // new
   x_st_VOID: ["Void", "ទុកជាមោឃៈ"],
   // new
-  x_no_unit: ["No Unit", "គ្មានបន្ទប់"],
+  x_no_unit: ["No Parking", "គ្មានចំណត"],
   // new
   x_none: ["No expenses yet.", "មិនទាន់មានចំណាយទេ។"],
   // new

@@ -22,7 +22,7 @@ const TEXT = {
   f_status: ["Status", "ស្ថានភាព"],
   c_no: ["Number", "លេខ"],
   c_kind: ["Kind", "ប្រភេទ"],
-  c_unit: ["Unit", "បន្ទប់"],
+  c_unit: ["Parking", "ចំណត"],
   c_lease: ["Lease and tenant", "កិច្ចសន្យា និងអ្នកជួល"],
   c_date: ["Date", "កាលបរិច្ឆេទ"],
   c_problems: ["Problems", "បញ្ហា"],
@@ -99,8 +99,8 @@ const TEXT = {
   ],
   move_in_reading: ["At move-in: {0}", "ពេលចូល៖ {0}"],
   no_meters: [
-    "This Unit has no meter in use.",
-    "បន្ទប់នេះគ្មាននាឡិកាកំពុងប្រើទេ។",
+    "This Parking has no meter in use.",
+    "ចំណតនេះគ្មាននាឡិកាកំពុងប្រើទេ។",
   ],
   // Signing
   sign_check: [

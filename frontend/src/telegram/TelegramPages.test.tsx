@@ -756,7 +756,9 @@ describe("Office › Telegram", () => {
     });
     fireEvent.click(screen.getByRole("radio", { name: "Some floors" }));
     fireEvent.click(screen.getByRole("button", { name: "Send notice" }));
-    expect(screen.getByText("Choose at least one floor or Unit.")).toBeTruthy();
+    expect(
+      screen.getByText("Choose at least one floor or Parking."),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole("checkbox", { name: "Floor 5" }));
     fireEvent.click(screen.getByRole("button", { name: "Send notice" }));
     expect(api.sendNotice).not.toHaveBeenCalled();
@@ -1111,7 +1113,7 @@ describe("Office › Telegram", () => {
     expect(api.health).not.toHaveBeenCalled();
   });
 
-  it("TEST-FE-1506 Contact office lists the waiting messages oldest first with who, Unit and phone, and the answered ones with who answered and how; Reply needs words and sends them; a message someone already answered reads the list again", async () => {
+  it("TEST-FE-1506 Contact office lists the waiting messages oldest first with who, Parking and phone, and the answered ones with who answered and how; Reply needs words and sends them; a message someone already answered reads the list again", async () => {
     const api = fakeApi();
     render(
       <ContactOfficePage
@@ -1455,7 +1457,7 @@ describe("Office › Telegram", () => {
       />,
     );
     expect(
-      await screen.findByText("គ្មានសំណើមកមើលបន្ទប់នៅទីនេះទេ។"),
+      await screen.findByText("គ្មានសំណើមកមើលចំណតនៅទីនេះទេ។"),
     ).toBeTruthy();
   });
 

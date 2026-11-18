@@ -1,6 +1,15 @@
 // V1-058 R1: the menu of the signed-in app (DESIGN.md 0.29 "Menu, top bar and search").
 // The groups and their order live only here, so a new menu order is a one-place change.
 
+import {
+  GENERAL_LEDGER,
+  HR,
+  MONTHLY_SERVICES,
+  PRODUCTS,
+  PROBLEM_REPORTS,
+  SHORT_STAYS,
+  TELEGRAM,
+} from "../leases/parking";
 import type { Language } from "../signInText";
 
 export type PageId =
@@ -254,7 +263,7 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   quotations: ["Quotations", "សម្រង់តម្លៃ"],
   utilities: ["Utilities", "ទឹកភ្លើង"],
   approvals: ["Approvals", "ការអនុម័ត"],
-  units: ["Units", "បន្ទប់"],
+  units: ["Parking", "ចំណត"],
   // UI v81 round 2 (design v81 menu); the Khmer word is new and needs the native check.
   inspections: ["Inspections", "ការត្រួតពិនិត្យ"],
   problems: ["Problem reports", "របាយការណ៍បញ្ហា"],
@@ -266,7 +275,7 @@ const PAGE_NAMES: Record<PageId, readonly [string, string]> = {
   locations: ["Storage locations", "ទីតាំងស្តុក"],
   customers: ["Customers", "អតិថិជន"],
   reservations: ["Reservations", "ការកក់ទុក"],
-  visitreqs: ["Viewing requests", "សំណើមើលបន្ទប់"],
+  visitreqs: ["Viewing requests", "សំណើមើលចំណត"],
   // new
   shortstays: ["Short stays", "ការស្នាក់នៅខ្លី"],
   leases: ["Leases", "កិច្ចសន្យាជួល"],
@@ -377,11 +386,55 @@ const PAGE_NEEDS: Record<PageId, readonly string[] | null> = {
   account: null,
 };
 
+// Parking Step 6 (owner 2026-11-17): the pages of the parts Parking hides (leases/parking.ts).
+const HIDDEN_ON_PARKING: ReadonlySet<PageId> = new Set<PageId>([
+  ...(GENERAL_LEDGER
+    ? []
+    : ([
+        "exreqs",
+        "expenses",
+        "bills",
+        "journal",
+        "needscheck",
+        "chart",
+        "statements",
+        "budget",
+        "fassets",
+        "bankcash",
+        "lclose",
+      ] as const)),
+  ...(HR ? [] : (["employees", "loans", "payroll", "attendance"] as const)),
+  ...(TELEGRAM
+    ? []
+    : ([
+        "visitreqs",
+        "tglinks",
+        "tgsent",
+        "tgcontact",
+        "tgfaq",
+        "tgnotices",
+        "tghealth",
+      ] as const)),
+  ...(SHORT_STAYS ? [] : (["shortstays"] as const)),
+  ...(PRODUCTS
+    ? []
+    : (["products", "stock", "locations", "quotations"] as const)),
+  ...(PROBLEM_REPORTS ? [] : (["problems"] as const)),
+]);
+
+/** Settings tabs of the parts Parking hides (Parking Step 6). */
+export function settingsTabShownOnParking(tab: string): boolean {
+  if (tab === "services") return MONTHLY_SERVICES;
+  if (tab === "sites") return SHORT_STAYS;
+  return true;
+}
+
 /** May the person see this page? Unknown access (null) shows everything. */
 export function pageAllowed(
   page: PageId,
   capabilities: ReadonlySet<string> | null,
 ): boolean {
+  if (HIDDEN_ON_PARKING.has(page)) return false;
   const needs = PAGE_NEEDS[page];
   if (needs === null || capabilities === null) return true;
   return needs.some((capability) => capabilities.has(capability));
@@ -556,7 +609,7 @@ const PAGE_SUB_TABS: Partial<Record<PageId, readonly PageSubTab[]>> = {
     },
     {
       id: "units",
-      label: ["Unit setup", "ការរៀបចំបន្ទប់"],
+      label: ["Parking setup", "ការរៀបចំចំណត"],
       needs: ["settings.manage"],
     },
     {
@@ -615,9 +668,10 @@ export function subItemsOf(
   }
   const subTabs = (PAGE_SUB_TABS[item.page] ?? []).filter(
     (subTab) =>
-      subTab.needs === undefined ||
-      capabilities === null ||
-      subTab.needs.some((capability) => capabilities.has(capability)),
+      (item.page !== "settings" || settingsTabShownOnParking(subTab.id)) &&
+      (subTab.needs === undefined ||
+        capabilities === null ||
+        subTab.needs.some((capability) => capabilities.has(capability))),
   );
   if (subTabs.length < 2) return [];
   const here = item.page === page;
